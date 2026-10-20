@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Reuse Workbench"
+description = "An AI-powered solution discovery and consolidation workbench for enterprises. A solution seeker describes a business pain point in plain language, the platform structures it, matches it against a curated library of existing solutions, recommends a base product with reusable capabilities from overlapping products, runs a deterministic simulated A/B experiment, and routes the proposed change through solution-owner approval and an IT consolidation portfolio."
+version = "1.0.0"
+id = "artifacts/workbench"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22653
+
+[services.development]
+run = "pnpm --filter @workspace/workbench run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/workbench", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/workbench/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22653"
+BASE_PATH = "/"

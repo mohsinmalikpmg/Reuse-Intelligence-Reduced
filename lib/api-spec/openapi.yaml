@@ -3,20 +3,26 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Reuse Workbench API - solution discovery, consolidation, simulation and governance
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: personas
+  - name: home
+  - name: library
+  - name: briefs
+  - name: cases
+  - name: experiments
+  - name: portfolio
+  - name: demo
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +30,660 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /personas:
+    get:
+      operationId: listPersonas
+      tags: [personas]
+      summary: Seeded login personas
+      responses:
+        "200":
+          description: Personas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Persona"
+
+  /home/seeker:
+    get:
+      operationId: getSeekerOverview
+      tags: [home]
+      summary: Solution seeker home
+      responses:
+        "200":
+          description: Seeker overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeekerOverview"
+
+  /home/owner:
+    get:
+      operationId: getOwnerOverview
+      tags: [home]
+      summary: Existing solution owner home
+      responses:
+        "200":
+          description: Owner overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerOverview"
+
+  /solutions:
+    get:
+      operationId: listSolutions
+      tags: [library]
+      summary: Search the solution library
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/SolutionStatus"
+      responses:
+        "200":
+          description: Solutions ordered by maturity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Solution"
+
+  /solutions/{solutionId}:
+    get:
+      operationId: getSolution
+      tags: [library]
+      summary: Solution detail with its capabilities
+      parameters:
+        - name: solutionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Solution detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /capabilities:
+    get:
+      operationId: listCapabilities
+      tags: [library]
+      summary: All reusable capabilities
+      responses:
+        "200":
+          description: Capabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Capability"
+
+  /business-problems:
+    get:
+      operationId: listBusinessProblems
+      tags: [library]
+      summary: Business problems in the portfolio
+      responses:
+        "200":
+          description: Business problems
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusinessProblem"
+
+  /briefs:
+    get:
+      operationId: listBriefs
+      tags: [briefs]
+      summary: Recent pain-point briefs
+      responses:
+        "200":
+          description: Briefs, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Brief"
+    post:
+      operationId: createBrief
+      tags: [briefs]
+      summary: Interpret a natural-language pain point into a structured brief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BriefInput"
+      responses:
+        "201":
+          description: Structured brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /briefs/{briefId}:
+    get:
+      operationId: getBrief
+      tags: [briefs]
+      summary: Get a brief
+      parameters:
+        - name: briefId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateBrief
+      tags: [briefs]
+      summary: Confirm or edit the structured interpretation
+      parameters:
+        - name: briefId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BriefUpdate"
+      responses:
+        "200":
+          description: Updated brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /briefs/{briefId}/matches:
+    get:
+      operationId: getBriefMatches
+      tags: [briefs]
+      summary: Ranked existing solutions that address the brief
+      parameters:
+        - name: briefId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Match results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases:
+    get:
+      operationId: listCases
+      tags: [cases]
+      summary: Consolidation cases
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/CaseStatus"
+      responses:
+        "200":
+          description: Case summaries, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CaseSummary"
+    post:
+      operationId: createCase
+      tags: [cases]
+      summary: Start a consolidation case using a solution as the base
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaseInput"
+      responses:
+        "201":
+          description: Case created with the recommended configuration applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}:
+    get:
+      operationId: getCase
+      tags: [cases]
+      summary: Get a case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateCase
+      tags: [cases]
+      summary: Rename or save a case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaseUpdate"
+      responses:
+        "200":
+          description: Updated case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/recommendation:
+    get:
+      operationId: getCaseRecommendation
+      tags: [cases]
+      summary: Consolidation recommendation (Overview tab)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/compare:
+    get:
+      operationId: getCaseComparison
+      tags: [cases]
+      summary: Capability comparison across overlapping solutions (Compare tab)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Comparison
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comparison"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/configuration:
+    get:
+      operationId: getCaseConfiguration
+      tags: [cases]
+      summary: Governed workflow configuration with impact (Configure tab)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Configuration"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateCaseConfiguration
+      tags: [cases]
+      summary: Toggle optional modules or set configurable values
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfigurationUpdate"
+      responses:
+        "200":
+          description: Updated configuration with recalculated impact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Configuration"
+        "400":
+          description: Change not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/experiment-plan:
+    get:
+      operationId: getCaseExperimentPlan
+      tags: [experiments]
+      summary: Auto-generated experiment design (Test tab, before running)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Experiment plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperimentPlan"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/experiments:
+    post:
+      operationId: runCaseExperiment
+      tags: [experiments]
+      summary: Run the seeded synthetic-user simulation (baseline vs proposed)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Completed simulated experiment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Experiment"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/review:
+    get:
+      operationId: getCaseReview
+      tags: [cases]
+      summary: Before-and-after change review with pilot plan and decisions
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Change review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeReview"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/decisions:
+    post:
+      operationId: recordCaseDecision
+      tags: [cases]
+      summary: Record an owner or IT decision on the case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecisionInput"
+      responses:
+        "201":
+          description: Updated case after the decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+        "400":
+          description: Decision not allowed for this role or state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /experiments:
+    get:
+      operationId: listExperiments
+      tags: [experiments]
+      summary: All simulated experiments, newest first
+      responses:
+        "200":
+          description: Experiments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Experiment"
+
+  /experiments/{experimentId}:
+    get:
+      operationId: getExperiment
+      tags: [experiments]
+      summary: Get an experiment
+      parameters:
+        - name: experimentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Experiment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Experiment"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /portfolio:
+    get:
+      operationId: getPortfolio
+      tags: [portfolio]
+      summary: IT portfolio decision dashboard
+      responses:
+        "200":
+          description: Portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+
+  /portfolio/decision-queue:
+    get:
+      operationId: getDecisionQueue
+      tags: [portfolio]
+      summary: Cases awaiting an IT decision
+      responses:
+        "200":
+          description: Queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CaseSummary"
+
+  /demo/reset:
+    post:
+      operationId: resetDemo
+      tags: [demo]
+      summary: One-click reset to the pre-seeded demonstration scenario
+      responses:
+        "200":
+          description: Reset complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoState"
+
+  /demo/state:
+    get:
+      operationId: getDemoState
+      tags: [demo]
+      summary: Identifiers of the preloaded demonstration case
+      responses:
+        "200":
+          description: Demo state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoState"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +691,1061 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    Role:
+      type: string
+      enum: [seeker, owner, it]
+
+    SolutionStatus:
+      type: string
+      enum: [certified, pilot, experimental, deprecated]
+
+    SolutionKind:
+      type: string
+      enum: [complete_solution, configurable_product, capability_module, prototype]
+
+    EvidenceLevel:
+      type: string
+      enum: [strong, moderate, limited, none]
+
+    EffortLevel:
+      type: string
+      enum: [low, medium, high]
+
+    ControlType:
+      type: string
+      enum: [locked, configurable, optional]
+
+    FeatureState:
+      type: string
+      enum: [required, configurable, optional, incompatible, recommended, retiring]
+
+    CaseStatus:
+      type: string
+      enum: [draft, simulated, pilot_proposed, approved, changes_requested, deferred, rejected]
+
+    DecisionAction:
+      type: string
+      enum: [approve_simulation, approve_pilot, request_changes, defer, reject, approve_consolidation]
+
+    ExperimentRecommendation:
+      type: string
+      enum: [proceed_to_pilot, revise_configuration, gather_more_evidence, do_not_proceed]
+
+    Persona:
+      type: object
+      required: [id, role, name, title, team, headline]
+      properties:
+        id: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        name: { type: string }
+        title: { type: string }
+        team: { type: string }
+        headline: { type: string }
+
+    Metrics:
+      type: object
+      description: Operating metrics for one task on one solution version
+      required: [taskMinutes, successRate, effortScore, errorRate, adoption, costPerTask]
+      properties:
+        taskMinutes: { type: number, description: Average minutes to complete the task }
+        successRate: { type: number, description: 0-100 percent }
+        effortScore: { type: number, description: 1 (low) to 10 (high) user effort }
+        errorRate: { type: number, description: 0-100 percent exceptions }
+        adoption: { type: number, description: 0-100 percent expected adoption }
+        costPerTask: { type: number, description: Currency per task }
+
+    SolutionVersion:
+      type: object
+      required: [version, releasedAt, summary]
+      properties:
+        version: { type: string }
+        releasedAt: { type: string }
+        summary: { type: string }
+
+    Solution:
+      type: object
+      required:
+        - id
+        - name
+        - outcome
+        - description
+        - status
+        - kind
+        - ownerName
+        - ownerTeam
+        - businessUnits
+        - activeUsers
+        - evidenceLevel
+        - timeToAdopt
+        - adoptionEffort
+        - workflowSteps
+        - currentVersion
+        - versions
+        - knownGaps
+        - dependencies
+        - capabilityIds
+        - businessProblemIds
+        - baselineMetrics
+        - retirementCandidate
+        - architectureStatus
+        - controlStatus
+        - supportModel
+        - lastReviewedAt
+      properties:
+        id: { type: string }
+        name: { type: string }
+        outcome: { type: string, description: One-sentence outcome }
+        description: { type: string }
+        status: { $ref: "#/components/schemas/SolutionStatus" }
+        kind: { $ref: "#/components/schemas/SolutionKind" }
+        ownerName: { type: string }
+        ownerTeam: { type: string }
+        businessUnits:
+          type: array
+          items: { type: string }
+        activeUsers: { type: integer }
+        evidenceLevel: { $ref: "#/components/schemas/EvidenceLevel" }
+        timeToAdopt: { type: string }
+        adoptionEffort: { $ref: "#/components/schemas/EffortLevel" }
+        workflowSteps:
+          type: array
+          items: { type: string }
+        currentVersion: { type: string }
+        versions:
+          type: array
+          items: { $ref: "#/components/schemas/SolutionVersion" }
+        knownGaps:
+          type: array
+          items: { type: string }
+        dependencies:
+          type: array
+          items: { type: string }
+        capabilityIds:
+          type: array
+          items: { type: string }
+        businessProblemIds:
+          type: array
+          items: { type: string }
+        baselineMetrics: { $ref: "#/components/schemas/Metrics" }
+        retirementCandidate: { type: boolean }
+        architectureStatus: { type: string }
+        controlStatus: { type: string }
+        supportModel: { type: string }
+        lastReviewedAt: { type: string }
+
+    Capability:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - category
+        - sourceSolutionId
+        - sourceSolutionName
+        - ownerName
+        - controlType
+        - workflowStep
+        - riskClass
+        - evidenceLevel
+        - lockedReason
+        - options
+        - defaultOption
+        - effects
+        - incompatibleWith
+        - dependsOn
+        - testCoverage
+        - supportStatus
+        - version
+        - evidence
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        sourceSolutionId: { type: string }
+        sourceSolutionName: { type: string }
+        ownerName: { type: string }
+        controlType: { $ref: "#/components/schemas/ControlType" }
+        workflowStep: { type: string }
+        riskClass: { $ref: "#/components/schemas/EffortLevel" }
+        evidenceLevel: { $ref: "#/components/schemas/EvidenceLevel" }
+        lockedReason: { type: ["string", "null"] }
+        options:
+          type: ["array", "null"]
+          items: { type: string }
+        defaultOption: { type: ["string", "null"] }
+        effects:
+          $ref: "#/components/schemas/Metrics"
+          description: Expected deltas applied when the capability is active
+        incompatibleWith:
+          type: array
+          items: { type: string }
+        dependsOn:
+          type: array
+          items: { type: string }
+        testCoverage: { type: string }
+        supportStatus: { type: string }
+        version: { type: string }
+        evidence: { type: string }
+
+    SolutionDetail:
+      type: object
+      required: [solution, capabilities, businessProblems, openCases]
+      properties:
+        solution: { $ref: "#/components/schemas/Solution" }
+        capabilities:
+          type: array
+          items: { $ref: "#/components/schemas/Capability" }
+        businessProblems:
+          type: array
+          items: { $ref: "#/components/schemas/BusinessProblem" }
+        openCases:
+          type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+
+    BusinessProblem:
+      type: object
+      required: [id, title, description, activeSolutionIds, recommendedAction, status]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        activeSolutionIds:
+          type: array
+          items: { type: string }
+        recommendedAction:
+          type: string
+          enum: [consolidate, standardize, retain, retire]
+        status: { type: string }
+
+    BriefField:
+      type: object
+      required: [value, confidence]
+      properties:
+        value: { type: string }
+        confidence: { type: number, description: 0-1 }
+
+    BriefFields:
+      type: object
+      required:
+        - user
+        - job
+        - currentProcess
+        - painPoint
+        - desiredOutcome
+        - constraints
+        - data
+        - requiredControls
+        - successMeasures
+      properties:
+        user: { $ref: "#/components/schemas/BriefField" }
+        job: { $ref: "#/components/schemas/BriefField" }
+        currentProcess: { $ref: "#/components/schemas/BriefField" }
+        painPoint: { $ref: "#/components/schemas/BriefField" }
+        desiredOutcome: { $ref: "#/components/schemas/BriefField" }
+        constraints: { $ref: "#/components/schemas/BriefField" }
+        data: { $ref: "#/components/schemas/BriefField" }
+        requiredControls: { $ref: "#/components/schemas/BriefField" }
+        successMeasures: { $ref: "#/components/schemas/BriefField" }
+
+    Brief:
+      type: object
+      required:
+        - id
+        - rawText
+        - fields
+        - clarifyingQuestion
+        - clarification
+        - source
+        - valueStatement
+        - confirmed
+        - createdAt
+      properties:
+        id: { type: string }
+        rawText: { type: string }
+        fields: { $ref: "#/components/schemas/BriefFields" }
+        clarifyingQuestion:
+          type: ["string", "null"]
+          description: At most one clarifying question, only when necessary
+        clarification: { type: ["string", "null"] }
+        source:
+          type: string
+          enum: [ai, cached, fallback]
+          description: ai = live model, cached = demo prompt cache, fallback = deterministic rules
+        valueStatement:
+          type: string
+          description: Immediate value statement, e.g. how many existing products address the need
+        confirmed: { type: boolean }
+        createdAt: { type: string }
+
+    BriefInput:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, minLength: 10 }
+
+    BriefFieldValues:
+      type: object
+      properties:
+        user: { type: string }
+        job: { type: string }
+        currentProcess: { type: string }
+        painPoint: { type: string }
+        desiredOutcome: { type: string }
+        constraints: { type: string }
+        data: { type: string }
+        requiredControls: { type: string }
+        successMeasures: { type: string }
+
+    BriefUpdate:
+      type: object
+      properties:
+        fields: { $ref: "#/components/schemas/BriefFieldValues" }
+        confirmed: { type: boolean }
+        clarification: { type: string }
+
+    FitLabel:
+      type: string
+      enum: [strong, good, partial, weak]
+
+    MatchScoring:
+      type: object
+      required: [semantic, workflow, persona, readiness, evidence, integration]
+      properties:
+        semantic: { type: number }
+        workflow: { type: number }
+        persona: { type: number }
+        readiness: { type: number }
+        evidence: { type: number }
+        integration: { type: number }
+
+    SolutionMatch:
+      type: object
+      required: [rank, solution, fitScore, fitLabel, recommended, whyMatched, gaps, scoring]
+      properties:
+        rank: { type: integer }
+        solution: { $ref: "#/components/schemas/Solution" }
+        fitScore: { type: number, description: 0-100 }
+        fitLabel: { $ref: "#/components/schemas/FitLabel" }
+        recommended: { type: boolean }
+        whyMatched:
+          type: array
+          items: { type: string }
+        gaps:
+          type: array
+          items: { type: string }
+        scoring: { $ref: "#/components/schemas/MatchScoring" }
+
+    CapabilityMatch:
+      type: object
+      required: [capability, fitScore, whyMatched]
+      properties:
+        capability: { $ref: "#/components/schemas/Capability" }
+        fitScore: { type: number }
+        whyMatched:
+          type: array
+          items: { type: string }
+
+    MatchResult:
+      type: object
+      required: [briefId, headline, matches, capabilityMatches, missingRequirements, existingCaseId]
+      properties:
+        briefId: { type: string }
+        headline: { type: string }
+        matches:
+          type: array
+          items: { $ref: "#/components/schemas/SolutionMatch" }
+        capabilityMatches:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityMatch" }
+        missingRequirements:
+          type: array
+          items: { type: string }
+        existingCaseId:
+          type: ["string", "null"]
+          description: Case already started from this brief, if any
+
+    Case:
+      type: object
+      required:
+        - id
+        - briefId
+        - title
+        - businessProblemId
+        - baseSolutionId
+        - candidateSolutionIds
+        - status
+        - moduleStates
+        - configValues
+        - experimentId
+        - createdByRole
+        - saved
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string }
+        briefId: { type: ["string", "null"] }
+        title: { type: string }
+        businessProblemId: { type: string }
+        baseSolutionId: { type: string }
+        candidateSolutionIds:
+          type: array
+          items: { type: string }
+        status: { $ref: "#/components/schemas/CaseStatus" }
+        moduleStates:
+          type: object
+          description: Optional module id -> active
+          additionalProperties: { type: boolean }
+        configValues:
+          type: object
+          description: Configurable capability id -> selected option
+          additionalProperties: { type: string }
+        experimentId: { type: ["string", "null"] }
+        createdByRole: { $ref: "#/components/schemas/Role" }
+        saved: { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CaseInput:
+      type: object
+      required: [baseSolutionId]
+      properties:
+        baseSolutionId: { type: string }
+        briefId: { type: string }
+        title: { type: string }
+        createdByRole: { $ref: "#/components/schemas/Role" }
+
+    CaseUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        saved: { type: boolean }
+
+    Decision:
+      type: object
+      required: [id, caseId, role, actor, action, reason, createdAt]
+      properties:
+        id: { type: string }
+        caseId: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        actor: { type: string }
+        action: { $ref: "#/components/schemas/DecisionAction" }
+        reason: { type: ["string", "null"] }
+        createdAt: { type: string }
+
+    DecisionInput:
+      type: object
+      required: [role, action]
+      properties:
+        role: { $ref: "#/components/schemas/Role" }
+        action: { $ref: "#/components/schemas/DecisionAction" }
+        reason: { type: string }
+
+    CaseSummary:
+      type: object
+      required:
+        - case
+        - baseSolution
+        - businessProblemTitle
+        - addedCapabilities
+        - experimentRecommendation
+        - latestDecision
+        - nextStep
+      properties:
+        case: { $ref: "#/components/schemas/Case" }
+        baseSolution: { $ref: "#/components/schemas/Solution" }
+        businessProblemTitle: { type: string }
+        addedCapabilities:
+          type: array
+          items: { type: string }
+        experimentRecommendation:
+          oneOf:
+            - $ref: "#/components/schemas/ExperimentRecommendation"
+            - type: "null"
+        latestDecision:
+          oneOf:
+            - $ref: "#/components/schemas/Decision"
+            - type: "null"
+        nextStep: { type: string, description: Plain-language next action for the current state }
+
+    CapabilityProvenance:
+      type: object
+      required: [capability, sourceSolutionName, reason, evidence, state]
+      properties:
+        capability: { $ref: "#/components/schemas/Capability" }
+        sourceSolutionName: { type: string }
+        reason: { type: string }
+        evidence: { type: string }
+        state: { $ref: "#/components/schemas/FeatureState" }
+
+    RoleSummaries:
+      type: object
+      required: [seeker, owner, it]
+      properties:
+        seeker: { type: string }
+        owner: { type: string }
+        it: { type: string }
+
+    Recommendation:
+      type: object
+      required:
+        - caseId
+        - baseSolution
+        - overlappingSolutions
+        - overallFit
+        - summary
+        - capabilitiesToAdd
+        - capabilitiesToRetain
+        - duplicates
+        - incompatible
+        - retirementCandidates
+        - confidence
+        - rationale
+        - roleSummaries
+        - adoptionEffort
+      properties:
+        caseId: { type: string }
+        baseSolution: { $ref: "#/components/schemas/Solution" }
+        overlappingSolutions:
+          type: array
+          items: { $ref: "#/components/schemas/Solution" }
+        overallFit: { type: number, description: 0-100 }
+        summary: { type: string }
+        capabilitiesToAdd:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityProvenance" }
+        capabilitiesToRetain:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityProvenance" }
+        duplicates:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityProvenance" }
+        incompatible:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityProvenance" }
+        retirementCandidates:
+          type: array
+          items: { $ref: "#/components/schemas/Solution" }
+        confidence: { type: number, description: 0-1 }
+        rationale:
+          type: array
+          items: { type: string }
+        roleSummaries: { $ref: "#/components/schemas/RoleSummaries" }
+        adoptionEffort: { type: string }
+
+    CapabilityPresence:
+      type: object
+      required: [solutionId, present, strength]
+      properties:
+        solutionId: { type: string }
+        present: { type: boolean }
+        strength:
+          type: string
+          enum: [strong, standard, weak, none]
+
+    CompareRow:
+      type: object
+      required: [capability, presence, verdict, verdictNote, evidence]
+      properties:
+        capability: { $ref: "#/components/schemas/Capability" }
+        presence:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityPresence" }
+        verdict:
+          type: string
+          enum: [common, unique, stronger, unsupported, retire]
+        verdictNote: { type: string }
+        evidence: { type: string }
+
+    Comparison:
+      type: object
+      required: [caseId, baseSolutionId, solutions, rows, summary]
+      properties:
+        caseId: { type: string }
+        baseSolutionId: { type: string }
+        solutions:
+          type: array
+          items: { $ref: "#/components/schemas/Solution" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/CompareRow" }
+        summary: { type: string }
+
+    ComponentConfig:
+      type: object
+      required: [capability, controlType, state, active, value, options, recommended, blockedReason, sourceSolutionName]
+      properties:
+        capability: { $ref: "#/components/schemas/Capability" }
+        controlType: { $ref: "#/components/schemas/ControlType" }
+        state: { $ref: "#/components/schemas/FeatureState" }
+        active: { type: boolean }
+        value: { type: ["string", "null"] }
+        options:
+          type: ["array", "null"]
+          items: { type: string }
+        recommended: { type: boolean }
+        blockedReason: { type: ["string", "null"] }
+        sourceSolutionName: { type: string }
+
+    WorkflowStepConfig:
+      type: object
+      required: [name, components]
+      properties:
+        name: { type: string }
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/ComponentConfig" }
+
+    ImpactDimension:
+      type: object
+      required: [score, label, note]
+      properties:
+        score: { type: number, description: 0-100 }
+        label: { type: string }
+        note: { type: string }
+
+    Impact:
+      type: object
+      required: [userValue, effort, risk, compatibility, evidenceConfidence, projected]
+      properties:
+        userValue: { $ref: "#/components/schemas/ImpactDimension" }
+        effort: { $ref: "#/components/schemas/ImpactDimension" }
+        risk: { $ref: "#/components/schemas/ImpactDimension" }
+        compatibility: { $ref: "#/components/schemas/ImpactDimension" }
+        evidenceConfidence: { $ref: "#/components/schemas/ImpactDimension" }
+        projected:
+          $ref: "#/components/schemas/Metrics"
+          description: Projected metrics with the current configuration applied
+
+    Configuration:
+      type: object
+      required: [caseId, summary, steps, impact, activeModuleCount, lockedCount]
+      properties:
+        caseId: { type: string }
+        summary: { type: string }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/WorkflowStepConfig" }
+        impact: { $ref: "#/components/schemas/Impact" }
+        activeModuleCount: { type: integer }
+        lockedCount: { type: integer }
+
+    ConfigurationUpdate:
+      type: object
+      properties:
+        moduleStates:
+          type: object
+          additionalProperties: { type: boolean }
+        configValues:
+          type: object
+          additionalProperties: { type: string }
+
+    SyntheticPersona:
+      type: object
+      required: [id, name, description, experience, volume, dataQuality, changeTolerance, processComplexity]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        experience: { type: number, description: 0-1 }
+        volume: { type: number, description: 0-1 }
+        dataQuality: { type: number, description: 0-1 }
+        changeTolerance: { type: number, description: 0-1 }
+        processComplexity: { type: number, description: 0-1 }
+
+    ExperimentPlan:
+      type: object
+      required: [caseId, baselineName, challengerName, metrics, cohort, recommendedSample, durationWeeks, keyRisks, summary]
+      properties:
+        caseId: { type: string }
+        baselineName: { type: string }
+        challengerName: { type: string }
+        metrics:
+          type: array
+          items: { type: string }
+        cohort:
+          type: array
+          items: { $ref: "#/components/schemas/SyntheticPersona" }
+        recommendedSample: { type: integer }
+        durationWeeks: { type: integer }
+        keyRisks:
+          type: array
+          items: { type: string }
+        summary: { type: string }
+
+    ExperimentMetric:
+      type: object
+      required: [key, label, unit, baseline, proposed, deltaPct, betterWhen, primary, improved]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        unit: { type: string }
+        baseline: { type: number }
+        proposed: { type: number }
+        deltaPct: { type: number }
+        betterWhen:
+          type: string
+          enum: [lower, higher]
+        primary: { type: boolean }
+        improved: { type: boolean }
+
+    SegmentResult:
+      type: object
+      required: [persona, baselineTaskMinutes, proposedTaskMinutes, baselineSuccessRate, proposedSuccessRate, deltaPct, flag]
+      properties:
+        persona: { $ref: "#/components/schemas/SyntheticPersona" }
+        baselineTaskMinutes: { type: number }
+        proposedTaskMinutes: { type: number }
+        baselineSuccessRate: { type: number }
+        proposedSuccessRate: { type: number }
+        deltaPct: { type: number, description: Task-time change, negative is faster }
+        flag: { type: ["string", "null"], description: Risk note for weak-performing segments }
+
+    Experiment:
+      type: object
+      required:
+        - id
+        - caseId
+        - label
+        - baselineName
+        - challengerName
+        - seed
+        - cohort
+        - metrics
+        - segments
+        - risks
+        - confidence
+        - recommendation
+        - narrative
+        - createdAt
+      properties:
+        id: { type: string }
+        caseId: { type: string }
+        label:
+          type: string
+          description: Always a visible simulated-result disclaimer
+        baselineName: { type: string }
+        challengerName: { type: string }
+        seed: { type: integer }
+        cohort:
+          type: array
+          items: { $ref: "#/components/schemas/SyntheticPersona" }
+        metrics:
+          type: array
+          items: { $ref: "#/components/schemas/ExperimentMetric" }
+        segments:
+          type: array
+          items: { $ref: "#/components/schemas/SegmentResult" }
+        risks:
+          type: array
+          items: { type: string }
+        confidence: { type: number, description: 0-1 }
+        recommendation: { $ref: "#/components/schemas/ExperimentRecommendation" }
+        narrative: { type: string }
+        createdAt: { type: string }
+
+    VersionSnapshot:
+      type: object
+      required: [version, label, workflowSteps, capabilities, userGroups, performance]
+      properties:
+        version: { type: string }
+        label: { type: string }
+        workflowSteps:
+          type: array
+          items: { type: string }
+        capabilities:
+          type: array
+          items: { type: string }
+        userGroups:
+          type: array
+          items: { type: string }
+        performance: { $ref: "#/components/schemas/Metrics" }
+
+    ConfigChange:
+      type: object
+      required: [capabilityName, from, to]
+      properties:
+        capabilityName: { type: string }
+        from: { type: string }
+        to: { type: string }
+
+    AffectedGroup:
+      type: object
+      required: [group, users, impact]
+      properties:
+        group: { type: string }
+        users: { type: integer }
+        impact: { type: string }
+
+    PilotPlan:
+      type: object
+      required:
+        - eligibleGroup
+        - pilotPercent
+        - pilotUsers
+        - durationWeeks
+        - successThresholds
+        - guardrails
+        - monitoring
+        - rollbackTrigger
+        - ownerApprovalRequired
+        - itApprovalRequired
+      properties:
+        eligibleGroup: { type: string }
+        pilotPercent: { type: integer }
+        pilotUsers: { type: integer }
+        durationWeeks: { type: integer }
+        successThresholds:
+          type: array
+          items: { type: string }
+        guardrails:
+          type: array
+          items: { type: string }
+        monitoring:
+          type: array
+          items: { type: string }
+        rollbackTrigger: { type: string }
+        ownerApprovalRequired: { type: boolean }
+        itApprovalRequired: { type: boolean }
+
+    ChangeReview:
+      type: object
+      required:
+        - case
+        - baseSolution
+        - currentVersion
+        - proposedVersion
+        - added
+        - removed
+        - changedConfig
+        - unchanged
+        - affectedUsers
+        - newDependencies
+        - experiment
+        - pilotPlan
+        - ownerSummary
+        - decisions
+        - availableActions
+      properties:
+        case: { $ref: "#/components/schemas/Case" }
+        baseSolution: { $ref: "#/components/schemas/Solution" }
+        currentVersion: { $ref: "#/components/schemas/VersionSnapshot" }
+        proposedVersion: { $ref: "#/components/schemas/VersionSnapshot" }
+        added:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityProvenance" }
+        removed:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityProvenance" }
+        changedConfig:
+          type: array
+          items: { $ref: "#/components/schemas/ConfigChange" }
+        unchanged:
+          type: array
+          items: { type: string }
+        affectedUsers:
+          type: array
+          items: { $ref: "#/components/schemas/AffectedGroup" }
+        newDependencies:
+          type: array
+          items: { type: string }
+        experiment:
+          oneOf:
+            - $ref: "#/components/schemas/Experiment"
+            - type: "null"
+        pilotPlan: { $ref: "#/components/schemas/PilotPlan" }
+        ownerSummary: { type: string }
+        decisions:
+          type: array
+          items: { $ref: "#/components/schemas/Decision" }
+        availableActions:
+          type: array
+          description: Decision actions currently permitted per role
+          items:
+            type: object
+            required: [role, actions]
+            properties:
+              role: { $ref: "#/components/schemas/Role" }
+              actions:
+                type: array
+                items: { $ref: "#/components/schemas/DecisionAction" }
+
+    PortfolioMetrics:
+      type: object
+      required:
+        - activeSolutions
+        - overlappingGroups
+        - certified
+        - experimental
+        - withoutOwner
+        - consolidationOpportunities
+        - retirementCandidates
+        - sharedCapabilityReuse
+        - pendingReviews
+      properties:
+        activeSolutions: { type: integer }
+        overlappingGroups: { type: integer }
+        certified: { type: integer }
+        experimental: { type: integer }
+        withoutOwner: { type: integer }
+        consolidationOpportunities: { type: integer }
+        retirementCandidates: { type: integer }
+        sharedCapabilityReuse: { type: integer, description: Capabilities used by more than one solution }
+        pendingReviews: { type: integer }
+
+    PortfolioRow:
+      type: object
+      required: [businessProblem, solutions, activeSolutions, recommendedAction, status, caseId]
+      properties:
+        businessProblem: { $ref: "#/components/schemas/BusinessProblem" }
+        solutions:
+          type: array
+          items: { $ref: "#/components/schemas/Solution" }
+        activeSolutions: { type: integer }
+        recommendedAction: { type: string }
+        status: { type: string }
+        caseId: { type: ["string", "null"] }
+
+    EvidenceEvent:
+      type: object
+      required: [at, actor, event]
+      properties:
+        at: { type: string }
+        actor: { type: string }
+        event: { type: string }
+
+    ConsolidationSummary:
+      type: object
+      required:
+        - case
+        - baseSolution
+        - overlappingSolutions
+        - reusableCapabilities
+        - retirementCandidate
+        - ownerName
+        - architectureStatus
+        - controlStatus
+        - duplicationReductionPct
+        - migrationEffort
+        - evidenceTrail
+        - valueStatement
+        - experimentRecommendation
+      properties:
+        case: { $ref: "#/components/schemas/Case" }
+        baseSolution: { $ref: "#/components/schemas/Solution" }
+        overlappingSolutions:
+          type: array
+          items: { $ref: "#/components/schemas/Solution" }
+        reusableCapabilities:
+          type: array
+          items: { $ref: "#/components/schemas/Capability" }
+        retirementCandidate:
+          oneOf:
+            - $ref: "#/components/schemas/Solution"
+            - type: "null"
+        ownerName: { type: string }
+        architectureStatus: { type: string }
+        controlStatus: { type: string }
+        duplicationReductionPct: { type: number }
+        migrationEffort: { type: string }
+        evidenceTrail:
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceEvent" }
+        valueStatement: { type: string }
+        experimentRecommendation:
+          oneOf:
+            - $ref: "#/components/schemas/ExperimentRecommendation"
+            - type: "null"
+
+    Portfolio:
+      type: object
+      required: [headline, valueStatement, metrics, rows, consolidationCases, unsupportedSolutions, duplicateCapabilities]
+      properties:
+        headline: { type: string }
+        valueStatement: { type: string }
+        metrics: { $ref: "#/components/schemas/PortfolioMetrics" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/PortfolioRow" }
+        consolidationCases:
+          type: array
+          items: { $ref: "#/components/schemas/ConsolidationSummary" }
+        unsupportedSolutions:
+          type: array
+          items: { $ref: "#/components/schemas/Solution" }
+        duplicateCapabilities:
+          type: array
+          items:
+            type: object
+            required: [category, capabilities]
+            properties:
+              category: { type: string }
+              capabilities:
+                type: array
+                items: { $ref: "#/components/schemas/Capability" }
+
+    SeekerOverview:
+      type: object
+      required: [headline, recentBriefs, recommendedSolutions, savedCases, demoPrompt]
+      properties:
+        headline: { type: string }
+        recentBriefs:
+          type: array
+          items: { $ref: "#/components/schemas/Brief" }
+        recommendedSolutions:
+          type: array
+          items: { $ref: "#/components/schemas/Solution" }
+        savedCases:
+          type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+        demoPrompt:
+          type: string
+          description: The pre-seeded demonstration pain point, usable as a one-click example
+
+    OwnerSolution:
+      type: object
+      required: [solution, pendingChanges, openExperiments, sharedCapabilityCount, proposedDecision]
+      properties:
+        solution: { $ref: "#/components/schemas/Solution" }
+        pendingChanges: { type: integer }
+        openExperiments: { type: integer }
+        sharedCapabilityCount: { type: integer }
+        proposedDecision: { type: ["string", "null"] }
+
+    OwnerOverview:
+      type: object
+      required: [headline, ownerName, mySolutions, proposedChanges, pendingExperiments, versionsRequiringReview]
+      properties:
+        headline: { type: string }
+        ownerName: { type: string }
+        mySolutions:
+          type: array
+          items: { $ref: "#/components/schemas/OwnerSolution" }
+        proposedChanges:
+          type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+        pendingExperiments:
+          type: array
+          items: { $ref: "#/components/schemas/Experiment" }
+        versionsRequiringReview:
+          type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+
+    DemoState:
+      type: object
+      required: [ok, demoBriefId, demoCaseId, demoPrompt, aiAvailable]
+      properties:
+        ok: { type: boolean }
+        demoBriefId: { type: string }
+        demoCaseId: { type: string }
+        demoPrompt: { type: string }
+        aiAvailable: { type: boolean }

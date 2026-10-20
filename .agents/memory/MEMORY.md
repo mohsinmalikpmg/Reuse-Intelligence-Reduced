@@ -1,0 +1,2 @@
+- [Typecheck order](typecheck-order.md) — run `pnpm run typecheck:libs` before api-server typecheck; api-client-react tsconfig needed `dom.iterable`.
+- [Demo determinism rules](demo-determinism.md) — simulation seeds must stay 31-bit for Postgres integer; LLM only interprets briefs, never produces numbers.
