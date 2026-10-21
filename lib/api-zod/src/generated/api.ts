@@ -8,6 +8,123 @@
 import * as zod from 'zod';
 
 
+export const ListSolutionExportsQueryParams = zod.object({
+  "caseId": zod.coerce.string().optional(),
+  "solutionId": zod.coerce.string().optional()
+})
+
+export const ListSolutionExportsResponseItem = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "title": zod.string(),
+  "sourceVersion": zod.string(),
+  "fingerprint": zod.string(),
+  "status": zod.enum(['building', 'ready', 'incomplete', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string(),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean(),
+  "detail": zod.string()
+})),
+  "gaps": zod.array(zod.string()),
+  "workspaceUrl": zod.string(),
+  "publishedUrl": zod.string(),
+  "verificationState": zod.enum(['awaiting_import', 'link_recorded_unverified']),
+  "linkRevision": zod.number().int(),
+  "canEdit": zod.boolean(),
+  "error": zod.string()
+})
+export const ListSolutionExportsResponse = zod.array(ListSolutionExportsResponseItem)
+
+
+
+
+
+export const CreateSolutionExportBody = zod.object({
+  "caseId": zod.string().min(1),
+  "expectedUpdatedAt": zod.string()
+})
+
+export const CreateSolutionExportResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "title": zod.string(),
+  "sourceVersion": zod.string(),
+  "fingerprint": zod.string(),
+  "status": zod.enum(['building', 'ready', 'incomplete', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string(),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean(),
+  "detail": zod.string()
+})),
+  "gaps": zod.array(zod.string()),
+  "workspaceUrl": zod.string(),
+  "publishedUrl": zod.string(),
+  "verificationState": zod.enum(['awaiting_import', 'link_recorded_unverified']),
+  "linkRevision": zod.number().int(),
+  "canEdit": zod.boolean(),
+  "error": zod.string()
+})
+
+
+export const SaveSolutionExportLinkParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const saveSolutionExportLinkBodyWorkspaceUrlMax = 2048;
+
+export const saveSolutionExportLinkBodyPublishedUrlMax = 2048;
+
+export const saveSolutionExportLinkBodyExpectedRevisionMin = 0;
+
+
+
+export const SaveSolutionExportLinkBody = zod.object({
+  "workspaceUrl": zod.string().max(saveSolutionExportLinkBodyWorkspaceUrlMax),
+  "publishedUrl": zod.string().max(saveSolutionExportLinkBodyPublishedUrlMax),
+  "expectedRevision": zod.number().int().min(saveSolutionExportLinkBodyExpectedRevisionMin)
+})
+
+export const SaveSolutionExportLinkResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "title": zod.string(),
+  "sourceVersion": zod.string(),
+  "fingerprint": zod.string(),
+  "status": zod.enum(['building', 'ready', 'incomplete', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string(),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean(),
+  "detail": zod.string()
+})),
+  "gaps": zod.array(zod.string()),
+  "workspaceUrl": zod.string(),
+  "publishedUrl": zod.string(),
+  "verificationState": zod.enum(['awaiting_import', 'link_recorded_unverified']),
+  "linkRevision": zod.number().int(),
+  "canEdit": zod.boolean(),
+  "error": zod.string()
+})
+
+
+export const DownloadSolutionExportParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadSolutionExportResponse = zod.unknown()
+
+
 export const ListSolutionPackagesResponse = zod.object({
   "canManage": zod.boolean(),
   "packages": zod.array(zod.object({

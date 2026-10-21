@@ -5,6 +5,67 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface SolutionExportInput {
+  /** @minLength 1 */
+  caseId: string;
+  expectedUpdatedAt: string;
+}
+
+export interface SolutionExportLinkInput {
+  /** @maxLength 2048 */
+  workspaceUrl: string;
+  /** @maxLength 2048 */
+  publishedUrl: string;
+  /** @minimum 0 */
+  expectedRevision: number;
+}
+
+export type SolutionExportStatus = typeof SolutionExportStatus[keyof typeof SolutionExportStatus];
+
+
+export const SolutionExportStatus = {
+  building: 'building',
+  ready: 'ready',
+  incomplete: 'incomplete',
+  failed: 'failed',
+} as const;
+
+export type SolutionExportChecksItem = {
+  name: string;
+  passed: boolean;
+  detail: string;
+};
+
+export type SolutionExportVerificationState = typeof SolutionExportVerificationState[keyof typeof SolutionExportVerificationState];
+
+
+export const SolutionExportVerificationState = {
+  awaiting_import: 'awaiting_import',
+  link_recorded_unverified: 'link_recorded_unverified',
+} as const;
+
+export interface SolutionExport {
+  id: string;
+  caseId: string;
+  solutionId: string;
+  title: string;
+  sourceVersion: string;
+  fingerprint: string;
+  status: SolutionExportStatus;
+  /** @nullable */
+  sha256: string | null;
+  createdAt: string;
+  createdBy: string;
+  checks: SolutionExportChecksItem[];
+  gaps: string[];
+  workspaceUrl: string;
+  publishedUrl: string;
+  verificationState: SolutionExportVerificationState;
+  linkRevision: number;
+  canEdit: boolean;
+  error: string;
+}
+
 export interface SolutionPackageUploadInput {
   solutionId: string;
   /**
@@ -2824,6 +2885,11 @@ export interface PrototypeDetail {
  * Opaque session token, Bearer sid.
  */
 export type AuthorizationSessionHeaderParameter = string;
+
+export type ListSolutionExportsParams = {
+caseId?: string;
+solutionId?: string;
+};
 
 export type ListSolutionPackages200SolutionsItemCapabilitiesItem = {
   id: string;

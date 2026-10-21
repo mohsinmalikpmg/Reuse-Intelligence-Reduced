@@ -20,6 +20,62 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /solution-exports:
+    get:
+      operationId: listSolutionExports
+      parameters:
+        - { name: caseId, in: query, schema: { type: string } }
+        - { name: solutionId, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Signed-in export history
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SolutionExport" }
+    post:
+      operationId: createSolutionExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SolutionExportInput" }
+      responses:
+        "200":
+          description: Immutable snapshot build, or same existing export on retry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolutionExport" }
+        "409": { description: Case changed; refresh before exporting }
+  /solution-exports/{id}/link:
+    put:
+      operationId: saveSolutionExportLink
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SolutionExportLinkInput" }
+      responses:
+        "200":
+          description: Link saved, not independently verified
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolutionExport" }
+        "409": { description: Link changed; refresh before editing }
+  /solution-exports/{id}/download:
+    get:
+      operationId: downloadSolutionExport
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Private runnable ZIP
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
   /library/solution-packages:
     get:
       operationId: listSolutionPackages
@@ -2125,6 +2181,49 @@ components:
       schema:
         type: string
   schemas:
+    SolutionExportInput:
+      type: object
+      required: [caseId, expectedUpdatedAt]
+      properties:
+        caseId: { type: string, minLength: 1 }
+        expectedUpdatedAt: { type: string }
+    SolutionExportLinkInput:
+      type: object
+      required: [workspaceUrl, publishedUrl, expectedRevision]
+      properties:
+        workspaceUrl: { type: string, maxLength: 2048 }
+        publishedUrl: { type: string, maxLength: 2048 }
+        expectedRevision: { type: integer, minimum: 0 }
+    SolutionExport:
+      type: object
+      required: [id, caseId, solutionId, title, sourceVersion, fingerprint, status, sha256, createdAt, createdBy, checks, gaps, workspaceUrl, publishedUrl, verificationState, linkRevision, canEdit, error]
+      properties:
+        id: { type: string }
+        caseId: { type: string }
+        solutionId: { type: string }
+        title: { type: string }
+        sourceVersion: { type: string }
+        fingerprint: { type: string }
+        status: { type: string, enum: [building, ready, incomplete, failed] }
+        sha256: { type: [string, "null"] }
+        createdAt: { type: string }
+        createdBy: { type: string }
+        checks:
+          type: array
+          items:
+            type: object
+            required: [name, passed, detail]
+            properties:
+              name: { type: string }
+              passed: { type: boolean }
+              detail: { type: string }
+        gaps: { type: array, items: { type: string } }
+        workspaceUrl: { type: string }
+        publishedUrl: { type: string }
+        verificationState: { type: string, enum: [awaiting_import, link_recorded_unverified] }
+        linkRevision: { type: integer }
+        canEdit: { type: boolean }
+        error: { type: string }
     SolutionPackageUploadInput:
       type: object
       required: [solutionId, version, filename, claims]

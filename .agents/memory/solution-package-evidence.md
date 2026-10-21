@@ -21,3 +21,18 @@ The user wants the Workbench to produce an integrated, importable Replit ZIP tha
 **Why:** The user explicitly described the output as standing up the required solution and demonstrating successful consolidation.
 
 **How to apply:** preserve source lineage; package actual wiring and runnable code; test the extracted artifact against requirements. Distinguish implemented features from open build gaps with concise statuses. The user strongly approved the simplified visual Workbench proposal as the direction to retain.
+
+## Export/import evidence boundary
+
+An extracted trusted demo ZIP passing tests does not verify the user's Replit
+import or deployed app. Keep workspace and published links separate and
+user-entered; never infer deployment URLs or claim an import occurred from a
+button click. Uploaded finance products remain source material until an
+explicitly agreed composition addresses dollar/cents conversion and schemas.
+
+**Why:** The requested scope excludes unattended provisioning, arbitrary
+uploaded-code execution and automatic finance-product merging.
+
+**How to apply:** preserve immutable export lineage and exact-output test
+evidence; leave external launch awaiting import or link recorded/unverified
+until actual user-participating launch verification is available.

@@ -72,6 +72,7 @@ import type {
   ListCasesParams,
   ListPrototypesParams,
   ListSampleInputsParams,
+  ListSolutionExportsParams,
   ListSolutionPackages200,
   ListSolutionsParams,
   LogoutBrowserSessionParams,
@@ -102,6 +103,9 @@ import type {
   SimilarExperiments,
   Solution,
   SolutionDetail,
+  SolutionExport,
+  SolutionExportInput,
+  SolutionExportLinkInput,
   SolutionFamily,
   SolutionPackage,
   SolutionPackageReviewInput,
@@ -138,6 +142,320 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListSolutionExportsUrl = (params?: ListSolutionExportsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/solution-exports?${stringifiedParams}` : `/api/solution-exports`
+}
+
+export const listSolutionExports = async (params?: ListSolutionExportsParams, options?: Parameters<typeof customFetch>[1]): Promise<SolutionExport[]> => {
+
+  return customFetch<SolutionExport[]>(getListSolutionExportsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSolutionExportsQueryKey = (params?: ListSolutionExportsParams,) => {
+    return [
+    `/api/solution-exports`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSolutionExportsQueryOptions = <TData = Awaited<ReturnType<typeof listSolutionExports>>, TError = ErrorType<unknown>>(params?: ListSolutionExportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSolutionExports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSolutionExportsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSolutionExports>>> = ({ signal }) => listSolutionExports(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSolutionExports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSolutionExportsQueryResult = NonNullable<Awaited<ReturnType<typeof listSolutionExports>>>
+export type ListSolutionExportsQueryError = ErrorType<unknown>
+
+
+
+export function useListSolutionExports<TData = Awaited<ReturnType<typeof listSolutionExports>>, TError = ErrorType<unknown>>(
+ params?: ListSolutionExportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSolutionExports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSolutionExportsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSolutionExportUrl = () => {
+
+
+
+
+  return `/api/solution-exports`
+}
+
+export const createSolutionExport = async (solutionExportInput: SolutionExportInput, options?: Parameters<typeof customFetch>[1]): Promise<SolutionExport> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SolutionExport>(getCreateSolutionExportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(solutionExportInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSolutionExportMutationKey = () => ['createSolutionExport'] as const;
+
+export const getCreateSolutionExportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSolutionExport>>, TError,CreateSolutionExportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSolutionExport>>, TError,CreateSolutionExportMutationVariables, TContext> => {
+
+const mutationKey = getCreateSolutionExportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSolutionExport>>, CreateSolutionExportMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSolutionExport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSolutionExportMutationResult = NonNullable<Awaited<ReturnType<typeof createSolutionExport>>>
+    export type CreateSolutionExportMutationBody = BodyType<SolutionExportInput>
+    export type CreateSolutionExportMutationError = ErrorType<void>
+    export type CreateSolutionExportMutationVariables = {data: BodyType<SolutionExportInput>}
+
+    export const useCreateSolutionExport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSolutionExport>>, TError,CreateSolutionExportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSolutionExport>>,
+        TError,
+        CreateSolutionExportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSolutionExportMutationOptions(options));
+    }
+
+export const getSaveSolutionExportLinkUrl = (id: string,) => {
+
+
+
+
+  return `/api/solution-exports/${id}/link`
+}
+
+export const saveSolutionExportLink = async (id: string,
+    solutionExportLinkInput: SolutionExportLinkInput, options?: Parameters<typeof customFetch>[1]): Promise<SolutionExport> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SolutionExport>(getSaveSolutionExportLinkUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(solutionExportLinkInput)
+  }
+);}
+
+
+
+
+
+export const getSaveSolutionExportLinkMutationKey = () => ['saveSolutionExportLink'] as const;
+
+export const getSaveSolutionExportLinkMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveSolutionExportLink>>, TError,SaveSolutionExportLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveSolutionExportLink>>, TError,SaveSolutionExportLinkMutationVariables, TContext> => {
+
+const mutationKey = getSaveSolutionExportLinkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveSolutionExportLink>>, SaveSolutionExportLinkMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  saveSolutionExportLink(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveSolutionExportLinkMutationResult = NonNullable<Awaited<ReturnType<typeof saveSolutionExportLink>>>
+    export type SaveSolutionExportLinkMutationBody = BodyType<SolutionExportLinkInput>
+    export type SaveSolutionExportLinkMutationError = ErrorType<void>
+    export type SaveSolutionExportLinkMutationVariables = {id: string;data: BodyType<SolutionExportLinkInput>}
+
+    export const useSaveSolutionExportLink = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveSolutionExportLink>>, TError,SaveSolutionExportLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveSolutionExportLink>>,
+        TError,
+        SaveSolutionExportLinkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveSolutionExportLinkMutationOptions(options));
+    }
+
+export const getDownloadSolutionExportUrl = (id: string,) => {
+
+
+
+
+  return `/api/solution-exports/${id}/download`
+}
+
+export const downloadSolutionExport = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadSolutionExportUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadSolutionExportQueryKey = (id: string,) => {
+    return [
+    `/api/solution-exports/${id}/download`
+    ] as const;
+    }
+
+
+export const getDownloadSolutionExportQueryOptions = <TData = Awaited<ReturnType<typeof downloadSolutionExport>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadSolutionExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadSolutionExportQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadSolutionExport>>> = ({ signal }) => downloadSolutionExport(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadSolutionExport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadSolutionExportQueryResult = NonNullable<Awaited<ReturnType<typeof downloadSolutionExport>>>
+export type DownloadSolutionExportQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadSolutionExport<TData = Awaited<ReturnType<typeof downloadSolutionExport>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadSolutionExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadSolutionExportQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListSolutionPackagesUrl = () => {
 

@@ -25,6 +25,7 @@ import { errMsg, httpStatus, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
 import { ProposalMap, proposalNodes } from "@/components/wb-proposal";
 import { cn } from "@/lib/utils";
+import { CaseExports } from "@/components/solution-exports";
 
 type Snap = { moduleStates: Record<string, boolean>; configValues: Record<string, string> };
 /** Remembered per browser: the schematic viewport is the default from 1024px up; "Prefer rows?" restores the list layout. */
@@ -408,6 +409,7 @@ export default function Workbench() {
           {!runnable && <span className="text-[13px] text-muted-foreground" data-testid="text-no-runnable">Nothing runnable yet: every step is still to build.</span>}
           {runnable && noInput && <span className="text-[13px] text-muted-foreground">Loading a sample input…</span>}
         </div>
+        <div className="mt-6"><CaseExports theCase={theCase} configPending={put.isPending} compact /></div>
       </div>
     );
   }
@@ -664,6 +666,7 @@ export default function Workbench() {
                   <p className="mt-1 text-[14px] text-muted-foreground">Energize A/B first. Your preference is recorded only against a real comparison.</p>
                 </div>
               )}
+              <CaseExports theCase={theCase} configPending={put.isPending} />
               {role === "it" && (
                 <section className="card-soft mt-4 p-5" data-testid="panel-owner">
                   <h3 className="mb-2 text-[17px] font-semibold">IT Owner review</h3>
