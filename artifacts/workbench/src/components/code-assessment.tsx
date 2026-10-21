@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { Skel, Tag, btn } from "@/components/bits";
 import { AcceptanceChecks } from "./acceptance-checks";
+import { UploadedSourceEvidence } from "@/components/solution-packages";
 
 const labels = { covered: "Covered in demo base", borrow: "Borrow · integration proposed", partial: "Partial · build needed", missing: "Missing · investigate or build", constraint: "Constraint · validate" } as const;
 const scopeNote = "This shared package is a runnable deterministic demo workflow engine and reusable elements, not a set of full independent enterprise applications. Preview-only catalog entries without indexed code remain unverified.";
@@ -194,7 +195,7 @@ export function SolutionCodePackage({ solutionId }: { solutionId: string }) {
   if (query.isError || !query.data) return <section className="card-soft mt-8 p-5" role="alert"><p>Code package index could not load.</p><button className={`${btn.secondary} mt-3`} onClick={() => query.refetch()}>Retry</button></section>;
   const pkg = query.data;
   const config = pkg.configurations.find((item) => item.solutionId === solutionId);
-  if (!config) return <section className="card-soft mt-8 p-5" data-testid="no-code-package"><h2 className="text-[18px] font-semibold">No code package indexed</h2><p className="mt-2 text-[14px] text-muted-foreground">This entry is not backed by an indexed configuration. Catalog descriptions and previews remain unverified, not source evidence.</p></section>;
+  if (!config) return <section className="mt-8" data-testid="no-code-package"><div className="card-soft p-5"><h2 className="text-[18px] font-semibold">No code package indexed</h2><p className="mt-2 text-[14px] text-muted-foreground">This entry is not backed by an indexed configuration. Catalog descriptions and previews remain unverified, not source evidence.</p></div><UploadedSourceEvidence solutionId={solutionId} /></section>;
   const evidence = pkg.capabilities.filter((item) => config.capabilityIds.includes(item.capabilityId));
   return (
     <section className="mt-8" data-testid="solution-code-package">
@@ -205,6 +206,7 @@ export function SolutionCodePackage({ solutionId }: { solutionId: string }) {
         <p className="mt-2 text-[13px] text-muted-foreground">Matching implementation in the demo configuration, not verification of a full enterprise product or your full need.</p>
         <ul className="mt-3 space-y-3">{config.capabilityIds.map((id) => <li key={id} className="border-t border-border pt-3"><span className="font-semibold">{id}</span>{evidence.filter((item) => item.capabilityId === id).map((item, i) => <SourceEvidence key={i} evidence={item} />)}{!evidence.some((item) => item.capabilityId === id) && <p className="text-muted-foreground">No source citation indexed for this capability.</p>}</li>)}</ul>
       </details>
+      <UploadedSourceEvidence solutionId={solutionId} />
     </section>
   );
 }

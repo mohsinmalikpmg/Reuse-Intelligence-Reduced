@@ -20,6 +20,97 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /library/solution-packages:
+    get:
+      operationId: listSolutionPackages
+      responses:
+        "200":
+          description: Authenticated library package inventory; management requires a server-side IT entitlement
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [canManage, packages, solutions]
+                properties:
+                  canManage: { type: boolean }
+                  packages:
+                    type: array
+                    items: { $ref: "#/components/schemas/SolutionPackage" }
+                  solutions:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, capabilities]
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        capabilities:
+                          type: array
+                          items:
+                            type: object
+                            required: [id, name]
+                            properties:
+                              id: { type: string }
+                              name: { type: string }
+  /library/solution-packages/upload-url:
+    post:
+      operationId: createSolutionPackageUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolutionPackageUploadInput"
+      responses:
+        "200":
+          description: IT-authorized private staging upload
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, uploadURL]
+                properties:
+                  id: { type: string }
+                  uploadURL: { type: string }
+  /library/solution-packages/{id}/inspect:
+    post:
+      operationId: inspectSolutionPackage
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Static inspection only; never executes uploaded code
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolutionPackage" }
+  /library/solution-packages/{id}/review:
+    patch:
+      operationId: reviewSolutionPackage
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolutionPackageReviewInput"
+      responses:
+        "200":
+          description: Human-reviewed source mappings, not sandbox validation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolutionPackage" }
+  /library/solution-packages/{id}/download:
+    get:
+      operationId: downloadSolutionPackage
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Authenticated immutable original ZIP
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
   /briefs/{briefId}/acceptance-checks:
     parameters:
       - { name: briefId, in: path, required: true, schema: { type: string } }
@@ -2019,6 +2110,75 @@ components:
       schema:
         type: string
   schemas:
+    SolutionPackageUploadInput:
+      type: object
+      required: [solutionId, version, filename, claims]
+      properties:
+        solutionId: { type: string }
+        version: { type: string, minLength: 1, maxLength: 100 }
+        filename: { type: string, minLength: 1, maxLength: 200 }
+        claims: { type: array, maxItems: 100, items: { type: string, maxLength: 1000 } }
+    SolutionPackageReviewInput:
+      type: object
+      required: [mappings, note]
+      properties:
+        note: { type: string, maxLength: 4000 }
+        mappings:
+          type: array
+          maxItems: 500
+          items:
+            type: object
+            required: [capabilityId, file, decision, note]
+            properties:
+              capabilityId: { type: string }
+              file: { type: string }
+              decision: { type: string, enum: [approved, rejected] }
+              note: { type: string, maxLength: 2000 }
+    SolutionPackage:
+      type: object
+      required: [id, solutionId, solutionName, version, filename, status, sha256, createdAt, claims, files, dependencies, mappings, warnings, reviewNote, sandboxTested]
+      properties:
+        id: { type: string }
+        solutionId: { type: string }
+        solutionName: { type: string }
+        version: { type: string }
+        filename: { type: string }
+        status: { type: string, enum: [awaiting_upload, inspected, reviewed, failed] }
+        sha256: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        claims: { type: array, items: { type: string } }
+        files:
+          type: array
+          items:
+            type: object
+            required: [path, sha256, size]
+            properties:
+              path: { type: string }
+              sha256: { type: string }
+              size: { type: integer }
+        dependencies:
+          type: array
+          items:
+            type: object
+            required: [name, version, source]
+            properties:
+              name: { type: string }
+              version: { type: string }
+              source: { type: string }
+        mappings:
+          type: array
+          items:
+            type: object
+            required: [capabilityId, capabilityName, file, decision, note]
+            properties:
+              capabilityId: { type: string }
+              capabilityName: { type: string }
+              file: { type: string }
+              decision: { type: string, enum: [proposed, approved, rejected] }
+              note: { type: string }
+        warnings: { type: array, items: { type: string } }
+        reviewNote: { type: string }
+        sandboxTested: { type: boolean, enum: [false] }
     AcceptanceCriterion:
       type: object
       required: [id, requirement, assertion, capabilityIds, testable, reason]

@@ -12,9 +12,11 @@ import intakeRouter from "./intake";
 import intakeFilesRouter from "./intake-files";
 import solutionCodeRouter from "./solution-code";
 import codeAssessmentRouter from "./code-assessment";
+import solutionPackagesRouter from "./solution-packages";
 
 const router: IRouter = Router();
 router.use(authRouter);
+router.use(solutionPackagesRouter);
 router.use(solutionCodeRouter);
 router.use(codeAssessmentRouter);
 router.use(intakeFilesRouter);

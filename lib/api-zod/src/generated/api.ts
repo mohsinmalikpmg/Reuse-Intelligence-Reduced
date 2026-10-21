@@ -8,6 +8,172 @@
 import * as zod from 'zod';
 
 
+export const ListSolutionPackagesResponse = zod.object({
+  "canManage": zod.boolean(),
+  "packages": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "version": zod.string(),
+  "filename": zod.string(),
+  "status": zod.enum(['awaiting_upload', 'inspected', 'reviewed', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "claims": zod.array(zod.string()),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string(),
+  "size": zod.number().int()
+})),
+  "dependencies": zod.array(zod.object({
+  "name": zod.string(),
+  "version": zod.string(),
+  "source": zod.string()
+})),
+  "mappings": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "capabilityName": zod.string(),
+  "file": zod.string(),
+  "decision": zod.enum(['proposed', 'approved', 'rejected']),
+  "note": zod.string()
+})),
+  "warnings": zod.array(zod.string()),
+  "reviewNote": zod.string(),
+  "sandboxTested": zod.literal(false)
+})),
+  "solutions": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))
+}))
+})
+
+
+export const createSolutionPackageUploadUrlBodyVersionMax = 100;
+
+export const createSolutionPackageUploadUrlBodyFilenameMax = 200;
+
+export const createSolutionPackageUploadUrlBodyClaimsItemMax = 1000;
+
+export const createSolutionPackageUploadUrlBodyClaimsMax = 100;
+
+
+
+export const CreateSolutionPackageUploadUrlBody = zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string().min(1).max(createSolutionPackageUploadUrlBodyVersionMax),
+  "filename": zod.string().min(1).max(createSolutionPackageUploadUrlBodyFilenameMax),
+  "claims": zod.array(zod.string().max(createSolutionPackageUploadUrlBodyClaimsItemMax)).max(createSolutionPackageUploadUrlBodyClaimsMax)
+})
+
+export const CreateSolutionPackageUploadUrlResponse = zod.object({
+  "id": zod.string(),
+  "uploadURL": zod.string()
+})
+
+
+export const InspectSolutionPackageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const InspectSolutionPackageResponse = zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "version": zod.string(),
+  "filename": zod.string(),
+  "status": zod.enum(['awaiting_upload', 'inspected', 'reviewed', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "claims": zod.array(zod.string()),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string(),
+  "size": zod.number().int()
+})),
+  "dependencies": zod.array(zod.object({
+  "name": zod.string(),
+  "version": zod.string(),
+  "source": zod.string()
+})),
+  "mappings": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "capabilityName": zod.string(),
+  "file": zod.string(),
+  "decision": zod.enum(['proposed', 'approved', 'rejected']),
+  "note": zod.string()
+})),
+  "warnings": zod.array(zod.string()),
+  "reviewNote": zod.string(),
+  "sandboxTested": zod.literal(false)
+})
+
+
+export const ReviewSolutionPackageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reviewSolutionPackageBodyNoteMax = 4000;
+
+export const reviewSolutionPackageBodyMappingsItemNoteMax = 2000;
+
+export const reviewSolutionPackageBodyMappingsMax = 500;
+
+
+
+export const ReviewSolutionPackageBody = zod.object({
+  "note": zod.string().max(reviewSolutionPackageBodyNoteMax),
+  "mappings": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "file": zod.string(),
+  "decision": zod.enum(['approved', 'rejected']),
+  "note": zod.string().max(reviewSolutionPackageBodyMappingsItemNoteMax)
+})).max(reviewSolutionPackageBodyMappingsMax)
+})
+
+export const ReviewSolutionPackageResponse = zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "version": zod.string(),
+  "filename": zod.string(),
+  "status": zod.enum(['awaiting_upload', 'inspected', 'reviewed', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "claims": zod.array(zod.string()),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string(),
+  "size": zod.number().int()
+})),
+  "dependencies": zod.array(zod.object({
+  "name": zod.string(),
+  "version": zod.string(),
+  "source": zod.string()
+})),
+  "mappings": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "capabilityName": zod.string(),
+  "file": zod.string(),
+  "decision": zod.enum(['proposed', 'approved', 'rejected']),
+  "note": zod.string()
+})),
+  "warnings": zod.array(zod.string()),
+  "reviewNote": zod.string(),
+  "sandboxTested": zod.literal(false)
+})
+
+
+export const DownloadSolutionPackageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadSolutionPackageResponse = zod.unknown()
+
+
 export const GetAcceptanceChecksParams = zod.object({
   "briefId": zod.coerce.string()
 })

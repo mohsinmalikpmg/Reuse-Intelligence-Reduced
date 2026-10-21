@@ -10,3 +10,4 @@ export * from "./prototypes";
 export * from "./auth";
 export * from "./intake";
 export * from "./acceptance";
+export * from "./solution-packages";

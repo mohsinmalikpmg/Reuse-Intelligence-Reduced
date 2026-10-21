@@ -11,6 +11,7 @@ import { ExecutionTag, functionRank } from "@/components/enterprise";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/persona";
 import { ITLibrary, SeekerLibrary } from "@/components/library-simple";
+import { SolutionPackagesPanel } from "@/components/solution-packages";
 
 type Filters = { fn: string; problem: string; step: string; status: string; owner: string; capability: string; data: string };
 const NONE: Filters = { fn: "", problem: "", step: "", status: "", owner: "", capability: "", data: "" };
@@ -30,6 +31,7 @@ const RANK: Record<SolutionStatus, number> = { certified: 0, pilot: 1, experimen
 const TABS = [
   { k: "families", label: "By problem" },
   { k: "all", label: "All solutions" },
+  { k: "packages", label: "Solution ZIPs" },
 ] as const;
 
 /** The Library opens on the schematic (Trace); the Cards choice is remembered per browser. */
@@ -180,7 +182,7 @@ function FullLibrary({ onBack }: { onBack: () => void }) {
         </div>
       )}
 
-      {tab === "families" ? (
+      {tab === "packages" ? <SolutionPackagesPanel /> : tab === "families" ? (
         <div className={cn("mt-6 space-y-5", view === "cards" && "max-w-5xl")} data-testid="view-families">
           {families.isLoading ? [0, 1, 2].map((i) => <Skel key={i} className="h-72" />) :
             shownFamilies.length === 0 ? (

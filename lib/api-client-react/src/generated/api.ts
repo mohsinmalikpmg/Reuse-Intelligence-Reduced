@@ -45,6 +45,7 @@ import type {
   ConfigurationPreview,
   ConfigurationUpdate,
   ConsolidationDecisionView,
+  CreateSolutionPackageUploadUrl200,
   DecisionInput,
   DecisionView,
   DemoState,
@@ -71,6 +72,7 @@ import type {
   ListCasesParams,
   ListPrototypesParams,
   ListSampleInputsParams,
+  ListSolutionPackages200,
   ListSolutionsParams,
   LogoutBrowserSessionParams,
   LogoutSuccess,
@@ -101,6 +103,9 @@ import type {
   Solution,
   SolutionDetail,
   SolutionFamily,
+  SolutionPackage,
+  SolutionPackageReviewInput,
+  SolutionPackageUploadInput,
   SolutionWorkbench,
   TestResponseInput,
   TestSession,
@@ -133,6 +138,381 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListSolutionPackagesUrl = () => {
+
+
+
+
+  return `/api/library/solution-packages`
+}
+
+export const listSolutionPackages = async ( options?: Parameters<typeof customFetch>[1]): Promise<ListSolutionPackages200> => {
+
+  return customFetch<ListSolutionPackages200>(getListSolutionPackagesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSolutionPackagesQueryKey = () => {
+    return [
+    `/api/library/solution-packages`
+    ] as const;
+    }
+
+
+export const getListSolutionPackagesQueryOptions = <TData = Awaited<ReturnType<typeof listSolutionPackages>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSolutionPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSolutionPackagesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSolutionPackages>>> = ({ signal }) => listSolutionPackages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSolutionPackages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSolutionPackagesQueryResult = NonNullable<Awaited<ReturnType<typeof listSolutionPackages>>>
+export type ListSolutionPackagesQueryError = ErrorType<unknown>
+
+
+
+export function useListSolutionPackages<TData = Awaited<ReturnType<typeof listSolutionPackages>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSolutionPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSolutionPackagesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSolutionPackageUploadUrlUrl = () => {
+
+
+
+
+  return `/api/library/solution-packages/upload-url`
+}
+
+export const createSolutionPackageUploadUrl = async (solutionPackageUploadInput: SolutionPackageUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<CreateSolutionPackageUploadUrl200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CreateSolutionPackageUploadUrl200>(getCreateSolutionPackageUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(solutionPackageUploadInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSolutionPackageUploadUrlMutationKey = () => ['createSolutionPackageUploadUrl'] as const;
+
+export const getCreateSolutionPackageUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSolutionPackageUploadUrl>>, TError,CreateSolutionPackageUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSolutionPackageUploadUrl>>, TError,CreateSolutionPackageUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getCreateSolutionPackageUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSolutionPackageUploadUrl>>, CreateSolutionPackageUploadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSolutionPackageUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSolutionPackageUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof createSolutionPackageUploadUrl>>>
+    export type CreateSolutionPackageUploadUrlMutationBody = BodyType<SolutionPackageUploadInput>
+    export type CreateSolutionPackageUploadUrlMutationError = ErrorType<unknown>
+    export type CreateSolutionPackageUploadUrlMutationVariables = {data: BodyType<SolutionPackageUploadInput>}
+
+    export const useCreateSolutionPackageUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSolutionPackageUploadUrl>>, TError,CreateSolutionPackageUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSolutionPackageUploadUrl>>,
+        TError,
+        CreateSolutionPackageUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSolutionPackageUploadUrlMutationOptions(options));
+    }
+
+export const getInspectSolutionPackageUrl = (id: string,) => {
+
+
+
+
+  return `/api/library/solution-packages/${id}/inspect`
+}
+
+export const inspectSolutionPackage = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SolutionPackage> => {
+
+  return customFetch<SolutionPackage>(getInspectSolutionPackageUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getInspectSolutionPackageMutationKey = () => ['inspectSolutionPackage'] as const;
+
+export const getInspectSolutionPackageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inspectSolutionPackage>>, TError,InspectSolutionPackageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof inspectSolutionPackage>>, TError,InspectSolutionPackageMutationVariables, TContext> => {
+
+const mutationKey = getInspectSolutionPackageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inspectSolutionPackage>>, InspectSolutionPackageMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  inspectSolutionPackage(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InspectSolutionPackageMutationResult = NonNullable<Awaited<ReturnType<typeof inspectSolutionPackage>>>
+
+    export type InspectSolutionPackageMutationError = ErrorType<unknown>
+    export type InspectSolutionPackageMutationVariables = {id: string}
+
+    export const useInspectSolutionPackage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inspectSolutionPackage>>, TError,InspectSolutionPackageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof inspectSolutionPackage>>,
+        TError,
+        InspectSolutionPackageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getInspectSolutionPackageMutationOptions(options));
+    }
+
+export const getReviewSolutionPackageUrl = (id: string,) => {
+
+
+
+
+  return `/api/library/solution-packages/${id}/review`
+}
+
+export const reviewSolutionPackage = async (id: string,
+    solutionPackageReviewInput: SolutionPackageReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<SolutionPackage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SolutionPackage>(getReviewSolutionPackageUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(solutionPackageReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewSolutionPackageMutationKey = () => ['reviewSolutionPackage'] as const;
+
+export const getReviewSolutionPackageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewSolutionPackage>>, TError,ReviewSolutionPackageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewSolutionPackage>>, TError,ReviewSolutionPackageMutationVariables, TContext> => {
+
+const mutationKey = getReviewSolutionPackageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewSolutionPackage>>, ReviewSolutionPackageMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewSolutionPackage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewSolutionPackageMutationResult = NonNullable<Awaited<ReturnType<typeof reviewSolutionPackage>>>
+    export type ReviewSolutionPackageMutationBody = BodyType<SolutionPackageReviewInput>
+    export type ReviewSolutionPackageMutationError = ErrorType<unknown>
+    export type ReviewSolutionPackageMutationVariables = {id: string;data: BodyType<SolutionPackageReviewInput>}
+
+    export const useReviewSolutionPackage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewSolutionPackage>>, TError,ReviewSolutionPackageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewSolutionPackage>>,
+        TError,
+        ReviewSolutionPackageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewSolutionPackageMutationOptions(options));
+    }
+
+export const getDownloadSolutionPackageUrl = (id: string,) => {
+
+
+
+
+  return `/api/library/solution-packages/${id}/download`
+}
+
+export const downloadSolutionPackage = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadSolutionPackageUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadSolutionPackageQueryKey = (id: string,) => {
+    return [
+    `/api/library/solution-packages/${id}/download`
+    ] as const;
+    }
+
+
+export const getDownloadSolutionPackageQueryOptions = <TData = Awaited<ReturnType<typeof downloadSolutionPackage>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadSolutionPackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadSolutionPackageQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadSolutionPackage>>> = ({ signal }) => downloadSolutionPackage(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadSolutionPackage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadSolutionPackageQueryResult = NonNullable<Awaited<ReturnType<typeof downloadSolutionPackage>>>
+export type DownloadSolutionPackageQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadSolutionPackage<TData = Awaited<ReturnType<typeof downloadSolutionPackage>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadSolutionPackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadSolutionPackageQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetAcceptanceChecksUrl = (briefId: string,) => {
 

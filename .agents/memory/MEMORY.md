@@ -12,3 +12,4 @@
 - [Enterprise breadth without new engines](enterprise-breadth.md) — live vs preview products: previews never run/open cases/get "Try in"; gate at API and UI; Decision View reports measured value only.
 - [Prototype intake](prototype-intake.md) — match on the engine's own vocabulary; never index prototype words into the scorer; cap prototype scores below improve/try; mutateAsync for undo after unmount.
 - [Collaborative intake validation](intake-validation.md) — validate needs and described capabilities iteratively before comparison; drag priorities, preserve corrections, distinguish claims from proof.
+- [Solution package evidence](solution-package-evidence.md) — ZIP management requires real IT grants; claims, static review and executed behavior remain separate.

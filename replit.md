@@ -13,6 +13,18 @@ A reuse-first solution discovery and A/B workbench: a maintenance supervisor des
 - Reset the demo: "Reset demo" in the sidebar demo-state card (or the persona menu), or `POST /api/demo/reset`.
 - Demo deep links: append `?as=seeker|owner|it` to any route to sign in as that persona.
 
+### IT-managed solution ZIPs
+
+Package APIs require real Replit authentication. Demo personas and `?as=it` confer no upload/review rights. After the intended administrator signs in, inspect the `users` table and explicitly grant that verified account in the development database:
+
+```sql
+UPDATE users SET can_manage_solution_packages = true WHERE id = '<verified authenticated user id>';
+```
+
+Replace the placeholder with the exact verified ID; never grant all users. Revoke with the same targeted statement setting `false`. New users default to false, and no bootstrap auto-grants exist. Apply schema with `pnpm --filter @workspace/db run push` (also used by `scripts/post-merge.sh`). Production entitlement grants require a separately authorized database administrator.
+
+`PRIVATE_OBJECT_DIR` must point to private App Storage. IT requests a ten-minute signed staging PUT URL, uploads a ZIP, then requests inspection. Limit: 20 MiB compressed, 60 MiB expanded, 5 MiB per file, 500 entries, 100:1 expansion. Inspection is static, serialized across server processes, and rejects unsafe paths, links, duplicates, encryption and nested archives. At most ten initialized uploads per account/hour and twenty mutations/minute. Invalid or failed inspections require a new upload. Successful originals are SHA-256 addressed with create-only generation preconditions; uploaded code is never executed. Signed-in users may list/download inspected packages; IT alone may upload/inspect/review. Only LIVE catalog solutions are eligible. Dependency extraction supports package.json and requirements*.txt declarations; other manifests remain available in the file inventory for manual review. Review confirms file/capability mappings only, never sandbox or integration validation. Staging uploads are private but may remain orphaned after failure/expiry; operators should configure lifecycle cleanup for the `solution-packages/staging/` prefix, never the immutable originals prefix.
+
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9

@@ -5,6 +5,106 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface SolutionPackageUploadInput {
+  solutionId: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  version: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  filename: string;
+  /**
+     * @maxItems 100
+     * @items.maxLength 1000
+     */
+  claims: string[];
+}
+
+export type SolutionPackageReviewInputMappingsItemDecision = typeof SolutionPackageReviewInputMappingsItemDecision[keyof typeof SolutionPackageReviewInputMappingsItemDecision];
+
+
+export const SolutionPackageReviewInputMappingsItemDecision = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export type SolutionPackageReviewInputMappingsItem = {
+  capabilityId: string;
+  file: string;
+  decision: SolutionPackageReviewInputMappingsItemDecision;
+  /** @maxLength 2000 */
+  note: string;
+};
+
+export interface SolutionPackageReviewInput {
+  /** @maxLength 4000 */
+  note: string;
+  /** @maxItems 500 */
+  mappings: SolutionPackageReviewInputMappingsItem[];
+}
+
+export type SolutionPackageStatus = typeof SolutionPackageStatus[keyof typeof SolutionPackageStatus];
+
+
+export const SolutionPackageStatus = {
+  awaiting_upload: 'awaiting_upload',
+  inspected: 'inspected',
+  reviewed: 'reviewed',
+  failed: 'failed',
+} as const;
+
+export type SolutionPackageFilesItem = {
+  path: string;
+  sha256: string;
+  size: number;
+};
+
+export type SolutionPackageDependenciesItem = {
+  name: string;
+  version: string;
+  source: string;
+};
+
+export type SolutionPackageMappingsItemDecision = typeof SolutionPackageMappingsItemDecision[keyof typeof SolutionPackageMappingsItemDecision];
+
+
+export const SolutionPackageMappingsItemDecision = {
+  proposed: 'proposed',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export type SolutionPackageMappingsItem = {
+  capabilityId: string;
+  capabilityName: string;
+  file: string;
+  decision: SolutionPackageMappingsItemDecision;
+  note: string;
+};
+
+export interface SolutionPackage {
+  id: string;
+  solutionId: string;
+  solutionName: string;
+  version: string;
+  filename: string;
+  status: SolutionPackageStatus;
+  /** @nullable */
+  sha256: string | null;
+  createdAt: string;
+  claims: string[];
+  files: SolutionPackageFilesItem[];
+  dependencies: SolutionPackageDependenciesItem[];
+  mappings: SolutionPackageMappingsItem[];
+  warnings: string[];
+  reviewNote: string;
+  sandboxTested: false;
+}
+
 export interface AcceptanceCriterion {
   id: string;
   requirement: string;
@@ -2724,6 +2824,28 @@ export interface PrototypeDetail {
  * Opaque session token, Bearer sid.
  */
 export type AuthorizationSessionHeaderParameter = string;
+
+export type ListSolutionPackages200SolutionsItemCapabilitiesItem = {
+  id: string;
+  name: string;
+};
+
+export type ListSolutionPackages200SolutionsItem = {
+  id: string;
+  name: string;
+  capabilities: ListSolutionPackages200SolutionsItemCapabilitiesItem[];
+};
+
+export type ListSolutionPackages200 = {
+  canManage: boolean;
+  packages: SolutionPackage[];
+  solutions: ListSolutionPackages200SolutionsItem[];
+};
+
+export type CreateSolutionPackageUploadUrl200 = {
+  id: string;
+  uploadURL: string;
+};
 
 export type BeginBrowserLoginParams = {
 /**
