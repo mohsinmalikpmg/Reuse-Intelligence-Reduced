@@ -1,0 +1,23 @@
+.cv-root .spine-stage {border-radius:12px;overflow:visible}
+.cv-root .spine-stage>button {min-height:70px}
+.cv-root .spine-row {min-height:47px;font-size:13px}
+.cv-root details>summary {cursor:pointer;min-height:30px}
+.cv-root details[open]>summary {margin-bottom:6px}
+.cv-root .spine-stage:has(>button[aria-expanded="true"]) {box-shadow:0 3px 16px #36586008}
+.cv-root button:disabled {cursor:not-allowed}
+@media (max-width:767px){
+ .cv-root header{padding-inline:16px;gap:10px}
+ .cv-root header>div:first-child{font-size:12px}
+ .cv-root main{padding-inline:14px}
+ .cv-root h1{font-size:24px;line-height:1.2}
+ .cv-root .spine-stage>button{gap:10px;padding-inline:12px;flex-wrap:wrap}
+ .cv-root .spine-stage>button h2{width:auto}
+ .cv-root .spine-stage>button>span:nth-last-child(2){flex-basis:calc(100% - 50px);order:4;margin-left:38px;padding-bottom:10px}
+ .cv-root .spine-stage>button>svg{margin-left:auto}
+ .cv-root .spine-stage>div{padding-inline:12px}
+ .cv-root .spine-row{gap:5px;align-items:flex-start;padding-top:10px;padding-bottom:10px}
+ .cv-root .spine-row span{font-size:11px}
+ .cv-root .spine-stage .grid-cols-2{gap:8px}
+ .cv-root [role="dialog"]{max-height:90dvh;overflow-y:auto}
+}
+@media (prefers-reduced-motion:reduce){.cv-root *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
