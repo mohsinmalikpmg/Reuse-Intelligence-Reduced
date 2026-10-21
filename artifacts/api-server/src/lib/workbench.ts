@@ -8,7 +8,7 @@ import { diffOutputs, scoreAgainstExpected } from "../engine/diff";
 import { executeWorkflow, executableSteps } from "../engine/run";
 import { isExecutable } from "../engine/steps";
 import { sampleInputById, sampleInputsFor, type SampleInput as SeedInput } from "../engine/workorders";
-import { buildComponents, caseContext, defaultConfigValues, defaultModuleStates, type CaseContext } from "./configuration";
+import { buildComponents, caseContext, defaultConfigValues, defaultModuleStates, productionConfigValue, productionModuleOn, type CaseContext } from "./configuration";
 import { configFingerprint } from "./fingerprint";
 import { hashInput, insertRun, listRunsForCase } from "./workbench-store";
 
@@ -24,10 +24,14 @@ export function toSampleInput(s: SeedInput): SampleInput {
 
 /** Production workflow of a solution: locked and configurable capabilities plus optional ones that ship enabled. */
 export function productionCapabilities(solution: Solution): { active: Capability[]; configValues: Record<string, string> } {
+  // Production = the governed configuration: published successor choices first, catalog evidence defaults otherwise.
   const caps = solutionCapabilities(solution);
-  const active = caps.filter((cap) => cap.controlType !== "optional" || cap.evidenceLevel === "strong" || cap.evidenceLevel === "moderate");
+  const active = caps.filter((cap) => productionModuleOn(solution, cap));
   const configValues: Record<string, string> = {};
-  for (const cap of caps) if (cap.controlType === "configurable" && cap.defaultOption) configValues[cap.id] = cap.defaultOption;
+  for (const cap of caps) {
+    const value = productionConfigValue(solution, cap);
+    if (value) configValues[cap.id] = value;
+  }
   return { active, configValues };
 }
 

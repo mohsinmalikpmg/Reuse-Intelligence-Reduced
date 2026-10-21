@@ -232,7 +232,8 @@ router.post("/cases/:caseId/experiments", async (req, res) => {
   if (!c) return;
   const ctx = caseContext(c);
   const experiment = await insertExperiment(runSimulation(c, ctx, newId("exp")));
-  const status: Case["status"] = c.status === "rejected" ? "rejected" : "tested";
+  // A simulation moves a draft (or a case sent back for changes) to "tested"; decided, published or rejected cases keep their status.
+  const status: Case["status"] = c.status === "draft" || c.status === "changes_requested" ? "tested" : c.status;
   await updateCaseRow(c.id, { experimentId: experiment.id, status });
   res.status(201).json(experiment);
 });

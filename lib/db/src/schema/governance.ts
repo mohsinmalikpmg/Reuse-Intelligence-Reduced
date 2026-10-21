@@ -29,6 +29,9 @@ export const solutionVersionsTable = pgTable("solution_versions", {
   summary: text("summary").notNull(),
   foldedCapabilities: jsonb("folded_capabilities").$type<FoldedCapabilityRow[]>().notNull().default([]),
   changedSettings: jsonb("changed_settings").$type<string[]>().notNull().default([]),
+  /** The approved production configuration: optional-module states and configurable values of the experiment's Version B */
+  moduleStates: jsonb("module_states").$type<Record<string, boolean>>().notNull().default({}),
+  configValues: jsonb("config_values").$type<Record<string, string>>().notNull().default({}),
   createdBy: text("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   publishedAt: timestamp("published_at", { withTimezone: true }),

@@ -8,6 +8,7 @@ import type { Case, DecisionAction } from "@workspace/api-zod";
 import { addedExternalModules, caseContext } from "./configuration";
 import { caseEvidence } from "./evidence";
 import { lineageChanges } from "./lineage";
+import { versionBCapabilities } from "./workbench";
 import {
   type DispositionChoice,
   type FoldedCapabilityInput,
@@ -43,7 +44,24 @@ export async function recordDraftSuccessor(c: Case, actor: string): Promise<void
   }));
   const changes = lineageChanges(c.lineage);
   const summary = `${changes.length ? changes.join("; ") : "Configuration confirmed without changes"}. From the experiment "${c.title}" by ${c.ownerName}${c.ownerTeam ? ` (${c.ownerTeam})` : ""}, approved by ${actor}.`;
-  const version = await ensureDraftVersion(c, { summary, folded, changedSettings: c.lineage.changedSettings.map((s) => `${s.capabilityName}: ${s.from} → ${s.to}`), createdBy: actor });
+  // The approved production configuration is the experiment's Version B, exactly as it was tested: which optional
+  // modules are on (base and folded) and which option each configurable setting uses.
+  const b = versionBCapabilities(c, ctx);
+  const members = new Set([...ctx.baseCapabilities.map((cap) => cap.id), ...folded.map((cap) => cap.capabilityId)]);
+  const moduleStates: Record<string, boolean> = {};
+  for (const cap of [...ctx.baseCapabilities, ...ctx.candidateCapabilities]) {
+    if (cap.controlType === "optional" && members.has(cap.id)) moduleStates[cap.id] = b.active.some((a) => a.id === cap.id);
+  }
+  const configValues: Record<string, string> = {};
+  for (const [id, value] of Object.entries(b.configValues)) if (members.has(id)) configValues[id] = value;
+  const version = await ensureDraftVersion(c, {
+    summary,
+    folded,
+    changedSettings: c.lineage.changedSettings.map((s) => `${s.capabilityName}: ${s.from} → ${s.to}`),
+    moduleStates,
+    configValues,
+    createdBy: actor,
+  });
 
   // Proposed dispositions mirror the computed fates; IT's own choices, if already made, are kept.
   const addedSources = new Set(added.map((cap) => cap.sourceSolutionId));

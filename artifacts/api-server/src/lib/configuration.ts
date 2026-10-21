@@ -109,13 +109,25 @@ export function isRecommendedModule(cap: Capability, ctx: CaseContext): boolean 
   return cap.evidenceLevel === "strong" || cap.evidenceLevel === "moderate";
 }
 
-/** Module activation defaults: base optional modules follow their evidence; external modules follow the recommendation. */
+/** Whether an optional capability is on in a product's production configuration: the published successor's choice, else its evidence. */
+export function productionModuleOn(solution: Solution, cap: Capability): boolean {
+  if (cap.controlType !== "optional") return true;
+  const published = solution.production?.moduleStates[cap.id];
+  if (published !== undefined) return published;
+  return cap.evidenceLevel === "strong" || cap.evidenceLevel === "moderate";
+}
+
+/** The production value of a configurable capability: the published successor's choice, else the catalog default. */
+export function productionConfigValue(solution: Solution, cap: Capability): string | undefined {
+  if (cap.controlType !== "configurable") return undefined;
+  return solution.production?.configValues[cap.id] ?? cap.defaultOption ?? undefined;
+}
+
+/** Module activation defaults: base optional modules follow production (published choice, else evidence); external modules follow the recommendation. */
 export function defaultModuleStates(ctx: CaseContext): Record<string, boolean> {
   const states: Record<string, boolean> = {};
   for (const cap of ctx.baseCapabilities) {
-    if (cap.controlType === "optional") {
-      states[cap.id] = cap.evidenceLevel === "strong" || cap.evidenceLevel === "moderate";
-    }
+    if (cap.controlType === "optional") states[cap.id] = productionModuleOn(ctx.base, cap);
   }
   for (const cap of ctx.candidateCapabilities) {
     states[cap.id] = isRecommendedModule(cap, ctx);
@@ -126,7 +138,8 @@ export function defaultModuleStates(ctx: CaseContext): Record<string, boolean> {
 export function defaultConfigValues(ctx: CaseContext): Record<string, string> {
   const values: Record<string, string> = {};
   for (const cap of ctx.baseCapabilities) {
-    if (cap.controlType === "configurable" && cap.defaultOption) values[cap.id] = cap.defaultOption;
+    const value = productionConfigValue(ctx.base, cap);
+    if (value) values[cap.id] = value;
   }
   return values;
 }
@@ -179,7 +192,7 @@ export function buildComponents(c: Case, ctx: CaseContext): ComponentConfig[] {
       state,
       active: state === "incompatible" ? false : active,
       executable: isExecutable(cap.id),
-      value: cap.controlType === "configurable" && isBase ? (c.configValues[cap.id] ?? cap.defaultOption) : null,
+      value: cap.controlType === "configurable" && isBase ? (c.configValues[cap.id] ?? productionConfigValue(ctx.base, cap) ?? null) : null,
       options: cap.controlType === "configurable" && isBase ? cap.options : null,
       recommended,
       blockedReason,

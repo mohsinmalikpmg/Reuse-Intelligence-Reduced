@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { FoldedCapability } from './foldedCapability';
+import type { ProductionConfig } from './productionConfig';
 import type { SolutionVersionState } from './solutionVersionState';
 
 export interface SolutionVersion {
@@ -21,4 +22,6 @@ export interface SolutionVersion {
   caseId: string | null;
   foldedCapabilities: FoldedCapability[];
   changedSettings: string[];
+  /** The production configuration this version applies (optional-module states and configurable values); absent for catalog versions */
+  production?: ProductionConfig | null;
 }

@@ -9,6 +9,7 @@ import type { Disposition } from './disposition';
 import type { EffortLevel } from './effortLevel';
 import type { EvidenceLevel } from './evidenceLevel';
 import type { Metrics } from './metrics';
+import type { ProductionConfig } from './productionConfig';
 import type { SolutionKind } from './solutionKind';
 import type { SolutionStatus } from './solutionStatus';
 import type { SolutionVersion } from './solutionVersion';
@@ -18,6 +19,8 @@ export interface Solution {
   name: string;
   /** Governance disposition recorded for this product, if any */
   disposition: Disposition | null;
+  /** Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply */
+  production?: ProductionConfig | null;
   /** One-sentence outcome */
   outcome: string;
   description: string;

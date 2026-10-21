@@ -1658,6 +1658,22 @@ components:
         changedSettings:
           type: array
           items: { type: string }
+        production:
+          description: The production configuration this version applies (optional-module states and configurable values); absent for catalog versions
+          oneOf:
+            - $ref: "#/components/schemas/ProductionConfig"
+            - type: "null"
+
+    ProductionConfig:
+      type: object
+      required: [moduleStates, configValues]
+      properties:
+        moduleStates:
+          type: object
+          additionalProperties: { type: boolean }
+        configValues:
+          type: object
+          additionalProperties: { type: string }
 
     FoldedCapability:
       type: object
@@ -1733,6 +1749,11 @@ components:
           description: Governance disposition recorded for this product, if any
           oneOf:
             - $ref: "#/components/schemas/Disposition"
+            - type: "null"
+        production:
+          description: Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply
+          oneOf:
+            - $ref: "#/components/schemas/ProductionConfig"
             - type: "null"
         outcome: { type: string, description: One-sentence outcome }
         description: { type: string }

@@ -319,6 +319,15 @@ export interface Disposition {
   label: string;
 }
 
+export type ProductionConfigModuleStates = {[key: string]: boolean};
+
+export type ProductionConfigConfigValues = {[key: string]: string};
+
+export interface ProductionConfig {
+  moduleStates: ProductionConfigModuleStates;
+  configValues: ProductionConfigConfigValues;
+}
+
 /**
  * released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version
  */
@@ -357,6 +366,8 @@ export interface SolutionVersion {
   caseId: string | null;
   foldedCapabilities: FoldedCapability[];
   changedSettings: string[];
+  /** The production configuration this version applies (optional-module states and configurable values); absent for catalog versions */
+  production?: ProductionConfig | null;
 }
 
 /**
@@ -382,6 +393,8 @@ export interface Solution {
   name: string;
   /** Governance disposition recorded for this product, if any */
   disposition: Disposition | null;
+  /** Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply */
+  production?: ProductionConfig | null;
   /** One-sentence outcome */
   outcome: string;
   description: string;

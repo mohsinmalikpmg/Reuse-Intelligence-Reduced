@@ -107,6 +107,10 @@ export const GetSeekerOverviewResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -136,7 +140,11 @@ export const GetSeekerOverviewResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -227,6 +235,10 @@ export const GetSeekerOverviewResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -256,7 +268,11 @@ export const GetSeekerOverviewResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -318,6 +334,10 @@ export const GetOwnerOverviewResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -347,7 +367,11 @@ export const GetOwnerOverviewResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -443,6 +467,10 @@ export const GetOwnerOverviewResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -472,7 +500,11 @@ export const GetOwnerOverviewResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -629,6 +661,10 @@ export const GetOwnerOverviewResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -658,7 +694,11 @@ export const GetOwnerOverviewResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -720,6 +760,10 @@ export const ListSolutionsResponseItem = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -749,7 +793,11 @@ export const ListSolutionsResponseItem = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -797,6 +845,10 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -826,7 +878,11 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -1162,6 +1218,10 @@ export const SearchLibraryResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1191,7 +1251,11 @@ export const SearchLibraryResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -1299,6 +1363,10 @@ export const GetMySolutionsResponseItem = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1328,7 +1396,11 @@ export const GetMySolutionsResponseItem = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -1419,6 +1491,10 @@ export const GetMySolutionsResponseItem = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1448,7 +1524,11 @@ export const GetMySolutionsResponseItem = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -1557,6 +1637,10 @@ export const GetMySolutionsResponseItem = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1586,7 +1670,11 @@ export const GetMySolutionsResponseItem = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -1660,6 +1748,10 @@ export const GetSolutionResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1689,7 +1781,11 @@ export const GetSolutionResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -1818,6 +1914,10 @@ export const GetSolutionResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1847,7 +1947,11 @@ export const GetSolutionResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -1952,6 +2056,10 @@ export const GetSolutionResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1981,7 +2089,11 @@ export const GetSolutionResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -2381,6 +2493,10 @@ export const GetBriefMatchesResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2410,7 +2526,11 @@ export const GetBriefMatchesResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -2570,6 +2690,10 @@ export const ListCasesResponseItem = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2599,7 +2723,11 @@ export const ListCasesResponseItem = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -3261,6 +3389,10 @@ export const GetCaseRecommendationResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -3290,7 +3422,11 @@ export const GetCaseRecommendationResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -3327,6 +3463,10 @@ export const GetCaseRecommendationResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -3356,7 +3496,11 @@ export const GetCaseRecommendationResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -3539,6 +3683,10 @@ export const GetCaseRecommendationResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -3568,7 +3716,11 @@ export const GetCaseRecommendationResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -4791,6 +4943,10 @@ export const GetCaseReviewResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -4820,7 +4976,11 @@ export const GetCaseReviewResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -5063,6 +5223,10 @@ export const GetCaseConsolidationResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -5092,7 +5256,11 @@ export const GetCaseConsolidationResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -5162,7 +5330,11 @@ export const GetCaseConsolidationResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 }),zod.null()]).describe('The successor version on the base product (draft after owner approval, current after IT approval)')
 })
 
@@ -5203,6 +5375,10 @@ export const SetCaseDispositionsResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -5232,7 +5408,11 @@ export const SetCaseDispositionsResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -5302,7 +5482,11 @@ export const SetCaseDispositionsResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 }),zod.null()]).describe('The successor version on the base product (draft after owner approval, current after IT approval)')
 })
 
@@ -5340,6 +5524,10 @@ export const RecordMigrationNoteResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -5369,7 +5557,11 @@ export const RecordMigrationNoteResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -5439,7 +5631,11 @@ export const RecordMigrationNoteResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 }),zod.null()]).describe('The successor version on the base product (draft after owner approval, current after IT approval)')
 })
 
@@ -5609,6 +5805,10 @@ export const GetImprovementGroupResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -5638,7 +5838,11 @@ export const GetImprovementGroupResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -5695,6 +5899,10 @@ export const GetImprovementGroupResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -5724,7 +5932,11 @@ export const GetImprovementGroupResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -5819,6 +6031,10 @@ export const GetImprovementGroupResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -5848,7 +6064,11 @@ export const GetImprovementGroupResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -5998,6 +6218,10 @@ export const RecordGroupDecisionResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6027,7 +6251,11 @@ export const RecordGroupDecisionResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -6084,6 +6312,10 @@ export const RecordGroupDecisionResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6113,7 +6345,11 @@ export const RecordGroupDecisionResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -6208,6 +6444,10 @@ export const RecordGroupDecisionResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6237,7 +6477,11 @@ export const RecordGroupDecisionResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -6572,6 +6816,10 @@ export const GetPortfolioResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6601,7 +6849,11 @@ export const GetPortfolioResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -6697,6 +6949,10 @@ export const GetPortfolioResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6726,7 +6982,11 @@ export const GetPortfolioResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -6763,6 +7023,10 @@ export const GetPortfolioResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6792,7 +7056,11 @@ export const GetPortfolioResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -6859,6 +7127,10 @@ export const GetPortfolioResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6888,7 +7160,11 @@ export const GetPortfolioResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -6938,6 +7214,10 @@ export const GetPortfolioResponse = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6967,7 +7247,11 @@ export const GetPortfolioResponse = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),
@@ -7097,6 +7381,10 @@ export const GetDecisionQueueResponseItem = zod.object({
   "preferred": zod.boolean().describe('The product preferred for this business problem'),
   "label": zod.string().describe('Plain-language badge')
 }).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -7126,7 +7414,11 @@ export const GetDecisionQueueResponseItem = zod.object({
   "preferredPercent": zod.number().int().nullable(),
   "provenance": zod.string().describe('e.g. from Pattern Finder')
 })),
-  "changedSettings": zod.array(zod.string())
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
 })),
   "knownGaps": zod.array(zod.string()),
   "dependencies": zod.array(zod.string()),

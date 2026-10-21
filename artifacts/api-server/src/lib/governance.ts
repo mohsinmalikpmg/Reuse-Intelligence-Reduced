@@ -50,6 +50,7 @@ export function toSolutionVersion(row: SolutionVersionRow): SolutionVersion {
     caseId: row.caseId,
     foldedCapabilities: row.foldedCapabilities,
     changedSettings: row.changedSettings,
+    production: { moduleStates: row.moduleStates, configValues: row.configValues },
   };
 }
 
@@ -139,7 +140,15 @@ function resolve(base: Solution, asOf?: string): Solution {
   if (rows.length === 0 && asOf !== undefined) return { ...base, disposition: dispositionForSolution(base.id) };
   const published = rows.filter((v) => v.state === "current");
   const capabilityIds = [...base.capabilityIds];
-  for (const v of published) for (const cap of v.foldedCapabilities) if (!capabilityIds.includes(cap.capabilityId)) capabilityIds.push(cap.capabilityId);
+  // Each published version applies on top of the previous one: new capabilities join the product and the approved
+  // production configuration (which optional modules are on, which option each setting uses) becomes the default.
+  const moduleStates: Record<string, boolean> = { ...(base.production?.moduleStates ?? {}) };
+  const configValues: Record<string, string> = { ...(base.production?.configValues ?? {}) };
+  for (const v of published) {
+    for (const cap of v.foldedCapabilities) if (!capabilityIds.includes(cap.capabilityId)) capabilityIds.push(cap.capabilityId);
+    for (const [id, on] of Object.entries(v.moduleStates)) if (capabilityIds.includes(id)) moduleStates[id] = on;
+    for (const [id, value] of Object.entries(v.configValues)) if (capabilityIds.includes(id)) configValues[id] = value;
+  }
   const latest = published[published.length - 1];
   const extra = [...rows].reverse().map(toSolutionVersion);
   return {
@@ -148,6 +157,7 @@ function resolve(base: Solution, asOf?: string): Solution {
     currentVersion: latest ? latest.version : base.currentVersion,
     versions: [...extra, ...base.versions],
     disposition: dispositionForSolution(base.id),
+    production: published.length ? { moduleStates, configValues } : (base.production ?? null),
   };
 }
 
@@ -156,11 +166,18 @@ function resolve(base: Solution, asOf?: string): Solution {
 export type FoldedCapabilityInput = FoldedCapabilityRow;
 
 /** Owner approval: record a draft successor version on the parent product for this experiment (idempotent per case). */
-export async function ensureDraftVersion(c: Case, input: { summary: string; folded: FoldedCapabilityInput[]; changedSettings: string[]; createdBy: string }): Promise<SolutionVersionRow> {
+export async function ensureDraftVersion(
+  c: Case,
+  input: { summary: string; folded: FoldedCapabilityInput[]; changedSettings: string[]; moduleStates: Record<string, boolean>; configValues: Record<string, string>; createdBy: string },
+): Promise<SolutionVersionRow> {
   const existing = versionForCase(c.id);
   if (existing) {
     if (existing.state === "draft") {
-      const [row] = await db.update(solutionVersionsTable).set({ summary: input.summary, foldedCapabilities: input.folded, changedSettings: input.changedSettings }).where(eq(solutionVersionsTable.id, existing.id)).returning();
+      const [row] = await db
+        .update(solutionVersionsTable)
+        .set({ summary: input.summary, foldedCapabilities: input.folded, changedSettings: input.changedSettings, moduleStates: input.moduleStates, configValues: input.configValues })
+        .where(eq(solutionVersionsTable.id, existing.id))
+        .returning();
       await loadGovernance();
       return row!;
     }
@@ -173,7 +190,19 @@ export async function ensureDraftVersion(c: Case, input: { summary: string; fold
   const top = taken.sort(compareVersions)[taken.length - 1]!;
   const [row] = await db
     .insert(solutionVersionsTable)
-    .values({ id: newId("ver"), solutionId: parent.id, caseId: c.id, version: bump(top), state: "draft", summary: input.summary, foldedCapabilities: input.folded, changedSettings: input.changedSettings, createdBy: input.createdBy })
+    .values({
+      id: newId("ver"),
+      solutionId: parent.id,
+      caseId: c.id,
+      version: bump(top),
+      state: "draft",
+      summary: input.summary,
+      foldedCapabilities: input.folded,
+      changedSettings: input.changedSettings,
+      moduleStates: input.moduleStates,
+      configValues: input.configValues,
+      createdBy: input.createdBy,
+    })
     .returning();
   await loadGovernance();
   return row!;

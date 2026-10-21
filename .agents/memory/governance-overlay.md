@@ -1,14 +1,8 @@
 ---
 name: Governance overlay over a static catalog
-description: How persisted successor versions and dispositions are layered onto the code catalog, and the rules that keep experiments and labels honest.
+description: Durable lessons from layering persisted successor versions onto the code catalog (as-of resolution, published configuration, label rules).
 ---
-Rule: the catalog stays code; governance state (successor versions, folded capabilities with provenance, dispositions, preferred marks) is a small persisted overlay held in memory and reloaded after every write, applied through a resolver hook so solution reads stay synchronous.
-
-**Why:** many call sites read solutions synchronously (matching, configuration, analysis); making them async for a handful of rows was not worth it, and the demo reset must be able to wipe the overlay cleanly.
-
-**How to apply:**
-- Experiments must resolve their parent "as of" the version they branched from; otherwise publishing a successor silently changes the lineage/diff of every open experiment. New cases branch from the new current version.
-- Labels are computed on the server from state, never stored: proposed dispositions read "Proposed: …"; a confirmed retire is "Retirement scheduled" until a migration note exists (the word "retired" is banned by the user).
-- Ranking demotion applies only to confirmed dispositions; proposals must not move products in the library.
-- IT approval requires owner approval first; folded experiments stay in their improvement group (settled, no further group actions) so the group page never 404s and the owner cannot re-adopt the same intent. Declined groups resolve via an "include settled" lookup.
-- Governance side effects run before the case row is updated so the returned case already carries `foldedInto`.
+- Experiments must resolve their parent product "as of" the version they branched from; otherwise publishing a successor silently changes the lineage, diff and A/B baseline of every open experiment. New cases branch from the new current version.
+- A successor version is not published until the product actually *runs* the approved configuration: capability membership alone is not enough — the approved optional-module states and configurable values must be recorded on the version and applied to production defaults. A reviewer caught this once; check both seeded approaches (a setting change and a limited-evidence folded capability) after any change here.
+- Labels are computed from state, never stored: proposals read "Proposed: …"; a confirmed retire reads "Retirement scheduled" until a migration note exists (the user bans the word "retired"). Ranking demotion applies only to confirmed dispositions.
+- Folded experiments stay in their improvement group (settled, no further group actions) so the owner cannot re-adopt the same intent and the group page never 404s.
