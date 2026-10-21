@@ -5,8 +5,8 @@ import { Link } from "wouter";
 import {
   getGetSolutionQueryKey, getGetSolutionWorkbenchQueryKey, useCreateCase, useGetSolution, useGetSolutionWorkbench, useListSolutions, type Capability,
 } from "@workspace/api-client-react";
-import { DSection, Drawer, ErrorView, LoadingView, Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
-import { STATUS_LABEL } from "@/components/wb-pilot";
+import { DSection, DispositionBadge, Drawer, ErrorView, LoadingView, Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
+import { caseStatusLabel } from "@/components/wb-pilot";
 import { OutputView, RunMeta } from "@/components/output-view";
 import { blocksFromWorkbench, type FlowBlock } from "@/components/flow";
 import { errMsg, useCurrentCase } from "@/lib/case";
@@ -38,6 +38,9 @@ export default function SolutionPage() {
       onError: (e) => say(errMsg(e)),
     });
   const usedIn = (c: Capability) => (all.data ?? []).filter((x) => x.capabilityIds.includes(c.id));
+  const draft = s.versions.find((v) => v.state === "draft");
+  const published = s.versions.find((v) => v.state === "current");
+  const newIn = (c: Capability) => s.versions.find((v) => v.state === "current" && v.foldedCapabilities.some((f) => f.capabilityId === c.id))?.version;
   const trace = step ? wb.data?.exampleRun.trace.find((t) => t.stepId === step.id) : undefined;
 
   return (
@@ -47,10 +50,21 @@ export default function SolutionPage() {
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill status={s.status} />
             <Tag tone={s.kind === "capability_module" ? "sky" : "slate"}>{s.kind === "capability_module" ? "Reusable capability" : "Full workflow"}</Tag>
-            <span className="text-[13.5px] text-muted-foreground">v{s.currentVersion} · Owner {s.ownerName}, {s.ownerTeam}</span>
+            <DispositionBadge disposition={s.disposition} solutionId={s.id} />
+            <span className="text-[13.5px] text-muted-foreground" data-testid="text-version">v{s.currentVersion} · Owner {s.ownerName}, {s.ownerTeam}</span>
           </div>
           <h1 data-testid="text-headline" className="mt-2 text-[32px] font-bold leading-tight md:text-[40px]">{s.name}</h1>
           <p data-testid="text-outcome" className="mt-2 text-[17px] leading-relaxed">{s.outcome}</p>
+          {draft && (
+            <p data-testid="text-draft-successor" className="mt-2 text-[14px] text-muted-foreground">
+              Draft successor v{draft.version} approved by the owner, awaiting IT: {draft.foldedCapabilities.map((c) => c.name).join(", ") || draft.changedSettings.join(", ") || "configuration change"}.
+            </p>
+          )}
+          {published && (
+            <p data-testid="text-published-successor" className="mt-2 text-[14px] text-muted-foreground">
+              v{published.version} is the governed version since {new Date(published.releasedAt).toLocaleDateString()}{published.foldedCapabilities.length ? `: ${published.foldedCapabilities.map((c) => `${c.name} from ${c.sourceSolutionName}`).join(", ")} now part of this product` : ""}.
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <button data-testid="button-try" onClick={() => start()} disabled={create.isPending} className={btn.primary}>Try this solution <ArrowRight className="h-5 w-5" /></button>
@@ -120,6 +134,7 @@ export default function SolutionPage() {
                   <button data-testid={`cap-${c.id}`} onClick={() => setCap(c)} className="flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-left text-[14.5px] hover:border-primary/40">
                     {c.controlType === "locked" && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                     <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
+                    {newIn(c) && <Tag tone="green" testid={`tag-new-in-${c.id}`}>New in v{newIn(c)}</Tag>}
                     <span className="text-[12.5px] text-muted-foreground">{n > 1 ? `also in ${n - 1}` : "only here"}</span>
                   </button>
                 </li>
@@ -137,7 +152,7 @@ export default function SolutionPage() {
         ) : (
           <ul className="space-y-1.5">
             {experimentsInProgress.map((e) => {
-              const st = STATUS_LABEL[e.case.status];
+              const st = caseStatusLabel(e.case);
               return (
                 <li key={e.case.id} data-testid={`experiment-${e.case.id}`} className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-[14.5px]">
                   <span className="font-medium">{e.case.lineage.intent}</span>
@@ -162,8 +177,24 @@ export default function SolutionPage() {
           <DSection label="Output produced">{trace.outputSummary} · {trace.itemCount} items · {trace.durationMs} ms</DSection>
         </>}
       </Drawer>
-      <Drawer open={drawer === "versions"} onClose={() => setDrawer(null)} title="Version history" testid="drawer-versions">
-        {s.versions.map((v) => <DSection key={v.version} label={`v${v.version} · ${new Date(v.releasedAt).toLocaleDateString()}`}>{v.summary}</DSection>)}
+      <Drawer open={drawer === "versions"} onClose={() => setDrawer(null)} title="Version history" sub="Governed versions and the evidence behind each change." testid="drawer-versions">
+        {s.versions.map((v) => (
+          <DSection key={v.version} label={`v${v.version} · ${v.state === "draft" ? "draft successor, awaiting IT" : new Date(v.releasedAt).toLocaleDateString()}`}>
+            <div data-testid={`version-${v.version}`}>
+              <div className="flex flex-wrap items-center gap-2">
+                {v.state === "current" && <Tag tone="green">Current governed version</Tag>}
+                {v.state === "draft" && <Tag tone="sienna">Draft</Tag>}
+              </div>
+              <p className={v.state === "released" ? "" : "mt-1"}>{v.summary}</p>
+              {v.foldedCapabilities.length > 0 && (
+                <ul className="mt-2 space-y-1 text-[13.5px]">
+                  {v.foldedCapabilities.map((f) => <li key={f.capabilityId} data-testid={`provenance-${f.capabilityId}`}><span className="font-medium">{f.name}</span> — {f.provenance}</li>)}
+                </ul>
+              )}
+              {v.caseId && <Link href={`/workbench/${v.caseId}?mode=compare`} data-testid={`link-evidence-${v.version}`} className="mt-2 inline-flex items-center gap-1 text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">See the evidence <ArrowRight className="h-3.5 w-3.5" /></Link>}
+            </div>
+          </DSection>
+        ))}
       </Drawer>
       <Drawer open={drawer === "details"} onClose={() => setDrawer(null)} title={s.name} sub={s.description} testid="drawer-details">
         <DSection label="Business units">{s.businessUnits.join(", ")}</DSection>

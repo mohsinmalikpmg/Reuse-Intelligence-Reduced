@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * folded = the approved change was published as a successor version of the parent product
+ */
 export type CaseStatus = typeof CaseStatus[keyof typeof CaseStatus];
 
 
@@ -17,4 +20,5 @@ export const CaseStatus = {
   changes_requested: 'changes_requested',
   deferred: 'deferred',
   rejected: 'rejected',
+  folded: 'folded',
 } as const;

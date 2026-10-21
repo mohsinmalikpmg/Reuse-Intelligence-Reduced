@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowRight, LayoutGrid, Network, Search, SlidersHorizontal, X } from "lucide-react";
 import { useListBusinessProblems, useListCapabilities, useListSolutions, type Solution, type SolutionStatus } from "@workspace/api-client-react";
-import { Drawer, Empty, ErrorView, Page, Skel, StatusPill, Tag, btn } from "@/components/bits";
+import { DispositionBadge, Drawer, Empty, ErrorView, Page, Skel, StatusPill, Tag, btn } from "@/components/bits";
 import { LibraryTree } from "@/components/library-tree";
 import { cn } from "@/lib/utils";
 
@@ -117,11 +117,11 @@ export default function Library() {
                     <h3 className="min-w-0 flex-1 text-[17px] font-semibold leading-snug">{s.name}</h3>
                     <StatusPill status={s.status} />
                   </div>
-                  <div className="mt-1"><Tag tone={s.kind === "capability_module" ? "sky" : "slate"}>{s.kind === "capability_module" ? "Reusable capability" : "Full workflow"}</Tag></div>
+                  <div className="mt-1 flex flex-wrap gap-1.5"><Tag tone={s.kind === "capability_module" ? "sky" : "slate"}>{s.kind === "capability_module" ? "Reusable capability" : "Full workflow"}</Tag><DispositionBadge disposition={s.disposition} solutionId={s.id} /></div>
                   <p className="mt-2.5 text-[14.5px] leading-snug">{s.outcome}</p>
                   <p className="mt-2 text-[13px] text-muted-foreground">{s.businessProblemIds.map(pTitle).filter(Boolean)[0] ?? ""}</p>
                   <div className="mt-auto flex items-center justify-between pt-4 text-[13px] text-muted-foreground">
-                    <span>{s.ownerName}</span>
+                    <span>{s.ownerName} · v{s.currentVersion}</span>
                     <span className="inline-flex items-center gap-1 font-semibold text-primary group-hover:gap-2 transition-[gap]">Open <ArrowRight className="h-4 w-4" /></span>
                   </div>
                 </Link>

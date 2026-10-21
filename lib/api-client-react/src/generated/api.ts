@@ -40,6 +40,7 @@ import type {
   ConsolidationDecisionView,
   DecisionInput,
   DemoState,
+  DispositionChoices,
   ErrorResponse,
   EvaluationInput,
   EvaluationList,
@@ -52,6 +53,7 @@ import type {
   ListSampleInputsParams,
   ListSolutionsParams,
   MatchResult,
+  MigrationNoteInput,
   OwnedSolution,
   OwnerOverview,
   Persona,
@@ -3500,6 +3502,184 @@ export function useGetCaseConsolidation<TData = Awaited<ReturnType<typeof getCas
 
 
 
+
+export const getSetCaseDispositionsUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/dispositions`
+}
+
+/**
+ * @summary Record IT's disposition choices for the products under a consolidation case (proposals until IT confirms the direction)
+ */
+export const setCaseDispositions = async (caseId: string,
+    dispositionChoices: DispositionChoices, options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationDecisionView> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ConsolidationDecisionView>(getSetCaseDispositionsUrl(caseId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dispositionChoices)
+  }
+);}
+
+
+
+
+
+export const getSetCaseDispositionsMutationKey = () => ['setCaseDispositions'] as const;
+
+export const getSetCaseDispositionsMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCaseDispositions>>, TError,SetCaseDispositionsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setCaseDispositions>>, TError,SetCaseDispositionsMutationVariables, TContext> => {
+
+const mutationKey = getSetCaseDispositionsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCaseDispositions>>, SetCaseDispositionsMutationVariables> = (props) => {
+          const {caseId,data} = props ?? {};
+
+          return  setCaseDispositions(caseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetCaseDispositionsMutationResult = NonNullable<Awaited<ReturnType<typeof setCaseDispositions>>>
+    export type SetCaseDispositionsMutationBody = BodyType<DispositionChoices>
+    export type SetCaseDispositionsMutationError = ErrorType<ErrorResponse>
+    export type SetCaseDispositionsMutationVariables = {caseId: string;data: BodyType<DispositionChoices>}
+
+    /**
+ * @summary Record IT's disposition choices for the products under a consolidation case (proposals until IT confirms the direction)
+ */
+export const useSetCaseDispositions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCaseDispositions>>, TError,SetCaseDispositionsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setCaseDispositions>>,
+        TError,
+        SetCaseDispositionsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetCaseDispositionsMutationOptions(options));
+    }
+
+export const getRecordMigrationNoteUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/migration-notes`
+}
+
+/**
+ * @summary Record the migration note for a product whose retirement is scheduled under this case
+ */
+export const recordMigrationNote = async (caseId: string,
+    migrationNoteInput: MigrationNoteInput, options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationDecisionView> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ConsolidationDecisionView>(getRecordMigrationNoteUrl(caseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(migrationNoteInput)
+  }
+);}
+
+
+
+
+
+export const getRecordMigrationNoteMutationKey = () => ['recordMigrationNote'] as const;
+
+export const getRecordMigrationNoteMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordMigrationNote>>, TError,RecordMigrationNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordMigrationNote>>, TError,RecordMigrationNoteMutationVariables, TContext> => {
+
+const mutationKey = getRecordMigrationNoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordMigrationNote>>, RecordMigrationNoteMutationVariables> = (props) => {
+          const {caseId,data} = props ?? {};
+
+          return  recordMigrationNote(caseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordMigrationNoteMutationResult = NonNullable<Awaited<ReturnType<typeof recordMigrationNote>>>
+    export type RecordMigrationNoteMutationBody = BodyType<MigrationNoteInput>
+    export type RecordMigrationNoteMutationError = ErrorType<ErrorResponse>
+    export type RecordMigrationNoteMutationVariables = {caseId: string;data: BodyType<MigrationNoteInput>}
+
+    /**
+ * @summary Record the migration note for a product whose retirement is scheduled under this case
+ */
+export const useRecordMigrationNote = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordMigrationNote>>, TError,RecordMigrationNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordMigrationNote>>,
+        TError,
+        RecordMigrationNoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordMigrationNoteMutationOptions(options));
+    }
 
 export const getGetSimilarExperimentsUrl = (caseId: string,) => {
 

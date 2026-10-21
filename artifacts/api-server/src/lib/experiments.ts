@@ -9,6 +9,7 @@ import { ACTIVE_STATUSES, allowedGroupActions, nextStatus, promotionStateFor } f
 import { caseEvidence, type ABEvidence } from "./evidence";
 import { hasExplicitIntent, lineageChanges } from "./lineage";
 import { getCase, insertDecision, listAllDecisions, listCaseRows, newId, summarizeAll, updateCaseRow } from "./store";
+import { applyGovernanceEffects } from "./consolidation";
 
 const active = (c: Case) => ACTIVE_STATUSES.includes(c.status);
 /** An experiment counts for grouping once the person has saved or proposed it; untouched drafts stay private. */
@@ -98,8 +99,10 @@ async function buildGroup(solutionId: string, key: string, members: Case[], evid
 }
 
 /** Saved or proposed experiments on one product, grouped by intent. */
-export async function improvementGroups(solutionId: string, cases?: Case[]): Promise<ImprovementGroup[]> {
-  const members = (cases ?? (await listCaseRows())).filter((c) => c.baseSolutionId === solutionId && visible(c));
+export async function improvementGroups(solutionId: string, cases?: Case[], includeSettled = false): Promise<ImprovementGroup[]> {
+  // Settled experiments (declined, folded in) are hidden from the owner's list but still resolve on their group page.
+  // A folded experiment stays in its group: it is the record of what became the current version and settles the group.
+  const members = (cases ?? (await listCaseRows())).filter((c) => c.baseSolutionId === solutionId && (includeSettled ? c.saved || c.status !== "draft" : visible(c) || c.status === "folded"));
   const byKey = partition(members);
   const evidence = new Map<string, ABEvidence>();
   for (const c of members) evidence.set(c.id, await caseEvidence(c));
@@ -113,8 +116,7 @@ export async function improvementGroupDetail(solutionId: string, key: string): P
   const solution = getSolution(solutionId);
   if (!solution) return null;
   const all = await listCaseRows();
-  const groups = await improvementGroups(solutionId, all);
-  const group = groups.find((g) => g.key === key);
+  const group = (await improvementGroups(solutionId, all)).find((g) => g.key === key) ?? (await improvementGroups(solutionId, all, true)).find((g) => g.key === key);
   if (!group) return null;
   const evidence = new Map<string, ABEvidence>();
   for (const s of group.experiments) evidence.set(s.case.id, await caseEvidence(s.case));
@@ -165,6 +167,7 @@ export async function recordGroupDecision(solutionId: string, key: string, input
     const action: DecisionAction = adopted ? (m.id === adopted.id ? "adopt_approach" : "keep_local") : input.action;
     await insertDecision({ id: newId("dec"), caseId: m.id, role: "owner", actor, action, reason: action === "keep_local" && adopted ? `Approach from ${adopted.ownerName} adopted${reason ? `: ${reason}` : "."}` : reason });
     const fresh = (await getCase(m.id)) ?? m;
+    await applyGovernanceEffects(fresh, action, actor);
     await updateCaseRow(m.id, { status: nextStatus(fresh, action), promotionState: promotionStateFor(action, fresh.promotionState), saved: true });
   }
   return improvementGroupDetail(solutionId, key);

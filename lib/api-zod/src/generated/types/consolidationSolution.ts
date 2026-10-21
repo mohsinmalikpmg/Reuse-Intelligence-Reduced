@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ConsolidationSolutionFate } from './consolidationSolutionFate';
+import type { Disposition } from './disposition';
 import type { Solution } from './solution';
 
 export interface ConsolidationSolution {
@@ -13,4 +14,6 @@ export interface ConsolidationSolution {
   fate: ConsolidationSolutionFate;
   /** One sentence on what happens to this product */
   note: string;
+  /** The recorded disposition for this product under this case; null until the owner approves */
+  disposition: Disposition | null;
 }

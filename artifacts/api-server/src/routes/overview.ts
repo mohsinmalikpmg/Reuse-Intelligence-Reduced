@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import type {
   Capability,
+  Case,
   ConsolidationSummary,
   Evaluation,
   EvidenceEvent,
@@ -14,6 +15,7 @@ import type {
 } from "@workspace/api-zod";
 import { DEMO_PROMPT, OWNER_PERSONA_NAME, businessProblems, capabilities, personas, solutions, sortByMaturity } from "../data/catalog";
 import { addedExternalModules, caseContext, isUnsupported } from "../lib/configuration";
+import { consolidationApproved } from "../lib/analysis";
 import { matchBrief } from "../lib/matching";
 import { demoState, resetDemo } from "../lib/seed";
 import { getExperiment, listAllDecisions, listBriefs, listCaseRows, listExperiments, summarizeAll } from "../lib/store";
@@ -199,15 +201,14 @@ router.get("/portfolio", async (_req, res) => {
       solutions: sols,
       activeSolutions: sols.length,
       recommendedAction: bp.recommendedAction.charAt(0).toUpperCase() + bp.recommendedAction.slice(1),
-      status: theCase ? caseStatusLabel(theCase.status) : bp.status,
+      status: theCase ? (theCase.status === "folded" && theCase.foldedInto ? `Consolidated into ${theCase.foldedInto}` : caseStatusLabel(theCase.status)) : bp.status,
       caseId: theCase?.id ?? null,
     };
   });
 
   const unsupported = solutions.filter((s) => s.ownerName === "Unassigned" || /none/i.test(s.supportModel));
-  const pendingReviews = cases.filter(
-    (c) => (c.status === "pilot_proposed" || c.status === "approved") && !decisions.some((d) => d.caseId === c.id && d.action === "approve_consolidation"),
-  ).length;
+  const approvedByIt = (c: Case) => consolidationApproved(decisions.filter((d) => d.caseId === c.id));
+  const pendingReviews = cases.filter((c) => (c.status === "pilot_proposed" || c.status === "approved") && !approvedByIt(c)).length;
 
   const byCategory = new Map<string, Capability[]>();
   for (const cap of capabilities) {
@@ -241,7 +242,7 @@ router.get("/portfolio", async (_req, res) => {
     const summary = summarizeEvaluations(evaluations.filter((e) => e.caseId === c.id && countsForCurrent(e)));
     return summary.tests > 0 && summary.aPreferred !== summary.bPreferred;
   });
-  const consolidated = cases.filter((c) => decisions.some((d) => d.caseId === c.id && d.action === "approve_consolidation"));
+  const consolidated = cases.filter((c) => c.status === "folded" && approvedByIt(c));
   const retired = solutions.filter((s) => s.status === "deprecated").length;
   const demoVotes = evaluations.filter((e) => e.demo).length;
   const metric = (key: string, label: string, numerator: number | null, denominator: number | null, value: string, definition: string, demo: boolean): PortfolioMetric => ({ key, label, value, numerator, denominator, definition, demo });
@@ -318,7 +319,7 @@ router.get("/portfolio/decision-queue", async (_req, res) => {
   const cases = await listCaseRows();
   const decisions = await listAllDecisions();
   const queue = cases.filter(
-    (c) => (c.status === "pilot_proposed" || c.status === "approved" || c.status === "deferred") && !decisions.some((d) => d.caseId === c.id && d.action === "approve_consolidation"),
+    (c) => (c.status === "pilot_proposed" || c.status === "approved" || c.status === "deferred") && !consolidationApproved(decisions.filter((d) => d.caseId === c.id)),
   );
   res.json(await summarizeAll(queue));
 });
@@ -358,6 +359,8 @@ function caseStatusLabel(status: string): string {
       return "Changes requested";
     case "deferred":
       return "Deferred";
+    case "folded":
+      return "Consolidated";
     default:
       return status;
   }

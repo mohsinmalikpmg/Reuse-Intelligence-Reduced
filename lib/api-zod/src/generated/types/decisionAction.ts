@@ -21,6 +21,7 @@ export const DecisionAction = {
   defer: 'defer',
   reject: 'reject',
   approve_consolidation: 'approve_consolidation',
+  withdraw_consolidation: 'withdraw_consolidation',
   adopt_approach: 'adopt_approach',
   merge_approaches: 'merge_approaches',
   request_more_evidence: 'request_more_evidence',

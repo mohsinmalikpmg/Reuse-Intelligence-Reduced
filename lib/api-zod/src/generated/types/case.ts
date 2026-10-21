@@ -19,6 +19,11 @@ export interface Case {
   /** @nullable */
   briefId: string | null;
   title: string;
+  /**
+     * e.g. Work Order Triage v3.3
+     * @nullable
+     */
+  foldedInto: string | null;
   businessProblemId: string;
   /** The parent product this experiment branches from */
   baseSolutionId: string;

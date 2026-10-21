@@ -4,7 +4,7 @@ import { ArrowLeft, Check, GitCompare } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetImprovementGroupQueryKey, useGetImprovementGroup, useRecordGroupDecision, type DecisionAction, type ImprovementApproach } from "@workspace/api-client-react";
 import { ErrorView, LoadingView, Page, Tag, btn, useUndoToast } from "@/components/bits";
-import { ACTION_LABEL, STATUS_LABEL } from "@/components/wb-pilot";
+import { ACTION_LABEL, caseStatusLabel } from "@/components/wb-pilot";
 import { groupSentence } from "@/pages/my-solutions";
 import { errMsg, useInvalidateCase } from "@/lib/case";
 import { cn } from "@/lib/utils";
@@ -115,7 +115,7 @@ function ApproachCard({ a, selectable, chosen, onChoose }: { a: ImprovementAppro
       {v && v.demoVotes > 0 && <p className="mt-1 text-[12px] text-muted-foreground">{v.demoVotes} of these are demo votes.</p>}
       <ul className="mt-3 space-y-1.5">
         {a.experiments.map((e) => {
-          const st = STATUS_LABEL[e.case.status];
+          const st = caseStatusLabel(e.case);
           return (
             <li key={e.case.id} className={cn("flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-[14px]", chosen === e.case.id ? "border-primary bg-secondary" : "border-border")} data-testid={`experiment-${e.case.id}`}>
               {selectable && <input type="radio" name="adopt" aria-label={`Adopt ${e.case.ownerName}'s experiment`} data-testid={`radio-adopt-${e.case.id}`} checked={chosen === e.case.id} onChange={() => onChoose(e.case.id)} className="h-4 w-4 accent-[hsl(var(--primary))]" />}

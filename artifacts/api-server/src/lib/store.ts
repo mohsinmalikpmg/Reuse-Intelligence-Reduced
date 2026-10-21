@@ -6,8 +6,9 @@ import { businessProblemById, getSolution, personas, solutions } from "../data/c
 import { type CaseContext, addedExternalModules, caseContext, defaultConfigValues, defaultModuleStates } from "./configuration";
 import { caseLineage, defaultExperimentTitle } from "./lineage";
 import { SIMULATION_LABEL } from "./simulation";
-import { nextStep } from "./analysis";
+import { consolidationApproved, nextStep } from "./analysis";
 import { caseEvidence } from "./evidence";
+import { foldedIntoFor } from "./governance";
 
 import { newId } from "./ids";
 export { newId };
@@ -54,6 +55,7 @@ export function toCase(row: CaseRow): Case {
     ownerTeam: row.ownerTeam,
     promotionState: row.promotionState as Case["promotionState"],
     demo: row.demo,
+    foldedInto: foldedIntoFor(row.id),
     lineage: { parentSolutionId: row.baseSolutionId, parentSolutionName: "", parentVersion: row.parentVersion, fingerprint: "", added: [], removed: [], changedSettings: [], intent: "", intentKey: "", summary: "" },
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -253,7 +255,7 @@ export async function summarize(c: Case, ctx?: CaseContext): Promise<CaseSummary
     addedCapabilities: addedExternalModules(c, context).map((cap) => cap.name),
     experimentRecommendation: experiment?.recommendation ?? null,
     latestDecision,
-    nextStep: nextStep(c, evidence, latestDecision, decisions.some((d) => d.action === "approve_consolidation")),
+    nextStep: nextStep(c, evidence, latestDecision, consolidationApproved(decisions)),
   };
 }
 

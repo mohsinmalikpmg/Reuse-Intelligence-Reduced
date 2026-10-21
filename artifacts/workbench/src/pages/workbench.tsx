@@ -18,7 +18,7 @@ import { InputPanel, SummaryCounts, Tray } from "@/components/wb-parts";
 import { Measures, StaleHint, Vote } from "@/components/wb-compare";
 import { AddSlot, BandRow, LaneHeaders, RequestRow, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type LaneRow, type MapEntry } from "@/components/wb-lanes";
 import { RequirementAdder, StepPicker, type ReuseActions } from "@/components/wb-reuse";
-import { InviteTesters, OwnerDecision, PROMOTION_LABEL, ProposeActions, STATUS_LABEL, lineageChanges } from "@/components/wb-pilot";
+import { InviteTesters, OwnerDecision, PROMOTION_LABEL, ProposeActions, caseStatusLabel, lineageChanges } from "@/components/wb-pilot";
 import { errMsg, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
 import { cn } from "@/lib/utils";
@@ -276,7 +276,7 @@ export default function Workbench() {
     onRequest: (input) => recordRequest(input),
   };
   const dragC = [...recs, ...more].find((c) => `add:${c.capability.id}` === dragging);
-  const status = STATUS_LABEL[theCase.status];
+  const status = caseStatusLabel(theCase);
   const sample = samples.find((s) => s.id === sampleId);
   const needsBoth = changedFromA.length > 0 || !!cmp?.staleB;
   const fresh = !!cmp && !cmp.staleB;

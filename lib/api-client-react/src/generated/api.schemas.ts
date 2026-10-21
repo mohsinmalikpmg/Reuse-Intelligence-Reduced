@@ -82,6 +82,9 @@ export const FeatureState = {
   retiring: 'retiring',
 } as const;
 
+/**
+ * folded = the approved change was published as a successor version of the parent product
+ */
 export type CaseStatus = typeof CaseStatus[keyof typeof CaseStatus];
 
 
@@ -93,6 +96,7 @@ export const CaseStatus = {
   changes_requested: 'changes_requested',
   deferred: 'deferred',
   rejected: 'rejected',
+  folded: 'folded',
 } as const;
 
 /**
@@ -110,6 +114,7 @@ export const DecisionAction = {
   defer: 'defer',
   reject: 'reject',
   approve_consolidation: 'approve_consolidation',
+  withdraw_consolidation: 'withdraw_consolidation',
   adopt_approach: 'adopt_approach',
   merge_approaches: 'merge_approaches',
   request_more_evidence: 'request_more_evidence',
@@ -195,6 +200,11 @@ export interface Case {
   /** @nullable */
   briefId: string | null;
   title: string;
+  /**
+     * e.g. Work Order Triage v3.3
+     * @nullable
+     */
+  foldedInto: string | null;
   businessProblemId: string;
   /** The parent product this experiment branches from */
   baseSolutionId: string;
@@ -262,10 +272,91 @@ export interface SimilarExperiments {
   experiments: SimilarExperiment[];
 }
 
+export type DispositionKind = typeof DispositionKind[keyof typeof DispositionKind];
+
+
+export const DispositionKind = {
+  retain: 'retain',
+  fold_into: 'fold_into',
+  configure: 'configure',
+  rebuild: 'rebuild',
+  retire: 'retire',
+} as const;
+
+export type DispositionState = typeof DispositionState[keyof typeof DispositionState];
+
+
+export const DispositionState = {
+  proposed: 'proposed',
+  confirmed: 'confirmed',
+} as const;
+
+/**
+ * What happens to a product under a consolidation; a proposal until IT confirms the direction
+ */
+export interface Disposition {
+  id: string;
+  caseId: string;
+  solutionId: string;
+  kind: DispositionKind;
+  state: DispositionState;
+  /** @nullable */
+  targetSolutionId: string | null;
+  /** @nullable */
+  targetSolutionName: string | null;
+  /** @nullable */
+  targetVersion: string | null;
+  /** @nullable */
+  reason: string | null;
+  /**
+     * Recorded once users have moved; a retirement stays scheduled until then
+     * @nullable
+     */
+  migrationNote: string | null;
+  /** The product preferred for this business problem */
+  preferred: boolean;
+  /** Plain-language badge */
+  label: string;
+}
+
+/**
+ * released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version
+ */
+export type SolutionVersionState = typeof SolutionVersionState[keyof typeof SolutionVersionState];
+
+
+export const SolutionVersionState = {
+  released: 'released',
+  draft: 'draft',
+  current: 'current',
+} as const;
+
+export interface FoldedCapability {
+  capabilityId: string;
+  name: string;
+  sourceSolutionId: string;
+  sourceSolutionName: string;
+  experimentOwner: string;
+  tests: number;
+  /** @nullable */
+  preferredPercent: number | null;
+  /** e.g. from Pattern Finder */
+  provenance: string;
+}
+
 export interface SolutionVersion {
   version: string;
   releasedAt: string;
   summary: string;
+  /** released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version */
+  state: SolutionVersionState;
+  /**
+     * The experiment whose evidence produced this version
+     * @nullable
+     */
+  caseId: string | null;
+  foldedCapabilities: FoldedCapability[];
+  changedSettings: string[];
 }
 
 /**
@@ -289,6 +380,8 @@ export interface Metrics {
 export interface Solution {
   id: string;
   name: string;
+  /** Governance disposition recorded for this product, if any */
+  disposition: Disposition | null;
   /** One-sentence outcome */
   outcome: string;
   description: string;
@@ -877,6 +970,23 @@ export interface ConsolidationSolution {
   fate: ConsolidationSolutionFate;
   /** One sentence on what happens to this product */
   note: string;
+  /** The recorded disposition for this product under this case; null until the owner approves */
+  disposition: Disposition | null;
+}
+
+export interface DispositionChoice {
+  solutionId: string;
+  kind: DispositionKind;
+  reason?: string;
+}
+
+export interface DispositionChoices {
+  choices: DispositionChoice[];
+}
+
+export interface MigrationNoteInput {
+  solutionId: string;
+  note: string;
 }
 
 export type FutureProductModulesItem = {
@@ -918,6 +1028,8 @@ export interface ConsolidationDecisionView {
      * @nullable
      */
   decided: string | null;
+  /** The successor version on the base product (draft after owner approval, current after IT approval) */
+  successor: SolutionVersion | null;
 }
 
 export interface DecisionInput {

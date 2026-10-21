@@ -5,6 +5,7 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { Disposition } from './disposition';
 import type { EffortLevel } from './effortLevel';
 import type { EvidenceLevel } from './evidenceLevel';
 import type { Metrics } from './metrics';
@@ -15,6 +16,8 @@ import type { SolutionVersion } from './solutionVersion';
 export interface Solution {
   id: string;
   name: string;
+  /** Governance disposition recorded for this product, if any */
+  disposition: Disposition | null;
   /** One-sentence outcome */
   outcome: string;
   description: string;

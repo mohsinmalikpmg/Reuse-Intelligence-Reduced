@@ -32,7 +32,7 @@ export function useInvalidateAll() {
 /** Refresh every query that belongs to one case. */
 export function useInvalidateCase() {
   const qc = useQueryClient();
-  return useCallback((caseId: string) => qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).includes(`/cases/${caseId}`) || String(q.queryKey[0]).includes("/my-solutions") || String(q.queryKey[0]).includes("/portfolio") }), [qc]);
+  return useCallback((caseId: string) => qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).includes(`/cases/${caseId}`) || String(q.queryKey[0]).includes("/my-solutions") || String(q.queryKey[0]).includes("/portfolio") || String(q.queryKey[0]).includes("/solutions") || String(q.queryKey[0]).includes("/search") }), [qc]);
 }
 
 export function useMe(): Persona | undefined {

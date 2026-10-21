@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, BadgeCheck, CircleDashed, FlaskConical, Archive, RotateCw } from "lucide-react";
-import type { SolutionStatus } from "@workspace/api-client-react";
+import type { Disposition, SolutionStatus } from "@workspace/api-client-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
@@ -53,6 +53,13 @@ export function StatusPill({ status, className }: { status: SolutionStatus; clas
 export function Tag({ children, tone = "muted", testid }: { children: ReactNode; tone?: "muted" | "sienna" | "green" | "sky" | "slate"; testid?: string }) {
   const cls = { muted: "bg-muted text-muted-foreground", sienna: "bg-accent text-accent-foreground", green: "bg-okbg text-ok", sky: "bg-[hsl(196_30%_93%)] text-skyink", slate: "bg-secondary text-primary" }[tone];
   return <span data-testid={testid} className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-semibold", cls)}>{children}</span>;
+}
+
+/** Governance disposition badge for a product: preferred (green), moved aside (sky), retirement scheduled (muted). */
+export function DispositionBadge({ disposition, solutionId }: { disposition: Disposition | null; solutionId: string }) {
+  if (!disposition) return null;
+  const tone = disposition.kind === "retain" ? (disposition.preferred ? "green" : "slate") : disposition.kind === "retire" ? "muted" : "sky";
+  return <Tag tone={tone} testid={`disposition-badge-${solutionId}`}>{disposition.label}</Tag>;
 }
 
 export function Skel({ className }: { className?: string }) {

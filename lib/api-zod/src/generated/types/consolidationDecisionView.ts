@@ -8,6 +8,7 @@
 import type { ConsolidationDecisionViewAvailableActionsItem } from './consolidationDecisionViewAvailableActionsItem';
 import type { ConsolidationSolution } from './consolidationSolution';
 import type { FutureProduct } from './futureProduct';
+import type { SolutionVersion } from './solutionVersion';
 
 export interface ConsolidationDecisionView {
   caseId: string;
@@ -28,4 +29,6 @@ export interface ConsolidationDecisionView {
      * @nullable
      */
   decided: string | null;
+  /** The successor version on the base product (draft after owner approval, current after IT approval) */
+  successor: SolutionVersion | null;
 }

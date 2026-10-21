@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { ArrowRight, Search as SearchIcon } from "lucide-react";
 import { useListBusinessProblems, useListSolutions, useSearchLibrary, type SolutionKind, type SolutionStatus } from "@workspace/api-client-react";
-import { Empty, ErrorView, Page, Skel, StatusPill, Tag } from "@/components/bits";
+import { DispositionBadge, Empty, ErrorView, Page, Skel, StatusPill, Tag } from "@/components/bits";
 
 export default function SearchPage() {
   const params = new URLSearchParams(useSearch());
@@ -51,7 +51,8 @@ export default function SearchPage() {
                     <span className="font-mono text-[12px] text-muted-foreground">{i + 1}</span>
                     <h2 className="text-[18px] font-semibold">{x.solution.name}</h2>
                     <StatusPill status={x.solution.status} />
-                    <span className="ml-auto text-[13px] text-muted-foreground">{x.solution.ownerName}</span>
+                    <DispositionBadge disposition={x.solution.disposition} solutionId={x.solution.id} />
+                    <span className="ml-auto text-[13px] text-muted-foreground">{x.solution.ownerName} · v{x.solution.currentVersion}</span>
                   </div>
                   <p className="mt-1.5 text-[15px]">{x.solution.outcome}</p>
                   {x.reasons.length > 0 && <ul className="mt-2 space-y-0.5 text-[13.5px] text-muted-foreground">{x.reasons.slice(0, 3).map((r, j) => <li key={j}><span className="text-siennaink">Matched:</span> {r}</li>)}</ul>}

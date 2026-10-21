@@ -5,9 +5,20 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { FoldedCapability } from './foldedCapability';
+import type { SolutionVersionState } from './solutionVersionState';
 
 export interface SolutionVersion {
   version: string;
   releasedAt: string;
   summary: string;
+  /** released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version */
+  state: SolutionVersionState;
+  /**
+     * The experiment whose evidence produced this version
+     * @nullable
+     */
+  caseId: string | null;
+  foldedCapabilities: FoldedCapability[];
+  changedSettings: string[];
 }

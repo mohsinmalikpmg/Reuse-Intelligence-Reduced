@@ -14,6 +14,7 @@ import {
   capabilityKeywords,
   sortByMaturity,
 } from "../data/catalog";
+import { rankBucket } from "./governance";
 
 const STOPWORDS = new Set(
   "the a an and or of to in on for with by from at is are be been it its this that these those we our they their as into than then there here use uses using each week weeks hour hours take takes several different manual manually".split(
@@ -300,7 +301,8 @@ export function searchSolutions(q: string | undefined, status: Solution["status"
       return [...qTokens].some((t) => hay.has(t));
     });
   }
-  return sortByMaturity(list);
+  // A confirmed disposition moves a product below the preferred one for its problem; maturity decides the rest.
+  return sortByMaturity(list).sort((a, b) => rankBucket(a) - rankBucket(b));
 }
 
 // ---------- Global search ----------
@@ -379,8 +381,15 @@ export function searchLibrary(q: string, filters: SearchFilters): { hits: Search
         if (s.status === "certified") score += 8;
         else if (s.status === "pilot") score += 4;
         reasons.push(s.status === "certified" ? `Certified, ${s.activeUsers} active users.` : `${s.status.charAt(0).toUpperCase()}${s.status.slice(1)}, ${s.activeUsers} users.`);
+        // Governance: the preferred product for a problem ranks above products IT has disposed of.
+        const bucket = rankBucket(s);
+        if (bucket === 0) score += 10;
+        if (bucket === 2 && s.disposition) {
+          score -= 25;
+          reasons.unshift(`${s.disposition.label}.`);
+        }
       }
-      return { solution: s, score: Math.min(100, score), reasons: reasons.slice(0, 3), matchedCapabilities };
+      return { solution: s, score: score > 0 ? Math.max(1, Math.min(100, score)) : 0, reasons: reasons.slice(0, 3), matchedCapabilities };
     })
     .filter((h) => h.score > 0)
     .sort((a, b) => b.score - a.score);

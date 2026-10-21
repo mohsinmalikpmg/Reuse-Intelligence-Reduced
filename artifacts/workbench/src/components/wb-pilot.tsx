@@ -16,7 +16,14 @@ import { cn } from "@/lib/utils";
 export const STATUS_LABEL: Record<CaseStatus, { l: string; tone: "muted" | "sienna" | "green" | "sky" | "slate" }> = {
   draft: { l: "Draft", tone: "muted" }, tested: { l: "Tested", tone: "sky" }, pilot_proposed: { l: "Proposed", tone: "sienna" },
   approved: { l: "Approved for pilot", tone: "green" }, changes_requested: { l: "Changes requested", tone: "sienna" }, deferred: { l: "Deferred", tone: "muted" }, rejected: { l: "Declined", tone: "muted" },
+  folded: { l: "Folded in", tone: "green" },
 };
+
+/** Status label for one experiment; a published one names the successor version it became part of. */
+export function caseStatusLabel(c: Pick<Case, "status" | "foldedInto">): { l: string; tone: (typeof STATUS_LABEL)[CaseStatus]["tone"] } {
+  const base = STATUS_LABEL[c.status];
+  return c.status === "folded" && c.foldedInto ? { l: `Folded into ${c.foldedInto}`, tone: base.tone } : base;
+}
 
 export const PROMOTION_LABEL: Record<PromotionState, string> = {
   experiment: "Experimental branch — not a new production solution",
@@ -120,7 +127,7 @@ export function lineageChanges(l: Case["lineage"]): string[] {
 
 export const ACTION_LABEL: Partial<Record<DecisionAction, string>> = {
   propose_pilot: "Proposed to the parent product", propose_capability: "Proposed as reusable capability", request_new_family: "New solution family requested",
-  approve_pilot: "Approve pilot", request_changes: "Request changes", reject: "Decline", defer: "Defer", approve_consolidation: "Consolidation approved",
+  approve_pilot: "Approve pilot", request_changes: "Request changes", reject: "Decline", defer: "Defer", approve_consolidation: "Consolidation approved", withdraw_consolidation: "Consolidation approval withdrawn",
   adopt_approach: "Approach adopted", merge_approaches: "Merge strongest elements", request_more_evidence: "More evidence requested", keep_local: "Kept as local experiment", decline: "Declined",
 };
 const OWNER_BUTTONS: DecisionAction[] = ["approve_pilot", "request_changes", "reject", "defer"];

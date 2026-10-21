@@ -5,6 +5,8 @@ import {
   CreateCaseBody,
   ListCasesQueryParams,
   RecordCaseDecisionBody,
+  RecordMigrationNoteBody,
+  SetCaseDispositionsBody,
   UpdateCaseBody,
   UpdateCaseConfigurationBody,
   type Case,
@@ -19,6 +21,8 @@ import { buildExperimentPlan, runSimulation } from "../lib/simulation";
 import { matchBrief } from "../lib/matching";
 import { caseEvidence } from "../lib/evidence";
 import { setReusePathTaken } from "../lib/reuse-store";
+import { applyGovernanceEffects } from "../lib/consolidation";
+import { GovernanceError, consolidationLocked, recordMigrationNote, upsertDispositions, versionForCase } from "../lib/governance";
 import {
   createCase,
   getBrief,
@@ -128,21 +132,22 @@ router.put("/cases/:caseId/configuration", async (req, res) => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  if (c.status === "approved" || c.status === "rejected") {
-    res.status(400).json({ error: `This case is ${c.status === "approved" ? "approved" : "rejected"}; start a new case to change the configuration.` });
+  if (c.status === "approved" || c.status === "rejected" || c.status === "folded") {
+    const why = c.status === "approved" ? "approved" : c.status === "folded" ? `published as ${c.foldedInto ?? "a successor version"}` : "rejected";
+    res.status(400).json({ error: `This case is ${why}; start a new case to change the configuration.` });
     return;
   }
   const ctx = caseContext(c);
   try {
     const next = applyConfigurationUpdate(c, ctx, parsed.data);
-    // Any configuration change invalidates the previous test: the case must be run again.
-    const status: Case["status"] = c.status === "draft" || c.status === "changes_requested" ? c.status : "draft";
+    // Any configuration change invalidates the previous test: the case must be run again. That includes a revision
+    // after "changes requested": the revised experiment goes back to draft so it can be tested and proposed anew.
     const updated = await updateCaseRow(c.id, {
       moduleStates: next.moduleStates,
       configValues: next.configValues,
-      status: c.status === "changes_requested" ? "changes_requested" : status,
+      status: "draft",
       // An edit withdraws any proposal: the experiment is an experimental branch again until it is proposed anew.
-      promotionState: status === "draft" ? "experiment" : c.promotionState,
+      promotionState: "experiment",
       experimentId: null,
     });
     res.json(buildConfiguration(updated, ctx));
@@ -255,6 +260,73 @@ router.get("/cases/:caseId/consolidation", async (req, res) => {
   res.json(buildConsolidation(c, ctx, decisions, await caseEvidence(c)));
 });
 
+// IT's disposition choices for the products under a case. Proposals until the direction is approved; the
+// proposed-future card and the library badges read from this record.
+router.put("/cases/:caseId/dispositions", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const parsed = SetCaseDispositionsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  if (c.status === "rejected") {
+    res.status(400).json({ error: "This case was rejected; there is nothing to dispose." });
+    return;
+  }
+  if (consolidationLocked(c.id)) {
+    res.status(400).json({ error: "The direction is approved. Withdraw the approval to change a disposition." });
+    return;
+  }
+  const ctx = caseContext(c);
+  const known = new Set([ctx.base.id, ...ctx.candidates.map((s) => s.id)]);
+  const unknown = parsed.data.choices.find((ch) => !known.has(ch.solutionId));
+  if (unknown) {
+    res.status(400).json({ error: `${unknown.solutionId} is not part of this case.` });
+    return;
+  }
+  const draft = versionForCase(c.id);
+  await upsertDispositions(
+    c.id,
+    parsed.data.choices.map((ch) => ({
+      solutionId: ch.solutionId,
+      kind: ch.kind,
+      reason: ch.reason ?? null,
+      preferred: ch.solutionId === ctx.base.id && ch.kind === "retain",
+      targetSolutionId: ch.kind === "retain" || ch.kind === "retire" ? null : ctx.base.id,
+      targetVersion: ch.kind === "retain" || ch.kind === "retire" ? null : (draft?.version ?? null),
+    })),
+  );
+  const decisions = await listDecisions(c.id);
+  res.json(buildConsolidation(c, ctx, decisions, await caseEvidence(c)));
+});
+
+router.post("/cases/:caseId/migration-notes", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const parsed = RecordMigrationNoteBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  if (!parsed.data.note.trim()) {
+    res.status(400).json({ error: "Say where the users went, in a sentence." });
+    return;
+  }
+  try {
+    await recordMigrationNote(c.id, parsed.data.solutionId, parsed.data.note);
+  } catch (err) {
+    if (err instanceof GovernanceError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    throw err;
+  }
+  const ctx = caseContext(c);
+  const decisions = await listDecisions(c.id);
+  res.json(buildConsolidation(c, ctx, decisions, await caseEvidence(c)));
+});
+
 router.post("/cases/:caseId/decisions", async (req, res) => {
   const c = await loadCase(String(req.params["caseId"]), res);
   if (!c) return;
@@ -280,6 +352,8 @@ router.post("/cases/:caseId/decisions", async (req, res) => {
   }
   const actor = (role === "seeker" || role === "owner") && c.ownerName && role === c.createdByRole ? c.ownerName : (personas.find((p) => p.role === role)?.name ?? role);
   await insertDecision({ id: newId("dec"), caseId: c.id, role, actor, action, reason: reason?.trim() || null });
+  // Governance record first (draft successor, publication, withdrawal), so the returned case already reflects it.
+  await applyGovernanceEffects(c, action, actor);
   const status = nextStatus(c, action);
   const updated = await updateCaseRow(c.id, { status, saved: true, promotionState: promotionStateFor(action, c.promotionState) });
   res.status(201).json(updated);

@@ -5,3 +5,4 @@ export * from "./decisions";
 export * from "./runs";
 export * from "./evaluations";
 export * from "./reuse";
+export * from "./governance";

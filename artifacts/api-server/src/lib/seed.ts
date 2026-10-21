@@ -7,6 +7,7 @@ import { getSolution } from "../data/catalog";
 import { matchBrief } from "./matching";
 import { nextStatus } from "./analysis";
 import { logger } from "./logger";
+import { clearGovernance } from "./governance";
 import { briefsTable, clearAll, createCase, db, getCase, insertDecision, newId, toBrief, updateCaseRow } from "./store";
 import { runComparison } from "./workbench";
 import { clearWorkbench, insertEvaluation } from "./workbench-store";
@@ -29,6 +30,8 @@ export async function ensureSeeded(): Promise<void> {
 export const DEMO_SAFETY_REQUIREMENT = "Flag maintenance issues that may create a safety risk";
 
 export async function resetDemo(): Promise<DemoState> {
+  // The governance overlay goes first so every solution read below sees the plain catalog again.
+  await clearGovernance();
   await clearWorkbench();
   await clearReuseEvents();
   await clearAll();

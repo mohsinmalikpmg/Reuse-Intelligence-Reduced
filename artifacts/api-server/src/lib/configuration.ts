@@ -55,8 +55,9 @@ export interface CaseContext {
   needs: string[];
 }
 
-export function caseContext(c: Pick<Case, "baseSolutionId" | "candidateSolutionIds">, needs: string[] = []): CaseContext {
-  const base = getSolution(c.baseSolutionId);
+export function caseContext(c: Pick<Case, "baseSolutionId" | "candidateSolutionIds"> & { parentVersion?: string }, needs: string[] = []): CaseContext {
+  // An experiment keeps comparing against the parent version it branched from, even after a successor is published.
+  const base = getSolution(c.baseSolutionId, c.parentVersion || undefined);
   if (!base) throw new ConfigurationError(`Unknown base solution ${c.baseSolutionId}`);
   const candidates = c.candidateSolutionIds
     .map((id) => getSolution(id))

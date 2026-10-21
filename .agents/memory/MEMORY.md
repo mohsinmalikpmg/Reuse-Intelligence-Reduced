@@ -5,3 +5,4 @@
 - [Workbench mapped-lanes layout](workbench-lanes-layout.md) — sticky offsets start at the 101px two-band header; base steps missing from Version A are "off", not "B-only"; drag checks need an in-viewport slot.
 - [Experiment lineage and grouping](experiment-lineage.md) — lineage recomputed on read, never stored; group by added capability id; save/propose wording mandate; grouped decisions keep non-adopted as local.
 - [Reuse-fit scoring lessons](reuse-fit-scoring.md) — IDF over a tiny catalogue inflates generic verbs; require ≥2 shared words, scale other dimensions by relevance; portable modules are never auto-"covered".
+- [Governance overlay](governance-overlay.md) — successor versions/dispositions are a persisted in-memory overlay on the code catalog; experiments resolve parent as-of their branch version; labels computed, never stored.

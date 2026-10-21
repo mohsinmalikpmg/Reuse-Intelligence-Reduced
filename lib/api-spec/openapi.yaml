@@ -1079,6 +1079,80 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /cases/{caseId}/dispositions:
+    put:
+      operationId: setCaseDispositions
+      tags: [cases]
+      summary: Record IT's disposition choices for the products under a consolidation case (proposals until IT confirms the direction)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DispositionChoices"
+      responses:
+        "200":
+          description: Updated consolidation view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsolidationDecisionView"
+        "400":
+          description: Not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/migration-notes:
+    post:
+      operationId: recordMigrationNote
+      tags: [cases]
+      summary: Record the migration note for a product whose retirement is scheduled under this case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MigrationNoteInput"
+      responses:
+        "200":
+          description: Updated consolidation view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsolidationDecisionView"
+        "400":
+          description: Not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /cases/{caseId}/similar:
     get:
       operationId: getSimilarExperiments
@@ -1409,7 +1483,8 @@ components:
 
     CaseStatus:
       type: string
-      enum: [draft, tested, pilot_proposed, approved, changes_requested, deferred, rejected]
+      description: folded = the approved change was published as a successor version of the parent product
+      enum: [draft, tested, pilot_proposed, approved, changes_requested, deferred, rejected, folded]
 
     DecisionAction:
       type: string
@@ -1417,7 +1492,7 @@ components:
         propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal);
         propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required);
         adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.
-      enum: [propose_pilot, propose_capability, request_new_family, approve_pilot, request_changes, defer, reject, approve_consolidation, adopt_approach, merge_approaches, request_more_evidence, keep_local, decline]
+      enum: [propose_pilot, propose_capability, request_new_family, approve_pilot, request_changes, defer, reject, approve_consolidation, withdraw_consolidation, adopt_approach, merge_approaches, request_more_evidence, keep_local, decline]
 
     PromotionState:
       type: string
@@ -1567,11 +1642,59 @@ components:
 
     SolutionVersion:
       type: object
-      required: [version, releasedAt, summary]
+      required: [version, releasedAt, summary, state, caseId, foldedCapabilities, changedSettings]
       properties:
         version: { type: string }
         releasedAt: { type: string }
         summary: { type: string }
+        state:
+          type: string
+          description: released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version
+          enum: [released, draft, current]
+        caseId: { type: ["string", "null"], description: The experiment whose evidence produced this version }
+        foldedCapabilities:
+          type: array
+          items: { $ref: "#/components/schemas/FoldedCapability" }
+        changedSettings:
+          type: array
+          items: { type: string }
+
+    FoldedCapability:
+      type: object
+      required: [capabilityId, name, sourceSolutionId, sourceSolutionName, experimentOwner, tests, preferredPercent, provenance]
+      properties:
+        capabilityId: { type: string }
+        name: { type: string }
+        sourceSolutionId: { type: string }
+        sourceSolutionName: { type: string }
+        experimentOwner: { type: string }
+        tests: { type: integer }
+        preferredPercent: { type: ["integer", "null"] }
+        provenance: { type: string, description: e.g. from Pattern Finder, via experiment by Alex Romero, 7 tests, 68% preferred }
+
+    DispositionKind:
+      type: string
+      enum: [retain, fold_into, configure, rebuild, retire]
+
+    Disposition:
+      type: object
+      description: What happens to a product under a consolidation; a proposal until IT confirms the direction
+      required: [id, caseId, solutionId, kind, state, targetSolutionId, targetSolutionName, targetVersion, reason, migrationNote, preferred, label]
+      properties:
+        id: { type: string }
+        caseId: { type: string }
+        solutionId: { type: string }
+        kind: { $ref: "#/components/schemas/DispositionKind" }
+        state:
+          type: string
+          enum: [proposed, confirmed]
+        targetSolutionId: { type: ["string", "null"] }
+        targetSolutionName: { type: ["string", "null"] }
+        targetVersion: { type: ["string", "null"] }
+        reason: { type: ["string", "null"] }
+        migrationNote: { type: ["string", "null"], description: Recorded once users have moved; a retirement stays scheduled until then }
+        preferred: { type: boolean, description: The product preferred for this business problem }
+        label: { type: string, description: Plain-language badge, e.g. Folding into Work Order Triage v3.3 }
 
     Solution:
       type: object
@@ -1602,9 +1725,15 @@ components:
         - controlStatus
         - supportModel
         - lastReviewedAt
+        - disposition
       properties:
         id: { type: string }
         name: { type: string }
+        disposition:
+          description: Governance disposition recorded for this product, if any
+          oneOf:
+            - $ref: "#/components/schemas/Disposition"
+            - type: "null"
         outcome: { type: string, description: One-sentence outcome }
         description: { type: string }
         status: { $ref: "#/components/schemas/SolutionStatus" }
@@ -2090,12 +2219,14 @@ components:
         - promotionState
         - demo
         - lineage
+        - foldedInto
         - createdAt
         - updatedAt
       properties:
         id: { type: string }
         briefId: { type: ["string", "null"] }
         title: { type: string }
+        foldedInto: { type: ["string", "null"], description: e.g. Work Order Triage v3.3, once the change is published as a successor version }
         businessProblemId: { type: string }
         baseSolutionId: { type: string, description: The parent product this experiment branches from }
         parentVersion: { type: string, description: Parent product version the experiment branched from }
@@ -2214,13 +2345,41 @@ components:
 
     ConsolidationSolution:
       type: object
-      required: [solution, fate, note]
+      required: [solution, fate, note, disposition]
       properties:
         solution: { $ref: "#/components/schemas/Solution" }
         fate:
           type: string
           enum: [base, folded, retired]
         note: { type: string, description: One sentence on what happens to this product }
+        disposition:
+          description: The recorded disposition for this product under this case; null until the owner approves
+          oneOf:
+            - $ref: "#/components/schemas/Disposition"
+            - type: "null"
+
+    DispositionChoice:
+      type: object
+      required: [solutionId, kind]
+      properties:
+        solutionId: { type: string }
+        kind: { $ref: "#/components/schemas/DispositionKind" }
+        reason: { type: string }
+
+    DispositionChoices:
+      type: object
+      required: [choices]
+      properties:
+        choices:
+          type: array
+          items: { $ref: "#/components/schemas/DispositionChoice" }
+
+    MigrationNoteInput:
+      type: object
+      required: [solutionId, note]
+      properties:
+        solutionId: { type: string }
+        note: { type: string }
 
     FutureProduct:
       type: object
@@ -2254,6 +2413,7 @@ components:
         - evidence
         - availableActions
         - decided
+        - successor
       properties:
         caseId: { type: string }
         headline: { type: string, description: e.g. Three solutions can become one governed product. }
@@ -2284,6 +2444,11 @@ components:
         decided:
           type: ["string", "null"]
           description: Summary of the IT consolidation decision, if one exists
+        successor:
+          description: The successor version on the base product (draft after owner approval, current after IT approval)
+          oneOf:
+            - $ref: "#/components/schemas/SolutionVersion"
+            - type: "null"
 
     Decision:
       type: object

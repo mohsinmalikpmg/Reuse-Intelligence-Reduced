@@ -1,6 +1,7 @@
 import type {
   Persona,
   Solution,
+  SolutionVersion,
   Capability,
   BusinessProblem,
   SyntheticPersona,
@@ -596,7 +597,9 @@ const capabilitySeeds: CapabilitySeed[] = [
   },
 ];
 
-type SolutionSeed = Solution & {
+type CatalogVersion = Pick<SolutionVersion, "version" | "releasedAt" | "summary">;
+type SolutionSeed = Omit<Solution, "versions" | "disposition"> & {
+  versions: CatalogVersion[];
   intendedUsers: string[];
   dataSources: string[];
   keywords: string[];
@@ -1022,10 +1025,29 @@ export function portableCapabilitiesFor(businessProblemIds: string[]): Capabilit
     .filter((c): c is Capability => !!c);
 }
 
-export const solutions: Solution[] = solutionSeeds.map((seed) => {
-  const { intendedUsers: _u, dataSources: _d, keywords: _k, ...rest } = seed;
-  return rest;
+/** The static catalog as shipped: the source of truth for everything the governance overlay does not add. */
+export const catalogSolutions: Solution[] = solutionSeeds.map((seed) => {
+  const { intendedUsers: _u, dataSources: _d, keywords: _k, versions, ...rest } = seed;
+  return { ...rest, versions: versions.map((v) => ({ ...v, state: "released" as const, caseId: null, foldedCapabilities: [], changedSettings: [] })), disposition: null };
 });
+
+/**
+ * Governance overlay hook. The resolver merges persisted successor versions, capability membership changes and
+ * dispositions onto a catalog solution; `asOf` limits the merge to versions up to that version number so an
+ * experiment keeps comparing against the parent version it branched from.
+ */
+export type SolutionResolver = (solution: Solution, asOf?: string) => Solution;
+let resolver: SolutionResolver = (s) => s;
+
+/** Solutions as they currently stand: catalog plus governance overlay. A live binding; refreshed by `setSolutionResolver`. */
+export let solutions: Solution[] = catalogSolutions;
+export let solutionPublicById = new Map(solutions.map((s) => [s.id, s]));
+
+export function setSolutionResolver(next: SolutionResolver): void {
+  resolver = next;
+  solutions = catalogSolutions.map((s) => resolver(s));
+  solutionPublicById = new Map(solutions.map((s) => [s.id, s]));
+}
 
 export const solutionSearchMeta = new Map(
   solutionSeeds.map((s) => [
@@ -1035,11 +1057,13 @@ export const solutionSearchMeta = new Map(
 );
 
 export const capabilityById = new Map(capabilities.map((c) => [c.id, c]));
-export const solutionPublicById = new Map(solutions.map((s) => [s.id, s]));
 export const businessProblemById = new Map(businessProblems.map((b) => [b.id, b]));
 
-export function getSolution(id: string): Solution | undefined {
-  return solutionPublicById.get(id);
+/** Current governed view of a solution. Pass `asOf` (a version number) to see it as it stood at that version. */
+export function getSolution(id: string, asOf?: string): Solution | undefined {
+  if (asOf === undefined) return solutionPublicById.get(id);
+  const base = catalogSolutions.find((s) => s.id === id);
+  return base ? resolver(base, asOf) : undefined;
 }
 
 export function getCapability(id: string): Capability | undefined {

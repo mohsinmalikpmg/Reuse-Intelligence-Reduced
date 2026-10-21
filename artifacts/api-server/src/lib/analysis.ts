@@ -10,6 +10,7 @@ import type {
   FutureProduct,
   Decision,
   DecisionAction,
+  Disposition,
   Experiment,
   GateItem,
   PilotPlan,
@@ -32,6 +33,7 @@ import {
   isUnsupported,
 } from "./configuration";
 import { bumpVersion, proposedName } from "./simulation";
+import { dispositionsForCase, toSolutionVersion, versionForCase } from "./governance";
 
 const READINESS: Record<Solution["status"], number> = { certified: 1, pilot: 0.7, experimental: 0.35, deprecated: 0.1 };
 const EVIDENCE: Record<Solution["evidenceLevel"], number> = { strong: 1, moderate: 0.7, limited: 0.4, none: 0.1 };
@@ -166,8 +168,16 @@ export function buildPilotPlan(c: Case, ctx: CaseContext, evidence: ABEvidence):
 const ROLE_ACTIONS: Record<Role, DecisionAction[]> = {
   seeker: ["propose_pilot", "propose_capability", "request_new_family"],
   owner: ["propose_pilot", "propose_capability", "request_new_family", "approve_pilot", "request_changes", "defer", "reject"],
-  it: ["approve_consolidation", "defer", "reject"],
+  it: ["approve_consolidation", "withdraw_consolidation", "defer", "reject"],
 };
+
+/** IT's consolidation approval stands until it is withdrawn; the latest of the two decisions decides. */
+export function consolidationApproved(decisions: Decision[]): boolean {
+  const latest = [...decisions]
+    .filter((d) => d.action === "approve_consolidation" || d.action === "withdraw_consolidation")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  return latest?.action === "approve_consolidation";
+}
 
 /** Decisions recorded on a whole improvement group by the owner; never offered on a single case. */
 export const GROUP_ACTIONS: DecisionAction[] = ["adopt_approach", "merge_approaches", "request_more_evidence", "keep_local", "decline"];
@@ -176,7 +186,7 @@ export const GROUP_ACTIONS: DecisionAction[] = ["adopt_approach", "merge_approac
 export const ACTIVE_STATUSES: Case["status"][] = ["draft", "tested", "pilot_proposed", "approved", "changes_requested", "deferred"];
 
 export function allowedActions(c: Case, decisions: Decision[]): { role: Role; actions: DecisionAction[] }[] {
-  const itApproved = decisions.some((d) => d.action === "approve_consolidation");
+  const itApproved = consolidationApproved(decisions);
   const byRole = (role: Role): DecisionAction[] => {
     const candidates = ROLE_ACTIONS[role];
     return candidates.filter((action) => {
@@ -192,12 +202,15 @@ export function allowedActions(c: Case, decisions: Decision[]): { role: Role; ac
         case "request_changes":
           return c.status === "pilot_proposed" || c.status === "deferred";
         case "approve_consolidation":
-          // IT approves the consolidation direction once a simulated test exists; it does not replace the owner's pilot decision.
-          return (c.status === "tested" || c.status === "pilot_proposed" || c.status === "approved" || c.status === "deferred") && !itApproved;
+          // IT publishes the owner-approved change as the governed successor version; the owner decides first.
+          return c.status === "approved" && !itApproved;
+        case "withdraw_consolidation":
+          // Reversible: the successor returns to draft and every disposition to a proposal.
+          return c.status === "folded" && itApproved;
         case "defer":
           return c.status === "pilot_proposed" || c.status === "approved";
         case "reject":
-          return c.status !== "rejected" && c.status !== "draft";
+          return c.status !== "rejected" && c.status !== "draft" && c.status !== "folded";
         default:
           return false;
       }
@@ -209,7 +222,7 @@ export function allowedActions(c: Case, decisions: Decision[]): { role: Role; ac
 /** Grouped owner decisions available for a set of experiments sharing an intent. */
 export function allowedGroupActions(members: Case[]): DecisionAction[] {
   // Once an approach is adopted the group is settled; what follows is consolidation, not another group decision.
-  if (members.some((c) => c.status === "approved")) return [];
+  if (members.some((c) => c.status === "approved" || c.status === "folded")) return [];
   const decidable = members.some((c) => c.status === "pilot_proposed" || c.status === "tested" || c.status === "deferred" || c.status === "changes_requested");
   if (!decidable) return [];
   return GROUP_ACTIONS.filter((a) => a !== "adopt_approach" || members.some((c) => c.status === "pilot_proposed" || c.status === "tested" || c.status === "deferred"));
@@ -225,7 +238,9 @@ export function nextStatus(c: Case, action: DecisionAction): Case["status"] {
     case "adopt_approach":
       return "approved";
     case "approve_consolidation":
-      return c.status;
+      return "folded";
+    case "withdraw_consolidation":
+      return "approved";
     case "request_changes":
     case "merge_approaches":
     case "request_more_evidence":
@@ -276,7 +291,9 @@ export function nextStep(c: Case, evidence: ABEvidence, latest: Decision | null,
           ? "Proposed as a reusable capability. Awaiting the owner's review."
           : itApproved ? "IT approved the direction. Awaiting the owner's decision on the proposed improvement." : `Awaiting owner review of the proposed improvement to ${c.lineage.parentSolutionName}.`;
     case "approved":
-      return itApproved ? "Approved by owner and IT. Pilot can start." : "Owner approved the pilot. Awaiting IT consolidation decision.";
+      return itApproved ? "Approved by owner and IT. Pilot can start." : "Owner approved the pilot; a draft successor version is recorded. Awaiting IT's consolidation decision.";
+    case "folded":
+      return c.foldedInto ? `Published as ${c.foldedInto}. The capability is part of the parent product now.` : "Published as a successor version of the parent product.";
     case "changes_requested":
       return `Owner requested changes${latest?.reason ? `: ${latest.reason}` : ""}. Revise Version B and run the comparison again.`;
     case "deferred":
@@ -422,10 +439,37 @@ export function buildConsolidation(c: Case, ctx: CaseContext, decisions: Decisio
   const locked = ctx.baseCapabilities.filter((cap) => cap.controlType === "locked");
   const totalProducts = ctx.candidates.length + 1;
 
-  const current: ConsolidationSolution[] = [
-    { solution: ctx.base, fate: "base", note: `Becomes the certified core of the future product.` },
+  // Once the owner has approved, the record decides: the successor version lists what is folded in, and each
+  // product's disposition says what happens to it. Before that, the view is computed from the configuration.
+  const record = versionForCase(c.id);
+  const dispositions = dispositionsForCase(c.id);
+  const dispositionOf = (id: string) => dispositions.find((d) => d.solutionId === id) ?? null;
+  const recordedNote = (s: Solution, d: Disposition): string => {
+    const folded = (record?.foldedCapabilities ?? []).filter((cap) => cap.sourceSolutionId === s.id).map((cap) => cap.name);
+    const carried = folded.length ? `${folded.join(" and ")} carried into ${ctx.base.name} v${record?.version ?? ""}` : "";
+    switch (d.kind) {
+      case "retain":
+        return d.preferred
+          ? record?.state === "current"
+            ? `Preferred product for this problem; v${record.version} is the governed version now.`
+            : `Preferred product for this problem; becomes v${record?.version ?? bumpVersion(ctx.base.currentVersion)}.`
+          : `Retained as a separate product${d.reason ? `: ${d.reason}` : "."}`;
+      case "fold_into":
+        return `${carried || "Its useful capabilities move"}; standalone use ends after migration.`;
+      case "configure":
+        return `${carried ? `${carried}; the` : "The"} remaining use is configured on ${d.targetSolutionName ?? ctx.base.name} instead of maintained separately.`;
+      case "rebuild":
+        return `${carried ? `${carried}; the` : "The"} rest is rebuilt on ${d.targetSolutionName ?? ctx.base.name}.`;
+      case "retire":
+        return d.migrationNote ? `Migration recorded: ${d.migrationNote}` : `${carried ? `${carried}; the` : "The"} product retires once its ${s.activeUsers} users have migrated.`;
+    }
+  };
+
+  const computed: ConsolidationSolution[] = [
+    { solution: ctx.base, fate: "base", note: `Becomes the certified core of the future product.`, disposition: dispositionOf(ctx.base.id) },
     ...ctx.candidates.map((s): ConsolidationSolution => {
       const reused = added.filter((cap) => cap.sourceSolutionId === s.id);
+      const disposition = dispositionOf(s.id);
       if (s.retirementCandidate) {
         return {
           solution: s,
@@ -433,6 +477,7 @@ export function buildConsolidation(c: Case, ctx: CaseContext, decisions: Decisio
           note: reused.length
             ? `${reused.map((cap) => cap.name).join(" and ")} carried over; the product itself is retired after the pilot.`
             : `Retired after the pilot; its ${s.activeUsers} users move to the consolidated version.`,
+          disposition,
         };
       }
       return {
@@ -441,14 +486,16 @@ export function buildConsolidation(c: Case, ctx: CaseContext, decisions: Decisio
         note: reused.length
           ? `${reused.map((cap) => cap.name).join(" and ")} ${reused.length === 1 ? "becomes" : "become"} optional module${reused.length === 1 ? "" : "s"} of the future product.`
           : `Nothing unique is carried forward; standalone use ends after the pilot.`,
+        disposition,
       };
     }),
   ];
+  const current: ConsolidationSolution[] = computed.map((entry) => (entry.disposition ? { ...entry, note: recordedNote(entry.solution, entry.disposition) } : entry));
 
   const future: FutureProduct = {
-    name: proposedName(ctx, added),
+    name: record ? `${ctx.base.name} v${record.version}` : proposedName(ctx, added),
     core: `Certified ${ctx.base.name} workflow (${ctx.base.workflowSteps.join(" → ")})`,
-    modules: added.map((cap) => ({ name: cap.name, sourceSolutionName: cap.sourceSolutionName })),
+    modules: record ? record.foldedCapabilities.map((cap) => ({ name: cap.name, sourceSolutionName: cap.sourceSolutionName })) : added.map((cap) => ({ name: cap.name, sourceSolutionName: cap.sourceSolutionName })),
     controls: locked.map((cap) => cap.name),
   };
 
@@ -471,7 +518,7 @@ export function buildConsolidation(c: Case, ctx: CaseContext, decisions: Decisio
         ? "No side-by-side run has been recorded; the direction rests on catalog evidence alone."
         : "Infrequent users may require additional guidance during the pilot.";
 
-  const itDecision = decisions.find((d) => d.action === "approve_consolidation");
+  const itDecision = consolidationApproved(decisions) ? decisions.find((d) => d.action === "approve_consolidation") : undefined;
   const evidenceLines = [
     `${ctx.base.name} is ${ctx.base.status} with ${ctx.base.evidenceLevel} evidence and ${ctx.base.activeUsers} active users.`,
     ...added.map((cap) => `${cap.name} (from ${cap.sourceSolutionName}): ${cap.evidence}`),
@@ -491,5 +538,6 @@ export function buildConsolidation(c: Case, ctx: CaseContext, decisions: Decisio
     evidence: evidenceLines,
     availableActions: allowedActions(c, decisions),
     decided: itDecision ? `${itDecision.actor} approved the consolidation direction on ${new Date(itDecision.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.` : null,
+    successor: record ? toSolutionVersion(record) : null,
   };
 }
