@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+
+  --color-paper: hsl(48 30% 95%);
+  --color-sheet: hsl(48 40% 98%);
+  --color-rule: hsl(40 14% 82%);
+  --color-ink: hsl(200 38% 14%);
+  --color-muted: hsl(200 10% 42%);
+  --color-petrol: hsl(192 62% 24%);
+  --color-petrol-soft: hsl(190 35% 88%);
+  --color-ochre: hsl(38 84% 44%);
+  --color-ochre-soft: hsl(42 80% 88%);
+  --color-paid: hsl(158 42% 30%);
+  --color-paid-soft: hsl(150 30% 87%);
+  --color-oxblood: hsl(356 58% 36%);
+  --color-oxblood-soft: hsl(355 60% 92%);
+  --color-slate: hsl(210 8% 55%);
+}
+
+html, body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-sans); }
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: repeating-linear-gradient(0deg, transparent 0 27px, hsl(192 40% 50% / 0.05) 27px 28px);
+}
+#root { position: relative; z-index: 1; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.rise { animation: rise .35s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+:focus-visible { outline: 2px solid var(--color-petrol); outline-offset: 2px; }

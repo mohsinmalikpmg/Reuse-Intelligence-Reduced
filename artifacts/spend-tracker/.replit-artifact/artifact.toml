@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/spend-tracker/"
+title = "Spend Tracker"
+description = "Synthetic invoice source C: AFE/PAR budget reconciliation, drilldowns and overrun alerts, isolated browser demonstration."
+version = "1.0.0"
+id = "artifacts/spend-tracker"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/spend-tracker/" ]
+localPort = 18468
+
+[services.development]
+run = "pnpm --filter @workspace/spend-tracker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/spend-tracker", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/spend-tracker/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18468"
+BASE_PATH = "/spend-tracker/"

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/approval-desk/"
+title = "Approval Desk"
+description = "Synthetic invoice source B: staged approval queue and persisted decision ledger, isolated browser demonstration."
+version = "1.0.0"
+id = "artifacts/approval-desk"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/approval-desk/" ]
+localPort = 18992
+
+[services.development]
+run = "pnpm --filter @workspace/approval-desk run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/approval-desk", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/approval-desk/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18992"
+BASE_PATH = "/approval-desk/"

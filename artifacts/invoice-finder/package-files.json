@@ -1,0 +1,14 @@
+[
+  ".gitignore", ".replitignore", "README.md", "SCENARIO.md", "DEMONSTRATION.md",
+  "capability-manifest.json", "package.json", "pnpm-lock.yaml", "tsconfig.json",
+  "vite.config.ts", "index.html", "public/favicon.svg",
+  "package-source.py", "package-files.json",
+  "src/App.tsx", "src/main.tsx", "src/styles.css",
+  "src/domain/types.ts", "src/domain/money.ts", "src/domain/fixture.ts",
+  "src/domain/validate.ts", "src/domain/search.ts", "src/domain/duplicates.ts",
+  "src/domain/spend.ts", "src/domain/workflow.ts", "src/domain/storage.ts",
+  "src/ui/useStore.ts", "src/ui/StatusChip.tsx", "src/ui/FilterPanel.tsx",
+  "src/ui/ResultsTable.tsx", "src/ui/InvoiceDetail.tsx", "src/ui/SpendSummary.tsx",
+  "src/ui/criteriaUrl.ts", "src/ui/ResetDialog.tsx", "tests/domain.test.ts",
+  "src/domain/fuzzy.ts", "src/ui/SearchHero.tsx", "tests/fuzzy.test.ts"
+]

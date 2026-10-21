@@ -14,3 +14,4 @@
 - [Collaborative intake validation](intake-validation.md) — validate needs and described capabilities iteratively before comparison; drag priorities, preserve corrections, distinguish claims from proof.
 - [Solution package evidence](solution-package-evidence.md) — ZIP management requires real IT grants; claims, static review and executed behavior remain separate.
 - [Finance source integration](finance-source-integration.md) — forecast-only Q4 proof; explicit cents bridge preserves precision without claiming full reporting-app reuse.
+- [Invoice source-demo boundaries](invoice-source-demo.md) — constructed originals must stay independent; shared fixtures are allowed, shared feature engines are not.

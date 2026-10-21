@@ -1,0 +1,86 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "30w6aqRxpc26VHzLwt85O"
+uri = "file://artifacts/invoice-finder/generated-artifacts/invoice-finder-9049a30ba24901fb.zip"
+type = "unspecified"
+title = "Invoice Finder — standalone source"
+description = "Independent app, lockfile, tests, synthetic scenario, source hashes and consolidation demonstration guide."
+logical_id = "32c5f488-8bbc-4604-8dea-7fe3be53da5e"
+content_hash = "sha256:9049a30ba24901fb9b20037f646b6ff6211a147226cf4479389cc14646500217"
+size = 46846
+mtime_ms = 1792621426955
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:4e84b0fc-53fb-4c2d-a52c-1c87c2e98614/32c5f488-8bbc-4604-8dea-7fe3be53da5e/61de1a99-8bf1-4d36-81cc-6f50bc9add79"
+storage_version_token = "1792621440088178"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "wR-ATjN6FNX1mFo2wW9ox"
+uri = "file://artifacts/approval-desk/generated-artifacts/approval-desk-6198dbc4b6694a68.zip"
+type = "unspecified"
+title = "Approval Desk — standalone source"
+description = "Independent staged-approval app with ledger tests, startup instructions and source hashes."
+logical_id = "ef046fdc-7677-4f9b-82a1-96b5a25bbe5b"
+content_hash = "sha256:6198dbc4b6694a681a369f690dc1a65341fa2b0ae83bd9340d6d37de1b3e75cd"
+size = 47586
+mtime_ms = 1792621132996
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:4e84b0fc-53fb-4c2d-a52c-1c87c2e98614/ef046fdc-7677-4f9b-82a1-96b5a25bbe5b/e747cb78-f3a1-43d7-826e-3f644f9ae3fd"
+storage_version_token = "1792621440643689"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "U0JcqBoaxJJ5GnoTjUYV6"
+uri = "file://artifacts/spend-tracker/generated-artifacts/spend-tracker-4622ba25e9a244c1.zip"
+type = "unspecified"
+title = "Spend Tracker — standalone source"
+description = "Independent budget reconciliation app with tests, synthetic seed and source hashes."
+logical_id = "0a4d4240-020a-4d0b-bf91-397aa353e019"
+content_hash = "sha256:4622ba25e9a244c1e1dbd8fa71a6712ebe59c62b277cf701650de0c9bb9a5e14"
+size = 49142
+mtime_ms = 1792621385050
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:4e84b0fc-53fb-4c2d-a52c-1c87c2e98614/0a4d4240-020a-4d0b-bf91-397aa353e019/dc924bd6-5fd0-4996-9742-7621a7c3edcf"
+storage_version_token = "1792621441196346"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "IxGKv1eTj0T6nDHPrHyUX"
+uri = "file://artifacts/invoice-finder/generated-artifacts/invoice-finder-900ea08c411bd0e8.zip"
+type = "unspecified"
+title = "Invoice Finder — fuzzy-search source"
+description = "Updated independent source with explainable fuzzy search, tests and future consolidation wiring guide."
+logical_id = "a89581ea-c414-46ca-8863-a64cc8bf3ea9"
+content_hash = "sha256:900ea08c411bd0e8e09222ac5aeff350b9c5ad3df9e118dea888f65b2fd416f3"
+size = 56259
+mtime_ms = 1792622326858
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:4e84b0fc-53fb-4c2d-a52c-1c87c2e98614/a89581ea-c414-46ca-8863-a64cc8bf3ea9/00e194b3-373c-4645-bf9e-512493ef1571"
+storage_version_token = "1792622370861728"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "kAQ915ad3tuQ8ZIycUZ_p"
+uri = "file://artifacts/approval-desk/generated-artifacts/approval-desk-82aabc3ef0819a0d.zip"
+type = "unspecified"
+title = "Approval Desk — bulk-action source"
+description = "Updated independent source with selection, eligibility preview, atomic batch decisions and per-invoice audit history."
+logical_id = "e82b785e-390a-4427-88db-e4cda404a1b6"
+content_hash = "sha256:82aabc3ef0819a0db9163ad6567bd994ea7df535d54bd3be24be5953aec5e8f5"
+size = 59630
+mtime_ms = 1792622307016
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:4e84b0fc-53fb-4c2d-a52c-1c87c2e98614/e82b785e-390a-4427-88db-e4cda404a1b6/e26effd9-1f51-4bd6-a162-d2b87ac5d03d"
+storage_version_token = "1792622371457673"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "EKBlzCtHRdz0bMAB_iG-N"
+uri = "file://artifacts/spend-tracker/generated-artifacts/spend-tracker-6dd53410be818553.zip"
+type = "unspecified"
+title = "Spend Tracker — line-item tracing source"
+description = "Updated independent source tracing project materials and labour across invoices to original synthetic lines."
+logical_id = "45248128-53a9-4dc3-afae-5864f9158967"
+content_hash = "sha256:6dd53410be8185531db7efff7ee3832f4c406a78cfee08908393368420102940"
+size = 61014
+mtime_ms = 1792622307078
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:4e84b0fc-53fb-4c2d-a52c-1c87c2e98614/45248128-53a9-4dc3-afae-5864f9158967/3e014c50-8dd1-44a1-b0fa-c0f86fb2ad4c"
+storage_version_token = "1792622372040885"
+content_type = "application/octet-stream"

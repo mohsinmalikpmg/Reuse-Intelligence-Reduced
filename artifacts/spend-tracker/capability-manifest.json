@@ -1,0 +1,82 @@
+{
+  "app": "spend-tracker",
+  "scenario": "SCENARIO.md (synthetic invoice scenario v1, variant A/C)",
+  "capabilities": {
+    "line-item-provenance-trace (standout)": [
+      "src/domain/lines.ts#SOURCE_LINES",
+      "src/domain/lines.ts#groupTrace",
+      "src/domain/lines.ts#tracedLines",
+      "src/trace.tsx#TracePage"
+    ],
+    "source-line-validation": [
+      "src/domain/lines.ts#validateLines"
+    ],
+    "invoice-source-lines": [
+      "src/domain/lines.ts#linesOfInvoice",
+      "src/trace.tsx#InvoiceLines"
+    ],
+    "group-to-invoice-reconciliation": [
+      "src/domain/lines.ts#groupTrace",
+      "src/trace.tsx#TracePage"
+    ],
+    "fixture-seed": [
+      "src/domain/model.ts#seedState"
+    ],
+    "reference-validation": [
+      "src/domain/model.ts#buildState",
+      "src/domain/model.ts#validateState"
+    ],
+    "par-afe-portfolio-rollups": [
+      "src/domain/model.ts#rollupPar",
+      "src/domain/model.ts#rollupAfe",
+      "src/domain/model.ts#rollupPortfolio"
+    ],
+    "committed-vs-projected-overrun": [
+      "src/domain/model.ts#finish",
+      "src/ui.tsx#OverrunFlags",
+      "src/ui.tsx#RollupLedger"
+    ],
+    "drilldown-reconciliation": [
+      "src/domain/model.ts#reconcile",
+      "src/pages.tsx#ReconTable",
+      "src/pages.tsx#DrillPage"
+    ],
+    "overrun-explanation-trail": [
+      "src/domain/model.ts#overrunTrail",
+      "src/pages.tsx#OverrunExplain"
+    ],
+    "duplicate-warning": [
+      "src/domain/model.ts#duplicateGroups",
+      "src/pages.tsx#InvoicePage"
+    ],
+    "invoice-search-detail": [
+      "src/domain/model.ts#searchInvoices",
+      "src/pages.tsx#InvoicesPage",
+      "src/pages.tsx#InvoicePage"
+    ],
+    "approve-reject-pay-simulation": [
+      "src/domain/model.ts#applyAction",
+      "src/domain/model.ts#allowedActions",
+      "src/store.tsx#act"
+    ],
+    "demo-roles-not-auth": [
+      "src/App.tsx#Shell",
+      "src/pages.tsx#AboutPage"
+    ],
+    "persistence-and-storage-errors": [
+      "src/domain/model.ts#decode",
+      "src/store.tsx#readStorage"
+    ],
+    "multi-tab-freshness": [
+      "src/store.tsx#StoreProvider"
+    ],
+    "confirmed-reset": [
+      "src/App.tsx#ResetControl",
+      "src/store.tsx#reset"
+    ],
+    "tests": [
+      "src/domain/domain.test.ts",
+      "src/domain/lines.test.ts"
+    ]
+  }
+}
