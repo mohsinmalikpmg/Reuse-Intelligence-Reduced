@@ -57,6 +57,11 @@ export interface Case {
   requirements: CaseRequirement[];
   /** Capabilities the person asked for that do not exist yet; recorded, never run */
   capabilityRequests: CapabilityRequest[];
+  /**
+     * Input text the case opened with (a prototype's worked example)
+     * @nullable
+     */
+  presetInputText: string | null;
   createdAt: string;
   updatedAt: string;
 }

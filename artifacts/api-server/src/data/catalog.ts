@@ -1065,14 +1065,41 @@ export const catalogSolutions: Solution[] = solutionSeeds.map((seed) => {
 export type SolutionResolver = (solution: Solution, asOf?: string) => Solution;
 let resolver: SolutionResolver = (s) => s;
 
-/** Solutions as they currently stand: catalog plus governance overlay. A live binding; refreshed by `setSolutionResolver`. */
+/**
+ * Prototypes people registered through the "I have a prototype" entrance. They are catalogue entries too (kind
+ * "prototype", execution "preview"), and their declared components are capabilities with the prototype as source,
+ * but FUSEBOX never runs them: no executor, never a candidate module, never "covered".
+ */
+let registered: { solutions: Solution[]; capabilities: Capability[] } = { solutions: [], capabilities: [] };
+let registeredCapabilityById = new Map<string, Capability>();
+
+/** Solutions as they currently stand: catalog plus governance overlay plus registered prototypes. A live binding. */
 export let solutions: Solution[] = catalogSolutions;
 export let solutionPublicById = new Map(solutions.map((s) => [s.id, s]));
 
+function rebuildSolutions(): void {
+  solutions = [...catalogSolutions.map((s) => resolver(s)), ...registered.solutions];
+  solutionPublicById = new Map(solutions.map((s) => [s.id, s]));
+}
+
 export function setSolutionResolver(next: SolutionResolver): void {
   resolver = next;
-  solutions = catalogSolutions.map((s) => resolver(s));
-  solutionPublicById = new Map(solutions.map((s) => [s.id, s]));
+  rebuildSolutions();
+}
+
+export function setRegisteredPrototypes(next: { solutions: Solution[]; capabilities: Capability[] }): void {
+  registered = next;
+  registeredCapabilityById = new Map(next.capabilities.map((c) => [c.id, c]));
+  rebuildSolutions();
+}
+
+export function isRegisteredPrototype(solutionId: string): boolean {
+  return registered.solutions.some((s) => s.id === solutionId);
+}
+
+/** Every capability a reuse check may land on: the catalogue's plus the declared components of registered prototypes. */
+export function allCapabilities(): Capability[] {
+  return registered.capabilities.length ? [...capabilities, ...registered.capabilities] : capabilities;
 }
 
 export const solutionSearchMeta = new Map(
@@ -1089,15 +1116,16 @@ export const businessProblemById = new Map(businessProblems.map((b) => [b.id, b]
 export function getSolution(id: string, asOf?: string): Solution | undefined {
   if (asOf === undefined) return solutionPublicById.get(id);
   const base = catalogSolutions.find((s) => s.id === id);
-  return base ? resolver(base, asOf) : undefined;
+  // Registered prototypes have no governed history: they are the same at every version.
+  return base ? resolver(base, asOf) : registered.solutions.find((s) => s.id === id);
 }
 
 export function getCapability(id: string): Capability | undefined {
-  return capabilityById.get(id);
+  return capabilityById.get(id) ?? registeredCapabilityById.get(id);
 }
 
 export function solutionCapabilities(solution: Solution): Capability[] {
-  return solution.capabilityIds.map((id) => capabilityById.get(id)).filter((c): c is Capability => !!c);
+  return solution.capabilityIds.map((id) => getCapability(id)).filter((c): c is Capability => !!c);
 }
 
 const kindOrder: Record<Solution["kind"], number> = {

@@ -6,6 +6,7 @@ import casesRouter from "./cases";
 import overviewRouter from "./overview";
 import workbenchRouter from "./workbench";
 import reuseRouter from "./reuse";
+import prototypesRouter from "./prototypes";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(casesRouter);
 router.use(overviewRouter);
 router.use(workbenchRouter);
 router.use(reuseRouter);
+router.use(prototypesRouter);
 
 export default router;

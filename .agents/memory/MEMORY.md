@@ -10,3 +10,4 @@
 - [Solution families](solution-families.md) — fresh demo has no approved configs; A resolves as-of parentVersion; B = fully resolved target version; "Try in" gated by addability.
 - [FUSEBOX circuit feedback](fusebox-circuits.md) — weld/illumination/convergence only from confirmed backend state; converge is illustrative until a persisted IT approval.
 - [Enterprise breadth without new engines](enterprise-breadth.md) — live vs preview products: previews never run/open cases/get "Try in"; gate at API and UI; Decision View reports measured value only.
+- [Prototype intake](prototype-intake.md) — match on the engine's own vocabulary; never index prototype words into the scorer; cap prototype scores below improve/try; mutateAsync for undo after unmount.

@@ -4,6 +4,7 @@ import { ArrowRight, Search as SearchIcon } from "lucide-react";
 import { useListBusinessProblems, useListSolutions, useSearchLibrary, type SolutionKind, type SolutionStatus } from "@workspace/api-client-react";
 import { DispositionBadge, Empty, ErrorView, Page, Skel, StatusPill, Tag, StageEyebrow } from "@/components/bits";
 import { CapabilityRow } from "@/components/family-card";
+import { ExecutionTag } from "@/components/enterprise";
 
 export default function SearchPage() {
   const params = new URLSearchParams(useSearch());
@@ -55,6 +56,7 @@ export default function SearchPage() {
                     {x.familyRole === "preferred" && <Tag tone="green" testid={`tag-preferred-${x.solution.id}`}>Preferred for {x.familyTitle.toLowerCase()}</Tag>}
                     {x.familyRole === "consolidating" && <Tag tone="muted" testid={`tag-consolidating-${x.solution.id}`}>Being consolidated</Tag>}
                     <DispositionBadge disposition={x.solution.disposition} solutionId={x.solution.id} />
+                    {x.solution.origin && <ExecutionTag s={x.solution} testid={`tag-prototype-${x.solution.id}`} />}
                     <span className="ml-auto text-[13px] text-muted-foreground">{x.solution.ownerName} · v{x.solution.currentVersion}</span>
                   </div>
                   <p className="mt-1.5 text-[15px]">{x.solution.outcome}</p>

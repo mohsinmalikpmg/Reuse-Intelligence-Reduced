@@ -11,6 +11,7 @@ import { OutputView, RunMeta } from "@/components/output-view";
 import { blocksFromWorkbench, type FlowBlock } from "@/components/flow";
 import { errMsg, useCurrentCase } from "@/lib/case";
 import { MetaGrid, MetaTags, OutputPreviewPanel, isLive } from "@/components/enterprise";
+import { PrototypePanel, ComparedPrototypes } from "@/components/prototype-panel";
 import { cn } from "@/lib/utils";
 
 export default function SolutionPage() {
@@ -33,7 +34,7 @@ export default function SolutionPage() {
 
   if (d.isLoading) return <LoadingView />;
   if (d.isError || !d.data) return <ErrorView onRetry={() => d.refetch()} message="This solution could not load." />;
-  const { solution: s, capabilities, experimentsInProgress } = d.data;
+  const { solution: s, capabilities, experimentsInProgress, prototype, comparedPrototypes } = d.data;
 
   const start = (mode?: "edit" | "compare") =>
     create.mutate({ data: { baseSolutionId: s.id, createdByRole: "seeker" } }, {
@@ -52,9 +53,9 @@ export default function SolutionPage() {
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill status={s.status} />
-            <Tag tone={s.kind === "capability_module" ? "sky" : "slate"}>{s.kind === "capability_module" ? "Reusable capability" : "Full workflow"}</Tag>
+            <Tag tone={s.kind === "capability_module" ? "sky" : "slate"}>{s.kind === "capability_module" ? "Reusable capability" : s.kind === "prototype" ? "Prototype" : "Full workflow"}</Tag>
             <DispositionBadge disposition={s.disposition} solutionId={s.id} />
-            <span className="text-[13.5px] text-muted-foreground" data-testid="text-version">v{s.currentVersion} · Owner {s.ownerName}, {s.ownerTeam}</span>
+            <span className="text-[13.5px] text-muted-foreground" data-testid="text-version">v{s.currentVersion} · Owner {s.ownerName}{s.ownerTeam ? `, ${s.ownerTeam}` : ""}</span>
           </div>
           <StageEyebrow stage="trace" className="mt-3" />
           <h1 data-testid="text-headline" className="mt-2 text-[32px] md:text-[40px]">{s.name}</h1>
@@ -75,18 +76,21 @@ export default function SolutionPage() {
           {live ? (
             <button data-testid="button-try" onClick={() => start()} disabled={create.isPending} className={btn.primary}>Try this solution <ArrowRight className="h-5 w-5" /></button>
           ) : (
-            <a href="#output-preview" data-testid="button-see-preview" className={btn.primary}><Eye className="h-5 w-5" /> See output preview</a>
+            <a href={prototype ? "#prototype" : "#output-preview"} data-testid="button-see-preview" className={btn.primary}><Eye className="h-5 w-5" /> {prototype ? "See where it fits" : "See output preview"}</a>
           )}
           <div className="flex flex-wrap gap-1">
             {live && <button data-testid="button-starting-point" onClick={() => start("edit")} disabled={create.isPending} className={btn.quiet}><PencilRuler className="h-4 w-4" /> Use as starting point</button>}
             {live && <button data-testid="button-compare" onClick={() => start("compare")} disabled={create.isPending} className={btn.quiet}><GitCompare className="h-4 w-4" /> Compare</button>}
             <button data-testid="button-view-details" onClick={() => setDrawer("details")} className={btn.quiet}><Info className="h-4 w-4" /> View details</button>
           </div>
-          {!live && <span className="max-w-[260px] text-right text-[12.5px] text-muted-foreground" data-testid="text-preview-only">Catalogued with a sample-data preview. Not yet wired to run on your input, so no experiment can be opened on it.</span>}
+          {!live && !prototype && <span className="max-w-[260px] text-right text-[12.5px] text-muted-foreground" data-testid="text-preview-only">Catalogued with a sample-data preview. Not yet wired to run on your input, so no experiment can be opened on it.</span>}
+          {prototype && <span className="max-w-[260px] text-right text-[12.5px] text-muted-foreground" data-testid="text-prototype-only">Runs on {prototype.platformName}, outside FUSEBOX. Its examples are what its builder submitted, not runs; no experiment can be opened on it.</span>}
         </div>
       </div>
 
-      <section className="mt-10">
+      {prototype && <PrototypePanel prototype={prototype} />}
+
+      {!prototype && <section className="mt-10">
         <div className="mb-3 flex items-center gap-2">
           <h2 className="text-[18px] font-semibold">How it works</h2>
           <span className="text-[13.5px] text-muted-foreground">Click a step to preview it. Double-click, or Details, for the technical view.</span>
@@ -132,7 +136,7 @@ export default function SolutionPage() {
           </div>
         )}
         <p className="mt-3 flex items-center gap-1.5 text-[13.5px] text-muted-foreground"><ShieldCheck className="h-4 w-4 text-ok" /> Controls in place: {s.controls.join(", ")}</p>
-      </section>
+      </section>}
 
       <section className="mt-8" data-testid="panel-record">
         <h2 className="mb-3 text-[18px] font-semibold">The record</h2>
@@ -152,10 +156,11 @@ export default function SolutionPage() {
             </div>
           )}
           {!live && s.outputPreview && <div className="mt-3"><OutputPreviewPanel preview={s.outputPreview} s={s} /></div>}
-          {!live && !s.outputPreview && <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-no-preview">No output preview has been recorded for this product yet.</p>}
+          {!live && !s.outputPreview && !prototype && <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-no-preview">No output preview has been recorded for this product yet.</p>}
+          {prototype && <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-no-preview">No FUSEBOX output exists for a prototype: the submitted examples above are what its builder provided.</p>}
         </div>
         <div>
-          <h2 className="mb-2 text-[16px] font-semibold">Reusable capabilities</h2>
+          <h2 className="mb-2 text-[16px] font-semibold">{prototype ? "Declared components" : "Reusable capabilities"}</h2>
           <ul className="space-y-1.5">
             {capabilities.slice(0, 6).map((c) => {
               const n = usedIn(c).length;
@@ -173,6 +178,8 @@ export default function SolutionPage() {
           </ul>
         </div>
       </section>
+
+      {comparedPrototypes.length > 0 && <ComparedPrototypes items={comparedPrototypes} solutionName={s.name} />}
 
       {/* Experiments branch from this product and are listed here only; they never appear in the library or search. */}
       <section className="mt-8" data-testid="panel-experiments">

@@ -1491,6 +1491,151 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /prototypes:
+    get:
+      operationId: listPrototypes
+      tags: [prototypes]
+      summary: Prototypes people registered through the prototype entrance, newest first
+      parameters:
+        - name: comparedTo
+          in: query
+          required: false
+          description: Only prototypes compared against, or recommended to fold into / extend, this product
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Registered prototypes (removed ones excluded)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegisteredPrototype"
+    post:
+      operationId: registerPrototype
+      tags: [prototypes]
+      summary: Register a prototype in the library with its worked examples and confirmed components
+      description: Files the prototype as a non-running catalogue entry (kind prototype, execution preview), records a reuse event, and returns the record. Submitted examples are claims, never evidence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrototypeIntake"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrototypeDetail"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prototypes/analyze:
+    post:
+      operationId: analyzePrototype
+      tags: [prototypes]
+      summary: Decompose the worked examples into components, run the same problem through an existing product when one can consume it, and say where the prototype fits
+      description: Deterministic; nothing is stored and no event is recorded. Pass confirmed components to re-run the verdicts on the edited list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrototypeIntake"
+      responses:
+        "200":
+          description: Proposed components, side-by-side comparison (or the honest fallback) and verdicts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrototypeAnalysis"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prototypes/{prototypeId}:
+    get:
+      operationId: getPrototype
+      tags: [prototypes]
+      summary: A registered prototype with its catalogue entry and recomputed analysis
+      parameters:
+        - name: prototypeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prototype detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrototypeDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: removePrototype
+      tags: [prototypes]
+      summary: Remove a registered prototype from the library (reversible with restore)
+      parameters:
+        - name: prototypeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredPrototype"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prototypes/{prototypeId}/restore:
+    post:
+      operationId: restorePrototype
+      tags: [prototypes]
+      summary: Put a removed prototype back in the library (the Undo of remove)
+      parameters:
+        - name: prototypeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredPrototype"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /demo/reset:
     post:
       operationId: resetDemo
@@ -1868,6 +2013,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ProductionConfig"
             - type: "null"
+        origin:
+          description: Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX
+          oneOf:
+            - $ref: "#/components/schemas/PrototypeOrigin"
+            - type: "null"
         outcome: { type: string, description: One-sentence outcome }
         description: { type: string }
         status: { $ref: "#/components/schemas/SolutionStatus" }
@@ -1964,7 +2114,7 @@ components:
 
     SolutionDetail:
       type: object
-      required: [solution, capabilities, businessProblems, openCases, experimentsInProgress]
+      required: [solution, capabilities, businessProblems, openCases, experimentsInProgress, prototype, comparedPrototypes]
       properties:
         solution: { $ref: "#/components/schemas/Solution" }
         capabilities:
@@ -1980,6 +2130,15 @@ components:
           type: array
           description: Saved or proposed experiments branched from this product; never library entries
           items: { $ref: "#/components/schemas/CaseSummary" }
+        prototype:
+          description: Set when this entry is a registered prototype
+          oneOf:
+            - $ref: "#/components/schemas/RegisteredPrototype"
+            - type: "null"
+        comparedPrototypes:
+          type: array
+          description: Registered prototypes compared against this product (duplicating or extending it, or whose example it ran)
+          items: { $ref: "#/components/schemas/RegisteredPrototype" }
 
     BusinessFunction:
       type: string
@@ -2235,7 +2394,7 @@ components:
 
     ReuseTrigger:
       type: string
-      enum: [discover_requirement, add_step, add_requirement, save, search, seed]
+      enum: [discover_requirement, add_step, add_requirement, save, search, seed, prototype]
 
     ReusePath:
       type: string
@@ -2386,6 +2545,7 @@ components:
         - foldedInto
         - createdAt
         - updatedAt
+        - presetInputText
       properties:
         id: { type: string }
         briefId: { type: ["string", "null"] }
@@ -2424,6 +2584,7 @@ components:
           type: array
           description: Capabilities the person asked for that do not exist yet; recorded, never run
           items: { $ref: "#/components/schemas/CapabilityRequest" }
+        presetInputText: { type: ["string", "null"], description: Input text the case opened with (a prototype's worked example), if any }
         createdAt: { type: string }
         updatedAt: { type: string }
 
@@ -2501,6 +2662,9 @@ components:
         approvedVersion:
           type: string
           description: Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of
+        presetInputText:
+          type: string
+          description: Input text the case opens with, e.g. a prototype's worked example, so the first run is on that same problem instance
 
     CaseUpdate:
       type: object
@@ -3763,7 +3927,7 @@ components:
 
     QueueItemKind:
       type: string
-      enum: [consolidation_approval, unowned_product, migration_pending, new_family_request]
+      enum: [consolidation_approval, unowned_product, migration_pending, new_family_request, registered_prototype]
 
     QueueItem:
       type: object
@@ -3862,3 +4026,199 @@ components:
         demoCaseId: { type: string }
         demoPrompt: { type: string }
         aiAvailable: { type: boolean }
+
+    # ---------- Prototype intake ("I have a prototype") ----------
+
+    PrototypePlatformKind:
+      type: string
+      enum: [platform, saas, agent_framework, notebook, other]
+      description: Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform
+
+    PrototypeOrigin:
+      type: object
+      description: Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX
+      required: [platformKind, platformName, link, registeredAt]
+      properties:
+        platformKind: { $ref: "#/components/schemas/PrototypePlatformKind" }
+        platformName: { type: string }
+        link: { type: ["string", "null"] }
+        registeredAt: { type: string }
+
+    PrototypeExampleInput:
+      type: object
+      required: [input, output]
+      properties:
+        input: { type: string, minLength: 10, description: The problem instance fed to the prototype (pasted text or a library sample input) }
+        output: { type: string, minLength: 10, description: The output the prototype produced for it, pasted as text }
+        sampleInputId: { type: string, description: Set when the input is one of the library's sample inputs }
+
+    PrototypeExample:
+      type: object
+      required: [id, input, output, sampleInputId]
+      properties:
+        id: { type: string }
+        input: { type: string }
+        output: { type: string }
+        sampleInputId: { type: ["string", "null"] }
+
+    PrototypeVerdict:
+      type: string
+      enum: [duplicates, extends, new]
+      description: duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it
+
+    PrototypeComponentInput:
+      type: object
+      required: [name]
+      properties:
+        id: { type: string }
+        name: { type: string, minLength: 2 }
+        description: { type: string }
+        sectionTitles:
+          type: array
+          items: { type: string }
+
+    PrototypeComponent:
+      type: object
+      required: [id, name, description, sectionTitles, matchedCapabilityId, matchedCapabilityName, matchedSolutionId, matchedSolutionName, matchScore, verdict, reason]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        sectionTitles:
+          type: array
+          description: Titles of the example sections that support this component
+          items: { type: string }
+        matchedCapabilityId: { type: ["string", "null"] }
+        matchedCapabilityName: { type: ["string", "null"], description: Null means nothing in the library produces this }
+        matchedSolutionId: { type: ["string", "null"] }
+        matchedSolutionName: { type: ["string", "null"] }
+        matchScore: { type: ["number", "null"], description: Reuse-fit score of the matched capability (0-100) }
+        verdict: { $ref: "#/components/schemas/PrototypeVerdict" }
+        reason: { type: string }
+
+    PrototypeIntake:
+      type: object
+      required: [name, platformKind, platformName, users, description, examples]
+      properties:
+        name: { type: string, minLength: 2 }
+        platformKind: { $ref: "#/components/schemas/PrototypePlatformKind" }
+        platformName: { type: string, minLength: 2 }
+        link: { type: string }
+        users: { type: string, minLength: 2, description: Who uses it today }
+        ownerName: { type: string }
+        ownerTeam: { type: string }
+        description: { type: string, minLength: 10, description: One sentence on what it does }
+        dataInvolved:
+          type: array
+          items: { type: string }
+        riskTier: { $ref: "#/components/schemas/EffortLevel" }
+        noRestrictedData: { type: boolean, description: The person confirms the examples contain no restricted data }
+        createdByRole: { $ref: "#/components/schemas/Role" }
+        examples:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items: { $ref: "#/components/schemas/PrototypeExampleInput" }
+        components:
+          type: array
+          description: The confirmed component list; when omitted the server proposes one from the examples
+          items: { $ref: "#/components/schemas/PrototypeComponentInput" }
+
+    PrototypeComparisonLine:
+      type: object
+      required: [key, section, text, status, matchedText, matchedStepId, matchedStepName, componentId]
+      properties:
+        key: { type: string }
+        section: { type: string, description: Section of the submitted output the line came from }
+        text: { type: string }
+        status:
+          type: string
+          enum: [reproduced, not_produced]
+          description: reproduced = the existing product produced an equivalent line on the same input; not_produced = it did not
+        matchedText: { type: ["string", "null"] }
+        matchedStepId: { type: ["string", "null"] }
+        matchedStepName: { type: ["string", "null"] }
+        componentId: { type: ["string", "null"], description: The component that explains a line the existing product did not produce }
+
+    PrototypeComparison:
+      type: object
+      description: Same problem, two outputs. The submitted side is a claim; the real side is an actual run of the existing product on exactly that input.
+      required: [exampleId, solutionId, solutionName, submittedLabel, realLabel, lines, reproduced, notProduced, onlyInReal, run]
+      properties:
+        exampleId: { type: string }
+        solutionId: { type: string }
+        solutionName: { type: string }
+        submittedLabel: { type: string }
+        realLabel: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/PrototypeComparisonLine" }
+        reproduced: { type: integer }
+        notProduced: { type: integer }
+        onlyInReal: { type: integer, description: Lines the existing product produced that the submitted output does not contain }
+        run: { $ref: "#/components/schemas/Run" }
+
+    PrototypeRecommendedPath:
+      type: string
+      enum: [fold_into, connect_module, register_new]
+
+    PrototypeAnalysis:
+      type: object
+      required: [components, comparison, fallback, recommendedPath, recommendation, basis, targetSolutionId, targetSolutionName, targetLive, targetCapabilityId]
+      properties:
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/PrototypeComponent" }
+        comparison:
+          oneOf:
+            - $ref: "#/components/schemas/PrototypeComparison"
+            - type: "null"
+        fallback: { type: ["string", "null"], description: Set when no live product can run any example input }
+        recommendedPath: { $ref: "#/components/schemas/PrototypeRecommendedPath" }
+        recommendation: { type: string, description: One sentence, mirroring the reuse check's single recommended path }
+        basis: { type: string, description: What the verdicts are based on }
+        targetSolutionId: { type: ["string", "null"] }
+        targetSolutionName: { type: ["string", "null"] }
+        targetLive: { type: boolean, description: True when the target product runs in FUSEBOX, so a case can open on it }
+        targetCapabilityId: { type: ["string", "null"] }
+
+    RegisteredPrototype:
+      type: object
+      required: [id, name, platformKind, platformName, link, users, ownerName, ownerTeam, description, dataInvolved, riskTier, examples, components, recommendedPath, recommendation, comparedSolutionId, comparedSolutionName, reuseEventId, createdBy, createdByRole, createdAt, removed]
+      properties:
+        id: { type: string, description: Also the catalogue solution id }
+        name: { type: string }
+        platformKind: { $ref: "#/components/schemas/PrototypePlatformKind" }
+        platformName: { type: string }
+        link: { type: ["string", "null"] }
+        users: { type: string }
+        ownerName: { type: string }
+        ownerTeam: { type: string }
+        description: { type: string }
+        dataInvolved:
+          type: array
+          items: { type: string }
+        riskTier: { $ref: "#/components/schemas/EffortLevel" }
+        examples:
+          type: array
+          items: { $ref: "#/components/schemas/PrototypeExample" }
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/PrototypeComponent" }
+        recommendedPath: { $ref: "#/components/schemas/PrototypeRecommendedPath" }
+        recommendation: { type: string }
+        comparedSolutionId: { type: ["string", "null"], description: The product whose capabilities this prototype duplicates or extends, or that ran its example }
+        comparedSolutionName: { type: ["string", "null"] }
+        reuseEventId: { type: ["string", "null"] }
+        createdBy: { type: string }
+        createdByRole: { $ref: "#/components/schemas/Role" }
+        createdAt: { type: string }
+        removed: { type: boolean }
+
+    PrototypeDetail:
+      type: object
+      required: [prototype, solution, analysis]
+      properties:
+        prototype: { $ref: "#/components/schemas/RegisteredPrototype" }
+        solution: { $ref: "#/components/schemas/Solution" }
+        analysis: { $ref: "#/components/schemas/PrototypeAnalysis" }

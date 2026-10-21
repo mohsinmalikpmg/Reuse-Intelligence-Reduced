@@ -12,6 +12,7 @@
 import type { Capability, Case, ReuseFitDimensions, ReuseOption, ReusePath, Solution } from "@workspace/api-zod";
 import {
   WORKFLOW_STEPS,
+  allCapabilities,
   capabilities,
   capabilityIO,
   capabilityKeywords,
@@ -21,7 +22,7 @@ import {
   solutionSearchMeta,
   solutions,
 } from "../data/catalog";
-import { type CaseContext, caseContext, conflictingBaseCapability, isUnsupported } from "./configuration";
+import { type CaseContext, candidatesFor, caseContext, conflictingBaseCapability, isUnsupported } from "./configuration";
 
 export const WEIGHTS = { problemFit: 30, inputOutput: 20, workflowPosition: 15, userContext: 10, dataControl: 15, maturityEvidence: 10 } as const;
 export const TRY_EXISTING_AT = 80;
@@ -91,6 +92,11 @@ function solutionTokens(s: Solution): Set<string> {
   return new Set(terms([s.name, s.outcome, s.description, ...(meta?.keywords ?? []), ...caps].join(" ")));
 }
 
+/**
+ * Document frequencies over the shipped catalogue only. Registered prototypes are deliberately left out: adding
+ * their words would re-weight every forward check (a newly known rare word dominates the need), so a registration
+ * must never move the scores of certified products.
+ */
 const DOCS: Doc[] = [
   ...capabilities.map((c) => ({ kind: "capability" as const, id: c.id, tokens: capabilityTokens(c) })),
   ...solutions.map((s) => ({ kind: "configuration" as const, id: s.id, tokens: solutionTokens(s) })),
@@ -122,6 +128,13 @@ function problemFit(needTokens: string[], candidate: Set<string>): { fit: number
   const known = needTokens.filter((t) => DF.has(t)).length;
   if (matched.length < 2 && known > 2) return { fit: 0, matched };
   return { fit: Math.min(1, hit / total), matched: matched.sort((a, b) => (DF.get(a) ?? 0) - (DF.get(b) ?? 0)) };
+}
+
+/** Share of a text's words the catalogue has ever seen. Low means the scorer is comparing on a handful of generic words. */
+export function knownShare(text: string): number {
+  const toks = [...new Set(terms(text))];
+  if (toks.length === 0) return 0;
+  return toks.filter((t) => DF.has(t)).length / toks.length;
 }
 
 // ---------- workflow ----------
@@ -311,7 +324,8 @@ export function scoreCapability(need: string, cap: Capability, ctx: CaseContext 
   if (source) reasons.push(`${capitalize(source.status)} in ${source.name} with ${cap.evidenceLevel} evidence.`);
 
   const d = { problemFit: pf.fit, inputOutput, workflowPosition: workflowPos, userContext, dataControl, maturityEvidence };
-  const score = round(total(d));
+  // Declared components of registered prototypes are shown, never recommended: no evidence inside FUSEBOX yet.
+  const score = source?.origin ? Math.min(round(total(d)), IMPROVE_AT - 1) : round(total(d));
   const addable = !!ctx && !inBase && ctx.candidateCapabilities.some((c) => c.id === cap.id) && exclusions.length === 0;
   return { capability: cap, source, score, dimensions: dims(d), reasons: reasons.slice(0, 4), exclusions, inBase, addable };
 }
@@ -357,10 +371,14 @@ function scoreSolution(need: string, s: Solution, wantedSteps: string[]): Scored
   const maturityEvidence = EVIDENCE[s.evidenceLevel] * 0.5 + STATUS[s.status] * 0.5;
   if (s.status === "deprecated") exclusions.push(`${s.name} is deprecated.`);
   if (s.retirementCandidate && /^none$/i.test(s.supportModel)) exclusions.push(`${s.name} has no owner and no mandatory controls, and is marked for retirement.`);
-  reasons.push(`${capitalize(s.status)}, ${s.activeUsers} users, ${s.evidenceLevel} evidence.`);
+  if (s.origin) reasons.push(`Registered prototype on ${s.origin.platformName}; used by ${s.primaryUsers[0] ?? "its builder's team"}; no evidence until it runs inside FUSEBOX.`);
+  else reasons.push(`${capitalize(s.status)}, ${s.activeUsers} users, ${s.evidenceLevel} evidence.`);
 
   const d = { problemFit: pf.fit, inputOutput, workflowPosition: workflowPos, userContext, dataControl, maturityEvidence };
-  return { solution: s, score: round(total(d)), dimensions: dims(d), reasons: reasons.slice(0, 4), exclusions };
+  // A registered prototype has no evidence inside FUSEBOX, so it is shown ("someone built this already") but can
+  // never be the recommended path: its score stays under the improve/try threshold.
+  const score = s.origin ? Math.min(round(total(d)), IMPROVE_AT - 1) : round(total(d));
+  return { solution: s, score, dimensions: dims(d), reasons: reasons.slice(0, 4), exclusions };
 }
 
 // ---------- scoring: active experiment (an open case) ----------
@@ -403,7 +421,8 @@ export function reuseCheck(need: string, input: ReuseContextInput): ReuseCheckOu
   const ctx = base ? caseContext({ baseSolutionId: base.id, candidateSolutionIds: candidateIdsFor(base) }, [need]) : null;
   const wantedSteps = input.workflowStep ? [input.workflowStep] : inferWorkflowSteps(need);
 
-  const caps = capabilities.map((cap) => scoreCapability(need, cap, ctx, wantedSteps)).sort((a, b) => b.score - a.score);
+  // Declared components of registered prototypes take part too; they can never be addable or "covered" (not candidates).
+  const caps = allCapabilities().map((cap) => scoreCapability(need, cap, ctx, wantedSteps)).sort((a, b) => b.score - a.score);
   const viable = caps.filter((c) => c.exclusions.length === 0 && c.dimensions.problemFit > 0);
   const topExcluded = caps.find((c) => c.exclusions.length > 0 && c.dimensions.problemFit > 0);
   // Show the best usable step. When the only strong match is ruled out by a hard exclusion, show that instead so
@@ -424,7 +443,8 @@ export function reuseCheck(need: string, input: ReuseContextInput): ReuseCheckOu
   const options: ReuseOption[] = [];
   if (bestCap) options.push(capabilityOption(bestCap, ctx));
 
-  const viableConfig = configs.find((c) => c.exclusions.length === 0);
+  // Live products first: a registered prototype is only shown when no certified or piloted product reaches the threshold.
+  const viableConfig = configs.find((c) => c.exclusions.length === 0 && !c.solution.origin && c.score >= IMPROVE_AT) ?? configs.find((c) => c.exclusions.length === 0);
   const topConfig = viableConfig && viableConfig.score >= IMPROVE_AT ? viableConfig : (configs[0] && configs[0].score >= IMPROVE_AT ? configs[0] : viableConfig ?? configs[0]);
   const topExp = experiments[0];
   if (topExp && (!topConfig || topExp.score >= topConfig.score)) options.push(experimentOption(topExp));
@@ -456,21 +476,20 @@ export function reuseCheck(need: string, input: ReuseContextInput): ReuseCheckOu
 
 /** Same rule as case creation: sibling products addressing the base's business problem. */
 function candidateIdsFor(base: Solution): string[] {
-  return solutions
-    .filter((s) => s.id !== base.id && s.businessProblemIds.some((bp) => base.businessProblemIds.includes(bp)) && s.status !== "deprecated")
-    .map((s) => s.id);
+  return candidatesFor(base);
 }
 
 function capabilityOption(c: ScoredCapability, ctx: CaseContext | null): ReuseOption {
   const excluded = c.exclusions.length > 0;
-  const where = c.inBase && ctx ? `Already in ${ctx.base.name}` : `From ${c.source?.name ?? c.capability.sourceSolutionName} · ${c.capability.ownerName}`;
+  const proto = c.source?.origin ?? null;
+  const where = c.inBase && ctx ? `Already in ${ctx.base.name}` : proto ? `Someone built this already: ${c.source?.name} · runs on ${proto.platformName} · not yet certified` : `From ${c.source?.name ?? c.capability.sourceSolutionName} · ${c.capability.ownerName}`;
   return {
     kind: "capability",
     title: c.capability.name,
     subtitle: where,
     score: c.score,
     path: pathFor(c.score, excluded),
-    reasons: c.reasons,
+    reasons: proto ? [...c.reasons.slice(0, 3), "A registered prototype: FUSEBOX has not run it, so there is no evidence yet."] : c.reasons,
     exclusions: c.exclusions,
     dimensions: c.dimensions,
     capability: c.capability,
@@ -484,10 +503,11 @@ function capabilityOption(c: ScoredCapability, ctx: CaseContext | null): ReuseOp
 
 function configurationOption(s: ScoredSolution): ReuseOption {
   const excluded = s.exclusions.length > 0;
+  const proto = s.solution.origin ?? null;
   return {
     kind: "configuration",
     title: s.solution.name,
-    subtitle: `${capitalize(s.solution.status)} v${s.solution.currentVersion} · ${s.solution.ownerName}`,
+    subtitle: proto ? `Someone built this already · runs on ${proto.platformName} · not yet certified` : `${capitalize(s.solution.status)} v${s.solution.currentVersion} · ${s.solution.ownerName}`,
     score: s.score,
     path: pathFor(s.score, excluded),
     reasons: s.reasons,

@@ -16,4 +16,5 @@ export const ReuseTrigger = {
   save: 'save',
   search: 'search',
   seed: 'seed',
+  prototype: 'prototype',
 } as const;

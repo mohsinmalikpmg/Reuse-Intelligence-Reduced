@@ -52,6 +52,7 @@ import type {
   HealthStatus,
   ImprovementGroupDetail,
   ListCasesParams,
+  ListPrototypesParams,
   ListSampleInputsParams,
   ListSolutionsParams,
   MatchResult,
@@ -60,7 +61,11 @@ import type {
   OwnerOverview,
   Persona,
   Portfolio,
+  PrototypeAnalysis,
+  PrototypeDetail,
+  PrototypeIntake,
   Recommendation,
+  RegisteredPrototype,
   ReuseCheckInput,
   ReuseCheckResult,
   ReuseEvent,
@@ -4820,6 +4825,493 @@ export const useUpdateReuseEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getUpdateReuseEventMutationOptions(options));
+    }
+
+export const getListPrototypesUrl = (params?: ListPrototypesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/prototypes?${stringifiedParams}` : `/api/prototypes`
+}
+
+/**
+ * @summary Prototypes people registered through the prototype entrance, newest first
+ */
+export const listPrototypes = async (params?: ListPrototypesParams, options?: Parameters<typeof customFetch>[1]): Promise<RegisteredPrototype[]> => {
+
+  return customFetch<RegisteredPrototype[]>(getListPrototypesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPrototypesQueryKey = (params?: ListPrototypesParams,) => {
+    return [
+    `/api/prototypes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPrototypesQueryOptions = <TData = Awaited<ReturnType<typeof listPrototypes>>, TError = ErrorType<unknown>>(params?: ListPrototypesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPrototypes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPrototypesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPrototypes>>> = ({ signal }) => listPrototypes(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPrototypes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPrototypesQueryResult = NonNullable<Awaited<ReturnType<typeof listPrototypes>>>
+export type ListPrototypesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Prototypes people registered through the prototype entrance, newest first
+ */
+
+export function useListPrototypes<TData = Awaited<ReturnType<typeof listPrototypes>>, TError = ErrorType<unknown>>(
+ params?: ListPrototypesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPrototypes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPrototypesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegisterPrototypeUrl = () => {
+
+
+
+
+  return `/api/prototypes`
+}
+
+/**
+ * Files the prototype as a non-running catalogue entry (kind prototype, execution preview), records a reuse event, and returns the record. Submitted examples are claims, never evidence.
+ * @summary Register a prototype in the library with its worked examples and confirmed components
+ */
+export const registerPrototype = async (prototypeIntake: PrototypeIntake, options?: Parameters<typeof customFetch>[1]): Promise<PrototypeDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PrototypeDetail>(getRegisterPrototypeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(prototypeIntake)
+  }
+);}
+
+
+
+
+
+export const getRegisterPrototypeMutationKey = () => ['registerPrototype'] as const;
+
+export const getRegisterPrototypeMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerPrototype>>, TError,RegisterPrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerPrototype>>, TError,RegisterPrototypeMutationVariables, TContext> => {
+
+const mutationKey = getRegisterPrototypeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerPrototype>>, RegisterPrototypeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerPrototype(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterPrototypeMutationResult = NonNullable<Awaited<ReturnType<typeof registerPrototype>>>
+    export type RegisterPrototypeMutationBody = BodyType<PrototypeIntake>
+    export type RegisterPrototypeMutationError = ErrorType<ErrorResponse>
+    export type RegisterPrototypeMutationVariables = {data: BodyType<PrototypeIntake>}
+
+    /**
+ * @summary Register a prototype in the library with its worked examples and confirmed components
+ */
+export const useRegisterPrototype = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerPrototype>>, TError,RegisterPrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerPrototype>>,
+        TError,
+        RegisterPrototypeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRegisterPrototypeMutationOptions(options));
+    }
+
+export const getAnalyzePrototypeUrl = () => {
+
+
+
+
+  return `/api/prototypes/analyze`
+}
+
+/**
+ * Deterministic; nothing is stored and no event is recorded. Pass confirmed components to re-run the verdicts on the edited list.
+ * @summary Decompose the worked examples into components, run the same problem through an existing product when one can consume it, and say where the prototype fits
+ */
+export const analyzePrototype = async (prototypeIntake: PrototypeIntake, options?: Parameters<typeof customFetch>[1]): Promise<PrototypeAnalysis> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PrototypeAnalysis>(getAnalyzePrototypeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(prototypeIntake)
+  }
+);}
+
+
+
+
+
+export const getAnalyzePrototypeMutationKey = () => ['analyzePrototype'] as const;
+
+export const getAnalyzePrototypeMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzePrototype>>, TError,AnalyzePrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzePrototype>>, TError,AnalyzePrototypeMutationVariables, TContext> => {
+
+const mutationKey = getAnalyzePrototypeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzePrototype>>, AnalyzePrototypeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  analyzePrototype(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzePrototypeMutationResult = NonNullable<Awaited<ReturnType<typeof analyzePrototype>>>
+    export type AnalyzePrototypeMutationBody = BodyType<PrototypeIntake>
+    export type AnalyzePrototypeMutationError = ErrorType<ErrorResponse>
+    export type AnalyzePrototypeMutationVariables = {data: BodyType<PrototypeIntake>}
+
+    /**
+ * @summary Decompose the worked examples into components, run the same problem through an existing product when one can consume it, and say where the prototype fits
+ */
+export const useAnalyzePrototype = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzePrototype>>, TError,AnalyzePrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzePrototype>>,
+        TError,
+        AnalyzePrototypeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalyzePrototypeMutationOptions(options));
+    }
+
+export const getGetPrototypeUrl = (prototypeId: string,) => {
+
+
+
+
+  return `/api/prototypes/${prototypeId}`
+}
+
+/**
+ * @summary A registered prototype with its catalogue entry and recomputed analysis
+ */
+export const getPrototype = async (prototypeId: string, options?: Parameters<typeof customFetch>[1]): Promise<PrototypeDetail> => {
+
+  return customFetch<PrototypeDetail>(getGetPrototypeUrl(prototypeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPrototypeQueryKey = (prototypeId: string,) => {
+    return [
+    `/api/prototypes/${prototypeId}`
+    ] as const;
+    }
+
+
+export const getGetPrototypeQueryOptions = <TData = Awaited<ReturnType<typeof getPrototype>>, TError = ErrorType<ErrorResponse>>(prototypeId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPrototype>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPrototypeQueryKey(prototypeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPrototype>>> = ({ signal }) => getPrototype(prototypeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: prototypeId !== null && prototypeId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPrototype>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPrototypeQueryResult = NonNullable<Awaited<ReturnType<typeof getPrototype>>>
+export type GetPrototypeQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary A registered prototype with its catalogue entry and recomputed analysis
+ */
+
+export function useGetPrototype<TData = Awaited<ReturnType<typeof getPrototype>>, TError = ErrorType<ErrorResponse>>(
+ prototypeId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPrototype>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPrototypeQueryOptions(prototypeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRemovePrototypeUrl = (prototypeId: string,) => {
+
+
+
+
+  return `/api/prototypes/${prototypeId}`
+}
+
+/**
+ * @summary Remove a registered prototype from the library (reversible with restore)
+ */
+export const removePrototype = async (prototypeId: string, options?: Parameters<typeof customFetch>[1]): Promise<RegisteredPrototype> => {
+
+  return customFetch<RegisteredPrototype>(getRemovePrototypeUrl(prototypeId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemovePrototypeMutationKey = () => ['removePrototype'] as const;
+
+export const getRemovePrototypeMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePrototype>>, TError,RemovePrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removePrototype>>, TError,RemovePrototypeMutationVariables, TContext> => {
+
+const mutationKey = getRemovePrototypeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removePrototype>>, RemovePrototypeMutationVariables> = (props) => {
+          const {prototypeId} = props ?? {};
+
+          return  removePrototype(prototypeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemovePrototypeMutationResult = NonNullable<Awaited<ReturnType<typeof removePrototype>>>
+
+    export type RemovePrototypeMutationError = ErrorType<ErrorResponse>
+    export type RemovePrototypeMutationVariables = {prototypeId: string}
+
+    /**
+ * @summary Remove a registered prototype from the library (reversible with restore)
+ */
+export const useRemovePrototype = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePrototype>>, TError,RemovePrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removePrototype>>,
+        TError,
+        RemovePrototypeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemovePrototypeMutationOptions(options));
+    }
+
+export const getRestorePrototypeUrl = (prototypeId: string,) => {
+
+
+
+
+  return `/api/prototypes/${prototypeId}/restore`
+}
+
+/**
+ * @summary Put a removed prototype back in the library (the Undo of remove)
+ */
+export const restorePrototype = async (prototypeId: string, options?: Parameters<typeof customFetch>[1]): Promise<RegisteredPrototype> => {
+
+  return customFetch<RegisteredPrototype>(getRestorePrototypeUrl(prototypeId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRestorePrototypeMutationKey = () => ['restorePrototype'] as const;
+
+export const getRestorePrototypeMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restorePrototype>>, TError,RestorePrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restorePrototype>>, TError,RestorePrototypeMutationVariables, TContext> => {
+
+const mutationKey = getRestorePrototypeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restorePrototype>>, RestorePrototypeMutationVariables> = (props) => {
+          const {prototypeId} = props ?? {};
+
+          return  restorePrototype(prototypeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestorePrototypeMutationResult = NonNullable<Awaited<ReturnType<typeof restorePrototype>>>
+
+    export type RestorePrototypeMutationError = ErrorType<ErrorResponse>
+    export type RestorePrototypeMutationVariables = {prototypeId: string}
+
+    /**
+ * @summary Put a removed prototype back in the library (the Undo of remove)
+ */
+export const useRestorePrototype = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restorePrototype>>, TError,RestorePrototypeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restorePrototype>>,
+        TError,
+        RestorePrototypeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRestorePrototypeMutationOptions(options));
     }
 
 export const getResetDemoUrl = () => {

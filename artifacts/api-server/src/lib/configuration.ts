@@ -104,8 +104,9 @@ export function conflictingBaseCapability(cap: Capability, ctx: CaseContext): Ca
 
 /** Products whose capabilities a case on this base can draw from: live products sharing a business problem. */
 export function candidatesFor(base: Solution): string[] {
+  // A product FUSEBOX cannot run (preview-only, or a registered prototype) has no steps an experiment could execute.
   return solutions
-    .filter((s) => s.id !== base.id && s.businessProblemIds.some((bp) => base.businessProblemIds.includes(bp)) && s.status !== "deprecated")
+    .filter((s) => s.id !== base.id && s.execution === "live" && s.businessProblemIds.some((bp) => base.businessProblemIds.includes(bp)) && s.status !== "deprecated")
     .map((s) => s.id);
 }
 

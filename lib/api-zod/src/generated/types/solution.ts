@@ -12,6 +12,7 @@ import type { EvidenceLevel } from './evidenceLevel';
 import type { Metrics } from './metrics';
 import type { OutputPreview } from './outputPreview';
 import type { ProductionConfig } from './productionConfig';
+import type { PrototypeOrigin } from './prototypeOrigin';
 import type { SolutionExecution } from './solutionExecution';
 import type { SolutionKind } from './solutionKind';
 import type { SolutionStatus } from './solutionStatus';
@@ -40,6 +41,8 @@ export interface Solution {
   disposition: Disposition | null;
   /** Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply */
   production?: ProductionConfig | null;
+  /** Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX */
+  origin?: PrototypeOrigin | null;
   /** One-sentence outcome */
   outcome: string;
   description: string;

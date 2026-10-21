@@ -12,6 +12,7 @@ import { Page, Skel, StatusPill, Tag, btn, useUndoToast, Headline } from "@/comp
 import { errMsg } from "@/lib/case";
 import { CoverageTable, RequirementChips } from "@/components/reuse-check";
 import { MetaTags, isLive } from "@/components/enterprise";
+import { PrototypeIntake } from "@/components/prototype-intake";
 import { cn } from "@/lib/utils";
 
 const dropUnderPointer: CollisionDetection = (args) => { const hits = pointerWithin(args); return hits.length ? hits : rectIntersection(args); };
@@ -27,6 +28,7 @@ export default function Discover() {
   const params = new URLSearchParams(search);
   const briefId = params.get("brief") ?? "";
   const showResults = params.get("results") === "1";
+  const prototypeMode = params.get("mode") === "prototype";
   const demo = useGetDemoState();
   const create = useCreateBrief();
   const [text, setText] = useState("");
@@ -36,6 +38,19 @@ export default function Discover() {
     if (text.trim().length < 10) { say("Add a little more detail, at least a sentence."); return; }
     create.mutate({ data: { text: text.trim() } }, { onSuccess: (b) => setLocation(`/discover?brief=${b.id}`), onError: (e) => say(errMsg(e)) });
   };
+
+  if (prototypeMode) {
+    return (
+      <Page className="max-w-[1000px] md:pt-14">
+        <Headline stage="trace" size="lg" title="Bring what you" accent="built." className="mb-0"
+          sub="Already have a prototype? Describe it and paste one worked example. We check whether the library already does it, run the same example through the existing product, and say where it fits." />
+        <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-prototype-framing">
+          Starting from a problem instead? <Link href="/discover" className="font-semibold text-primary underline-offset-2 hover:underline" data-testid="link-back-to-problem">Describe the problem</Link>.
+        </p>
+        <PrototypeIntake key={params.get("again") ?? ""} />
+      </Page>
+    );
+  }
 
   return (
     <Page className="max-w-[1000px] md:pt-14">
@@ -66,6 +81,11 @@ export default function Discover() {
           </button>
         </div>
       </form>
+      {!briefId && (
+        <p className="mt-4 text-[14px] text-muted-foreground" data-testid="text-prototype-entrance">
+          Already built something? <Link href="/discover?mode=prototype" className="font-semibold text-primary underline-offset-2 hover:underline" data-testid="link-have-prototype">I have a prototype</Link>. We check it against the library before anyone builds it again.
+        </p>
+      )}
       {briefId && <Understanding briefId={briefId} showResults={showResults} onFind={() => setLocation(`/discover?brief=${briefId}&results=1`)} />}
     </Page>
   );

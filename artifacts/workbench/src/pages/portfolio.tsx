@@ -82,6 +82,7 @@ const KIND_LABEL: Record<QueueItem["kind"], string> = {
   unowned_product: "No owner or support",
   migration_pending: "Migration not recorded",
   new_family_request: "New solution family requested",
+  registered_prototype: "Prototype registered",
 };
 
 function QueueRow({ item, open, settled, onToggle }: { item: QueueItem; open: boolean; settled: boolean; onToggle: () => void }) {

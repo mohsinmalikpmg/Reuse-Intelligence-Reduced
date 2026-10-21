@@ -8,6 +8,7 @@ import { matchBrief } from "./matching";
 import { nextStatus } from "./analysis";
 import { logger } from "./logger";
 import { clearGovernance } from "./governance";
+import { clearPrototypes } from "./prototypes";
 import { eq } from "drizzle-orm";
 import { casesTable, decisionsTable, evaluationsTable, runsTable } from "@workspace/db";
 import { briefsTable, clearAll, createCase, db, getCase, insertDecision, newId, toBrief, updateCaseRow } from "./store";
@@ -34,6 +35,7 @@ export const DEMO_SAFETY_REQUIREMENT = "Flag maintenance issues that may create 
 export async function resetDemo(): Promise<DemoState> {
   // The governance overlay goes first so every solution read below sees the plain catalog again.
   await clearGovernance();
+  await clearPrototypes();
   await clearWorkbench();
   await clearReuseEvents();
   await clearAll();

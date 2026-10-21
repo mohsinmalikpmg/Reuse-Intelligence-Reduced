@@ -19,4 +19,6 @@ export interface CaseInput {
   reuseEventId?: string;
   /** Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of */
   approvedVersion?: string;
+  /** Input text the case opens with, e.g. a prototype's worked example, so the first run is on that same problem instance */
+  presetInputText?: string;
 }

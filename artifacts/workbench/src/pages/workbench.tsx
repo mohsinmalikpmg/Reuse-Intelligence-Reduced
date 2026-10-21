@@ -138,8 +138,11 @@ export default function Workbench() {
     if (sampleId || !samples.length) return;
     const pref = wbQ.data?.exampleRun.sampleInputId;
     const s = samples.find((x) => x.id === pref) ?? samples[0];
-    setSampleId(s.id); setText(s.text);
-  }, [samples, sampleId, wbQ.data]);
+    setSampleId(s.id);
+    // A case opened from a prototype's worked example starts on that same problem instance, as edited text.
+    const preset = caseQ.data?.presetInputText;
+    if (preset) { setText(preset); setEdited(true); } else setText(s.text);
+  }, [samples, sampleId, wbQ.data, caseQ.data?.presetInputText]);
 
   const cfg = cfgQ.data;
   const bBlocks = useMemo(() => (cfg && baseId ? blocksFromConfig(cfg, baseId) : []), [cfg, baseId]);
@@ -432,7 +435,7 @@ export default function Workbench() {
           <section className="card-soft flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5" data-testid="panel-shared-input">
             <FileText className="h-5 w-5 shrink-0 text-primary" />
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[14px] font-semibold text-primary" data-testid="text-input-name">{edited ? "Edited text" : sample?.name ?? "Input"}{edited && <Tag tone="sienna">Edited</Tag>}</div>
+              <div className="flex items-center gap-2 text-[14px] font-semibold text-primary" data-testid="text-input-name">{edited ? (caseQ.data?.presetInputText && text === caseQ.data.presetInputText ? "Prototype's worked example" : "Edited text") : sample?.name ?? "Input"}{edited && <Tag tone="sienna">Edited</Tag>}</div>
               <div className="text-[12px] text-muted-foreground">{sample && !edited ? `${sample.noteCount} note${sample.noteCount === 1 ? "" : "s"}${sample.hasExpected ? " · labelled findings" : ""} · ` : ""}shared by A and B</div>
             </div>
             <button data-testid="button-change-input" aria-expanded={inputOpen} onClick={() => { setInputOpen((v) => !v); setReqOpen(false); }} className={cn(btn.quiet, "px-2")}><ChevronDown className={cn("h-4 w-4 transition-transform", inputOpen && "rotate-180")} /> {inputOpen ? "Hide input" : "Change input"}</button>

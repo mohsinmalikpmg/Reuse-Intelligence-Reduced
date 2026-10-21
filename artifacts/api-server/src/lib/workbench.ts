@@ -128,6 +128,17 @@ export function previewRun(solution: Solution, sampleInputId: string, id: string
   return { id, createdAt: new Date(0).toISOString(), ...run };
 }
 
+/**
+ * Run a live product's production workflow on arbitrary text, not persisted — used to put an existing product's real
+ * output beside a prototype's submitted example on the same problem instance. Never a case run, never evidence.
+ */
+export function adHocRun(solution: Solution, inputText: string): Run {
+  requireExecutable(solution);
+  const { active, configValues } = productionCapabilities(solution);
+  const run = execute({ caseId: null, solution, version: "A", versionLabel: `${solution.name} v${solution.currentVersion} · real run`, active, configValues, sampleInputId: null, text: inputText });
+  return { id: `adhoc-${hashInput(inputText)}`, createdAt: new Date().toISOString(), ...run };
+}
+
 /** Run a solution's production workflow (not persisted) — used for the saved example output. */
 export function exampleRun(solution: Solution): Run {
   const { active, configValues } = productionCapabilities(solution);

@@ -1,4 +1,4 @@
-import { Eye, ShieldCheck } from "lucide-react";
+import { Boxes, Eye, ShieldCheck } from "lucide-react";
 import type { OutputPreview, Solution } from "@workspace/api-client-react";
 import { Tag } from "@/components/bits";
 
@@ -13,7 +13,10 @@ export function RiskTag({ tier, testid }: { tier: Solution["riskTier"]; testid?:
   return <Tag tone={tier === "high" ? "sienna" : tier === "medium" ? "sky" : "muted"} testid={testid}>{tier === "high" ? "High-risk output" : tier === "medium" ? "Medium risk" : "Low risk"}</Tag>;
 }
 
-export function ExecutionTag({ s, testid }: { s: Pick<Solution, "execution">; testid?: string }) {
+export const isPrototype = (s: Pick<Solution, "origin">) => !!s.origin;
+
+export function ExecutionTag({ s, testid }: { s: Pick<Solution, "execution" | "origin">; testid?: string }) {
+  if (s.origin) return <Tag tone="sienna" testid={testid}><Boxes className="h-3 w-3" /> Prototype · runs on {s.origin.platformName} · not run by FUSEBOX</Tag>;
   return isLive(s) ? <Tag tone="green" testid={testid}>Runs on your input</Tag> : <Tag tone="slate" testid={testid}><Eye className="h-3 w-3" /> Output preview</Tag>;
 }
 

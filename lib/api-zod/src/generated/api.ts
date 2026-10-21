@@ -128,6 +128,12 @@ export const GetSeekerOverviewResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -232,6 +238,7 @@ export const GetSeekerOverviewResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -273,6 +280,12 @@ export const GetSeekerOverviewResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -389,6 +402,12 @@ export const GetOwnerOverviewResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -498,6 +517,7 @@ export const GetOwnerOverviewResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -539,6 +559,12 @@ export const GetOwnerOverviewResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -709,6 +735,7 @@ export const GetOwnerOverviewResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -750,6 +777,12 @@ export const GetOwnerOverviewResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -866,6 +899,12 @@ export const ListSolutionsResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -968,6 +1007,12 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1359,6 +1404,12 @@ export const ListSolutionFamiliesResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1512,6 +1563,12 @@ export const ListSolutionFamiliesResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1603,6 +1660,12 @@ export const ListSolutionFamiliesResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -1874,6 +1937,12 @@ export const SearchLibraryResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2054,6 +2123,12 @@ export const GetMySolutionsResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2158,6 +2233,7 @@ export const GetMySolutionsResponseItem = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -2199,6 +2275,12 @@ export const GetMySolutionsResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2321,6 +2403,7 @@ export const GetMySolutionsResponseItem = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -2362,6 +2445,12 @@ export const GetMySolutionsResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2490,6 +2579,12 @@ export const GetSolutionResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2634,6 +2729,7 @@ export const GetSolutionResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -2675,6 +2771,12 @@ export const GetSolutionResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2793,6 +2895,7 @@ export const GetSolutionResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -2834,6 +2937,12 @@ export const GetSolutionResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -2900,7 +3009,89 @@ export const GetSolutionResponse = zod.object({
   "createdAt": zod.string()
 }),zod.null()]),
   "nextStep": zod.string().describe('Plain-language next action for the current state')
-})).describe('Saved or proposed experiments branched from this product; never library entries')
+})).describe('Saved or proposed experiments branched from this product; never library entries'),
+  "prototype": zod.union([zod.object({
+  "id": zod.string().describe('Also the catalogue solution id'),
+  "name": zod.string(),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "users": zod.string(),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "description": zod.string(),
+  "dataInvolved": zod.array(zod.string()),
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "sampleInputId": zod.string().nullable()
+})),
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string(),
+  "comparedSolutionId": zod.string().nullable().describe('The product whose capabilities this prototype duplicates or extends'),
+  "comparedSolutionName": zod.string().nullable(),
+  "reuseEventId": zod.string().nullable(),
+  "createdBy": zod.string(),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "createdAt": zod.string(),
+  "removed": zod.boolean()
+}),zod.null()]).describe('Set when this entry is a registered prototype'),
+  "comparedPrototypes": zod.array(zod.object({
+  "id": zod.string().describe('Also the catalogue solution id'),
+  "name": zod.string(),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "users": zod.string(),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "description": zod.string(),
+  "dataInvolved": zod.array(zod.string()),
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "sampleInputId": zod.string().nullable()
+})),
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string(),
+  "comparedSolutionId": zod.string().nullable().describe('The product whose capabilities this prototype duplicates or extends'),
+  "comparedSolutionName": zod.string().nullable(),
+  "reuseEventId": zod.string().nullable(),
+  "createdBy": zod.string(),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "createdAt": zod.string(),
+  "removed": zod.boolean()
+})).describe('Registered prototypes compared against this product (duplicating or extending it, or whose example it ran)')
 })
 
 
@@ -3290,6 +3481,12 @@ export const GetBriefMatchesResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -3463,6 +3660,7 @@ export const ListCasesResponseItem = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -3504,6 +3702,12 @@ export const ListCasesResponseItem = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -3585,7 +3789,8 @@ export const CreateCaseBody = zod.object({
   "createdByRole": zod.enum(['seeker', 'owner', 'it']).optional(),
   "moduleIds": zod.array(zod.string()).optional().describe('Addable modules switched on in Version B from the start (e.g. from a reuse check)'),
   "reuseEventId": zod.string().optional().describe('Reuse-check event this case acts on; recorded as the path taken'),
-  "approvedVersion": zod.string().optional().describe('Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of')
+  "approvedVersion": zod.string().optional().describe('Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of'),
+  "presetInputText": zod.string().optional().describe('Input text the case opens with, e.g. a prototype\'s worked example, so the first run is on that same problem instance')
 })
 
 export const CreateCaseResponse = zod.object({
@@ -3638,6 +3843,7 @@ export const CreateCaseResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -3700,6 +3906,7 @@ export const GetCaseResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -3773,6 +3980,7 @@ export const UpdateCaseResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -3848,6 +4056,7 @@ export const AddCaseRequirementResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -4031,6 +4240,7 @@ export const RemoveCaseRequirementResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -4106,6 +4316,7 @@ export const AddCapabilityRequestResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -4169,6 +4380,7 @@ export const RemoveCapabilityRequestResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -4220,6 +4432,12 @@ export const GetCaseBaselineResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -4457,6 +4675,12 @@ export const GetCaseRecommendationResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -4548,6 +4772,12 @@ export const GetCaseRecommendationResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -4785,6 +5015,12 @@ export const GetCaseRecommendationResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -5991,6 +6227,7 @@ export const GetCaseReviewResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -6062,6 +6299,12 @@ export const GetCaseReviewResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6479,6 +6722,12 @@ export const GetCaseConsolidationResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6648,6 +6897,12 @@ export const SetCaseDispositionsResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6814,6 +7069,12 @@ export const RecordMigrationNoteResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -6987,6 +7248,7 @@ export const GetSimilarExperimentsResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -7071,6 +7333,7 @@ export const GetImprovementGroupResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -7112,6 +7375,12 @@ export const GetImprovementGroupResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -7223,6 +7492,12 @@ export const GetImprovementGroupResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -7331,6 +7606,7 @@ export const GetImprovementGroupResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -7372,6 +7648,12 @@ export const GetImprovementGroupResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -7535,6 +7817,7 @@ export const RecordGroupDecisionResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -7576,6 +7859,12 @@ export const RecordGroupDecisionResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -7687,6 +7976,12 @@ export const RecordGroupDecisionResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -7795,6 +8090,7 @@ export const RecordGroupDecisionResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -7836,6 +8132,12 @@ export const RecordGroupDecisionResponse = zod.object({
   "moduleStates": zod.record(zod.string(), zod.boolean()),
   "configValues": zod.record(zod.string(), zod.string())
 }),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
   "outcome": zod.string().describe('One-sentence outcome'),
   "description": zod.string(),
   "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
@@ -7992,6 +8294,7 @@ export const RecordCaseDecisionResponse = zod.object({
   "reuseEventId": zod.string().nullable(),
   "createdAt": zod.string()
 })).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -8186,7 +8489,7 @@ export const GetPortfolioResponse = zod.object({
 }),
   "queue": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['consolidation_approval', 'unowned_product', 'migration_pending', 'new_family_request']),
+  "kind": zod.enum(['consolidation_approval', 'unowned_product', 'migration_pending', 'new_family_request', 'registered_prototype']),
   "title": zod.string(),
   "detail": zod.string().describe('Why IT is needed'),
   "usage": zod.string().nullable().describe('Usage context such as "120 users"; never decides the recommendation'),
@@ -8216,7 +8519,7 @@ export const reuseCheckBodyNeedMin = 3;
 
 export const ReuseCheckBody = zod.object({
   "need": zod.string().min(reuseCheckBodyNeedMin),
-  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed']),
+  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed', 'prototype']),
   "baseSolutionId": zod.string().optional(),
   "caseId": zod.string().optional(),
   "briefId": zod.string().optional(),
@@ -8343,7 +8646,7 @@ export const ReuseCheckResponse = zod.object({
  */
 export const ListReuseEventsResponseItem = zod.object({
   "id": zod.string(),
-  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed']),
+  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed', 'prototype']),
   "need": zod.string(),
   "baseSolutionId": zod.string().nullable(),
   "caseId": zod.string().nullable(),
@@ -8374,7 +8677,7 @@ export const UpdateReuseEventBody = zod.object({
 
 export const UpdateReuseEventResponse = zod.object({
   "id": zod.string(),
-  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed']),
+  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed', 'prototype']),
   "need": zod.string(),
   "baseSolutionId": zod.string().nullable(),
   "caseId": zod.string().nullable(),
@@ -8388,6 +8691,837 @@ export const UpdateReuseEventResponse = zod.object({
   "actor": zod.string(),
   "demo": zod.boolean().describe('Seeded demonstration data'),
   "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Prototypes people registered through the prototype entrance, newest first
+ */
+export const ListPrototypesQueryParams = zod.object({
+  "comparedTo": zod.coerce.string().optional().describe('Only prototypes compared against, or recommended to fold into / extend, this product')
+})
+
+export const ListPrototypesResponseItem = zod.object({
+  "id": zod.string().describe('Also the catalogue solution id'),
+  "name": zod.string(),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "users": zod.string(),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "description": zod.string(),
+  "dataInvolved": zod.array(zod.string()),
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "sampleInputId": zod.string().nullable()
+})),
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string(),
+  "comparedSolutionId": zod.string().nullable().describe('The product whose capabilities this prototype duplicates or extends'),
+  "comparedSolutionName": zod.string().nullable(),
+  "reuseEventId": zod.string().nullable(),
+  "createdBy": zod.string(),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "createdAt": zod.string(),
+  "removed": zod.boolean()
+})
+export const ListPrototypesResponse = zod.array(ListPrototypesResponseItem)
+
+
+/**
+ * Files the prototype as a non-running catalogue entry (kind prototype, execution preview), records a reuse event, and returns the record. Submitted examples are claims, never evidence.
+ * @summary Register a prototype in the library with its worked examples and confirmed components
+ */
+export const registerPrototypeBodyNameMin = 2;
+
+export const registerPrototypeBodyPlatformNameMin = 2;
+
+export const registerPrototypeBodyUsersMin = 2;
+
+export const registerPrototypeBodyDescriptionMin = 10;
+
+export const registerPrototypeBodyExamplesItemInputMin = 10;
+
+export const registerPrototypeBodyExamplesItemOutputMin = 10;
+
+export const registerPrototypeBodyExamplesMax = 3;
+
+export const registerPrototypeBodyComponentsItemNameMin = 2;
+
+
+
+export const RegisterPrototypeBody = zod.object({
+  "name": zod.string().min(registerPrototypeBodyNameMin),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string().min(registerPrototypeBodyPlatformNameMin),
+  "link": zod.string().optional(),
+  "users": zod.string().min(registerPrototypeBodyUsersMin).describe('Who uses it today'),
+  "ownerName": zod.string().optional(),
+  "ownerTeam": zod.string().optional(),
+  "description": zod.string().min(registerPrototypeBodyDescriptionMin).describe('One sentence on what it does'),
+  "dataInvolved": zod.array(zod.string()).optional(),
+  "riskTier": zod.enum(['low', 'medium', 'high']).optional(),
+  "noRestrictedData": zod.boolean().optional().describe('The person confirms the examples contain no restricted data'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']).optional(),
+  "examples": zod.array(zod.object({
+  "input": zod.string().min(registerPrototypeBodyExamplesItemInputMin).describe('The problem instance fed to the prototype (pasted text or a library sample input)'),
+  "output": zod.string().min(registerPrototypeBodyExamplesItemOutputMin).describe('The output the prototype produced for it'),
+  "sampleInputId": zod.string().optional().describe('Set when the input is one of the library\'s sample inputs')
+})).min(1).max(registerPrototypeBodyExamplesMax),
+  "components": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "name": zod.string().min(registerPrototypeBodyComponentsItemNameMin),
+  "description": zod.string().optional(),
+  "sectionTitles": zod.array(zod.string()).optional()
+})).optional().describe('The confirmed component list; when omitted the server proposes one from the examples')
+})
+
+export const RegisterPrototypeResponse = zod.object({
+  "prototype": zod.object({
+  "id": zod.string().describe('Also the catalogue solution id'),
+  "name": zod.string(),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "users": zod.string(),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "description": zod.string(),
+  "dataInvolved": zod.array(zod.string()),
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "sampleInputId": zod.string().nullable()
+})),
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string(),
+  "comparedSolutionId": zod.string().nullable().describe('The product whose capabilities this prototype duplicates or extends'),
+  "comparedSolutionName": zod.string().nullable(),
+  "reuseEventId": zod.string().nullable(),
+  "createdBy": zod.string(),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "createdAt": zod.string(),
+  "removed": zod.boolean()
+}),
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
+  "disposition": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
+  "state": zod.enum(['proposed', 'confirmed']),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetVersion": zod.string().nullable(),
+  "reason": zod.string().nullable(),
+  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
+  "preferred": zod.boolean().describe('The product preferred for this business problem'),
+  "label": zod.string().describe('Plain-language badge')
+}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string(),
+  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
+  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
+  "foldedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "experimentOwner": zod.string(),
+  "tests": zod.number().int(),
+  "preferredPercent": zod.number().int().nullable(),
+  "provenance": zod.string().describe('e.g. from Pattern Finder')
+})),
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "analysis": zod.object({
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "comparison": zod.union([zod.object({
+  "exampleId": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "submittedLabel": zod.string(),
+  "realLabel": zod.string(),
+  "lines": zod.array(zod.object({
+  "key": zod.string(),
+  "section": zod.string().describe('Section of the submitted output the line came from'),
+  "text": zod.string(),
+  "status": zod.enum(['reproduced', 'not_produced']).describe('reproduced = the existing product produced an equivalent line on the same input; not_produced = it did not'),
+  "matchedText": zod.string().nullable(),
+  "matchedStepId": zod.string().nullable(),
+  "matchedStepName": zod.string().nullable(),
+  "componentId": zod.string().nullable().describe('The component that explains a line the existing product did not produce')
+})),
+  "reproduced": zod.number().int(),
+  "notProduced": zod.number().int(),
+  "onlyInReal": zod.number().int().describe('Lines the existing product produced that the submitted output does not contain'),
+  "run": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+}).describe('Same problem, two outputs. The submitted side is a claim; the real side is an actual run of the existing product on exactly that input.'),zod.null()]),
+  "fallback": zod.string().nullable().describe('Set when no live product can run any example input'),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string().describe('One sentence'),
+  "basis": zod.string().describe('What the verdicts are based on'),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetLive": zod.boolean().describe('True when the target product runs in FUSEBOX'),
+  "targetCapabilityId": zod.string().nullable()
+})
+})
+
+
+/**
+ * Deterministic; nothing is stored and no event is recorded. Pass confirmed components to re-run the verdicts on the edited list.
+ * @summary Decompose the worked examples into components, run the same problem through an existing product when one can consume it, and say where the prototype fits
+ */
+export const analyzePrototypeBodyNameMin = 2;
+
+export const analyzePrototypeBodyPlatformNameMin = 2;
+
+export const analyzePrototypeBodyUsersMin = 2;
+
+export const analyzePrototypeBodyDescriptionMin = 10;
+
+export const analyzePrototypeBodyExamplesItemInputMin = 10;
+
+export const analyzePrototypeBodyExamplesItemOutputMin = 10;
+
+export const analyzePrototypeBodyExamplesMax = 3;
+
+export const analyzePrototypeBodyComponentsItemNameMin = 2;
+
+
+
+export const AnalyzePrototypeBody = zod.object({
+  "name": zod.string().min(analyzePrototypeBodyNameMin),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string().min(analyzePrototypeBodyPlatformNameMin),
+  "link": zod.string().optional(),
+  "users": zod.string().min(analyzePrototypeBodyUsersMin).describe('Who uses it today'),
+  "ownerName": zod.string().optional(),
+  "ownerTeam": zod.string().optional(),
+  "description": zod.string().min(analyzePrototypeBodyDescriptionMin).describe('One sentence on what it does'),
+  "dataInvolved": zod.array(zod.string()).optional(),
+  "riskTier": zod.enum(['low', 'medium', 'high']).optional(),
+  "noRestrictedData": zod.boolean().optional().describe('The person confirms the examples contain no restricted data'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']).optional(),
+  "examples": zod.array(zod.object({
+  "input": zod.string().min(analyzePrototypeBodyExamplesItemInputMin).describe('The problem instance fed to the prototype (pasted text or a library sample input)'),
+  "output": zod.string().min(analyzePrototypeBodyExamplesItemOutputMin).describe('The output the prototype produced for it'),
+  "sampleInputId": zod.string().optional().describe('Set when the input is one of the library\'s sample inputs')
+})).min(1).max(analyzePrototypeBodyExamplesMax),
+  "components": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "name": zod.string().min(analyzePrototypeBodyComponentsItemNameMin),
+  "description": zod.string().optional(),
+  "sectionTitles": zod.array(zod.string()).optional()
+})).optional().describe('The confirmed component list; when omitted the server proposes one from the examples')
+})
+
+export const AnalyzePrototypeResponse = zod.object({
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "comparison": zod.union([zod.object({
+  "exampleId": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "submittedLabel": zod.string(),
+  "realLabel": zod.string(),
+  "lines": zod.array(zod.object({
+  "key": zod.string(),
+  "section": zod.string().describe('Section of the submitted output the line came from'),
+  "text": zod.string(),
+  "status": zod.enum(['reproduced', 'not_produced']).describe('reproduced = the existing product produced an equivalent line on the same input; not_produced = it did not'),
+  "matchedText": zod.string().nullable(),
+  "matchedStepId": zod.string().nullable(),
+  "matchedStepName": zod.string().nullable(),
+  "componentId": zod.string().nullable().describe('The component that explains a line the existing product did not produce')
+})),
+  "reproduced": zod.number().int(),
+  "notProduced": zod.number().int(),
+  "onlyInReal": zod.number().int().describe('Lines the existing product produced that the submitted output does not contain'),
+  "run": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+}).describe('Same problem, two outputs. The submitted side is a claim; the real side is an actual run of the existing product on exactly that input.'),zod.null()]),
+  "fallback": zod.string().nullable().describe('Set when no live product can run any example input'),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string().describe('One sentence'),
+  "basis": zod.string().describe('What the verdicts are based on'),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetLive": zod.boolean().describe('True when the target product runs in FUSEBOX'),
+  "targetCapabilityId": zod.string().nullable()
+})
+
+
+/**
+ * @summary A registered prototype with its catalogue entry and recomputed analysis
+ */
+export const GetPrototypeParams = zod.object({
+  "prototypeId": zod.coerce.string()
+})
+
+export const GetPrototypeResponse = zod.object({
+  "prototype": zod.object({
+  "id": zod.string().describe('Also the catalogue solution id'),
+  "name": zod.string(),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "users": zod.string(),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "description": zod.string(),
+  "dataInvolved": zod.array(zod.string()),
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "sampleInputId": zod.string().nullable()
+})),
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string(),
+  "comparedSolutionId": zod.string().nullable().describe('The product whose capabilities this prototype duplicates or extends'),
+  "comparedSolutionName": zod.string().nullable(),
+  "reuseEventId": zod.string().nullable(),
+  "createdBy": zod.string(),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "createdAt": zod.string(),
+  "removed": zod.boolean()
+}),
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
+  "disposition": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
+  "state": zod.enum(['proposed', 'confirmed']),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetVersion": zod.string().nullable(),
+  "reason": zod.string().nullable(),
+  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
+  "preferred": zod.boolean().describe('The product preferred for this business problem'),
+  "label": zod.string().describe('Plain-language badge')
+}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "origin": zod.union([zod.object({
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "registeredAt": zod.string()
+}).describe('Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX'),zod.null()]).optional().describe('Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX'),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string(),
+  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
+  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
+  "foldedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "experimentOwner": zod.string(),
+  "tests": zod.number().int(),
+  "preferredPercent": zod.number().int().nullable(),
+  "provenance": zod.string().describe('e.g. from Pattern Finder')
+})),
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "analysis": zod.object({
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "comparison": zod.union([zod.object({
+  "exampleId": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "submittedLabel": zod.string(),
+  "realLabel": zod.string(),
+  "lines": zod.array(zod.object({
+  "key": zod.string(),
+  "section": zod.string().describe('Section of the submitted output the line came from'),
+  "text": zod.string(),
+  "status": zod.enum(['reproduced', 'not_produced']).describe('reproduced = the existing product produced an equivalent line on the same input; not_produced = it did not'),
+  "matchedText": zod.string().nullable(),
+  "matchedStepId": zod.string().nullable(),
+  "matchedStepName": zod.string().nullable(),
+  "componentId": zod.string().nullable().describe('The component that explains a line the existing product did not produce')
+})),
+  "reproduced": zod.number().int(),
+  "notProduced": zod.number().int(),
+  "onlyInReal": zod.number().int().describe('Lines the existing product produced that the submitted output does not contain'),
+  "run": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+}).describe('Same problem, two outputs. The submitted side is a claim; the real side is an actual run of the existing product on exactly that input.'),zod.null()]),
+  "fallback": zod.string().nullable().describe('Set when no live product can run any example input'),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string().describe('One sentence'),
+  "basis": zod.string().describe('What the verdicts are based on'),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetLive": zod.boolean().describe('True when the target product runs in FUSEBOX'),
+  "targetCapabilityId": zod.string().nullable()
+})
+})
+
+
+/**
+ * @summary Remove a registered prototype from the library (reversible with restore)
+ */
+export const RemovePrototypeParams = zod.object({
+  "prototypeId": zod.coerce.string()
+})
+
+export const RemovePrototypeResponse = zod.object({
+  "id": zod.string().describe('Also the catalogue solution id'),
+  "name": zod.string(),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "users": zod.string(),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "description": zod.string(),
+  "dataInvolved": zod.array(zod.string()),
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "sampleInputId": zod.string().nullable()
+})),
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string(),
+  "comparedSolutionId": zod.string().nullable().describe('The product whose capabilities this prototype duplicates or extends'),
+  "comparedSolutionName": zod.string().nullable(),
+  "reuseEventId": zod.string().nullable(),
+  "createdBy": zod.string(),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "createdAt": zod.string(),
+  "removed": zod.boolean()
+})
+
+
+/**
+ * @summary Put a removed prototype back in the library (the Undo of remove)
+ */
+export const RestorePrototypeParams = zod.object({
+  "prototypeId": zod.coerce.string()
+})
+
+export const RestorePrototypeResponse = zod.object({
+  "id": zod.string().describe('Also the catalogue solution id'),
+  "name": zod.string(),
+  "platformKind": zod.enum(['platform', 'saas', 'agent_framework', 'notebook', 'other']).describe('Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform'),
+  "platformName": zod.string(),
+  "link": zod.string().nullable(),
+  "users": zod.string(),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "description": zod.string(),
+  "dataInvolved": zod.array(zod.string()),
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "examples": zod.array(zod.object({
+  "id": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "sampleInputId": zod.string().nullable()
+})),
+  "components": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "sectionTitles": zod.array(zod.string()).describe('Titles of the example sections that support this component'),
+  "matchedCapabilityId": zod.string().nullable(),
+  "matchedCapabilityName": zod.string().nullable().describe('Null means nothing in the library produces this'),
+  "matchedSolutionId": zod.string().nullable(),
+  "matchedSolutionName": zod.string().nullable(),
+  "matchScore": zod.number().nullable().describe('Reuse-fit score of the matched capability (0-100)'),
+  "verdict": zod.enum(['duplicates', 'extends', 'new']).describe('duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it'),
+  "reason": zod.string()
+})),
+  "recommendedPath": zod.enum(['fold_into', 'connect_module', 'register_new']),
+  "recommendation": zod.string(),
+  "comparedSolutionId": zod.string().nullable().describe('The product whose capabilities this prototype duplicates or extends'),
+  "comparedSolutionName": zod.string().nullable(),
+  "reuseEventId": zod.string().nullable(),
+  "createdBy": zod.string(),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "createdAt": zod.string(),
+  "removed": zod.boolean()
 })
 
 

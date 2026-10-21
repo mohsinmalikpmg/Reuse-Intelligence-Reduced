@@ -50,6 +50,7 @@ export function toCase(row: CaseRow): Case {
     saved: row.saved,
     requirements: row.requirements ?? [],
     capabilityRequests: row.capabilityRequests ?? [],
+    presetInputText: row.presetInputText ?? null,
     parentVersion: row.parentVersion,
     intent: row.intent,
     ownerName: row.ownerName,
@@ -141,6 +142,8 @@ export async function createCase(input: {
   approvedVersion?: string;
   owner?: { name: string; team: string };
   demo?: boolean;
+  /** Input text the case opens with, e.g. a prototype's worked example. */
+  presetInputText?: string | null;
 }): Promise<Case> {
   const live = getSolution(input.baseSolutionId);
   if (!live) throw new Error(`Unknown solution ${input.baseSolutionId}`);
@@ -207,6 +210,7 @@ export async function createCase(input: {
       ownerTeam: owner.team,
       promotionState: "experiment",
       demo: input.demo ?? false,
+      presetInputText: input.presetInputText?.trim() || null,
     })
     .returning();
   return toCase(row!);

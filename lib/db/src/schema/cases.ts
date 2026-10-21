@@ -28,6 +28,8 @@ export const casesTable = pgTable("cases", {
   demo: boolean("demo").notNull().default(false),
   requirements: jsonb("requirements").$type<CaseRequirementRow[]>().notNull().default([]),
   capabilityRequests: jsonb("capability_requests").$type<CapabilityRequestRow[]>().notNull().default([]),
+  // Input text a case opens with (e.g. a prototype's worked example), so the first run is on the same problem instance.
+  presetInputText: text("preset_input_text"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

@@ -14,4 +14,5 @@ export const QueueItemKind = {
   unowned_product: 'unowned_product',
   migration_pending: 'migration_pending',
   new_family_request: 'new_family_request',
+  registered_prototype: 'registered_prototype',
 } as const;

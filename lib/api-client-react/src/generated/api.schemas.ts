@@ -238,6 +238,11 @@ export interface Case {
   requirements: CaseRequirement[];
   /** Capabilities the person asked for that do not exist yet; recorded, never run */
   capabilityRequests: CapabilityRequest[];
+  /**
+     * Input text the case opened with (a prototype's worked example)
+     * @nullable
+     */
+  presetInputText: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -374,6 +379,31 @@ export interface ProductionConfig {
 }
 
 /**
+ * Where the prototype runs today; platform = low-code platform such as Copilot Studio or Power Platform
+ */
+export type PrototypePlatformKind = typeof PrototypePlatformKind[keyof typeof PrototypePlatformKind];
+
+
+export const PrototypePlatformKind = {
+  platform: 'platform',
+  saas: 'saas',
+  agent_framework: 'agent_framework',
+  notebook: 'notebook',
+  other: 'other',
+} as const;
+
+/**
+ * Set on registered prototypes only; the platform the prototype runs on outside FUSEBOX
+ */
+export interface PrototypeOrigin {
+  platformKind: PrototypePlatformKind;
+  platformName: string;
+  /** @nullable */
+  link: string | null;
+  registeredAt: string;
+}
+
+/**
  * released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version
  */
 export type SolutionVersionState = typeof SolutionVersionState[keyof typeof SolutionVersionState];
@@ -456,6 +486,8 @@ export interface Solution {
   disposition: Disposition | null;
   /** Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply */
   production?: ProductionConfig | null;
+  /** Set only on prototypes registered through the prototype entrance; the platform it runs on outside FUSEBOX */
+  origin?: PrototypeOrigin | null;
   /** One-sentence outcome */
   outcome: string;
   description: string;
@@ -621,6 +653,94 @@ export interface BusinessProblem {
   status: string;
 }
 
+export interface PrototypeExample {
+  id: string;
+  input: string;
+  output: string;
+  /** @nullable */
+  sampleInputId: string | null;
+}
+
+/**
+ * duplicates = an existing capability already produces this; extends = an existing product ran the same input and did not produce it; new = nothing in the library is about it
+ */
+export type PrototypeVerdict = typeof PrototypeVerdict[keyof typeof PrototypeVerdict];
+
+
+export const PrototypeVerdict = {
+  duplicates: 'duplicates',
+  extends: 'extends',
+  new: 'new',
+} as const;
+
+export interface PrototypeComponent {
+  id: string;
+  name: string;
+  description: string;
+  /** Titles of the example sections that support this component */
+  sectionTitles: string[];
+  /** @nullable */
+  matchedCapabilityId: string | null;
+  /**
+     * Null means nothing in the library produces this
+     * @nullable
+     */
+  matchedCapabilityName: string | null;
+  /** @nullable */
+  matchedSolutionId: string | null;
+  /** @nullable */
+  matchedSolutionName: string | null;
+  /**
+     * Reuse-fit score of the matched capability (0-100)
+     * @nullable
+     */
+  matchScore: number | null;
+  verdict: PrototypeVerdict;
+  reason: string;
+}
+
+export type PrototypeRecommendedPath = typeof PrototypeRecommendedPath[keyof typeof PrototypeRecommendedPath];
+
+
+export const PrototypeRecommendedPath = {
+  fold_into: 'fold_into',
+  connect_module: 'connect_module',
+  register_new: 'register_new',
+} as const;
+
+export interface RegisteredPrototype {
+  /** Also the catalogue solution id */
+  id: string;
+  name: string;
+  platformKind: PrototypePlatformKind;
+  platformName: string;
+  /** @nullable */
+  link: string | null;
+  users: string;
+  ownerName: string;
+  ownerTeam: string;
+  description: string;
+  dataInvolved: string[];
+  riskTier: EffortLevel;
+  examples: PrototypeExample[];
+  components: PrototypeComponent[];
+  recommendedPath: PrototypeRecommendedPath;
+  recommendation: string;
+  /**
+     * The product whose capabilities this prototype duplicates or extends
+     * @nullable
+     */
+  comparedSolutionId: string | null;
+  /** @nullable */
+  comparedSolutionName: string | null;
+  /** @nullable */
+  reuseEventId: string | null;
+  createdBy: string;
+  createdByRole: Role;
+  createdAt: string;
+  removed: boolean;
+}
+
 export interface SolutionDetail {
   solution: Solution;
   capabilities: Capability[];
@@ -628,6 +748,10 @@ export interface SolutionDetail {
   openCases: CaseSummary[];
   /** Saved or proposed experiments branched from this product; never library entries */
   experimentsInProgress: CaseSummary[];
+  /** Set when this entry is a registered prototype */
+  prototype: RegisteredPrototype | null;
+  /** Registered prototypes compared against this product (duplicating or extending it, or whose example it ran) */
+  comparedPrototypes: RegisteredPrototype[];
 }
 
 export interface BriefField {
@@ -839,6 +963,7 @@ export const ReuseTrigger = {
   save: 'save',
   search: 'search',
   seed: 'seed',
+  prototype: 'prototype',
 } as const;
 
 /**
@@ -1019,6 +1144,8 @@ export interface CaseInput {
   reuseEventId?: string;
   /** Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of */
   approvedVersion?: string;
+  /** Input text the case opens with, e.g. a prototype's worked example, so the first run is on that same problem instance */
+  presetInputText?: string;
 }
 
 export type CaseUpdatePilotPercent = typeof CaseUpdatePilotPercent[keyof typeof CaseUpdatePilotPercent];
@@ -2059,6 +2186,7 @@ export const QueueItemKind = {
   unowned_product: 'unowned_product',
   migration_pending: 'migration_pending',
   new_family_request: 'new_family_request',
+  registered_prototype: 'registered_prototype',
 } as const;
 
 export interface QueueItem {
@@ -2139,6 +2267,139 @@ export interface DemoState {
   aiAvailable: boolean;
 }
 
+export interface PrototypeExampleInput {
+  /**
+     * The problem instance fed to the prototype (pasted text or a library sample input)
+     * @minLength 10
+     */
+  input: string;
+  /**
+     * The output the prototype produced for it
+     * @minLength 10
+     */
+  output: string;
+  /** Set when the input is one of the library's sample inputs */
+  sampleInputId?: string;
+}
+
+export interface PrototypeComponentInput {
+  id?: string;
+  /** @minLength 2 */
+  name: string;
+  description?: string;
+  sectionTitles?: string[];
+}
+
+export interface PrototypeIntake {
+  /** @minLength 2 */
+  name: string;
+  platformKind: PrototypePlatformKind;
+  /** @minLength 2 */
+  platformName: string;
+  link?: string;
+  /**
+     * Who uses it today
+     * @minLength 2
+     */
+  users: string;
+  ownerName?: string;
+  ownerTeam?: string;
+  /**
+     * One sentence on what it does
+     * @minLength 10
+     */
+  description: string;
+  dataInvolved?: string[];
+  riskTier?: EffortLevel;
+  /** The person confirms the examples contain no restricted data */
+  noRestrictedData?: boolean;
+  createdByRole?: Role;
+  /**
+     * @minItems 1
+     * @maxItems 3
+     */
+  examples: PrototypeExampleInput[];
+  /** The confirmed component list; when omitted the server proposes one from the examples */
+  components?: PrototypeComponentInput[];
+}
+
+/**
+ * reproduced = the existing product produced an equivalent line on the same input; not_produced = it did not
+ */
+export type PrototypeComparisonLineStatus = typeof PrototypeComparisonLineStatus[keyof typeof PrototypeComparisonLineStatus];
+
+
+export const PrototypeComparisonLineStatus = {
+  reproduced: 'reproduced',
+  not_produced: 'not_produced',
+} as const;
+
+export interface PrototypeComparisonLine {
+  key: string;
+  /** Section of the submitted output the line came from */
+  section: string;
+  text: string;
+  /** reproduced = the existing product produced an equivalent line on the same input; not_produced = it did not */
+  status: PrototypeComparisonLineStatus;
+  /** @nullable */
+  matchedText: string | null;
+  /** @nullable */
+  matchedStepId: string | null;
+  /** @nullable */
+  matchedStepName: string | null;
+  /**
+     * The component that explains a line the existing product did not produce
+     * @nullable
+     */
+  componentId: string | null;
+}
+
+/**
+ * Same problem, two outputs. The submitted side is a claim; the real side is an actual run of the existing product on exactly that input.
+ */
+export interface PrototypeComparison {
+  exampleId: string;
+  solutionId: string;
+  solutionName: string;
+  submittedLabel: string;
+  realLabel: string;
+  lines: PrototypeComparisonLine[];
+  reproduced: number;
+  notProduced: number;
+  /** Lines the existing product produced that the submitted output does not contain */
+  onlyInReal: number;
+  run: Run;
+}
+
+export interface PrototypeAnalysis {
+  components: PrototypeComponent[];
+  comparison: PrototypeComparison | null;
+  /**
+     * Set when no live product can run any example input
+     * @nullable
+     */
+  fallback: string | null;
+  recommendedPath: PrototypeRecommendedPath;
+  /** One sentence */
+  recommendation: string;
+  /** What the verdicts are based on */
+  basis: string;
+  /** @nullable */
+  targetSolutionId: string | null;
+  /** @nullable */
+  targetSolutionName: string | null;
+  /** True when the target product runs in FUSEBOX */
+  targetLive: boolean;
+  /** @nullable */
+  targetCapabilityId: string | null;
+}
+
+export interface PrototypeDetail {
+  prototype: RegisteredPrototype;
+  solution: Solution;
+  analysis: PrototypeAnalysis;
+}
+
 export type ListSolutionsParams = {
 q?: string;
 status?: SolutionStatus;
@@ -2158,5 +2419,12 @@ businessProblemId?: string;
 
 export type ListCasesParams = {
 status?: CaseStatus;
+};
+
+export type ListPrototypesParams = {
+/**
+ * Only prototypes compared against, or recommended to fold into / extend, this product
+ */
+comparedTo?: string;
 };
 

@@ -18,6 +18,7 @@ import { DEMO_PROMPT, OWNER_PERSONA_NAME, businessProblems, getSolution, persona
 import { consolidationApproved } from "../lib/analysis";
 import { versionForCase } from "../lib/governance";
 import { listReuseEvents } from "../lib/reuse-store";
+import { duplicatesCertified, listPrototypeRows } from "../lib/prototypes";
 import { matchBrief } from "../lib/matching";
 import { demoState, resetDemo } from "../lib/seed";
 import { getExperiment, listAllDecisions, listBriefs, listCaseRows, listExperiments, summarizeAll } from "../lib/store";
@@ -316,7 +317,7 @@ router.get("/portfolio", async (_req, res) => {
       demo: isDemo(c),
     });
   }
-  for (const s of solutions.filter((x) => x.status !== "deprecated" && (x.ownerName === "Unassigned" || /none/i.test(x.supportModel)))) {
+  for (const s of solutions.filter((x) => x.status !== "deprecated" && !x.origin && (x.ownerName === "Unassigned" || /none/i.test(x.supportModel)))) {
     // The case that decides its fate: the one holding its disposition, else the furthest-along case that overlaps it.
     const covering =
       (s.disposition ? cases.find((c) => c.id === s.disposition?.caseId) : undefined) ??
@@ -351,6 +352,25 @@ router.get("/portfolio", async (_req, res) => {
       demo: c ? isDemo(c) : false,
     });
   }
+  // Registered prototypes reach IT only when a decision is needed: nobody owns it, or it duplicates a certified product.
+  for (const p of listPrototypeRows()) {
+    const dup = duplicatesCertified(p);
+    const noOwner = !p.ownerName;
+    if (!dup && !noOwner) continue;
+    const dupOf = p.components.filter((c) => c.verdict === "duplicates" && c.matchedSolutionId && getSolution(c.matchedSolutionId)?.status === "certified");
+    const certified = [...new Set(dupOf.map((c) => c.matchedSolutionName))].filter(Boolean).join(", ");
+    queue.push({
+      id: `prototype-${p.id}`,
+      kind: "registered_prototype",
+      title: `${p.name}: ${dup ? `duplicates ${certified}` : "registered without an owner"}`,
+      detail: `Registered from ${p.platformName} by ${p.createdBy || "its builder"}, used by ${p.users}. ${dup ? `${dupOf.map((c) => c.name).join(", ")} ${dupOf.length === 1 ? "is" : "are"} already in ${certified}${noOwner ? "; no owner recorded" : ""}.` : "No owner recorded; nobody is accountable for its users."} ${p.recommendation}`,
+      usage: `${p.exampleCount} submitted example${p.exampleCount === 1 ? "" : "s"} · not run by FUSEBOX`,
+      actionLabel: "Open prototype",
+      caseId: null,
+      solutionId: p.id,
+      demo: false,
+    });
+  }
   for (const c of cases.filter((x) => x.promotionState === "new_family_requested" && x.status === "pilot_proposed")) {
     const request = decisions.find((d) => d.caseId === c.id && d.action === "request_new_family");
     queue.push({
@@ -371,7 +391,14 @@ router.get("/portfolio", async (_req, res) => {
     id: e.id,
     actor: e.actor,
     need: e.need,
-    outcome: e.pathTaken === "use" ? `tried ${e.bestTitle ?? "an existing capability"} instead of building` : `started from ${e.bestTitle ?? "an existing solution"} and improved it`,
+    outcome:
+      e.trigger === "prototype"
+        ? e.pathTaken === "use"
+          ? `connected a prototype to ${e.bestTitle ?? "an existing product"} as a module instead of keeping a copy`
+          : `folded a prototype into ${e.bestTitle ?? "an existing product"} instead of keeping a copy`
+        : e.pathTaken === "use"
+          ? `tried ${e.bestTitle ?? "an existing capability"} instead of building`
+          : `started from ${e.bestTitle ?? "an existing solution"} and improved it`,
     at: e.createdAt,
     demo: e.demo,
   }));

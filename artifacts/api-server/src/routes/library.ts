@@ -1,12 +1,13 @@
 import { Router, type IRouter } from "express";
 import { ListSolutionsQueryParams, SearchLibraryQueryParams, type SearchResults, type SolutionDetail } from "@workspace/api-zod";
-import { businessProblems, capabilities, getSolution, personas, solutionCapabilities } from "../data/catalog";
+import { allCapabilities, businessProblems, getSolution, personas, solutionCapabilities } from "../data/catalog";
 import { searchLibrary, searchSolutions } from "../lib/matching";
 import { listCaseRows, summarizeAll } from "../lib/store";
 import { experimentsInProgress } from "../lib/experiments";
 import { recordSearch } from "../lib/workbench-store";
 import { buildFamilies, capabilitiesWithFamily, configurationPreview, familyRoleOf, familyTitleOf } from "../lib/families";
 import { WorkbenchError } from "../lib/workbench";
+import { getPrototypeRow, listPrototypeRows, toRegisteredPrototype } from "../lib/prototypes";
 
 const router: IRouter = Router();
 
@@ -76,12 +77,15 @@ router.get("/solutions/:solutionId", async (req, res) => {
     openCases: await summarizeAll(cases),
     // Experiments are listed on their parent only; the library and search index catalogue products, never cases.
     experimentsInProgress: await summarizeAll(experimentsInProgress(solution.id, all)),
+    prototype: solution.origin ? (() => { const row = getPrototypeRow(solution.id); return row ? toRegisteredPrototype(row) : null; })() : null,
+    // Owners see what was compared against their product: the examples and the side-by-side live on the prototype's page.
+    comparedPrototypes: solution.origin ? [] : listPrototypeRows(solution.id).map(toRegisteredPrototype),
   };
   res.json(detail);
 });
 
 router.get("/capabilities", (_req, res) => {
-  res.json(capabilities);
+  res.json(allCapabilities());
 });
 
 router.get("/business-problems", (_req, res) => {

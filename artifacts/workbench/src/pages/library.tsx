@@ -75,6 +75,7 @@ export default function Library() {
     };
   }, [all.data]);
 
+  const prototypes = useMemo(() => (all.data ?? []).filter((x) => !!x.origin), [all.data]);
   const list = useMemo(() => {
     let s: Solution[] = [...(sols.data ?? [])];
     if (chip === "full") s = s.filter((x) => x.kind !== "capability_module");
@@ -187,6 +188,22 @@ export default function Library() {
                   </section>
                 ))}
               </>
+            )}
+            {prototypes.length > 0 && (
+              <section data-testid="group-prototypes" className="space-y-3">
+                <h2 className="flex items-center gap-3 pt-2 text-[15px] font-bold uppercase tracking-[0.08em] text-primary"><span className="h-2 w-2 rounded-full bg-siennaink" />Registered prototypes<span className="h-px flex-1 bg-border" /><span className="text-[12.5px] font-semibold normal-case tracking-normal text-muted-foreground">{prototypes.length} · built outside FUSEBOX, not run here</span></h2>
+                <ul className="grid gap-2 md:grid-cols-2">
+                  {prototypes.map((p) => (
+                    <li key={p.id}>
+                      <Link href={`/solutions/${p.id}`} data-testid={`prototype-card-${p.id}`} className="card-soft flex h-full flex-col p-4 transition-[border-color] hover:border-primary/50">
+                        <div className="flex flex-wrap items-center gap-2"><span className="text-[16px] font-semibold text-primary">{p.name}</span><ExecutionTag s={p} /></div>
+                        <p className="mt-1 text-[14px]">{p.outcome}</p>
+                        <span className="mt-2 text-[12.5px] text-muted-foreground">{p.ownerName === "Unassigned" ? "No owner yet" : `Owner ${p.ownerName}`}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
         </div>
       ) : (

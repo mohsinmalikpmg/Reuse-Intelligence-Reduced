@@ -8,6 +8,7 @@
 import type { BusinessProblem } from './businessProblem';
 import type { Capability } from './capability';
 import type { CaseSummary } from './caseSummary';
+import type { RegisteredPrototype } from './registeredPrototype';
 import type { Solution } from './solution';
 
 export interface SolutionDetail {
@@ -17,4 +18,8 @@ export interface SolutionDetail {
   openCases: CaseSummary[];
   /** Saved or proposed experiments branched from this product; never library entries */
   experimentsInProgress: CaseSummary[];
+  /** Set when this entry is a registered prototype */
+  prototype: RegisteredPrototype | null;
+  /** Registered prototypes compared against this product (duplicating or extending it, or whose example it ran) */
+  comparedPrototypes: RegisteredPrototype[];
 }

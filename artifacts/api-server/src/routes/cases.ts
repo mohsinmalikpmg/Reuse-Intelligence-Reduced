@@ -89,6 +89,7 @@ router.post("/cases", async (req, res) => {
       createdByRole: parsed.data.createdByRole,
       moduleIds: parsed.data.moduleIds,
       approvedVersion: parsed.data.approvedVersion,
+      presetInputText: parsed.data.presetInputText ?? null,
     });
   } catch (err) {
     if (err instanceof CaseInputError) {

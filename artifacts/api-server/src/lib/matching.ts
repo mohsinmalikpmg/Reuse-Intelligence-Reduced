@@ -10,6 +10,7 @@ import type {
 import {
   solutions,
   solutionSearchMeta,
+  allCapabilities,
   capabilities,
   capabilityKeywords,
   sortByMaturity,
@@ -334,7 +335,8 @@ export function searchLibrary(q: string, filters: SearchFilters): { hits: Search
   if (filters.owner) list = list.filter((s) => s.ownerName === filters.owner || s.ownerTeam === filters.owner);
   if (filters.businessProblemId) list = list.filter((s) => s.businessProblemIds.includes(filters.businessProblemId!));
 
-  const capHits = capabilities
+  // Declared components of registered prototypes are searchable too, so "someone built this already" surfaces.
+  const capHits = allCapabilities()
     .map((cap) => {
       const kw = capabilityKeywords.get(cap.id) ?? [];
       const sim = overlap(qTokens, new Set(tokenize([cap.name, cap.description, ...kw].join(" "))));
@@ -380,7 +382,8 @@ export function searchLibrary(q: string, filters: SearchFilters): { hits: Search
       if (score > 0) {
         if (s.status === "certified") score += 8;
         else if (s.status === "pilot") score += 4;
-        reasons.push(s.status === "certified" ? `Certified, ${s.activeUsers} active users.` : `${s.status.charAt(0).toUpperCase()}${s.status.slice(1)}, ${s.activeUsers} users.`);
+        if (s.origin) reasons.push(`Registered prototype, runs on ${s.origin.platformName}; not run by FUSEBOX.`);
+        else reasons.push(s.status === "certified" ? `Certified, ${s.activeUsers} active users.` : `${s.status.charAt(0).toUpperCase()}${s.status.slice(1)}, ${s.activeUsers} users.`);
         // Governance: the preferred product for a problem ranks above products IT has disposed of.
         const bucket = rankBucket(s);
         if (bucket === 0) score += 10;

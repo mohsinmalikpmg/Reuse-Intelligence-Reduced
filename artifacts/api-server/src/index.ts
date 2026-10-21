@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { ensureSeeded } from "./lib/seed";
 import { loadGovernance } from "./lib/governance";
+import { loadPrototypes } from "./lib/prototypes";
 
 const rawPort = process.env["PORT"];
 
@@ -19,6 +20,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 // The governance overlay (successor versions, dispositions) must be merged onto the catalog before any request reads a solution.
 loadGovernance()
+  .then(() => loadPrototypes())
   .then(() => {
     ensureSeeded().catch((err) => {
       logger.error({ err }, "Failed to seed demo scenario");
