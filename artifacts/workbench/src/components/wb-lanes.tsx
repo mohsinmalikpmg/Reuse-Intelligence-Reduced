@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 export type Deviation = "added" | "off" | "on" | "setting" | null;
 export type LaneRow = {
-  id: string; name: string; description: string; kind: FlowBlock["kind"]; source: string;
+  id: string; name: string; description: string; kind: FlowBlock["kind"]; source: string; stage: string;
   a: FlowBlock | null; b: FlowBlock;
   deviation: Deviation; inputChanged: boolean; changes: number;
   traceA: StepTrace | null; traceB: StepTrace | null;
@@ -34,7 +34,7 @@ export function buildRows(aBlocks: FlowBlock[], bBlocks: FlowBlock[], cmp: ABCom
     const traceB = runB?.trace.find((t) => t.stepId === b.id) ?? null;
     const entries = byStep.get(b.id) ?? [];
     return {
-      id: b.id, name: b.name, description: b.description, kind: b.kind, source: b.source, a, b, deviation,
+      id: b.id, name: b.name, description: b.description, kind: b.kind, source: b.source, stage: b.stage, a, b, deviation,
       inputChanged: !!cmp && !!traceA && !!traceB && traceA.inputSummary !== traceB.inputSummary,
       changes: entries.length, traceA, traceB, entries,
     };
@@ -42,7 +42,7 @@ export function buildRows(aBlocks: FlowBlock[], bBlocks: FlowBlock[], cmp: ABCom
 }
 
 export const laneGrid = "grid grid-cols-[minmax(0,1fr)_44px_minmax(0,1fr)] items-stretch";
-const KIND = { required: { icon: Lock, label: "Required" }, configurable: { icon: SlidersHorizontal, label: "Configurable" }, optional: { icon: ToggleRight, label: "Optional" } };
+export const KIND = { required: { icon: Lock, label: "Required" }, configurable: { icon: SlidersHorizontal, label: "Configurable" }, optional: { icon: ToggleRight, label: "Optional" } };
 
 export function deviationLabel(r: LaneRow): string | null {
   if (r.deviation === "added") return "B only";
@@ -132,7 +132,7 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
 
 /* ---------- Step row ---------- */
 
-function TraceBody({ t, label }: { t: StepTrace | null; label: string }) {
+export function TraceBody({ t, label }: { t: StepTrace | null; label: string }) {
   if (!t) return <p className="text-[13px] text-muted-foreground">Run to see what this step received and produced.</p>;
   return (
     <dl className="space-y-1.5 text-[13.5px] leading-snug">
@@ -154,7 +154,7 @@ export function provenance(e: Pick<DiffEntry, "change" | "stepName" | "sourceSol
 
 const CHANGE = { added: { icon: Plus, cls: "bg-okbg/70 text-foreground", mark: "text-ok" }, removed: { icon: Minus, cls: "bg-muted/70 text-muted-foreground line-through", mark: "text-muted-foreground" }, changed: { icon: RefreshCw, cls: "bg-accent/70 text-foreground", mark: "text-siennaink" } };
 
-function DiffLines({ entries, picked, onPick, title }: { entries: DiffEntry[]; picked: DiffEntry | null; onPick: (e: DiffEntry) => void; title: string }) {
+export function DiffLines({ entries, picked, onPick, title }: { entries: DiffEntry[]; picked: DiffEntry | null; onPick: (e: DiffEntry) => void; title: string }) {
   if (entries.length === 0) return null;
   return (
     <div className="mt-3">
@@ -384,7 +384,7 @@ export function RequestRow({ req, narrow, showA, editable, busy, onRemove }: { r
 
 /* ---------- Lane headers ---------- */
 
-export function LaneHeaders({ editTools, narrow, showA, setShowA, controls, aLabel = "Current product" }: { editTools: ReactNode; narrow: boolean; showA: boolean; setShowA: (v: boolean) => void; controls: string[]; aLabel?: string }) {
+export function LaneHeaders({ editTools, narrow, showA, setShowA, controls, aLabel = "Current product", extra }: { editTools: ReactNode; narrow: boolean; showA: boolean; setShowA: (v: boolean) => void; controls: string[]; aLabel?: string; extra?: ReactNode }) {
   const controlsLine = controls.length > 0 && <span className="text-[12px] text-muted-foreground" data-testid="list-controls">Controls in place: {controls.join(", ")}</span>;
   if (narrow) {
     return (
@@ -409,7 +409,7 @@ export function LaneHeaders({ editTools, narrow, showA, setShowA, controls, aLab
         <div className="flex min-h-10 flex-wrap items-center gap-2 px-1">
           <span className="grid h-7 w-7 place-items-center rounded-md bg-siennaink text-[13px] font-bold text-white">B</span>
           <span className="font-semibold">Proposed version</span>
-          <span className="ml-auto">{editTools}</span>
+          <span className="ml-auto inline-flex items-center gap-1">{editTools}{extra}</span>
         </div>
       </div>
       {controlsLine && <div className="mt-1 px-1">{controlsLine}</div>}

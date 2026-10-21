@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, useLocation, useParams, useSearch } from "wouter";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, rectIntersection, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Equal, FileText, GitBranch, Info, ListPlus, Lock, Pencil, Play, RotateCcw, Save, Undo2 } from "lucide-react";
+import { Check, ChevronDown, Equal, FileText, GitBranch, Info, LayoutList, ListPlus, Lock, Pencil, Play, RotateCcw, Save, Undo2, Workflow, Zap } from "lucide-react";
 import {
   useGetDemoState,
   getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetCaseBaselineQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
@@ -19,12 +19,16 @@ import { InputPanel, SummaryCounts, Tray } from "@/components/wb-parts";
 import { Measures, StaleHint, Vote } from "@/components/wb-compare";
 import { AddSlot, BandRow, LaneHeaders, RequestRow, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type LaneRow, type MapEntry } from "@/components/wb-lanes";
 import { RequirementAdder, StepPicker, type ReuseActions } from "@/components/wb-reuse";
+import { Schematic, StepDetail, type LaneEntry } from "@/components/wb-schematic";
 import { InviteTesters, OwnerDecision, PROMOTION_LABEL, ProposeActions, caseStatusLabel, lineageChanges } from "@/components/wb-pilot";
 import { errMsg, httpStatus, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
 import { cn } from "@/lib/utils";
 
 type Snap = { moduleStates: Record<string, boolean>; configValues: Record<string, string> };
+/** Remembered per browser: the schematic viewport is the default from 1024px up; "Prefer rows?" restores the list layout. */
+const LAYOUT_KEY = "reuse-workbench.workbench.layout";
+const darkTool = "inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium text-[#9ED9E3] transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-40";
 const dropUnderPointer: CollisionDetection = (args) => { const hits = pointerWithin(args); return hits.length ? hits : rectIntersection(args); };
 
 function snapshot(cfg: Configuration): Snap {
@@ -41,8 +45,11 @@ function LanesDrop({ enabled, dragging, children }: { enabled: boolean; dragging
   return <div ref={setNodeRef} data-testid="workflow-b" className={cn("rounded-2xl transition-[background-color,box-shadow]", dragging && "bg-[hsl(187_70%_65%/.08)] shadow-[inset_0_0_0_2px_hsl(var(--cyan)/.5)]", dragging && isOver && "bg-[hsl(187_70%_65%/.14)]")}>{children}</div>;
 }
 
-function scrollToRow(id: string) {
-  document.getElementById(`row-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+function scrollToRow(id: string, retry = true) {
+  // The schematic only mounts a step's detail once it is open; fall back to its block, or try once more next frame.
+  const el = document.getElementById(`row-${id}`) ?? document.getElementById(`blk-${id}`);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  else if (retry) window.requestAnimationFrame(() => scrollToRow(id, false));
 }
 
 /** The experiment at this address no longer exists: forget it and open the demo experiment instead. */
@@ -116,6 +123,10 @@ export default function Workbench() {
   const [welded, setWelded] = useState<string | null>(null);
   const [energized, setEnergized] = useState<Set<string>>(() => new Set());
   const [showA, setShowA] = useState(false);
+  const [rowsPref, setRowsPref] = useState(() => localStorage.getItem(LAYOUT_KEY) === "rows");
+  const setLayout = (rows: boolean) => { setRowsPref(rows); localStorage.setItem(LAYOUT_KEY, rows ? "rows" : "schematic"); };
+  // The footer status line: set only from the configuration the server returned.
+  const [connected, setConnected] = useState<string | null>(null);
   const [reqOpen, setReqOpen] = useState(false);
   const [similar, setSimilar] = useState<SimilarExperiments | null>(null);
   const [intentOpen, setIntentOpen] = useState(false);
@@ -137,7 +148,7 @@ export default function Workbench() {
   const { recs, more } = useMemo(() => {
     const all = (cfg?.steps ?? []).flatMap((s) => s.components).filter((c) => c.executable && c.controlType === "optional" && !c.active && c.capability.sourceSolutionId !== baseId);
     const sorted = [...all].sort((a, b) => Number(b.recommended) - Number(a.recommended) || Number(a.state === "incompatible") - Number(b.state === "incompatible"));
-    return { recs: sorted.slice(0, 2), more: sorted.slice(2) };
+    return { recs: sorted.slice(0, 3), more: sorted.slice(3) };
   }, [cfg, baseId]);
   const cmp: ABComparison | undefined = cmpQ.data?.[0];
   const editable = role !== "it";
@@ -150,8 +161,8 @@ export default function Workbench() {
   const rows = useMemo(() => buildRows(aBlocks, bBlocks, cmp, cmp?.runA ?? wbQ.data?.exampleRun, cmp?.runB ?? run ?? undefined), [aBlocks, bBlocks, cmp, wbQ.data, run]);
   const requests = caseQ.data?.capabilityRequests ?? [];
   // Requested capabilities sit where they were asked for, as non-executing rows; they never enter a run.
-  const lane = useMemo<({ kind: "step"; row: LaneRow } | { kind: "request"; req: CapabilityRequest })[]>(() => {
-    const out: ({ kind: "step"; row: LaneRow } | { kind: "request"; req: CapabilityRequest })[] = [];
+  const lane = useMemo<LaneEntry[]>(() => {
+    const out: LaneEntry[] = [];
     const ids = new Set(rows.map((r) => r.id));
     for (const r of rows) {
       out.push({ kind: "step", row: r });
@@ -174,7 +185,9 @@ export default function Workbench() {
       onSuccess: (next) => {
         qc.setQueryData(getGetCaseConfigurationQueryKey(caseId), next);
         // The weld is the server's confirmation made visible: only when the step is really active in the saved configuration.
-        if (weldId && next.steps.some((st) => st.components.some((c) => c.capability.id === weldId && c.active))) setWelded(weldId);
+        const joined = weldId ? next.steps.flatMap((st) => st.components).find((c) => c.capability.id === weldId && c.active) : undefined;
+        if (joined) setWelded(weldId!);
+        setConnected(joined ? `Connected: ${joined.capability.name} · source ${joined.sourceSolutionName}` : null);
         qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).includes(`/cases/${caseId}`) && String(q.queryKey[0]) !== getGetCaseConfigurationQueryKey(caseId)[0] });
         if (record) { setUndo((u) => [...u, before]); say(label, () => restore(before)); } else say(label);
       },
@@ -276,8 +289,10 @@ export default function Workbench() {
   const jump = (id: string) => {
     if (id === "input") { setInputOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); setCurrent("input"); return; }
     if (rows.some((r) => r.id === id)) setOpen((o) => new Set(o).add(id));
-    scrollToRow(id);
+    window.setTimeout(() => scrollToRow(id), 40);
   };
+  // Clicking a block opens its detail below the viewport and brings it into view; clicking again closes it.
+  const toggleBlock = (id: string) => { const opening = !open.has(id); toggleRow(id); if (opening) window.setTimeout(() => scrollToRow(id), 60); };
   const onPick = (e: DiffEntry) => { setPicked(e); setOpen((o) => new Set(o).add(e.stepId)); scrollToRow(e.stepId); };
 
   // Scroll-spy: the map highlights the row nearest the top of the viewport.
@@ -325,20 +340,27 @@ export default function Workbench() {
   const busyRun = runOne.isPending || runBoth.isPending;
   const noInput = !sampleId && !text.trim();
   const stepsResponsible = cmp?.diff.stepsResponsible ?? [];
+  const schematic = !narrow && !rowsPref;
+  const connectStatus = busyRun ? "Energizing A and B…" : connected ?? (changedFromA.length ? `${changedFromA.length} change${changedFromA.length === 1 ? "" : "s"} in B · ready to energize` : "Ready to connect");
 
   const stateText = runBoth.isPending ? "Running both..." : runOne.isPending ? "Running..."
     : cmp?.staleB ? "Version B changed since the last run" : fresh ? `Compared on "${samples.find((s) => s.id === cmp.sampleInputId)?.name ?? "edited text"}" · ${new Date(cmp.runB.createdAt).toLocaleTimeString()}`
     : changedFromA.length ? "B differs from A · not compared yet" : "Version B equals the current product";
+  // The kit's one action: "Energize A/B" in sienna. Before B differs from A there is only B to energize.
   const primary = !cmp && !needsBoth
-    ? <button data-testid="button-run" onClick={doRun} disabled={busyRun || noInput} className={cn(btn.primary, "min-h-12 px-7")}><Play className="h-5 w-5" /> {runOne.isPending ? "Running..." : "Run"}</button>
-    : <button data-testid="button-run-both" onClick={doBoth} disabled={busyRun || noInput} className={cn(fresh ? btn.secondary : btn.accent, "min-h-12 px-7")}><Play className="h-5 w-5" /> {runBoth.isPending ? "Running both..." : cmp ? "Run both again" : "Run both"}</button>;
+    ? <button data-testid="button-run" onClick={doRun} disabled={busyRun || noInput} className={cn(btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runOne.isPending ? "Energizing..." : "Energize B"}</button>
+    : <button data-testid="button-run-both" onClick={doBoth} disabled={busyRun || noInput} className={cn(fresh ? btn.secondary : btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runBoth.isPending ? "Energizing..." : cmp ? "Energize A/B again" : "Energize A/B"}</button>;
 
   const editTools = editable && (
     <div className="flex flex-wrap items-center gap-1">
-      <button data-testid="button-undo" disabled={!undo.length || put.isPending} onClick={() => restore(undo[undo.length - 1])} className={btn.quiet}><Undo2 className="h-4 w-4" /> Undo</button>
-      <button data-testid="button-reset-b" disabled={put.isPending || changedFromA.length === 0} onClick={resetToA} className={btn.quiet}><RotateCcw className="h-4 w-4" /> Reset B</button>
+      <button data-testid="button-undo" disabled={!undo.length || put.isPending} onClick={() => restore(undo[undo.length - 1])} className={schematic ? darkTool : btn.quiet}><Undo2 className="h-4 w-4" /> Undo</button>
+      <button data-testid="button-reset-b" disabled={put.isPending || changedFromA.length === 0} onClick={resetToA} className={schematic ? darkTool : btn.quiet}><RotateCcw className="h-4 w-4" /> Reset B</button>
     </div>
   );
+  const layoutToggle = !narrow && (schematic
+    ? <button data-testid="button-layout-rows" onClick={() => setLayout(true)} className={darkTool} title="Show the same steps as a list"><LayoutList className="h-4 w-4" /> Prefer rows?</button>
+    : <button data-testid="button-layout-schematic" onClick={() => setLayout(false)} className={btn.quiet}><Workflow className="h-4 w-4" /> Schematic</button>);
+  const slotRow = slotOpen && slotOpen !== "end" ? rows.find((r) => r.id === slotOpen) ?? null : null;
   const labelA = cmp ? "A · comparison run" : "A · saved example";
   const labelB = cmp ? "B · comparison run" : "B · your run";
   const browse = <Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={(c) => { add(c); setSlotOpen(null); }} />;
@@ -431,31 +453,66 @@ export default function Workbench() {
         )}
         {cmp?.staleB && <div className="mt-3"><StaleHint onRun={doBoth} busy={runBoth.isPending} /></div>}
 
-        {/* Map + lanes */}
-        <div className={cn("mt-5", narrow ? "space-y-4" : "grid grid-cols-[224px_minmax(0,1fr)] items-start gap-6")}>
+        {/* Map + lanes: the schematic viewport from 1024px up (unless rows are preferred), the list layout otherwise */}
+        <div className={cn("mt-5", narrow ? "space-y-4" : schematic ? "grid grid-cols-[248px_minmax(0,1fr)] items-start gap-5" : "grid grid-cols-[224px_minmax(0,1fr)] items-start gap-6")}>
           <div className={narrow ? "" : "sticky top-[calc(var(--shell-top)+5.75rem)] max-h-[calc(100dvh-var(--shell-top)-6.75rem)] overflow-y-auto pr-1"}>
+            {schematic && editable && (
+              <section className="card-soft mb-4 p-3.5" data-testid="panel-library">
+                <div className="flex items-baseline justify-between gap-2"><span className="text-[14px] font-semibold text-primary">Component Library</span><span className="font-mono text-[9.5px] uppercase tracking-[.1em] text-muted-foreground">Drag or click</span></div>
+                <p className="mt-1 text-[12px] leading-snug text-muted-foreground">An existing component is recommended before anything new is generated.</p>
+                <div className="mt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={add} /></div>
+              </section>
+            )}
             <WorkflowMap entries={entries} current={current} open={open} onJump={jump} horizontal={narrow} lit={energized}
               onExpandAll={() => setOpen(new Set(rows.map((r) => r.id)))} onCollapseAll={() => setOpen(new Set())}>
-              {!narrow && editable && <div className="mt-4 border-t border-border px-2 pt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled={editable} onAdd={add} /></div>}
+              {!narrow && !schematic && editable && <div className="mt-4 border-t border-border px-2 pt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled={editable} onAdd={add} /></div>}
             </WorkflowMap>
           </div>
 
           <div className="min-w-0">
-            <LaneHeaders editTools={editTools} narrow={narrow} showA={showA} setShowA={setShowA} controls={controls.map((c) => c.name)} aLabel={standardA ? `Standard product · v${theCase.parentVersion}` : "Current product"} />
-            <LanesDrop enabled={editable} dragging={!!dragging}>
-              {wbQ.isLoading || rows.length === 0 ? <div className={narrow ? "space-y-2" : laneGrid}><Skel className="h-14" /><div /><Skel className="h-14" /></div> : lane.map((x) => {
-                if (x.kind === "request") return <RequestRow key={x.req.id} req={x.req} narrow={narrow} showA={showA} editable={editable} busy={removeRequest.isPending} onRemove={() => dropRequest(x.req)} />;
-                const r = x.row;
-                const i = rows.indexOf(r);
-                return (
-                  <StepRow key={r.id} r={r} no={i + 1} open={open.has(r.id)} onToggle={() => toggleRow(r.id)} editable={editable} busy={put.isPending}
-                    onSetOption={(v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(on) => toggle(r.id, r.name, on)} onRemove={() => toggle(r.id, r.name, false)}
-                    picked={picked} onPick={onPick} explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} labelA={labelA} labelB={labelB}
-                    narrow={narrow} showA={showA} dragging={!!dragging} slot={slotFor(r.id, r.name, narrow || coarsePointer || i === rows.length - 1)}
-                    welded={welded === r.id} energized={energized.has(r.id)} />
-                );
-              })}
-            </LanesDrop>
+            {schematic ? (
+              <>
+                {wbQ.isLoading || rows.length === 0 ? <Skel className="h-72 rounded-[20px]" /> : (
+                  <Schematic lane={lane} rows={rows} aLabel={standardA ? `standard product v${theCase.parentVersion}` : "production baseline"} editable={editable} busy={put.isPending}
+                    open={open} onToggle={toggleBlock} onSetOption={(r, v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(r, on) => toggle(r.id, r.name, on)} onRemove={(r) => toggle(r.id, r.name, false)}
+                    onRemoveRequest={(req) => dropRequest(req)} requestBusy={removeRequest.isPending} dragging={!!dragging} slotOpen={slotOpen} setSlotOpen={setSlotOpen}
+                    welded={welded} energized={energized} running={busyRun} status={connectStatus} changes={changedFromA.length}
+                    tools={<>{editTools}{layoutToggle}</>} />
+                )}
+                {controls.length > 0 && <p className="mt-2 px-1 text-[12px] text-muted-foreground" data-testid="list-controls">Controls in place: {controls.map((c) => c.name).join(", ")}</p>}
+                {slotOpen && !dragging && editable && (
+                  <div id="row-picker" className="mt-3 scroll-mt-[calc(var(--shell-top)+5.25rem)]">
+                    <StepPicker afterId={slotRow?.id ?? null} afterName={slotRow?.name ?? null} actions={reuseActions} browse={browse} onClose={() => setSlotOpen(null)} />
+                  </div>
+                )}
+                {rows.some((r) => open.has(r.id)) && (
+                  <div className="mt-3 space-y-3" data-testid="panel-step-details">
+                    {rows.filter((r) => open.has(r.id)).map((r) => (
+                      <StepDetail key={r.id} r={r} no={rows.indexOf(r) + 1} labelA={labelA} labelB={labelB} picked={picked} onPick={onPick}
+                        explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} onClose={() => toggleRow(r.id)} />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <LaneHeaders editTools={editTools} extra={layoutToggle} narrow={narrow} showA={showA} setShowA={setShowA} controls={controls.map((c) => c.name)} aLabel={standardA ? `Standard product · v${theCase.parentVersion}` : "Current product"} />
+                <LanesDrop enabled={editable} dragging={!!dragging}>
+                  {wbQ.isLoading || rows.length === 0 ? <div className={narrow ? "space-y-2" : laneGrid}><Skel className="h-14" /><div /><Skel className="h-14" /></div> : lane.map((x) => {
+                    if (x.kind === "request") return <RequestRow key={x.req.id} req={x.req} narrow={narrow} showA={showA} editable={editable} busy={removeRequest.isPending} onRemove={() => dropRequest(x.req)} />;
+                    const r = x.row;
+                    const i = rows.indexOf(r);
+                    return (
+                      <StepRow key={r.id} r={r} no={i + 1} open={open.has(r.id)} onToggle={() => toggleRow(r.id)} editable={editable} busy={put.isPending}
+                        onSetOption={(v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(on) => toggle(r.id, r.name, on)} onRemove={() => toggle(r.id, r.name, false)}
+                        picked={picked} onPick={onPick} explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} labelA={labelA} labelB={labelB}
+                        narrow={narrow} showA={showA} dragging={!!dragging} slot={slotFor(r.id, r.name, narrow || coarsePointer || i === rows.length - 1)}
+                        welded={welded === r.id} energized={energized.has(r.id)} />
+                    );
+                  })}
+                </LanesDrop>
+              </>
+            )}
 
             {/* Output */}
             <BandRow id="output" label="Output" icon={<Equal className="h-3.5 w-3.5" />} narrow={narrow}>
@@ -504,15 +561,15 @@ export default function Workbench() {
               ) : run ? (
                 <div className={narrow ? "space-y-3" : laneGrid}>
                   {!narrow || showA ? <div className="rounded-[14px] border border-dashed border-input bg-card/60 p-5 text-[14px] text-muted-foreground" data-testid="panel-version-a">
-                    {changedFromA.length === 0 ? "Version B equals the current product, so this output is the same for A." : "Run both to see the current product's output beside Version B."}
+                    {changedFromA.length === 0 ? "Version B equals the current product, so this output is the same for A." : "Energize A/B to see the current product's output beside Version B."}
                   </div> : null}
                   {!narrow && <div />}
                   {outputCard("B", run)}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-input bg-card/60 p-8 text-center" data-testid="state-no-comparison">
-                  <div className="text-[16px] font-semibold text-primary">{needsBoth ? "Run both to see A and B side by side" : "Press Run to see the output"}</div>
-                  <p className="mt-1 text-[14px] text-muted-foreground">{needsBoth ? "Version B differs from the current product. The same input goes through both." : "Add a step to Version B, or run the current product as it is."}</p>
+                  <div className="text-[16px] font-semibold text-primary">{needsBoth ? "Energize A/B to see A and B side by side" : "Energize to see the output"}</div>
+                  <p className="mt-1 text-[14px] text-muted-foreground">{needsBoth ? "Version B differs from the current product. The same input goes through both." : "Connect a component to Version B, or energize the current product as it is."}</p>
                 </div>
               )}
             </BandRow>
@@ -542,7 +599,7 @@ export default function Workbench() {
               ) : (
                 <div className="rounded-2xl border border-dashed border-input bg-card/60 p-6 text-center" data-testid="state-no-verdict">
                   <div className="text-[15px] font-semibold text-primary">Which result better solves the problem?</div>
-                  <p className="mt-1 text-[14px] text-muted-foreground">Run both first. Your preference is recorded only against a real comparison.</p>
+                  <p className="mt-1 text-[14px] text-muted-foreground">Energize A/B first. Your preference is recorded only against a real comparison.</p>
                 </div>
               )}
               {role === "owner" && (

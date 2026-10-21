@@ -312,6 +312,31 @@
 .socket-ready { box-shadow: 0 0 0 2px hsl(var(--cyan)), 0 0 14px hsl(187 70% 65% / .35); transition: box-shadow .12s ease-out; }
 .socket-over { box-shadow: 0 0 0 2px hsl(var(--orange)), 0 0 16px hsl(29 100% 62% / .45); animation: magnet .14s cubic-bezier(.18,1,.32,1) both; }
 .socket-blocked { box-shadow: 0 0 0 2px hsl(var(--bad) / .6); }
+/* Live workflow schematic (Connect + Energize): dark viewport, block chains, wires, sockets */
+.schem { background-color: #081F29; color: #E8F7F8; border: 1px solid #173D4A; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 36px -12px rgba(7,29,39,.35); }
+.schem::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(110,158,175,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(110,158,175,.055) 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; }
+.schem::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 72% 70%, rgba(255,127,54,.07), transparent 38%); }
+.schem-row { border: 1px solid #2A4E59; border-radius: 16px; background: rgba(15,48,60,.55); }
+.schem-row.editable { border-color: #754D35; background: rgba(81,53,30,.14); }
+.blk { position: relative; border: 1px solid #426879; background: #123745; border-radius: 12px; color: #D9EFF2; transition: border-color .18s, box-shadow .2s, transform .18s; }
+.blk:hover { border-color: #6FA3B2; }
+.blk.inserted { border-color: #CE7642; background: #3B2B26; box-shadow: 0 0 0 1px rgba(255,155,67,.1); }
+.blk.off { opacity: .5; filter: grayscale(.8); }
+.blk.open { border-color: #FFD09F; box-shadow: 0 0 0 1px rgba(255,208,159,.45); }
+.blk.lit { border-color: #96E2EB; box-shadow: 0 0 0 1px #6ECEDA, 0 0 20px rgba(101,225,235,.28); }
+@keyframes charged { 0% { box-shadow: 0 0 0 0 rgba(255,150,61,.65), 0 0 35px rgba(255,150,61,.9); } 100% { box-shadow: 0 0 0 1px rgba(255,155,67,.1); } }
+.blk.charged { animation: seat .32s cubic-bezier(.18,1.35,.42,1) both, charged .9s ease-out both; }
+.port { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 9999px; background: #0D3441; border: 2px solid #75D1E1; z-index: 1; }
+.port.l { left: -5px; } .port.r { right: -5px; }
+.blk.off .port { border-color: #2A4E59; background: #0B2531; }
+.blk.inserted .port { border-color: #FF9B4C; }
+.wire { display: block; height: 2px; width: 26px; flex: 0 0 26px; border-radius: 9px; background: #2C7182; align-self: center; }
+.wire.hot { background: #CE7642; box-shadow: 0 0 8px rgba(255,140,58,.32); }
+@keyframes wireflow { to { background-position: -200% 0; } }
+.wire.flow { background: linear-gradient(90deg, #245C6E, #72DCE9, #245C6E); background-size: 200% 100%; animation: wireflow .7s linear infinite; box-shadow: 0 0 8px rgba(107,221,232,.3); }
+.wire.flow.hot { background: linear-gradient(90deg, #704329, #FF9B4C, #704329); background-size: 200% 100%; box-shadow: 0 0 10px rgba(255,140,58,.32); }
+.socket { border: 1.5px dashed rgba(117,209,225,.6); border-radius: 12px; color: #9ED9E3; background: rgba(13,52,65,.5); transition: border-color .15s, box-shadow .15s, color .15s; }
+.socket:hover, .socket:focus-visible { border-color: #FF9B4C; color: #FFD09F; }
 @keyframes running-bar { from { transform: translateX(-20%); } to { transform: translateX(260%); } }
 @keyframes current { from { stroke-dashoffset: 48; } to { stroke-dashoffset: 0; } }
 .current-on { stroke-dasharray: 10 38; animation: current .9s linear infinite; }
@@ -327,7 +352,10 @@
    Every effect is removed; the state it confirmed stays visible. */
 :root[data-motion="off"] .seat, :root[data-motion="off"] .weld, :root[data-motion="off"] .socket-over, :root[data-motion="off"] .current-on,
 :root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out, :root[data-motion="off"] .cube-spark,
-:root[data-motion="off"] .drop-pop, :root[data-motion="off"] .reveal, :root[data-motion="off"] [style*="running-bar"] { animation: none !important; }
+:root[data-motion="off"] .drop-pop, :root[data-motion="off"] .reveal, :root[data-motion="off"] [style*="running-bar"],
+:root[data-motion="off"] .blk.charged, :root[data-motion="off"] .wire.flow { animation: none !important; }
+:root[data-motion="off"] .blk.charged { box-shadow: 0 0 0 2px hsl(var(--orange)); }
+:root[data-motion="off"] .wire.flow { background: #72DCE9; } :root[data-motion="off"] .wire.flow.hot { background: #FF9B4C; }
 :root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
 :root[data-motion="off"] .current-on { stroke-dasharray: none; }
 :root[data-motion="off"] .weld { display: none; }
@@ -335,7 +363,7 @@
 :root[data-motion="off"] .press:active { transform: none; }
 /* OS reduced-motion applies unless the person explicitly turned tactile motion on. */
 @media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion="on"]) :is(.seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, .drop-pop, .reveal, [style*="running-bar"]) { animation: none !important; }
+  :root:not([data-motion="on"]) :is(.seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, .drop-pop, .reveal, .blk.charged, .wire.flow, [style*="running-bar"]) { animation: none !important; }
   :root:not([data-motion="on"]) :is(.trace-in, .converge-in, .converge-out) { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
   :root:not([data-motion="on"]) .current-on { stroke-dasharray: none; }
   :root:not([data-motion="on"]) .weld { display: none; }
