@@ -14,3 +14,10 @@ Keep uploader claims, static source mappings, and executed sandbox results disti
 **Why:** ZIP intake is intentionally non-executing. Human-reviewed source evidence cannot prove full requirements, integration compatibility, or production readiness.
 
 **How to apply:** downstream assessment must preserve provenance and test scope rather than treating an approved ZIP as a passed acceptance test.
+
+## Workbench output goal
+The user wants the Workbench to produce an integrated, importable Replit ZIP that combines features from library solution sources and, when provided, the user's supplied solution sources. A diagram, configuration export, or collection of untouched archives is not that deliverable.
+
+**Why:** The user explicitly described the output as standing up the required solution and demonstrating successful consolidation.
+
+**How to apply:** preserve source lineage; package actual wiring and runnable code; test the extracted artifact against requirements. Distinguish implemented features from open build gaps with concise statuses. The user strongly approved the simplified visual Workbench proposal as the direction to retain.

@@ -1,14 +1,31 @@
 import { Router, type IRouter } from "express";
 import type { LibraryCodePackage } from "@workspace/api-zod";
 import manifest from "../data/solution-code-manifest.json";
-import { getBrief } from "../lib/store";
+import { CaseInputError, getBrief } from "../lib/store";
 import { assessCode } from "../lib/code-assessment";
 import { GetAcceptanceChecksResponse, RunAcceptanceCheckBody, RunAcceptanceCheckResponse } from "@workspace/api-zod";
 import { db, acceptanceRunsTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 import { acceptancePlan, runAcceptance, verifyAcceptanceEngine, AcceptanceError } from "../lib/acceptance-checks";
+import { createBriefWorkbench, ProposalWorkbenchError } from "../lib/proposal-workbench";
 
 const router: IRouter = Router();
+router.post("/briefs/:briefId/workbench", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store");
+  // This operation deliberately has no selections/body: the server derives the complete proposal.
+  if (req.body !== undefined || Number(req.headers["content-length"] ?? 0) > 0 || req.headers["transfer-encoding"]) {
+    res.status(400).json({ error: "This endpoint accepts no request body. Workbench is derived from the confirmed brief." });
+    return;
+  }
+  try {
+    const { objectPath: _objectPath, ...pkg } = manifest;
+    res.json(await createBriefWorkbench(String(req.params.briefId), pkg as LibraryCodePackage));
+  } catch (error) {
+    if (error instanceof ProposalWorkbenchError) { res.status(error.status).json({ error: error.message }); return; }
+    if (error instanceof CaseInputError) { res.status(409).json({ error: `The assessed configuration is no longer available: ${error.message}` }); return; }
+    throw error;
+  }
+});
 router.get("/briefs/:briefId/acceptance-checks", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
   const brief = await getBrief(String(req.params.briefId));

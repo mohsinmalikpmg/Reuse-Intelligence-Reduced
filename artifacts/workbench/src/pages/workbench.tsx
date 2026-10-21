@@ -7,7 +7,7 @@ import {
   useGetDemoState,
   getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetCaseBaselineQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
   getSimilarExperiments, useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseBaseline, useGetCaseConfiguration, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
-  useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
+  getGetRunQueryKey, useGetRun, useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
   type ABComparison, type CapabilityRequest, type Case, type CaseRequirementResult, type ComponentConfig, type Configuration, type ConfigurationUpdate, type DiffEntry, type Run, type SampleInput, type SimilarExperiments,
 } from "@workspace/api-client-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +23,7 @@ import { Schematic, StepDetail, type LaneEntry } from "@/components/wb-schematic
 import { InviteTesters, OwnerDecision, PROMOTION_LABEL, ProposeActions, caseStatusLabel, lineageChanges } from "@/components/wb-pilot";
 import { errMsg, httpStatus, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
+import { ProposalMap, proposalNodes } from "@/components/wb-proposal";
 import { cn } from "@/lib/utils";
 
 type Snap = { moduleStates: Record<string, boolean>; configValues: Record<string, string> };
@@ -80,7 +81,10 @@ function GoneView({ caseId }: { caseId: string }) {
 
 export default function Workbench() {
   const { caseId } = useParams<{ caseId: string }>();
-  const initialMode = new URLSearchParams(useSearch()).get("mode");
+  const search = new URLSearchParams(useSearch());
+  const initialMode = search.get("mode");
+  const proposalView = search.get("view") === "proposal";
+  const [, navigate] = useLocation();
   const role = useRole();
   const qc = useQueryClient();
   const say = useUndoToast();
@@ -112,7 +116,17 @@ export default function Workbench() {
   const [edited, setEdited] = useState(false);
   // "Try with my input" from the library lands with the input panel already open.
   const [inputOpen, setInputOpen] = useState(initialMode === "input");
-  const [run, setRun] = useState<Run | null>(null);
+  const [localRun, setLocalRun] = useState<Run | null>(null);
+  // A single B run is persisted; its id lives in the address so a reload rehydrates the real run.
+  const runParam = search.get("run") ?? "";
+  const runQ = useGetRun(runParam, { query: { enabled: !!runParam && localRun?.id !== runParam, queryKey: getGetRunQueryKey(runParam) } });
+  const fetchedRun = runQ.data && runQ.data.caseId === caseId && runQ.data.version === "B" ? runQ.data : null;
+  const run = localRun?.caseId === caseId && (!runParam || localRun.id === runParam) ? localRun : fetchedRun;
+  const setRun = (r: Run) => {
+    setLocalRun(r);
+    const q = new URLSearchParams(window.location.search); q.delete("view"); q.set("run", r.id);
+    navigate(`/workbench/${caseId}?${q.toString()}`, { replace: true });
+  };
   const [undo, setUndo] = useState<Snap[]>([]);
   const [dragging, setDragging] = useState<string | null>(null);
   const [picked, setPicked] = useState<DiffEntry | null>(null);
@@ -134,15 +148,23 @@ export default function Workbench() {
   const jumpedRef = useRef(false);
 
   const samples = samplesQ.data ?? wbQ.data?.sampleInputs ?? [];
+  const hydratedRun = useRef<string | null>(null);
   useEffect(() => {
-    if (sampleId || !samples.length) return;
+    if (!fetchedRun || hydratedRun.current === fetchedRun.id) return;
+    hydratedRun.current = fetchedRun.id;
+    setSampleId(fetchedRun.sampleInputId ?? "");
+    setText(fetchedRun.inputText);
+    setEdited(true);
+  }, [fetchedRun]);
+  useEffect(() => {
+    if (runParam || sampleId || !samples.length) return;
     const pref = wbQ.data?.exampleRun.sampleInputId;
     const s = samples.find((x) => x.id === pref) ?? samples[0];
     setSampleId(s.id);
     // A case opened from a prototype's worked example starts on that same problem instance, as edited text.
     const preset = caseQ.data?.presetInputText;
     if (preset) { setText(preset); setEdited(true); } else setText(s.text);
-  }, [samples, sampleId, wbQ.data, caseQ.data?.presetInputText]);
+  }, [samples, sampleId, wbQ.data, caseQ.data?.presetInputText, runParam]);
 
   const cfg = cfgQ.data;
   const bBlocks = useMemo(() => (cfg && baseId ? blocksFromConfig(cfg, baseId) : []), [cfg, baseId]);
@@ -354,6 +376,42 @@ export default function Workbench() {
     ? <button data-testid="button-run" onClick={doRun} disabled={busyRun || noInput} className={cn(btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runOne.isPending ? "Energizing..." : "Energize B"}</button>
     : <button data-testid="button-run-both" onClick={doBoth} disabled={busyRun || noInput} className={cn(fresh ? btn.secondary : btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runBoth.isPending ? "Energizing..." : cmp ? "Energize A/B again" : "Energize A/B"}</button>;
 
+  if (proposalView) {
+    const baseName = wbQ.data?.solution.name ?? theCase.lineage.parentSolutionName;
+    const nodes = proposalNodes(lane, baseName);
+    const runnable = nodes.some((n) => n.kind !== "build");
+    const openFull = () => navigate(`/workbench/${caseId}`);
+    const tryIt = () => {
+      setInputOpen(true);
+      runOne.mutate({ data: { caseId, version: "B", ...inputArgs } }, {
+        onSuccess: (r) => { setRun(r); invalidateCase(caseId); navigate(`/workbench/${caseId}`); window.setTimeout(() => scrollToRow("output"), 120); },
+        onError: (e) => say(errMsg(e)),
+      });
+    };
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 pb-24 pt-5 md:px-6" data-testid="view-proposal">
+        <StageEyebrow stage="connect" className="mb-2" />
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
+          <span>Workbench</span><span>/</span><Link href={`/solutions/${baseId}`} className="hover:text-primary hover:underline">{theCase.lineage.parentSolutionName}</Link>
+          <Tag tone={status.tone} testid="status-case">{status.l}</Tag>
+        </div>
+        <h1 data-testid="text-headline" className="mt-0.5 break-words text-[24px] md:text-[28px]">{theCase.title}</h1>
+        <p className="mt-1 text-[14px] text-muted-foreground">Starts from {baseName}. Click any block for what it does and where it comes from.</p>
+        <div className="mt-5">
+          {wbQ.isLoading ? <Skel className="h-60 rounded-[20px]" /> : <ProposalMap nodes={nodes} baseName={baseName} />}
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <button data-testid="button-try-proposal" onClick={tryIt} disabled={!runnable || runOne.isPending || noInput} className={cn(btn.accent, "min-h-12 px-6")}>
+            <Zap className="h-5 w-5" /> {runOne.isPending ? "Running…" : "Try current workflow"}
+          </button>
+          <button data-testid="button-open-full-workbench" onClick={openFull} className={btn.secondary}><Workflow className="h-4 w-4" /> Open full workbench</button>
+          {!runnable && <span className="text-[13px] text-muted-foreground" data-testid="text-no-runnable">Nothing runnable yet: every step is still to build.</span>}
+          {runnable && noInput && <span className="text-[13px] text-muted-foreground">Loading a sample input…</span>}
+        </div>
+      </div>
+    );
+  }
+
   const editTools = editable && (
     <div className="flex flex-wrap items-center gap-1">
       <button data-testid="button-undo" disabled={!undo.length || put.isPending} onClick={() => restore(undo[undo.length - 1])} className={schematic ? darkTool : btn.quiet}><Undo2 className="h-4 w-4" /> Undo</button>
@@ -420,6 +478,7 @@ export default function Workbench() {
             {editable && <button data-testid="button-save" disabled={updCase.isPending} onClick={saveExperiment} className={btn.quiet}>
               <Save className="h-4 w-4" /> {theCase.saved ? "Saved experiment" : "Save experiment"}
             </button>}
+            {theCase.briefId && <Link href={`/workbench/${caseId}?view=proposal`} className={btn.quiet} data-testid="link-proposal-view"><Workflow className="h-4 w-4" /> Proposed map</Link>}
           </div>
         </div>
         <Dialog open={!!similar} onOpenChange={(o) => { if (!o) setSimilar(null); }}>
@@ -518,7 +577,7 @@ export default function Workbench() {
 
             {/* Output */}
             <BandRow id="output" label="Output" icon={<Equal className="h-3.5 w-3.5" />} narrow={narrow}>
-              {runBoth.isPending || runOne.isPending ? (
+              {runParam && runQ.isError && !run ? <div role="alert" className="card-soft p-5">Saved output could not load. <button className={btn.quiet} onClick={() => void runQ.refetch()}>Retry</button></div> : runParam && runQ.isLoading && !run ? <div role="status" className="card-soft p-5">Loading saved output…</div> : runParam && runQ.data && !run ? <div role="alert" className="card-soft p-5">This saved run belongs to a different workflow.</div> : runBoth.isPending || runOne.isPending ? (
                 <div className="circuit-grid rounded-2xl border border-navy2 p-5 text-white" role="status" aria-live="polite" data-testid="state-running">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="relative grid h-9 w-9 place-items-center rounded-full border border-cyan/60"><Play className="h-4 w-4 text-cyan" /><span className="absolute inset-0 animate-ping rounded-full border border-cyan/40 motion-reduce:hidden" /></span>
@@ -566,7 +625,10 @@ export default function Workbench() {
                     {changedFromA.length === 0 ? "Version B equals the current product, so this output is the same for A." : "Energize A/B to see the current product's output beside Version B."}
                   </div> : null}
                   {!narrow && <div />}
-                  {outputCard("B", run)}
+                  <div>
+                    {run.configFingerprint !== theCase.lineage.fingerprint && <p className="mb-2 rounded-lg bg-accent px-3 py-2 text-[13px] text-siennaink" data-testid="text-run-stale">Saved run from {new Date(run.createdAt).toLocaleString()} · Version B has changed since. Energize again for the current version.</p>}
+                    {outputCard("B", run)}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-input bg-card/60 p-8 text-center" data-testid="state-no-comparison">

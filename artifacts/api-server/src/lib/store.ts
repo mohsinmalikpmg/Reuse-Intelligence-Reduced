@@ -130,6 +130,14 @@ export async function findCaseForBrief(briefId: string): Promise<Case | null> {
 /** Candidate solutions = every other solution addressing the same business problem(s) as the base. */
 export class CaseInputError extends Error {}
 
+interface CreateCaseOptions {
+  executor?: Pick<typeof db, "insert">;
+  /** Internal assessed configuration; callers using the public CaseInput keep existing defaults. */
+  baseModuleIds?: string[];
+  requirements?: Case["requirements"];
+  capabilityRequests?: Case["capabilityRequests"];
+}
+
 export async function createCase(input: {
   baseSolutionId: string;
   briefId?: string | null;
@@ -144,7 +152,7 @@ export async function createCase(input: {
   demo?: boolean;
   /** Input text the case opens with, e.g. a prototype's worked example. */
   presetInputText?: string | null;
-}): Promise<Case> {
+}, options: CreateCaseOptions = {}): Promise<Case> {
   const live = getSolution(input.baseSolutionId);
   if (!live) throw new Error(`Unknown solution ${input.baseSolutionId}`);
   const approved = input.approvedVersion ? live.versions.find((v) => v.state === "current" && v.version === input.approvedVersion) : undefined;
@@ -160,13 +168,18 @@ export async function createCase(input: {
   // solutions stay off until the user adds them. The tray still marks the recommended ones.
   const moduleStates = defaultModuleStates(ctx);
   for (const cap of ctx.candidateCapabilities) moduleStates[cap.id] = false;
+  if (options.baseModuleIds) {
+    for (const cap of ctx.baseCapabilities) {
+      if (cap.controlType === "optional") moduleStates[cap.id] = options.baseModuleIds.includes(cap.id);
+    }
+  }
   // Modules chosen through a reuse check or a library "Try in" start switched on in Version B, so the first run already
   // shows them. A module that cannot actually run on this base is refused rather than silently ignored.
   const wanted = input.moduleIds ?? [];
   for (const id of wanted) {
     const cap = ctx.candidateCapabilities.find((c) => c.id === id) ?? getCapability(id);
     if (!cap) throw new CaseInputError(`Unknown capability ${id}.`);
-    const blocked = moduleBlockedReason(cap, ctx, wanted);
+    const blocked = moduleBlockedReason(cap, ctx, wanted, moduleStates);
     if (blocked) throw new CaseInputError(`${cap.name} cannot be tried in ${base.name}: ${blocked}`);
     moduleStates[id] = true;
   }
@@ -187,7 +200,7 @@ export async function createCase(input: {
   const role = input.createdByRole ?? "seeker";
   const persona = personas.find((p) => p.role === role);
   const owner = input.owner ?? { name: persona?.name ?? role, team: persona?.team ?? "" };
-  const [row] = await db
+  const [row] = await (options.executor ?? db)
     .insert(casesTable)
     .values({
       id,
@@ -211,6 +224,8 @@ export async function createCase(input: {
       promotionState: "experiment",
       demo: input.demo ?? false,
       presetInputText: input.presetInputText?.trim() || null,
+      requirements: options.requirements ?? [],
+      capabilityRequests: options.capabilityRequests ?? [],
     })
     .returning();
   return toCase(row!);

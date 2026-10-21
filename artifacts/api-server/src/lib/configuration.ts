@@ -16,6 +16,11 @@ import { isExecutable } from "../engine/steps";
 
 export class ConfigurationError extends Error {}
 
+/** The indexed demo executors expose these equivalent catalog IDs. */
+export function canonicalCapabilityId(id: string): string {
+  return ({ "cap-b-summarize": "cap-summarize", "cap-csv-ingest": "cap-wo-ingest" } as Record<string, string>)[id] ?? id;
+}
+
 /** Small, documented effects of choosing a non-default option on a configurable capability. */
 const OPTION_EFFECTS: Record<string, Record<string, Partial<Metrics>>> = {
   "cap-summarize": {
@@ -120,18 +125,16 @@ export function freshContext(base: Solution, parentVersion?: string): CaseContex
  * buildComponents applies ("incompatible" states and unmet dependencies), so a "Try in" offer never produces a case
  * whose Version B silently equals Version A. `alsoOn` lists other modules being switched on at the same time.
  */
-export function moduleBlockedReason(cap: Capability, ctx: CaseContext, alsoOn: string[] = []): string | null {
+export function moduleBlockedReason(cap: Capability, ctx: CaseContext, alsoOn: string[] = [], baseStates = defaultModuleStates(ctx)): string | null {
   if (ctx.baseCapabilities.some((b) => b.id === cap.id)) return `${cap.name} is already part of ${ctx.base.name}.`;
   if (!ctx.candidateCapabilities.some((c) => c.id === cap.id)) return `${cap.name} is not available for ${ctx.base.name}.`;
   const conflict = conflictingBaseCapability(cap, ctx);
   if (conflict) return `Conflicts with ${conflict.name} in ${ctx.base.name}. The base product's version is retained.`;
   if (isUnsupported(cap) && !isRecommendedModule(cap, ctx)) return `${cap.supportStatus}. Cannot be added without an owner and evidence.`;
-  const baseOn = defaultModuleStates(ctx);
   const missing = cap.dependsOn
-    .map((id) => getCapability(id))
-    .filter((d): d is Capability => !!d)
-    .filter((d) => !isActive(d, ctx, baseOn) && !alsoOn.includes(d.id));
-  if (missing.length > 0) return `Requires ${missing.map((m) => m.name).join(", ")} to be active.`;
+    .filter((id) => !ctx.baseCapabilities.some((b) => canonicalCapabilityId(b.id) === canonicalCapabilityId(id) && isActive(b, ctx, baseStates))
+      && !alsoOn.some((on) => canonicalCapabilityId(on) === canonicalCapabilityId(id)));
+  if (missing.length > 0) return `Requires ${missing.map((id) => getCapability(id)?.name ?? id).join(", ")} to be active.`;
   return null;
 }
 

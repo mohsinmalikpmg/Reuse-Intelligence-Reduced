@@ -348,6 +348,69 @@ export const RunAcceptanceCheckResponse = zod.object({
 })
 
 
+/**
+ * Recompute the confirmed brief assessment and atomically open its persisted Workbench case. Repeated requests for the same assessment return the existing case without resetting edits. No request body is accepted.
+ */
+export const CreateBriefWorkbenchParams = zod.object({
+  "briefId": zod.coerce.string()
+})
+
+export const CreateBriefWorkbenchResponse = zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "foldedInto": zod.string().nullable().describe('e.g. Work Order Triage v3.3'),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected', 'folded']).describe('folded = the approved change was published as a successor version of the parent product'),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "presetInputText": zod.string().nullable().describe('Input text the case opened with (a prototype\'s worked example)'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
 export const GetCodeAssessmentParams = zod.object({
   "briefId": zod.coerce.string()
 })

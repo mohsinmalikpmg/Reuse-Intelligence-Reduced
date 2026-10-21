@@ -668,6 +668,77 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getRunAcceptanceCheckMutationOptions(options));
     }
 
+export const getCreateBriefWorkbenchUrl = (briefId: string,) => {
+
+
+
+
+  return `/api/briefs/${briefId}/workbench`
+}
+
+/**
+ * Recompute the confirmed brief assessment and atomically open its persisted Workbench case. Repeated requests for the same assessment return the existing case without resetting edits. No request body is accepted.
+ */
+export const createBriefWorkbench = async (briefId: string, options?: Parameters<typeof customFetch>[1]): Promise<Case> => {
+
+  return customFetch<Case>(getCreateBriefWorkbenchUrl(briefId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCreateBriefWorkbenchMutationKey = () => ['createBriefWorkbench'] as const;
+
+export const getCreateBriefWorkbenchMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBriefWorkbench>>, TError,CreateBriefWorkbenchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBriefWorkbench>>, TError,CreateBriefWorkbenchMutationVariables, TContext> => {
+
+const mutationKey = getCreateBriefWorkbenchMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBriefWorkbench>>, CreateBriefWorkbenchMutationVariables> = (props) => {
+          const {briefId} = props ?? {};
+
+          return  createBriefWorkbench(briefId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBriefWorkbenchMutationResult = NonNullable<Awaited<ReturnType<typeof createBriefWorkbench>>>
+
+    export type CreateBriefWorkbenchMutationError = ErrorType<void>
+    export type CreateBriefWorkbenchMutationVariables = {briefId: string}
+
+    export const useCreateBriefWorkbench = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBriefWorkbench>>, TError,CreateBriefWorkbenchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBriefWorkbench>>,
+        TError,
+        CreateBriefWorkbenchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateBriefWorkbenchMutationOptions(options));
+    }
+
 export const getGetCodeAssessmentUrl = (briefId: string,) => {
 
 

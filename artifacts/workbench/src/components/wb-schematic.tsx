@@ -16,7 +16,7 @@ export type LaneEntry = { kind: "step"; row: LaneRow } | { kind: "request"; req:
 
 /* ---------- Pieces ---------- */
 
-function Wire({ hot, flow }: { hot?: boolean; flow?: boolean }) {
+export function Wire({ hot, flow }: { hot?: boolean; flow?: boolean }) {
   return <span aria-hidden className={cn("wire", hot && "hot", flow && "flow")} />;
 }
 

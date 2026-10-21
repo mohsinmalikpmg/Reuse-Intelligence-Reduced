@@ -20,7 +20,9 @@ The user confirmed that complexity is persistent across the app, including Libra
 
 **Why:** The user corrected a proposal to simplify only post-intake comparison, then explicitly confirmed app-wide simplification of navigation, page purposes and information hierarchy.
 
-**How to apply:** Library starts from the user's need with a few concise solution cards and concrete input/output examples. Comparison offers one recommendation and at most two alternatives; introduce borrowed components and gaps after choosing a starting point, one decision at a time. Separate seeker and IT Owner workspaces, not merely role labels on equally dense screens. IT starts with what needs attention. Keep important limitations visible and technical evidence available on request.
+**How to apply:** Library starts from the user's need with a few concise solution cards and concrete input/output examples. Comparison should lead directly into the existing Workbench to illustrate the proposed combination and wiring, borrowed capabilities and missing capabilities—not a read-and-acknowledge checklist. Use the iterated Workbench as a starting point, not an immutable layout. Separate seeker and IT Owner workspaces. IT starts with what needs attention. Use concise actionable gap statuses and optional source evidence, not generic disclaimer blocks.
+
+**Why the comparison change:** The user said comparison was “far far far from valuable” and explicitly requested a simple visual combination in the Workbench, leveraging but not treating the previous design as gospel.
 
 Verification lessons:
 - dnd-kit default `rectIntersection` picks the wrong step when the drag source is wide; use `pointerWithin` (with rect fallback).

@@ -22,7 +22,7 @@ const intents: { id: string; pattern: RegExp; partial?: string }[] = [
 const unsupported = /\b(real.time|live integration|sap|salesforce|cmms|email|sms|single.sign.on|sso|audit trail|retention|encrypt|write.back|automatic updates?|push updates?|multilingual|languages?|predictive|machine learning|llm)\b/i;
 const otherDomain = /\b(invoice|payroll|recruit|candidate|stock trading|insurance claim|patient|medical diagnosis)\b/i;
 const maintenance = /\b(work.orders?|maintenance|equipment|pumps?|compressors?|plant|mechanical|inspection)\b/i;
-const constraint = /\b(read.only|do not|must not|no automatic|without.{0,15}(updates?|write)|never.{0,15}(updates?|write))\b/i;
+const constraint = /\b(read.only|do not|don['’]t|must not|no|without.{0,15}(updates?|write)|never)\b/i;
 const aliases: Record<string, string> = { "cap-summarize": "cap-b-summarize", "cap-wo-ingest": "cap-csv-ingest" };
 function implementedBy(base: Set<string>, id: string) {
   return base.has(id) || Boolean(aliases[id] && base.has(aliases[id]!));
@@ -45,10 +45,13 @@ function analyzeRequirement(text: string, context: string, pkg: LibraryCodePacka
 export function assessCode(brief: Brief, pkg: LibraryCodePackage): CodeAssessment {
   const context = [brief.rawText, ...Object.values(brief.fields).map(f => f.value)].join(" ");
   const interpretations = brief.requirements.map(r => analyzeRequirement(r.text, context, pkg));
-  const configurations = pkg.configurations.filter(c => getSolution(c.solutionId));
+  const configurations = pkg.configurations.filter(c => {
+    const solution = getSolution(c.solutionId);
+    return solution?.execution === "live" && solution.status !== "deprecated";
+  });
   const classify = (i: number, base: Set<string>): CodeRequirementAssessment["status"] => {
     const a = interpretations[i]!;
-    if (constraint.test(brief.requirements[i]!.text) && !a.evidence.length) return "constraint";
+    if (constraint.test(brief.requirements[i]!.text)) return "constraint";
     if (!a.evidence.length) return "missing";
     if (a.restrictions.length) return "partial";
     return a.evidence.every(e => implementedBy(base, e.capabilityId)) ? "covered" : "borrow";

@@ -138,6 +138,21 @@ paths:
         "400": { description: Invalid selection or input }
         "404": { description: Brief not found }
         "409": { description: Assessment or indexed engine changed }
+  /briefs/{briefId}/workbench:
+    post:
+      operationId: createBriefWorkbench
+      description: Recompute the confirmed brief assessment and atomically open its persisted Workbench case. Repeated requests for the same assessment return the existing case without resetting edits. No request body is accepted.
+      parameters:
+        - { name: briefId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Persisted Workbench case, newly created or previously opened
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Case" }
+        "400": { description: Brief is not confirmed or a request body was supplied }
+        "404": { description: Brief not found }
+        "409": { description: No valid live code-backed base or incompatible base configuration }
   /briefs/{briefId}/code-assessment:
     get:
       operationId: getCodeAssessment
