@@ -20,6 +20,22 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /intake/records/{id}/compare:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: compareIntakeRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntakeRevisionInput" }
+      responses:
+        "200":
+          description: Confirmed needs copied to a shared matching brief; private source files excluded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntakeComparison" }
   /auth/user:
     get:
       tags: [Auth]
@@ -1945,6 +1961,11 @@ components:
       schema:
         type: string
   schemas:
+    IntakeComparison:
+      type: object
+      required: [briefId]
+      properties:
+        briefId: { type: string }
     AuthUser:
       type: object
       required: [id, email, firstName, lastName, profileImageUrl]

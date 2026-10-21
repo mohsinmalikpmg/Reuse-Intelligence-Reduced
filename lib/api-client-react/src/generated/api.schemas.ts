@@ -5,6 +5,10 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface IntakeComparison {
+  briefId: string;
+}
+
 export interface AuthUser {
   id: string;
   /** @nullable */

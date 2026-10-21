@@ -10,7 +10,8 @@ import { MotionProvider } from '@/lib/motion';
 import { Frame } from '@/components/frame';
 import NotFound from '@/pages/not-found';
 import SignIn from '@/pages/signin';
-import Discover from '@/pages/discover';
+import DiscoverIntake from '@/pages/discover-intake';
+import IntakeShell from '@/components/intake/Shell';
 import Library from '@/pages/library';
 import SolutionPage from '@/pages/solution';
 import SearchPage from '@/pages/search';
@@ -35,7 +36,8 @@ function Router() {
     <Frame>
       <RoutedErrorBoundary>
         <Switch>
-          <Route path="/discover" component={Discover} />
+          <Route path="/discover" component={DiscoverIntake} />
+          <Route path="/discover/records/:id" component={IntakeShell} />
           <Route path="/library" component={Library} />
           <Route path="/solutions/:id" component={SolutionPage} />
           <Route path="/search" component={SearchPage} />

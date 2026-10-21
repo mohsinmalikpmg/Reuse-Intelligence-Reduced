@@ -1,10 +1,12 @@
 import { Router, type IRouter } from "express";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { pool } from "@workspace/db";
 import { z } from "zod";
 import { blankModel, intakeModelSchema, confirmationIssues } from "../lib/intake-model";
 import { interpretIntake } from "../lib/intake-interpret";
 import { privateObjectFile } from "../lib/intake-files";
+import { matchBrief } from "../lib/matching";
+import type { Brief } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 const revisionSchema = z.object({ revision: z.number().int().positive() });
@@ -77,6 +79,49 @@ router.put("/intake/records/:id", async (req, res) => {
   res.json(await present(rows[0]));
 });
 const interpreting = new Set<string>();
+router.post("/intake/records/:id/compare", async (req, res) => {
+  const parsed = revisionSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "A valid revision is required." }); return; }
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows } = await client.query("SELECT * FROM intake_records WHERE id=$1 AND user_id=$2 FOR UPDATE", [String(req.params.id), req.user!.id]);
+    const row = rows[0];
+    if (!row) { await client.query("ROLLBACK"); res.status(404).json({ error: "Intake not found." }); return; }
+    if (row.revision !== parsed.data.revision) { await client.query("ROLLBACK"); res.status(409).json({ error: "This intake has changed. Reload before comparing." }); return; }
+    const model = intakeModelSchema.parse(row.model);
+    if (row.status !== "confirmed" || !model.confirmed || confirmationIssues(model).length) {
+      await client.query("ROLLBACK"); res.status(400).json({ error: "Confirm the current intake before comparing it with the library." }); return;
+    }
+    // One immutable handoff per confirmed revision. Do not reinterpret reviewed content,
+    // send private attachments, or treat prototype claims as proven capabilities.
+    const id = `brief_intake_${createHash("sha256").update(`${row.id}:${row.revision}`).digest("hex").slice(0, 32)}`;
+    const field = (value: string) => ({ value, confidence: value ? 1 : 0 });
+    const fields: Brief["fields"] = {
+      user: field(model.profile.user.value), job: field(model.profile.outcome.value),
+      currentProcess: field(model.profile.problem.value), painPoint: field(model.profile.problem.value),
+      desiredOutcome: field(model.profile.outcome.value), constraints: field(model.profile.scope.value),
+      data: field(""), requiredControls: field(""), successMeasures: field(""),
+    };
+    const brief: Brief = {
+      id, rawText: Object.values(model.profile).map(f => f.value).join("\n\n"),
+      fields, today: model.profile.problem.value, better: model.profile.outcome.value,
+      requirements: model.requirements.map(r => ({ id: r.id, text: r.text, source: "added" })),
+      clarifyingQuestion: null, clarification: null, source: "ai", valueStatement: "",
+      confirmed: true, createdAt: new Date().toISOString(),
+    };
+    brief.valueStatement = matchBrief(brief).valueStatement;
+    await client.query(`INSERT INTO briefs(id,raw_text,fields,today,better,requirements,source,value_statement,confirmed)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,true) ON CONFLICT(id) DO NOTHING`,
+    [id, brief.rawText, JSON.stringify(fields), brief.today, brief.better, JSON.stringify(brief.requirements), brief.source, brief.valueStatement]);
+    await client.query("COMMIT");
+    res.json({ briefId: id });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    req.log.error({ errorType: err instanceof Error ? err.name : "Unknown" }, "Intake comparison handoff failed");
+    res.status(500).json({ error: "Could not prepare the library comparison. Your confirmed intake is unchanged." });
+  } finally { client.release(); }
+});
 router.post("/intake/records/:id/interpret", async (req, res) => {
   const parsed = revisionSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "A valid revision is required." }); return; }

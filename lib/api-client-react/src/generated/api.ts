@@ -56,6 +56,7 @@ import type {
   HealthStatus,
   ImprovementGroupDetail,
   IntakeAttachment,
+  IntakeComparison,
   IntakeFileInput,
   IntakeRecord,
   IntakeRecordInput,
@@ -127,6 +128,89 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getCompareIntakeRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/intake/records/${id}/compare`
+}
+
+export const compareIntakeRecord = async (id: string,
+    intakeRevisionInput: IntakeRevisionInput, options?: Parameters<typeof customFetch>[1]): Promise<IntakeComparison> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IntakeComparison>(getCompareIntakeRecordUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(intakeRevisionInput)
+  }
+);}
+
+
+
+
+
+export const getCompareIntakeRecordMutationKey = () => ['compareIntakeRecord'] as const;
+
+export const getCompareIntakeRecordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof compareIntakeRecord>>, TError,CompareIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof compareIntakeRecord>>, TError,CompareIntakeRecordMutationVariables, TContext> => {
+
+const mutationKey = getCompareIntakeRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof compareIntakeRecord>>, CompareIntakeRecordMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  compareIntakeRecord(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompareIntakeRecordMutationResult = NonNullable<Awaited<ReturnType<typeof compareIntakeRecord>>>
+    export type CompareIntakeRecordMutationBody = BodyType<IntakeRevisionInput>
+    export type CompareIntakeRecordMutationError = ErrorType<unknown>
+    export type CompareIntakeRecordMutationVariables = {id: string;data: BodyType<IntakeRevisionInput>}
+
+    export const useCompareIntakeRecord = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof compareIntakeRecord>>, TError,CompareIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof compareIntakeRecord>>,
+        TError,
+        CompareIntakeRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompareIntakeRecordMutationOptions(options));
+    }
 
 export const getGetCurrentAuthUserUrl = () => {
 

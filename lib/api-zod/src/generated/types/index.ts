@@ -123,6 +123,7 @@ export * from './improvementGroupDetail';
 export * from './intakeAttachment';
 export * from './intakeAttachmentSourceId';
 export * from './intakeAttachmentStatus';
+export * from './intakeComparison';
 export * from './intakeFileInput';
 export * from './intakeFileInputSourceId';
 export * from './intakeRecord';

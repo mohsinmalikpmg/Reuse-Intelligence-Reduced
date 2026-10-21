@@ -8,6 +8,22 @@
 import * as zod from 'zod';
 
 
+export const CompareIntakeRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const CompareIntakeRecordBody = zod.object({
+  "revision": zod.number().int().min(1)
+})
+
+export const CompareIntakeRecordResponse = zod.object({
+  "briefId": zod.string()
+})
+
+
 /**
  * @summary Get the currently authenticated user
  */

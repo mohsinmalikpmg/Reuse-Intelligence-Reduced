@@ -28,7 +28,7 @@ export default function Discover() {
   const params = new URLSearchParams(search);
   const briefId = params.get("brief") ?? "";
   const showResults = params.get("results") === "1";
-  const prototypeMode = params.get("mode") === "prototype";
+  const prototypeMode = !briefId && params.get("mode") === "prototype";
   const demo = useGetDemoState();
   const create = useCreateBrief();
   const [text, setText] = useState("");
@@ -54,6 +54,7 @@ export default function Discover() {
 
   return (
     <Page className="max-w-[1000px] md:pt-14">
+      <Link href="/discover" className="mb-4 inline-flex text-sm font-semibold text-primary underline-offset-2 hover:underline" data-testid="link-back-to-intake">← Back to intake</Link>
       <Headline stage="trace" size="lg" title="Follow the" accent="current." className="mb-0"
         sub="What are you trying to solve? Describe it the way you would to a colleague. We look for something that already exists before anything new is built." />
       <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-enterprise-framing">
