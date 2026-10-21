@@ -14,3 +14,9 @@ The approved canvas intake has a standalone artifact; the user subsequently chos
 **Why:** The user explicitly selected “Replace Discover’s intake screen” when asked where to integrate the selected design.
 
 **How to apply:** Preserve the standalone artifact and canvas reference. Integrate collection and iterative validation into Discover, then hand off confirmed needs to matching without reinterpreting them. Never turn confirmed intake into portfolio approval.
+
+Intake's outcome is synthesis against the solution library, not a report or an IT Owner handoff. Library solutions should include ZIP files of functioning code and components. Evaluate existing capabilities, capabilities borrowed from multiple solutions, the best overall starting solution, and missing capabilities to create.
+
+**Why:** The user explicitly corrected the report interpretation and confirmed this reuse-and-gap outcome. Descriptions alone are not the intended basis for comparison.
+
+**How to apply:** Ground capability mappings in versioned solution elements and source evidence. Distinguish code-inspected capability claims from runtime verification, and proposed combinations from proven integrations. Do not fabricate functioning ZIP packages for preview-only catalogue entries.
