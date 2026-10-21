@@ -158,10 +158,10 @@ export function Frame({ children }: { children: ReactNode }) {
     <nav aria-label="Primary" className={cn("flex flex-col", rail ? "gap-3 px-2" : "gap-4 px-3")}>
       {(Object.keys(STAGES) as Stage[]).map((s) => (
         <div key={s}>
-          <div className={cn("mb-1 flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-white/50", rail ? "justify-center" : "px-2")}>
+          {persona.role === "it" && <div className={cn("mb-1 flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-white/50", rail ? "justify-center" : "px-2")}>
             <span className="rounded border border-white/15 px-1 py-px text-[10px] text-white/70">{STAGES[s].n}</span>
             {!rail && <span className="truncate">{STAGES[s].label}</span>}
-          </div>
+          </div>}
           <ul className="flex flex-col gap-0.5">
             {NAV.filter((n) => n.stage === s).map((n) => {
               const on = isOn(n);

@@ -14,7 +14,7 @@ import { MetaGrid, MetaTags, OutputPreviewPanel, isLive } from "@/components/ent
 import { PrototypePanel, ComparedPrototypes } from "@/components/prototype-panel";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/persona";
-import { SolutionCodePackage } from "@/components/code-assessment";
+import { SolutionCodePackageToggle } from "@/components/code-assessment";
 
 export default function SolutionPage() {
   const isOwner = useRole() === "it";
@@ -30,7 +30,7 @@ export default function SolutionPage() {
   const create = useCreateCase();
   const [step, setStep] = useState<FlowBlock | null>(null);
   const [stepDrawer, setStepDrawer] = useState(false);
-  const [sample, setSample] = useState(false);
+  const [sample, setSample] = useState(!isOwner);
   const [drawer, setDrawer] = useState<"versions" | "details" | null>(null);
   const [cap, setCap] = useState<Capability | null>(null);
   const blocks = useMemo(() => (wb.data ? blocksFromWorkbench(wb.data.blocks) : []), [wb.data]);
@@ -92,7 +92,7 @@ export default function SolutionPage() {
       </div>
 
       {prototype && <PrototypePanel prototype={prototype} />}
-      <SolutionCodePackage solutionId={s.id} />
+      <SolutionCodePackageToggle solutionId={s.id} open={isOwner} />
 
       {!prototype && <section className="mt-10">
         <div className="mb-3 flex items-center gap-2">

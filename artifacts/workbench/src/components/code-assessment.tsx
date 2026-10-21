@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import {
   getGetCodeAssessmentQueryKey, getGetIntakeSessionQueryKey,
@@ -81,52 +83,109 @@ function PackageMetadata({ pkg }: { pkg: LibraryCodePackage }) {
   );
 }
 
+type Step = { kind: "borrow" | "gap"; item: CodeRequirementAssessment };
+
 export function CodeAssessment({ briefId }: { briefId: string }) {
   const query = useGetCodeAssessment(briefId, { query: { queryKey: getGetCodeAssessmentQueryKey(briefId), enabled: !!briefId } });
-  if (query.isLoading) return <section className="mt-10" aria-label="Code-grounded assessment" role="status"><p className="mb-3 text-[14px] text-muted-foreground">Assessing indexed source implementations…</p><Skel className="h-44" /></section>;
-  if (query.isError || !query.data) return <section className="card-soft mt-10 p-5" role="alert"><h2 className="font-semibold">Code-grounded assessment unavailable</h2><p className="mt-2 text-[14px]">Source evidence could not load. Catalog descriptions below are not a substitute.</p><button className={`${btn.secondary} mt-3`} onClick={() => query.refetch()}>Retry</button></section>;
+  const [phase, setPhase] = useState<"choose" | "walk" | "overview" | "check">("choose");
+  const [i, setI] = useState(0);
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const [tech, setTech] = useState(false);
+  if (query.isLoading) return <section className="mt-10" aria-label="Code-grounded assessment" role="status"><p className="mb-3 text-[14px] text-muted-foreground">Checking which existing code fits your need…</p><Skel className="h-44" /></section>;
+  if (query.isError || !query.data) return <section className="card-soft mt-10 p-5" role="alert"><h2 className="font-semibold">Recommendation unavailable</h2><p className="mt-2 text-[14px]">Source evidence could not load. Catalog descriptions are not a substitute.</p><button className={`${btn.secondary} mt-3`} onClick={() => query.refetch()}>Retry</button></section>;
   const report = query.data;
-  const best = report.candidates.find((candidate) => candidate.solutionId === report.bestSolutionId);
-  const gaps = report.requirements.filter((item) => item.status === "missing" || item.status === "partial");
-  const sources = new Map<string, { name: string; items: Set<string> }>();
-  for (const item of report.requirements) {
-    if (item.status !== "borrow" && item.status !== "partial") continue;
-    for (const match of item.matches) {
-      if (match.solutionId === report.bestSolutionId) continue;
-      const source = sources.get(match.solutionId) ?? { name: match.solutionName, items: new Set<string>() };
-      source.items.add(match.capabilityName);
-      sources.set(match.solutionId, source);
-    }
-  }
+  const best = report.candidates.find((c) => c.solutionId === report.bestSolutionId);
+  const alts = report.candidates.filter((c) => c.solutionId !== report.bestSolutionId).sort((a, b) => b.weightedCoverage - a.weightedCoverage).slice(0, 2);
+  const helps = report.requirements.filter((r) => r.status === "covered");
+  const remains = report.requirements.filter((r) => r.status !== "covered");
+  const steps: Step[] = [
+    ...report.requirements.filter((r) => r.status === "borrow").map((item) => ({ kind: "borrow" as const, item })),
+    ...report.requirements.filter((r) => r.status === "partial" || r.status === "missing" || r.status === "constraint").map((item) => ({ kind: "gap" as const, item })),
+  ];
+  const cur = steps[i];
+  const next = () => (i + 1 < steps.length ? setI(i + 1) : setPhase("overview"));
+  const limits = (
+    <div className="rounded-xl border-l-4 border-l-sienna bg-secondary/60 p-4 text-[14px]" data-testid="assessment-limitations">
+      <span className="font-semibold">Keep in mind: </span>"Covered" means matching code exists in the demo base, not that your full need is met. Borrowed parts are proposals; integration is not verified.
+      {report.limitations.length > 0 && <ul className="mt-2 list-disc pl-5 text-muted-foreground">{report.limitations.map((t, k) => <li key={k}>{t}</li>)}</ul>}
+    </div>
+  );
   return (
     <section className="mt-10 space-y-5" data-testid="code-assessment">
-      <div className="card-soft border-l-4 border-l-sienna p-6">
-        <div className="eyebrow mb-2 !text-siennaink">Code-grounded assessment</div>
-        <h2 className="text-[24px] font-semibold">{best ? `Best starting solution: ${best.name}` : "No suitable code-backed base"}</h2>
-        <p className="mt-2 text-[14px] text-muted-foreground">Covered means a matching implementation exists in the demo base configuration, not proof it meets your full need. Borrow means proposed composition; integration is not verified.</p>
-        {best && <Link href={`/solutions/${best.solutionId}`} className={`${btn.primary} mt-4`}>Explore starting solution</Link>}
-        {!best && <p className="mt-3 text-[14px]">Review the gaps below before choosing a base. A catalog suggestion is not code evidence.</p>}
-      </div>
-      <div>
-        <h3 className="mb-3 text-[18px] font-semibold">Capability coverage by priority</h3>
-        {report.requirements.length ? <ol className="space-y-3">{report.requirements.map((item) => <Requirement key={item.id} item={item} />)}</ol> : <p className="text-[14px] text-muted-foreground">No requirements were available to assess.</p>}
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card-soft p-5">
-          <h3 className="text-[17px] font-semibold">Borrow from source products</h3>
-          <p className="mt-1 text-[13px] text-muted-foreground">Proposed composition only. Review the integration notes in each citation; cross-product integration has not been verified.</p>
-          {sources.size ? <ul className="mt-3 space-y-3">{Array.from(sources, ([id, source]) => <li key={id}><Link href={`/solutions/${id}`} className="font-semibold text-primary underline">{source.name}</Link><p className="text-[14px]">{Array.from(source.items).join(", ")}</p></li>)}</ul> : <p className="mt-3 text-[14px] text-muted-foreground">No additional source products proposed.</p>}
+      {phase === "choose" && <>
+        <div className="card-soft border-l-4 border-l-primary p-6">
+          <div className="eyebrow mb-2">Our recommendation</div>
+          <h2 className="text-[26px] font-semibold">{best ? `Start from ${best.name}` : "No existing code is a good starting point"}</h2>
+          {best ? <div className="mt-4 grid gap-4 md:grid-cols-3 text-[14.5px]">
+            <div><div className="font-semibold text-primary">What it already helps with</div><p className="mt-1">{helps.length ? helps.slice(0, 3).map((r) => r.text).join("; ") : "Nothing fully covered yet."}{helps.length > 3 ? ` and ${helps.length - 3} more` : ""}</p></div>
+            <div><div className="font-semibold text-siennaink">What remains</div><p className="mt-1">{remains.length ? `${remains.length} requirement${remains.length === 1 ? "" : "s"} to borrow, build or validate` : "No open requirements found in this check."}</p></div>
+            <div><div className="font-semibold text-primary">Why this one</div><p className="mt-1">It has the most matching code for your highest-priority needs.</p></div>
+          </div> : <p className="mt-2 text-[14.5px]">Review the gaps before choosing anything. A catalog suggestion is not code evidence.</p>}
+          <div className="mt-5 flex flex-wrap gap-2">
+            {best ? <button className={btn.primary} data-testid="button-continue-recommendation" onClick={() => { setI(0); setPhase(steps.length ? "walk" : "overview"); }}>Continue with {best.name} <ArrowRight className="h-5 w-5" /></button>
+              : <button className={btn.primary} onClick={() => { setI(0); setPhase(steps.length ? "walk" : "overview"); }}>Review the gaps <ArrowRight className="h-5 w-5" /></button>}
+            {best && <Link href={`/solutions/${best.solutionId}`} className={btn.quiet}>See examples</Link>}
+          </div>
         </div>
-        <div className="card-soft p-5">
-          <h3 className="text-[17px] font-semibold">Still need to build or complete</h3>
-          {gaps.length ? <ul className="mt-3 space-y-3">{gaps.map((item) => <li key={item.id} className="text-[14px]"><span className="font-semibold">Priority {item.priority} · {item.status === "partial" ? "Partial" : "Missing"}:</span> {item.text}<p className="mt-1 text-muted-foreground">{item.note}</p></li>)}</ul> : <p className="mt-3 text-[14px] text-muted-foreground">No missing or partial requirements identified in this assessment. This is not full-needs verification.</p>}
+        {alts.length > 0 && <div>
+          <h3 className="mb-2 text-[15px] font-semibold text-muted-foreground">Other possible starting points</h3>
+          <ul className="grid gap-3 md:grid-cols-2">{alts.map((a) => <li key={a.solutionId} className="card-soft flex items-center gap-3 p-4" data-testid={`alt-${a.solutionId}`}>
+            <span className="min-w-0 flex-1"><span className="block font-semibold">{a.name}</span><span className="text-[13px] text-muted-foreground">Another code-backed option. Explore it to see examples.</span></span>
+            <Link href={`/solutions/${a.solutionId}`} className={btn.secondary}>Explore</Link>
+          </li>)}</ul>
+          <p className="mt-2 text-[12.5px] text-muted-foreground">Exploring an alternative does not re-run this assessment from a different base.</p>
+        </div>}
+      </>}
+
+      {phase === "walk" && cur && <div className="card-soft p-6" data-testid="assessment-step">
+        <div className="flex items-center gap-2 text-[13px] text-muted-foreground"><span>{i + 1} of {steps.length}</span><span>·</span><span>{cur.kind === "borrow" ? "Proposed to borrow" : "Still a gap"}</span><span className="flex-1" /><button className="underline" onClick={() => setPhase("overview")}>Review overview</button></div>
+        <h3 className="mt-3 text-[22px] font-semibold">{cur.item.text}</h3>
+        <p className="mt-2 text-[15px]">{cur.kind === "borrow" && cur.item.matches[0] ? `Borrow "${cur.item.matches[0].capabilityName}" from ${cur.item.matches[0].solutionName}.` : labels[cur.item.status]}</p>
+        <p className="mt-1 text-[14px] text-muted-foreground">{cur.item.note}</p>
+        <details className="mt-4 text-[14px]"><summary className="cursor-pointer font-semibold text-primary">Show source evidence ({cur.item.matches.length})</summary>
+          {cur.item.matches.length ? cur.item.matches.map((m, k) => <div key={k} className="mt-3 border-t border-border pt-3"><Link href={`/solutions/${m.solutionId}`} className="font-semibold text-primary underline">{m.solutionName}</Link> · {m.capabilityName}<SourceEvidence evidence={m.evidence} /><p className="mt-2"><span className="font-semibold">Integration: </span>{m.integration || "No integration instructions recorded."}</p></div>) : <p className="mt-2 text-muted-foreground">No matching source implementation indexed.</p>}
+        </details>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button className={btn.primary} onClick={() => { setSkipped(skipped.filter((x) => x !== cur.item.id)); next(); }}>{cur.kind === "borrow" ? "Noted, next" : "Understood, next"} <ArrowRight className="h-5 w-5" /></button>
+          <button className={btn.quiet} onClick={() => (i > 0 ? setI(i - 1) : setPhase("choose"))}><ArrowLeft className="h-4 w-4" /> Back</button>
+          <button className={btn.quiet} onClick={() => { setSkipped([...new Set([...skipped, cur.item.id])]); next(); }}>Skip for now</button>
         </div>
-      </div>
-      {report.limitations.length > 0 && <div className="card-soft p-5"><h3 className="font-semibold">Assessment limitations</h3><ul className="mt-2 list-disc pl-5 text-[14px]">{report.limitations.map((text, i) => <li key={i}>{text}</li>)}</ul></div>}
-      <PackageMetadata pkg={report.package} />
-      <AcceptanceChecks briefId={briefId} />
+      </div>}
+
+      {phase === "overview" && <div className="card-soft p-6" data-testid="assessment-overview">
+        <h3 className="text-[22px] font-semibold">{best ? `Your plan starting from ${best.name}` : "Your open gaps"}</h3>
+        {steps.length ? <ol className="mt-4 space-y-2">{steps.map((st, k) => <li key={st.item.id}><button className="flex w-full items-start gap-3 rounded-lg border border-border px-3 py-2.5 text-left hover:border-primary/50" onClick={() => { setI(k); setPhase("walk"); }}>
+          <Tag tone={st.kind === "borrow" ? "sky" : "sienna"}>{st.kind === "borrow" ? "Borrow" : "Gap"}</Tag>
+          <span className="min-w-0 flex-1 text-[14.5px]">{st.item.text}</span>
+          {skipped.includes(st.item.id) && <span className="text-[12.5px] text-muted-foreground">Skipped</span>}
+        </button></li>)}</ol> : <p className="mt-2 text-[14px] text-muted-foreground">Nothing to borrow and no gaps identified. This is not full-needs verification.</p>}
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button className={btn.primary} data-testid="button-to-acceptance" onClick={() => setPhase("check")}>Check it against my requirements <ArrowRight className="h-5 w-5" /></button>
+          <button className={btn.quiet} onClick={() => setPhase("choose")}><ArrowLeft className="h-4 w-4" /> Back to recommendation</button>
+        </div>
+      </div>}
+
+      {phase === "check" && <>
+        <button className={btn.quiet} onClick={() => setPhase("overview")}><ArrowLeft className="h-4 w-4" /> Back to overview</button>
+        <AcceptanceChecks briefId={briefId} />
+      </>}
+
+      {limits}
+      <button className={btn.quiet} onClick={() => setTech(!tech)} aria-expanded={tech} data-testid="button-technical-details">{tech ? "Hide" : "Show"} technical details</button>
+      {tech && <>
+        <div><h3 className="mb-3 text-[17px] font-semibold">Every requirement, by priority</h3>
+          {report.requirements.length ? <ol className="space-y-3">{report.requirements.map((item) => <Requirement key={item.id} item={item} />)}</ol> : <p className="text-[14px] text-muted-foreground">No requirements were available to assess.</p>}</div>
+        <PackageMetadata pkg={report.package} />
+      </>}
     </section>
   );
+}
+
+/** Code package evidence; IT sees it directly, seekers open it on request. */
+export function SolutionCodePackageToggle({ solutionId, open: initial }: { solutionId: string; open: boolean }) {
+  const [open, setOpen] = useState(initial);
+  if (open) return <SolutionCodePackage solutionId={solutionId} />;
+  return <button className={`${btn.quiet} mt-6`} onClick={() => setOpen(true)} data-testid="button-show-code-evidence">Show code evidence and download</button>;
 }
 
 export function SolutionCodePackage({ solutionId }: { solutionId: string }) {

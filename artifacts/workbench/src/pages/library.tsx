@@ -9,6 +9,8 @@ import { EnterpriseSchematic } from "@/components/enterprise-schematic";
 import { CapabilitySchematic, ProblemSchematic } from "@/components/catalog-schematic";
 import { ExecutionTag, functionRank } from "@/components/enterprise";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/lib/persona";
+import { ITLibrary, SeekerLibrary } from "@/components/library-simple";
 
 type Filters = { fn: string; problem: string; step: string; status: string; owner: string; capability: string; data: string };
 const NONE: Filters = { fn: "", problem: "", step: "", status: "", owner: "", capability: "", data: "" };
@@ -49,6 +51,14 @@ function familyText(f: SolutionFamily): string {
 }
 
 export default function Library() {
+  const isIT = useRole() === "it";
+  const [full, setFull] = useState(false);
+  if (!isIT) return <SeekerLibrary />;
+  if (!full) return <ITLibrary onBrowse={() => setFull(true)} />;
+  return <FullLibrary onBack={() => setFull(false)} />;
+}
+
+function FullLibrary({ onBack }: { onBack: () => void }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<(typeof TABS)[number]["k"]>("families");
   const families = useListSolutionFamilies();
@@ -137,6 +147,7 @@ export default function Library() {
 
   return (
     <Page>
+      <button className={btn.quiet} onClick={onBack} data-testid="button-back-attention">Back to what needs attention</button>
       <Headline stage="trace" title="Explore what" accent="already exists." className="mb-0" sub="Every business function, the product to use for each problem, and the capabilities that can be reused around it." />
       <div className="relative mt-6 max-w-3xl">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
