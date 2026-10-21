@@ -3,11 +3,18 @@ name: Simplicity UX mandate
 description: The user's non-negotiable UX rules for the workbench frontend and the verification lessons from the redesign.
 ---
 
-The user's standing rule: "above all simplicity and tactile interaction, that's what will win." When adding anything to the frontend, keep the five-view structure (Describe → Match → Shape → Test → Decide), the information limits (≤3 options/reasons/metrics, 1 risk, 1 primary + 2 secondary actions, one sentence per card), and put everything else behind one drawer. Remove rather than add when in doubt.
+The user's standing rule: "above all simplicity and tactile interaction, that's what will win." Keep the information limits (≤3 options/reasons/metrics, 1 risk, 1 primary + 2 secondary actions, one sentence per card). Remove rather than add when in doubt. The newer app-wide mandate below supersedes the old fixed-view and role-copy-only approach.
 
 **Why:** the user supplied a 550-line simplicity override spec (attached_assets/Pasted-NON-NEGOTIABLE-SIMPLICITY-OVERRIDE…); the full rules are summarised in replit.md "UX rules".
 
-**How to apply:** no new pages or dashboards per role; role switch only changes copy/actions. Any new state change needs Undo. Keep the demo case seeded so the seeker has something to drag (recommended additions off).
+**How to apply:** any new state change needs Undo. Keep the demo case seeded so the seeker has something to drag (recommended additions off). Role experiences now follow the newer mandate below, not the earlier copy/actions-only restriction.
+
+## App-wide human-scale experience
+The user confirmed that complexity is persistent across the app, including Library and Comparison—not just intake. Organize each view around one human decision and one primary action. Use plain-language outcomes; omit metrics unless they help that decision. Progressive disclosure alone is insufficient if the page still exposes the system's internal model.
+
+**Why:** The user corrected a proposal to simplify only post-intake comparison, then explicitly confirmed app-wide simplification of navigation, page purposes and information hierarchy.
+
+**How to apply:** Library starts from the user's need with a few concise solution cards and concrete input/output examples. Comparison offers one recommendation and at most two alternatives; introduce borrowed components and gaps after choosing a starting point, one decision at a time. Separate seeker and IT Owner workspaces, not merely role labels on equally dense screens. IT starts with what needs attention. Keep important limitations visible and technical evidence available on request.
 
 Verification lessons:
 - dnd-kit default `rectIntersection` picks the wrong step when the drag source is wide; use `pointerWithin` (with rect fallback).
