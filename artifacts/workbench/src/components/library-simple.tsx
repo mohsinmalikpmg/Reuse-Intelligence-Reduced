@@ -63,7 +63,7 @@ function SolutionCard({ s, problem }: { s: Solution; problem: string }) {
       <span className="text-[12.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{problem}</span>
       <h3 className="mt-1 text-[18px] font-semibold leading-snug text-primary">{s.name}</h3>
       <p className="mt-1.5 line-clamp-2 text-[14.5px]">{s.outcome}</p>
-      {!isLive(s) && <p className="mt-2 text-[12.5px] text-siennaink">Preview only. It does not run on your input yet.</p>}
+      {!isLive(s) && <p className="mt-2 text-[12.5px] text-siennaink">Preview</p>}
       <Link href={`/solutions/${s.id}`} className={`${btn.secondary} mt-4 self-start`} data-testid={`link-open-${s.id}`}>See an example <ArrowRight className="h-4 w-4" /></Link>
     </li>
   );

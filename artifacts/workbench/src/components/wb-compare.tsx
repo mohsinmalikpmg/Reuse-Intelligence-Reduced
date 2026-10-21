@@ -36,7 +36,6 @@ export function Measures({ cmp }: { cmp: ABComparison }) {
           <><div className="font-semibold">Against labelled expected findings</div><div>A: {score(cmp.scoreA)}</div><div>B: {score(cmp.scoreB)}</div></>
         ) : <span className="text-muted-foreground">No labelled expected findings for this input, so no accuracy is claimed.</span>}
       </div>
-      <p className="mt-2 text-[12.5px] text-muted-foreground">A longer or more detailed output is not evidence that it is more accurate.</p>
     </details>
   );
 }

@@ -10,6 +10,12 @@ The user's standing rule: "above all simplicity and tactile interaction, that's 
 **How to apply:** any new state change needs Undo. Keep the demo case seeded so the seeker has something to drag (recommended additions off). Role experiences now follow the newer mandate below, not the earlier copy/actions-only restriction.
 
 ## App-wide human-scale experience
+Remove repetitive defensive disclaimers and meta-explanations throughout the app. The user calls passages such as “Keep in mind…not semantic proof…not production readiness…” AI slop and explicitly wants them removed, not hidden in another panel.
+
+**Why:** The user says these blocks undermine the human-scale experience.
+
+**How to apply:** Use short, factual statuses and specific actionable gaps. Preserve necessary sharing consent, privacy warnings and errors; do not repeat generic caveats about what the system cannot prove.
+
 The user confirmed that complexity is persistent across the app, including Library and Comparison—not just intake. Organize each view around one human decision and one primary action. Use plain-language outcomes; omit metrics unless they help that decision. Progressive disclosure alone is insufficient if the page still exposes the system's internal model.
 
 **Why:** The user corrected a proposal to simplify only post-intake comparison, then explicitly confirmed app-wide simplification of navigation, page purposes and information hierarchy.

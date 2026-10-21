@@ -86,7 +86,7 @@ export default function SolutionPage() {
             {live && <button data-testid="button-compare" onClick={() => start("compare")} disabled={create.isPending} className={btn.quiet}><GitCompare className="h-4 w-4" /> Compare</button>}
             {isOwner && <button data-testid="button-view-details" onClick={() => setDrawer("details")} className={btn.quiet}><Info className="h-4 w-4" /> View details</button>}
           </div>
-          {!live && !prototype && <span className="max-w-[260px] text-right text-[12.5px] text-muted-foreground" data-testid="text-preview-only">Catalogued with a sample-data preview. Not yet wired to run on your input, so no experiment can be opened on it.</span>}
+          {!live && !prototype && <span className="max-w-[260px] text-right text-[12.5px] text-muted-foreground" data-testid="text-preview-only">Preview · needs integration</span>}
           {prototype && <span className="max-w-[260px] text-right text-[12.5px] text-muted-foreground" data-testid="text-prototype-only">Runs on {prototype.platformName}, outside FUSEBOX. Its examples are what its builder submitted, not runs; no experiment can be opened on it.</span>}
         </div>
       </div>

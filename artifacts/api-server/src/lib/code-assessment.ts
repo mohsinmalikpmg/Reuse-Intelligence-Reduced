@@ -85,17 +85,17 @@ export function assessCode(brief: Brief, pkg: LibraryCodePackage): CodeAssessmen
         capabilityId: e.capabilityId, capabilityName: cap?.name ?? e.capabilityId,
         solutionId: e.solutionId, solutionName: getSolution(e.solutionId)?.name ?? e.solutionId, evidence: e,
         integration: borrowed
-          ? `Proposed reuse of a shared-engine element. Requires ${deps.length ? deps.map(id => capabilityById.get(id)?.name ?? id).join(", ") : "the demo work-order input/context"}.${conflicts.length ? ` Conflicts with: ${conflicts.map(id => capabilityById.get(id)?.name ?? id).join(", ")}.` : ""} Adapt interfaces, configuration and controls and test the combined workflow before adoption; no production compatibility is asserted.`
-          : "Present in the packaged seed configuration. Validate against your real inputs and acceptance criteria; no production readiness is asserted.",
+          ? `Needs integration. Requires ${deps.length ? deps.map(id => capabilityById.get(id)?.name ?? id).join(", ") : "work-order input"}.${conflicts.length ? ` Conflicts with: ${conflicts.map(id => capabilityById.get(id)?.name ?? id).join(", ")}.` : ""}`
+          : "Included in this configuration.",
       };
     });
     return {
       id: r.id, text: r.text, priority: i + 1, status, matches,
-      note: status === "constraint" ? "Acceptance constraint, not a missing feature to build. Validate that the selected deployment and any borrowed components preserve this restriction; local demo behavior alone is not proof of production controls."
-        : status === "missing" ? "Build or investigate: no supporting implementation was identified in this indexed package. Other catalog entries remain unverified."
+      note: status === "constraint" ? "Keep this restriction when adding or changing components."
+        : status === "missing" ? "Not found in the reviewed code."
         : status === "partial" ? [...new Set(a.restrictions)].join(" ")
-        : status === "borrow" ? "Potential combination: one or more required elements come from outside the best starting configuration."
-        : "A matching implementation exists in the best starting demo configuration. Coverage is provisional, not acceptance-test proof.",
+        : status === "borrow" ? "Available from another solution; needs integration."
+        : "Found in this solution’s code.",
     };
   });
   return {

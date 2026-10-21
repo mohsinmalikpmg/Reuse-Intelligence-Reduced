@@ -63,7 +63,7 @@ export function OutputPreviewPanel({ preview, s, testid = "output-preview" }: { 
     <div className="card-soft p-5" data-testid={testid}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="eyebrow">Output preview · sample data</span>
-        <Tag tone="slate"><Eye className="h-3 w-3" /> Not a run, not evidence</Tag>
+        <Tag tone="slate"><Eye className="h-3 w-3" /> Preview</Tag>
       </div>
       <h3 className="mt-1.5 text-[18px] font-bold leading-snug" data-testid={`${testid}-title`}>{preview.title}</h3>
       <div className="mt-3 rounded-xl border border-border bg-secondary/50 px-4 py-3 text-[13.5px]">
@@ -78,7 +78,7 @@ export function OutputPreviewPanel({ preview, s, testid = "output-preview" }: { 
           </section>
         ))}
       </div>
-      <p className="mt-4 flex items-start gap-1.5 text-[13px] text-muted-foreground" data-testid={`${testid}-note`}><ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok" /> {preview.note}</p>
+      <p className="mt-4 flex items-start gap-1.5 text-[13px] text-muted-foreground" data-testid={`${testid}-note`}><ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok" /> {preview.note.replace(/^Built once from fixed sample inputs(?: so the output shape is credible)?\. FUSEBOX does not run this product on real data yet, so it cannot produce A\/B evidence; /, "Needs integration: ")}</p>
     </div>
   );
 }

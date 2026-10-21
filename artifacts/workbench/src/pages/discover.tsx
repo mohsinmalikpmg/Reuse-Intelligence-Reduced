@@ -230,7 +230,7 @@ function Results({ briefId }: { briefId: string }) {
     <>
       <CodeAssessment briefId={briefId} />
       <details className="card-soft mt-8 p-5" data-testid="catalog-descriptions">
-        <summary className="cursor-pointer text-[17px] font-semibold text-primary">Catalog descriptions (not source evidence)</summary>
+        <summary className="cursor-pointer text-[17px] font-semibold text-primary">Catalog descriptions</summary>
         <p className="mt-3 text-[14px] text-muted-foreground">Secondary comparison based on catalog descriptions, not implemented code. These suggestions do not override the code-grounded starting solution or establish verified coverage.</p>
         <CatalogResults briefId={briefId} />
       </details>
@@ -247,7 +247,7 @@ function CatalogResults({ briefId }: { briefId: string }) {
   if (!best) return <p className="mt-10 text-muted-foreground">Nothing in the library matches yet. Try wording it differently, or browse the <Link href="/library" className="text-primary underline">library</Link>.</p>;
   return (
     <section className="reveal mt-12" data-testid="section-results">
-      <div className="eyebrow mb-2 !text-siennaink">Catalog suggestion · not source evidence</div>
+      <div className="eyebrow mb-2 !text-siennaink">Catalog suggestion</div>
       <MatchCard m={best} big />
       <CoverageTable rows={m.data.coverage} briefId={briefId} baseSolutionId={best.solution.id} baseSolutionName={best.solution.name} baseLive={isLive(best.solution)} />
       {rest.length > 0 && <>

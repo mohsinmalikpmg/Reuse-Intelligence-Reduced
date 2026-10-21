@@ -11,7 +11,7 @@ function RunEvidence({ run, currentPlan }: { run: AcceptanceRun; currentPlan: st
     <summary className="cursor-pointer font-semibold">
       {new Date(run.createdAt).toLocaleString()} · {run.inputMode === "fixture" ? "Fixture input" : "Supplied input"} · {run.results.filter(r => r.status === "passed").length} passed / {run.results.filter(r => r.status === "failed").length} failed / {run.results.filter(r => r.status === "not_testable").length} not testable
     </summary>
-    <p className="mt-2 text-sm text-muted-foreground">Historical result for the configuration and input below, not the current selection. {run.planFingerprint !== currentPlan && "The assessment has changed since this run."} Success is not production readiness or verification of the full requirement.</p>
+    <p className="mt-2 text-sm text-muted-foreground">Saved result for the input and configuration below. {run.planFingerprint !== currentPlan && "The assessment has changed since this run."}</p>
     <ol className="mt-3 space-y-3">{run.results.map(result => <li key={result.criterion.id}>
       <Tag tone={result.status === "passed" ? "green" : result.status === "failed" ? "sienna" : "slate"}>{result.status.replace("_", " ")}</Tag>
       <p className="font-semibold">{result.criterion.requirement}</p>
@@ -49,24 +49,24 @@ function ReviewForm({ plan, briefId }: { plan: Plan; briefId: string }) {
   const mutation = useRunAcceptanceCheck();
   const toggle = (list: string[], id: string) => list.includes(id) ? list.filter(x => x !== id) : [...list, id];
   return <div className="mt-4 space-y-4">
-    <div><h4 className="font-semibold">1. Review the proposed demo assertions</h4>
-      <p className="text-sm text-muted-foreground">These limited checks are not a restatement of your full acceptance requirements. If an assertion is unsuitable, do not confirm it; revise the requirement in intake first. Constraints and incomplete behaviors remain not testable.</p>
+    <div><h4 className="font-semibold">1. Review the proposed checks</h4>
+      <p className="text-sm text-muted-foreground">If a check needs changing, revise the requirement in intake first.</p>
       <div className="mt-3 space-y-3">{plan.criteria.map(c => <label key={c.id} className="flex items-start gap-3 rounded border border-border p-3">
         <input type="checkbox" className="mt-1" checked={reviewedCriterionIds.includes(c.id)} onChange={() => setReviewed(toggle(reviewedCriterionIds, c.id))} />
-        <span><span className="block font-semibold">{c.requirement}</span><span className="block text-sm">{c.assertion}</span><span className="block text-sm text-muted-foreground">{c.reason}</span><span className="text-xs">I have reviewed this {c.testable ? "limited assertion" : "untestable limitation"}.</span></span>
+        <span><span className="block font-semibold">{c.requirement}</span><span className="block text-sm">{c.assertion}</span>{!c.testable && <span className="block text-sm text-muted-foreground">{c.reason.replace("This restriction requires separate control verification; output presence cannot prove a prohibition.", "Verify this restriction separately.")}</span>}<span className="text-xs">{c.testable ? "I have reviewed this check." : "Not testable · reviewed."}</span></span>
       </label>)}</div>
     </div>
     <div><h4 className="font-semibold">2. Select proposed borrowed elements</h4>
-      <p className="text-sm text-muted-foreground">Starts with the indexed seed configuration. Dependencies and conflicts are checked on execution; nothing is silently added or removed.</p>
+      <p className="text-sm text-muted-foreground">Dependencies and conflicts are checked when you run.</p>
       <details className="mt-2 text-sm"><summary>Base elements</summary><p>{plan.baseCapabilityIds.join(", ") || "No suitable base"}</p></details>
       {plan.borrowedOptions.length ? plan.borrowedOptions.map(option => <label key={option.capabilityId} className="mt-3 flex items-start gap-3">
         <input type="checkbox" className="mt-1" checked={borrowedIds.includes(option.capabilityId)} onChange={() => setBorrowed(toggle(borrowedIds, option.capabilityId))} />
-        <span><span className="font-semibold">{option.capabilityName}</span> · {option.solutionName}<span className="block text-sm text-muted-foreground">{option.integration}</span></span>
+        <span><span className="font-semibold">{option.capabilityName}</span> · {option.solutionName}<span className="block text-sm text-muted-foreground">{option.integration.replace("; demo behavior only, not a production integration.", ".")}</span></span>
       </label>) : <p className="mt-2 text-sm">No borrowed elements proposed.</p>}
     </div>
     <div><h4 className="font-semibold">3. Choose input and execute</h4>
-      <label className="mt-2 block text-sm">Input source <select className="ml-2 rounded border bg-background p-2" value={inputMode} onChange={e => setMode(e.target.value as "fixture" | "supplied")}><option value="fixture">Labelled maintenance demo fixture</option><option value="supplied">My supplied work-order text</option></select></label>
-      <p className="mt-2 text-sm text-muted-foreground">{inputMode === "fixture" ? "Synthetic maintenance notes, including repeated equipment issues and a gas-leak signal. Designed to exercise the demo, not demonstrate real-world accuracy." : "Use one record per line: ID | YYYY-MM-DD | Site | Equipment tag (type) | Note. Input and actual outputs will be stored with this brief; avoid sensitive information."}</p>
+      <label className="mt-2 block text-sm">Input source <select className="ml-2 rounded border bg-background p-2" value={inputMode} onChange={e => setMode(e.target.value as "fixture" | "supplied")}><option value="fixture">Sample maintenance notes</option><option value="supplied">My supplied work-order text</option></select></label>
+      <p className="mt-2 text-sm text-muted-foreground">{inputMode === "fixture" ? "Synthetic notes with repeated equipment issues and a gas-leak signal." : "Use one record per line: ID | YYYY-MM-DD | Site | Equipment tag (type) | Note."}</p>
       <textarea aria-label={inputMode === "fixture" ? "Fixture input preview" : "Supplied work-order input"} className="mt-2 min-h-40 w-full rounded border border-border bg-background p-3 font-mono text-xs" value={inputMode === "fixture" ? plan.fixtureText : inputText} readOnly={inputMode === "fixture"} maxLength={50000} onChange={e => setInput(e.target.value)} />
       <button className={`${btn.primary} mt-3`} disabled={!plan.baseSolutionId || !plan.criteria.length || reviewedCriterionIds.length !== plan.criteria.length || (inputMode === "supplied" && !inputText.trim()) || mutation.isPending} onClick={() => mutation.mutate({ briefId, data: { planFingerprint: plan.planFingerprint, borrowedIds, reviewedCriterionIds, inputMode, inputText: inputMode === "supplied" ? inputText : "" } }, { onSuccess: run => {
         client.setQueryData<Plan>(getGetAcceptanceChecksQueryKey(briefId), old => old ? { ...old, runs: [run, ...old.runs.filter(r => r.id !== run.id)] } : old);
@@ -82,7 +82,7 @@ export function AcceptanceChecks({ briefId }: { briefId: string }) {
   const query = useGetAcceptanceChecks(briefId, { query: { queryKey: getGetAcceptanceChecksQueryKey(briefId), staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: true } });
   return <section className="card-soft p-5" data-testid="acceptance-checks">
     <h3 className="text-[18px] font-semibold">Acceptance check · combined demo configuration</h3>
-    <p className="mt-2 text-sm text-muted-foreground">Runs only the existing deterministic engine. Uploaded code is never executed. Fixture success is not production readiness. Inputs and results are saved in this shared demo; do not enter confidential or personal data.</p>
+    <p className="mt-2 text-sm text-muted-foreground">Runs the built-in engine, not uploaded code. Inputs and results are saved in this shared demo. Do not enter confidential or personal data.</p>
     {query.isLoading ? <p role="status">Loading criteria and saved runs…</p> : query.isError || !query.data ? <p role="alert">Acceptance checks could not load. <button className="underline" onClick={() => query.refetch()}>Retry</button></p> : <>
       <ReviewForm key={query.data.planFingerprint} plan={query.data} briefId={briefId} />
       <h4 className="mt-6 font-semibold">Saved execution history</h4>

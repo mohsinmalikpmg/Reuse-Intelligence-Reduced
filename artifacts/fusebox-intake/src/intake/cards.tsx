@@ -49,7 +49,7 @@ export function CapabilityCard({ item, sourceName, onSave, onConfirm, onCarry }:
     </form> : <>
       <details open={item.changed}><summary>Review workflow, inputs, outputs & dependencies</summary><dl><dt>Workflow</dt><dd>{item.workflow}</dd><dt>Input</dt><dd>{item.input}</dd><dt>Output</dt><dd>{item.output}</dd><dt>Dependencies</dt><dd>{item.dependency}</dd></dl></details>
       {item.changed && <p className="fi-readback">This is the revised interpretation. Check each detail before approving again.</p>}
-      {item.gap.trim() && <div className="fi-warning"><strong>Open gap</strong><p>{item.gap}</p><label className="fi-check"><input type="checkbox" checked={item.carry} onChange={e => onCarry(e.target.checked)} />Carry this gap forward for the IT Owner; it is not resolved.</label></div>}
+      {item.gap.trim() && <div className="fi-warning"><strong>Open gap</strong><p>{item.gap}</p><label className="fi-check"><input type="checkbox" checked={item.carry} onChange={e => onCarry(e.target.checked)} />Carry this open gap forward for the IT Owner.</label></div>}
       <div className="fi-actions"><button className="fi-link" onClick={() => { setDraft(item); setEditing(true); }}>Correct this understanding</button>{item.status !== 'Confirmed' && <button className="fi-btn" onClick={onConfirm}><Check />Confirm description</button>}</div>
     </>}
   </article>;
@@ -102,7 +102,7 @@ export function SourceCard({ source, recordId, attachments, onSave, onDirty, onU
   return <article className="fi-card fi-source fi-collection-card">
     <div className="fi-source-top"><div><p className="fi-input-kicker">{isProblem ? '01 / THE NEED' : source.id === 'prototype' ? '02 / THE SOLUTION' : '03 / THE AGENT'}</p><h3>{isProblem ? 'Tell us what needs to change.' : source.id === 'prototype' ? 'Show us what you’ve built.' : 'Bring the instructions behind the agent.'}</h3></div><span className={`fi-label ${source.changed ? 'warm' : 'blue'}`}>{source.changed ? 'Changed source' : source.supplied ? 'Saved material' : 'Not supplied'}</span></div>
     <p className="fi-input-guidance">{guidance}</p>
-    {empty && <p className="fi-hint" style={{ marginBottom: 8 }}>Nothing here yet. <button className="fi-link" data-testid={`button-sample-${source.id}`} onClick={() => { setDraft(SAMPLES[source.id].text); setName(SAMPLES[source.id].name); }}>Fill with a sample input</button> to try the flow — it is only saved and interpreted if you keep it.</p>}
+    {empty && <p className="fi-hint" style={{ marginBottom: 8 }}><button className="fi-link" data-testid={`button-sample-${source.id}`} onClick={() => { setDraft(SAMPLES[source.id].text); setName(SAMPLES[source.id].name); }}>Fill with a sample input</button></p>}
     <label className="fi-input-label" htmlFor={`name-${source.id}`}>Give this input a name</label>
     <input id={`name-${source.id}`} data-testid={`input-name-${source.id}`} className="fi-input" placeholder={sourceLabels[source.id]} value={name} onChange={e => setName(e.target.value)} />
     <div className="fi-editor-label"><label className="fi-input-label" htmlFor={`source-${source.id}`}>{isProblem ? 'Describe it in your own words' : source.id === 'prototype' ? 'Description, README or schema' : 'Instructions and example input / output'}</label><span>Paste or write</span></div>

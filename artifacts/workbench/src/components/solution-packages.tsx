@@ -14,7 +14,7 @@ const REQ = { credentials: "include" as const };
 const STATUS: Record<SolutionPackage["status"], { label: string; tone: "muted" | "sienna" | "green" | "sky" | "slate" }> = {
   awaiting_upload: { label: "Awaiting upload", tone: "muted" },
   inspected: { label: "Inspected · awaiting human review", tone: "sky" },
-  reviewed: { label: "Human reviewed", tone: "green" },
+  reviewed: { label: "Source reviewed", tone: "green" },
   failed: { label: "Inspection failed", tone: "sienna" },
 };
 const errStatus = (e: unknown) => (e && typeof e === "object" && "status" in e ? Number((e as { status: unknown }).status) : 0);
@@ -63,7 +63,7 @@ export function SolutionPackagesPanel() {
     <div className="mt-6 max-w-5xl space-y-5" data-testid="view-packages">
       <div className="card-soft border-l-4 border-l-sienna p-5">
         <div className="eyebrow mb-1 !text-siennaink">Solution ZIP intake</div>
-        <p className="text-[14px]">Real source packages for live solutions. Each upload is statically inspected (files, hashes, dependencies), then a person in IT approves which files evidence which capability. <strong>Uploads are never run or sandbox tested here.</strong></p>
+        <p className="text-[14px]">Upload source files for IT to review and map to capabilities. Uploaded code is not executed.</p>
       </div>
       {data.canManage ? <UploadForm solutions={data.solutions} /> : (
         <div className="card-soft flex gap-3 p-5" data-testid="packages-readonly">
@@ -136,7 +136,7 @@ function UploadForm({ solutions }: { solutions: ListSolutionPackages200Solutions
         <label className="block"><span className="eyebrow mb-1 block">Version</span>
           <input value={version} maxLength={100} onChange={(e) => setVersion(e.target.value)} placeholder="e.g. 2.4.1" className={inputCls} data-testid="input-upload-version" disabled={busy} /></label>
       </div>
-      <label className="block"><span className="eyebrow mb-1 block">Uploader claims (one per line, unverified)</span>
+      <label className="block"><span className="eyebrow mb-1 block">Uploader claims (one per line)</span>
         <textarea value={claims} onChange={(e) => setClaims(e.target.value)} rows={3} placeholder="Summarizes maintenance work orders" className="w-full rounded-xl border border-input bg-card p-3 text-[14px]" data-testid="input-upload-claims" disabled={busy} /></label>
       <input type="file" accept=".zip,application/zip" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block text-[14px]" data-testid="input-upload-file" disabled={busy} />
       <p className="text-[12.5px] text-muted-foreground">Maximum 20 MiB ZIP. Rejected archives require a new upload; they cannot be retried.</p>
@@ -181,19 +181,19 @@ function PackageCard({ pkg, open, onToggle, canManage, solution }: { pkg: Soluti
           {inspect.isError && <p role="alert" className="text-bad">{errMsg(inspect.error)}</p>}
           {pkg.warnings.length > 0 && <div className="rounded-xl bg-accent p-3 text-accent-foreground"><div className="font-semibold">Inspection warnings</div><ul className="list-disc pl-5">{pkg.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
           <div className="grid gap-4 md:grid-cols-3">
-            <Col title="Uploader claims" sub="Stated by the uploader. Not verified.">
+            <Col title="Uploader claims">
               {pkg.claims.length ? <ul className="list-disc pl-5">{pkg.claims.map((c, i) => <li key={i}>{c}</li>)}</ul> : <p className="text-muted-foreground">No claims made.</p>}
             </Col>
-            <Col title="Human-approved mappings" sub="Static file evidence approved by IT review.">
+            <Col title="Source reviewed" sub="File-to-capability mappings approved by IT.">
               {approved.length ? <ul className="space-y-1">{approved.map((m, i) => <li key={i}><span className="font-semibold">{m.capabilityName}</span><br /><span className="break-all font-mono text-[12px]">{m.file}</span></li>)}</ul> : <p className="text-muted-foreground">None approved yet.</p>}
             </Col>
-            <Col title="Sandbox tested" sub="Execution in an isolated sandbox.">
-              <Tag tone="muted">Not tested</Tag><p className="mt-1 text-muted-foreground">Uploaded packages are never executed here.</p>
+            <Col title="Sandbox tests">
+              <Tag tone="muted">Not tested</Tag>
             </Col>
           </div>
           <details><summary className="cursor-pointer font-semibold text-primary">Dependencies ({pkg.dependencies.length})</summary>
-            <p className="mt-2 text-muted-foreground">Static declarations from package.json and requirements*.txt only. Other manifests, indirect dependencies, licenses and vulnerabilities require separate review.</p>
-            {pkg.dependencies.length ? <ul className="mt-2 space-y-1">{pkg.dependencies.map((d, i) => <li key={i} className="break-all font-mono text-[12px]">{d.name}@{d.version} <span className="text-muted-foreground">· {d.source}</span></li>)}</ul> : <p className="mt-2 text-muted-foreground">No supported dependency declarations detected; this does not mean the package has no dependencies.</p>}
+             <p className="mt-2 text-muted-foreground">Reads package.json and requirements*.txt. Review other manifests, indirect dependencies, licenses and vulnerabilities separately.</p>
+             {pkg.dependencies.length ? <ul className="mt-2 space-y-1">{pkg.dependencies.map((d, i) => <li key={i} className="break-all font-mono text-[12px]">{d.name}@{d.version} <span className="text-muted-foreground">· {d.source}</span></li>)}</ul> : <p className="mt-2 text-muted-foreground">No supported dependency declarations found.</p>}
           </details>
           <details><summary className="cursor-pointer font-semibold text-primary">File manifest ({pkg.files.length})</summary>
             <ul className="mt-2 max-h-72 space-y-1 overflow-auto">{pkg.files.map((f) => <li key={f.path} className="break-all font-mono text-[12px]">{f.path} <span className="text-muted-foreground">· {f.size.toLocaleString()} B · {f.sha256.slice(0, 16)}…</span></li>)}</ul>
@@ -206,8 +206,8 @@ function PackageCard({ pkg, open, onToggle, canManage, solution }: { pkg: Soluti
   );
 }
 
-function Col({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
-  return <div className="rounded-xl border border-border p-3"><div className="font-semibold">{title}</div><p className="mb-2 text-[12.5px] text-muted-foreground">{sub}</p>{children}</div>;
+function Col({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
+  return <div className="rounded-xl border border-border p-3"><div className="mb-2 font-semibold">{title}</div>{sub && <p className="mb-2 text-[12.5px] text-muted-foreground">{sub}</p>}{children}</div>;
 }
 
 function ReviewEditor({ pkg, solution }: { pkg: SolutionPackage; solution?: ListSolutionPackages200SolutionsItem }) {
@@ -275,8 +275,8 @@ export function UploadedSourceEvidence({ solutionId }: { solutionId: string }) {
   const pkgs = (q.data?.packages ?? []).filter((p) => p.solutionId === solutionId && p.mappings.some((m) => m.decision === "approved"));
   return (
     <div className="card-soft mt-3 p-5 text-[14px]" data-testid="uploaded-source-evidence">
-      <h3 className="font-semibold">Uploaded source ZIPs · human-approved evidence</h3>
-      <p className="text-[12.5px] text-muted-foreground">Static file-to-capability mappings approved by IT. Not sandbox tested and not part of the assessment above.</p>
+       <h3 className="font-semibold">Uploaded source ZIPs · source reviewed</h3>
+       <p className="text-[12.5px] text-muted-foreground">IT-approved mappings. Assessment uses the indexed library package.</p>
       {pkgs.length === 0 ? <p className="mt-2 text-muted-foreground">No approved mappings from uploaded packages.</p> : pkgs.map((p) => (
         <div key={p.id} className="mt-3 border-t border-border pt-3">
           <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">v{p.version}</span><Tag tone="muted">Not sandbox tested</Tag><a className="text-primary underline" href={`/api/library/solution-packages/${encodeURIComponent(p.id)}/download`}>Download</a></div>
