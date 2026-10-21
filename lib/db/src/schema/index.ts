@@ -7,3 +7,5 @@ export * from "./evaluations";
 export * from "./reuse";
 export * from "./governance";
 export * from "./prototypes";
+export * from "./auth";
+export * from "./intake";

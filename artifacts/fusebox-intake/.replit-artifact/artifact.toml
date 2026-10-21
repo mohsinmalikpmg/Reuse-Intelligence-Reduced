@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/fusebox-intake/"
+title = "FUSEBOX Intake"
+description = "Collaborative intake validation for business needs, prototypes and agents, with saved inputs, prioritized requirements and approved profiles."
+version = "1.0.0"
+id = "artifacts/fusebox-intake"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/fusebox-intake/" ]
+localPort = 21228
+
+[services.development]
+run = "pnpm --filter @workspace/fusebox-intake run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/fusebox-intake", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/fusebox-intake/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21228"
+BASE_PATH = "/fusebox-intake/"

@@ -21,6 +21,8 @@ import type {
 
 import type {
   ABComparison,
+  AuthUserEnvelope,
+  BeginBrowserLoginParams,
   Brief,
   BriefInput,
   BriefUpdate,
@@ -43,20 +45,33 @@ import type {
   DecisionView,
   DemoState,
   DispositionChoices,
+  ErrorEnvelope,
   ErrorResponse,
   EvaluationInput,
   EvaluationList,
   Experiment,
   ExperimentPlan,
   GroupDecisionInput,
+  HandleBrowserLoginCallbackParams,
   HealthStatus,
   ImprovementGroupDetail,
+  IntakeAttachment,
+  IntakeFileInput,
+  IntakeRecord,
+  IntakeRecordInput,
+  IntakeRecordUpdate,
+  IntakeRevisionInput,
+  IntakeSession,
   ListCasesParams,
   ListPrototypesParams,
   ListSampleInputsParams,
   ListSolutionsParams,
+  LogoutBrowserSessionParams,
+  LogoutSuccess,
   MatchResult,
   MigrationNoteInput,
+  MobileTokenExchangeRequest,
+  MobileTokenExchangeSuccess,
   OwnedSolution,
   OwnerOverview,
   Persona,
@@ -112,6 +127,1326 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetCurrentAuthUserUrl = () => {
+
+
+
+
+  return `/api/auth/user`
+}
+
+/**
+ * @summary Get the currently authenticated user
+ */
+export const getCurrentAuthUser = async ( options?: Parameters<typeof customFetch>[1]): Promise<AuthUserEnvelope> => {
+
+  return customFetch<AuthUserEnvelope>(getGetCurrentAuthUserUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCurrentAuthUserQueryKey = () => {
+    return [
+    `/api/auth/user`
+    ] as const;
+    }
+
+
+export const getGetCurrentAuthUserQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentAuthUser>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentAuthUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentAuthUserQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentAuthUser>>> = ({ signal }) => getCurrentAuthUser({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentAuthUser>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCurrentAuthUserQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentAuthUser>>>
+export type GetCurrentAuthUserQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the currently authenticated user
+ */
+
+export function useGetCurrentAuthUser<TData = Awaited<ReturnType<typeof getCurrentAuthUser>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCurrentAuthUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCurrentAuthUserQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBeginBrowserLoginUrl = (params?: BeginBrowserLoginParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/login?${stringifiedParams}` : `/api/login`
+}
+
+/**
+ * @summary Start the browser OIDC login flow
+ */
+export const beginBrowserLogin = async (params?: BeginBrowserLoginParams, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+  return customFetch<unknown>(getBeginBrowserLoginUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getBeginBrowserLoginQueryKey = (params?: BeginBrowserLoginParams,) => {
+    return [
+    `/api/login`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getBeginBrowserLoginQueryOptions = <TData = Awaited<ReturnType<typeof beginBrowserLogin>>, TError = ErrorType<void>>(params?: BeginBrowserLoginParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof beginBrowserLogin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getBeginBrowserLoginQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof beginBrowserLogin>>> = ({ signal }) => beginBrowserLogin(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof beginBrowserLogin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type BeginBrowserLoginQueryResult = NonNullable<Awaited<ReturnType<typeof beginBrowserLogin>>>
+export type BeginBrowserLoginQueryError = ErrorType<void>
+
+
+/**
+ * @summary Start the browser OIDC login flow
+ */
+
+export function useBeginBrowserLogin<TData = Awaited<ReturnType<typeof beginBrowserLogin>>, TError = ErrorType<void>>(
+ params?: BeginBrowserLoginParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof beginBrowserLogin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getBeginBrowserLoginQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getHandleBrowserLoginCallbackUrl = (params?: HandleBrowserLoginCallbackParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/callback?${stringifiedParams}` : `/api/callback`
+}
+
+/**
+ * @summary Complete the browser OIDC login flow
+ */
+export const handleBrowserLoginCallback = async (params?: HandleBrowserLoginCallbackParams, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+  return customFetch<unknown>(getHandleBrowserLoginCallbackUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getHandleBrowserLoginCallbackQueryKey = (params?: HandleBrowserLoginCallbackParams,) => {
+    return [
+    `/api/callback`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getHandleBrowserLoginCallbackQueryOptions = <TData = Awaited<ReturnType<typeof handleBrowserLoginCallback>>, TError = ErrorType<void>>(params?: HandleBrowserLoginCallbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof handleBrowserLoginCallback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getHandleBrowserLoginCallbackQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof handleBrowserLoginCallback>>> = ({ signal }) => handleBrowserLoginCallback(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof handleBrowserLoginCallback>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type HandleBrowserLoginCallbackQueryResult = NonNullable<Awaited<ReturnType<typeof handleBrowserLoginCallback>>>
+export type HandleBrowserLoginCallbackQueryError = ErrorType<void>
+
+
+/**
+ * @summary Complete the browser OIDC login flow
+ */
+
+export function useHandleBrowserLoginCallback<TData = Awaited<ReturnType<typeof handleBrowserLoginCallback>>, TError = ErrorType<void>>(
+ params?: HandleBrowserLoginCallbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof handleBrowserLoginCallback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getHandleBrowserLoginCallbackQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLogoutBrowserSessionUrl = (params?: LogoutBrowserSessionParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/logout?${stringifiedParams}` : `/api/logout`
+}
+
+/**
+ * @summary Clear the session and begin OIDC logout
+ */
+export const logoutBrowserSession = async (params?: LogoutBrowserSessionParams, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+  return customFetch<unknown>(getLogoutBrowserSessionUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutBrowserSessionQueryKey = (params?: LogoutBrowserSessionParams,) => {
+    return [
+    `/api/logout`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getLogoutBrowserSessionQueryOptions = <TData = Awaited<ReturnType<typeof logoutBrowserSession>>, TError = ErrorType<void>>(params?: LogoutBrowserSessionParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof logoutBrowserSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getLogoutBrowserSessionQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof logoutBrowserSession>>> = ({ signal }) => logoutBrowserSession(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof logoutBrowserSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type LogoutBrowserSessionQueryResult = NonNullable<Awaited<ReturnType<typeof logoutBrowserSession>>>
+export type LogoutBrowserSessionQueryError = ErrorType<void>
+
+
+/**
+ * @summary Clear the session and begin OIDC logout
+ */
+
+export function useLogoutBrowserSession<TData = Awaited<ReturnType<typeof logoutBrowserSession>>, TError = ErrorType<void>>(
+ params?: LogoutBrowserSessionParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof logoutBrowserSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getLogoutBrowserSessionQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLogoutIntakeSessionUrl = () => {
+
+
+
+
+  return `/api/logout`
+}
+
+/**
+ * @summary Clear the browser session
+ */
+export const logoutIntakeSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<LogoutSuccess> => {
+
+  return customFetch<LogoutSuccess>(getLogoutIntakeSessionUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutIntakeSessionMutationKey = () => ['logoutIntakeSession'] as const;
+
+export const getLogoutIntakeSessionMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutIntakeSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutIntakeSession>>, TError,void, TContext> => {
+
+const mutationKey = getLogoutIntakeSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutIntakeSession>>, void> = () => {
+
+
+          return  logoutIntakeSession(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutIntakeSessionMutationResult = NonNullable<Awaited<ReturnType<typeof logoutIntakeSession>>>
+
+    export type LogoutIntakeSessionMutationError = ErrorType<ErrorEnvelope>
+
+
+    /**
+ * @summary Clear the browser session
+ */
+export const useLogoutIntakeSession = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutIntakeSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logoutIntakeSession>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogoutIntakeSessionMutationOptions(options));
+    }
+
+export const getExchangeMobileAuthorizationCodeUrl = () => {
+
+
+
+
+  return `/api/mobile-auth/token-exchange`
+}
+
+/**
+ * @summary Exchange a mobile OIDC code for a session token
+ */
+export const exchangeMobileAuthorizationCode = async (mobileTokenExchangeRequest: MobileTokenExchangeRequest, options?: Parameters<typeof customFetch>[1]): Promise<MobileTokenExchangeSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MobileTokenExchangeSuccess>(getExchangeMobileAuthorizationCodeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mobileTokenExchangeRequest)
+  }
+);}
+
+
+
+
+
+export const getExchangeMobileAuthorizationCodeMutationKey = () => ['exchangeMobileAuthorizationCode'] as const;
+
+export const getExchangeMobileAuthorizationCodeMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeMobileAuthorizationCode>>, TError,ExchangeMobileAuthorizationCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof exchangeMobileAuthorizationCode>>, TError,ExchangeMobileAuthorizationCodeMutationVariables, TContext> => {
+
+const mutationKey = getExchangeMobileAuthorizationCodeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof exchangeMobileAuthorizationCode>>, ExchangeMobileAuthorizationCodeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  exchangeMobileAuthorizationCode(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExchangeMobileAuthorizationCodeMutationResult = NonNullable<Awaited<ReturnType<typeof exchangeMobileAuthorizationCode>>>
+    export type ExchangeMobileAuthorizationCodeMutationBody = BodyType<MobileTokenExchangeRequest>
+    export type ExchangeMobileAuthorizationCodeMutationError = ErrorType<ErrorEnvelope>
+    export type ExchangeMobileAuthorizationCodeMutationVariables = {data: BodyType<MobileTokenExchangeRequest>}
+
+    /**
+ * @summary Exchange a mobile OIDC code for a session token
+ */
+export const useExchangeMobileAuthorizationCode = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeMobileAuthorizationCode>>, TError,ExchangeMobileAuthorizationCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof exchangeMobileAuthorizationCode>>,
+        TError,
+        ExchangeMobileAuthorizationCodeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getExchangeMobileAuthorizationCodeMutationOptions(options));
+    }
+
+export const getLogoutMobileSessionUrl = () => {
+
+
+
+
+  return `/api/mobile-auth/logout`
+}
+
+/**
+ * @summary Delete a mobile session token
+ */
+export const logoutMobileSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<LogoutSuccess> => {
+
+  return customFetch<LogoutSuccess>(getLogoutMobileSessionUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutMobileSessionMutationKey = () => ['logoutMobileSession'] as const;
+
+export const getLogoutMobileSessionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutMobileSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutMobileSession>>, TError,void, TContext> => {
+
+const mutationKey = getLogoutMobileSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutMobileSession>>, void> = () => {
+
+
+          return  logoutMobileSession(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutMobileSessionMutationResult = NonNullable<Awaited<ReturnType<typeof logoutMobileSession>>>
+
+    export type LogoutMobileSessionMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Delete a mobile session token
+ */
+export const useLogoutMobileSession = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutMobileSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logoutMobileSession>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogoutMobileSessionMutationOptions(options));
+    }
+
+export const getGetIntakeSessionUrl = () => {
+
+
+
+
+  return `/api/intake/session`
+}
+
+export const getIntakeSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<IntakeSession> => {
+
+  return customFetch<IntakeSession>(getGetIntakeSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIntakeSessionQueryKey = () => {
+    return [
+    `/api/intake/session`
+    ] as const;
+    }
+
+
+export const getGetIntakeSessionQueryOptions = <TData = Awaited<ReturnType<typeof getIntakeSession>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIntakeSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIntakeSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIntakeSession>>> = ({ signal }) => getIntakeSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIntakeSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIntakeSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getIntakeSession>>>
+export type GetIntakeSessionQueryError = ErrorType<unknown>
+
+
+
+export function useGetIntakeSession<TData = Awaited<ReturnType<typeof getIntakeSession>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIntakeSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIntakeSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListIntakeRecordsUrl = () => {
+
+
+
+
+  return `/api/intake/records`
+}
+
+export const listIntakeRecords = async ( options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord[]> => {
+
+  return customFetch<IntakeRecord[]>(getListIntakeRecordsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListIntakeRecordsQueryKey = () => {
+    return [
+    `/api/intake/records`
+    ] as const;
+    }
+
+
+export const getListIntakeRecordsQueryOptions = <TData = Awaited<ReturnType<typeof listIntakeRecords>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listIntakeRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListIntakeRecordsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listIntakeRecords>>> = ({ signal }) => listIntakeRecords({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listIntakeRecords>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListIntakeRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof listIntakeRecords>>>
+export type ListIntakeRecordsQueryError = ErrorType<unknown>
+
+
+
+export function useListIntakeRecords<TData = Awaited<ReturnType<typeof listIntakeRecords>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listIntakeRecords>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListIntakeRecordsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateIntakeRecordUrl = () => {
+
+
+
+
+  return `/api/intake/records`
+}
+
+export const createIntakeRecord = async (intakeRecordInput: IntakeRecordInput, options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IntakeRecord>(getCreateIntakeRecordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(intakeRecordInput)
+  }
+);}
+
+
+
+
+
+export const getCreateIntakeRecordMutationKey = () => ['createIntakeRecord'] as const;
+
+export const getCreateIntakeRecordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createIntakeRecord>>, TError,CreateIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createIntakeRecord>>, TError,CreateIntakeRecordMutationVariables, TContext> => {
+
+const mutationKey = getCreateIntakeRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createIntakeRecord>>, CreateIntakeRecordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createIntakeRecord(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateIntakeRecordMutationResult = NonNullable<Awaited<ReturnType<typeof createIntakeRecord>>>
+    export type CreateIntakeRecordMutationBody = BodyType<IntakeRecordInput>
+    export type CreateIntakeRecordMutationError = ErrorType<unknown>
+    export type CreateIntakeRecordMutationVariables = {data: BodyType<IntakeRecordInput>}
+
+    export const useCreateIntakeRecord = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createIntakeRecord>>, TError,CreateIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createIntakeRecord>>,
+        TError,
+        CreateIntakeRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateIntakeRecordMutationOptions(options));
+    }
+
+export const getGetIntakeRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/intake/records/${id}`
+}
+
+export const getIntakeRecord = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord> => {
+
+  return customFetch<IntakeRecord>(getGetIntakeRecordUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIntakeRecordQueryKey = (id: string,) => {
+    return [
+    `/api/intake/records/${id}`
+    ] as const;
+    }
+
+
+export const getGetIntakeRecordQueryOptions = <TData = Awaited<ReturnType<typeof getIntakeRecord>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIntakeRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIntakeRecordQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIntakeRecord>>> = ({ signal }) => getIntakeRecord(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIntakeRecord>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIntakeRecordQueryResult = NonNullable<Awaited<ReturnType<typeof getIntakeRecord>>>
+export type GetIntakeRecordQueryError = ErrorType<unknown>
+
+
+
+export function useGetIntakeRecord<TData = Awaited<ReturnType<typeof getIntakeRecord>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIntakeRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIntakeRecordQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveIntakeRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/intake/records/${id}`
+}
+
+export const saveIntakeRecord = async (id: string,
+    intakeRecordUpdate: IntakeRecordUpdate, options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IntakeRecord>(getSaveIntakeRecordUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(intakeRecordUpdate)
+  }
+);}
+
+
+
+
+
+export const getSaveIntakeRecordMutationKey = () => ['saveIntakeRecord'] as const;
+
+export const getSaveIntakeRecordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveIntakeRecord>>, TError,SaveIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveIntakeRecord>>, TError,SaveIntakeRecordMutationVariables, TContext> => {
+
+const mutationKey = getSaveIntakeRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveIntakeRecord>>, SaveIntakeRecordMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  saveIntakeRecord(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveIntakeRecordMutationResult = NonNullable<Awaited<ReturnType<typeof saveIntakeRecord>>>
+    export type SaveIntakeRecordMutationBody = BodyType<IntakeRecordUpdate>
+    export type SaveIntakeRecordMutationError = ErrorType<unknown>
+    export type SaveIntakeRecordMutationVariables = {id: string;data: BodyType<IntakeRecordUpdate>}
+
+    export const useSaveIntakeRecord = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveIntakeRecord>>, TError,SaveIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveIntakeRecord>>,
+        TError,
+        SaveIntakeRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveIntakeRecordMutationOptions(options));
+    }
+
+export const getDeleteIntakeRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/intake/records/${id}`
+}
+
+export const deleteIntakeRecord = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteIntakeRecordUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteIntakeRecordMutationKey = () => ['deleteIntakeRecord'] as const;
+
+export const getDeleteIntakeRecordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteIntakeRecord>>, TError,DeleteIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteIntakeRecord>>, TError,DeleteIntakeRecordMutationVariables, TContext> => {
+
+const mutationKey = getDeleteIntakeRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteIntakeRecord>>, DeleteIntakeRecordMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteIntakeRecord(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteIntakeRecordMutationResult = NonNullable<Awaited<ReturnType<typeof deleteIntakeRecord>>>
+
+    export type DeleteIntakeRecordMutationError = ErrorType<unknown>
+    export type DeleteIntakeRecordMutationVariables = {id: string}
+
+    export const useDeleteIntakeRecord = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteIntakeRecord>>, TError,DeleteIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteIntakeRecord>>,
+        TError,
+        DeleteIntakeRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteIntakeRecordMutationOptions(options));
+    }
+
+export const getInterpretIntakeRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/intake/records/${id}/interpret`
+}
+
+export const interpretIntakeRecord = async (id: string,
+    intakeRevisionInput: IntakeRevisionInput, options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IntakeRecord>(getInterpretIntakeRecordUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(intakeRevisionInput)
+  }
+);}
+
+
+
+
+
+export const getInterpretIntakeRecordMutationKey = () => ['interpretIntakeRecord'] as const;
+
+export const getInterpretIntakeRecordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof interpretIntakeRecord>>, TError,InterpretIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof interpretIntakeRecord>>, TError,InterpretIntakeRecordMutationVariables, TContext> => {
+
+const mutationKey = getInterpretIntakeRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof interpretIntakeRecord>>, InterpretIntakeRecordMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  interpretIntakeRecord(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InterpretIntakeRecordMutationResult = NonNullable<Awaited<ReturnType<typeof interpretIntakeRecord>>>
+    export type InterpretIntakeRecordMutationBody = BodyType<IntakeRevisionInput>
+    export type InterpretIntakeRecordMutationError = ErrorType<unknown>
+    export type InterpretIntakeRecordMutationVariables = {id: string;data: BodyType<IntakeRevisionInput>}
+
+    export const useInterpretIntakeRecord = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof interpretIntakeRecord>>, TError,InterpretIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof interpretIntakeRecord>>,
+        TError,
+        InterpretIntakeRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getInterpretIntakeRecordMutationOptions(options));
+    }
+
+export const getConfirmIntakeRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/intake/records/${id}/confirm`
+}
+
+export const confirmIntakeRecord = async (id: string,
+    intakeRevisionInput: IntakeRevisionInput, options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IntakeRecord>(getConfirmIntakeRecordUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(intakeRevisionInput)
+  }
+);}
+
+
+
+
+
+export const getConfirmIntakeRecordMutationKey = () => ['confirmIntakeRecord'] as const;
+
+export const getConfirmIntakeRecordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmIntakeRecord>>, TError,ConfirmIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmIntakeRecord>>, TError,ConfirmIntakeRecordMutationVariables, TContext> => {
+
+const mutationKey = getConfirmIntakeRecordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmIntakeRecord>>, ConfirmIntakeRecordMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  confirmIntakeRecord(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmIntakeRecordMutationResult = NonNullable<Awaited<ReturnType<typeof confirmIntakeRecord>>>
+    export type ConfirmIntakeRecordMutationBody = BodyType<IntakeRevisionInput>
+    export type ConfirmIntakeRecordMutationError = ErrorType<unknown>
+    export type ConfirmIntakeRecordMutationVariables = {id: string;data: BodyType<IntakeRevisionInput>}
+
+    export const useConfirmIntakeRecord = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmIntakeRecord>>, TError,ConfirmIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmIntakeRecord>>,
+        TError,
+        ConfirmIntakeRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConfirmIntakeRecordMutationOptions(options));
+    }
+
+export const getUploadIntakeFileUrl = (id: string,) => {
+
+
+
+
+  return `/api/intake/records/${id}/files`
+}
+
+export const uploadIntakeFile = async (id: string,
+    intakeFileInput: IntakeFileInput, options?: Parameters<typeof customFetch>[1]): Promise<IntakeAttachment> => {
+    const formData = new FormData();
+formData.append(`file`, intakeFileInput.file);
+formData.append(`sourceId`, intakeFileInput.sourceId);
+
+  return customFetch<IntakeAttachment>(getUploadIntakeFileUrl(id),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getUploadIntakeFileMutationKey = () => ['uploadIntakeFile'] as const;
+
+export const getUploadIntakeFileMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadIntakeFile>>, TError,UploadIntakeFileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadIntakeFile>>, TError,UploadIntakeFileMutationVariables, TContext> => {
+
+const mutationKey = getUploadIntakeFileMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadIntakeFile>>, UploadIntakeFileMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  uploadIntakeFile(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadIntakeFileMutationResult = NonNullable<Awaited<ReturnType<typeof uploadIntakeFile>>>
+    export type UploadIntakeFileMutationBody = BodyType<IntakeFileInput>
+    export type UploadIntakeFileMutationError = ErrorType<unknown>
+    export type UploadIntakeFileMutationVariables = {id: string;data: BodyType<IntakeFileInput>}
+
+    export const useUploadIntakeFile = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadIntakeFile>>, TError,UploadIntakeFileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadIntakeFile>>,
+        TError,
+        UploadIntakeFileMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUploadIntakeFileMutationOptions(options));
+    }
+
+export const getDownloadIntakeFileUrl = (fileId: string,) => {
+
+
+
+
+  return `/api/intake/files/${fileId}`
+}
+
+export const downloadIntakeFile = async (fileId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadIntakeFileUrl(fileId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadIntakeFileQueryKey = (fileId: string,) => {
+    return [
+    `/api/intake/files/${fileId}`
+    ] as const;
+    }
+
+
+export const getDownloadIntakeFileQueryOptions = <TData = Awaited<ReturnType<typeof downloadIntakeFile>>, TError = ErrorType<unknown>>(fileId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadIntakeFile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadIntakeFileQueryKey(fileId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadIntakeFile>>> = ({ signal }) => downloadIntakeFile(fileId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: fileId !== null && fileId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadIntakeFile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadIntakeFileQueryResult = NonNullable<Awaited<ReturnType<typeof downloadIntakeFile>>>
+export type DownloadIntakeFileQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadIntakeFile<TData = Awaited<ReturnType<typeof downloadIntakeFile>>, TError = ErrorType<unknown>>(
+ fileId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadIntakeFile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadIntakeFileQueryOptions(fileId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getHealthCheckUrl = () => {
 

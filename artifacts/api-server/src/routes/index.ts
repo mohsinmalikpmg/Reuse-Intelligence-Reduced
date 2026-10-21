@@ -7,8 +7,14 @@ import overviewRouter from "./overview";
 import workbenchRouter from "./workbench";
 import reuseRouter from "./reuse";
 import prototypesRouter from "./prototypes";
+import authRouter from "./auth";
+import intakeRouter from "./intake";
+import intakeFilesRouter from "./intake-files";
 
 const router: IRouter = Router();
+router.use(authRouter);
+router.use(intakeFilesRouter);
+router.use(intakeRouter);
 
 router.use(healthRouter);
 router.use(libraryRouter);

@@ -17,7 +17,273 @@ tags:
   - name: experiments
   - name: portfolio
   - name: demo
+  - name: Auth
+    description: Browser and mobile authentication endpoints.
 paths:
+  /auth/user:
+    get:
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Auth status resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+  /login:
+    get:
+      tags: [Auth]
+      operationId: beginBrowserLogin
+      summary: Start the browser OIDC login flow
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          description: Relative path to redirect to after login.
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the OIDC authorization endpoint.
+  /callback:
+    get:
+      tags: [Auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete the browser OIDC login flow
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+      responses:
+        '302':
+          description: Redirect to the validated returnTo path.
+        '400':
+          description: Login attempt expired.
+        '401':
+          description: Login could not be verified.
+  /logout:
+    get:
+      tags: [Auth]
+      operationId: logoutBrowserSession
+      summary: Clear the session and begin OIDC logout
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+            default: /
+      responses:
+        '302':
+          description: Redirect to the OIDC provider logout URL.
+    post:
+      tags: [Auth]
+      operationId: logoutIntakeSession
+      summary: Clear the browser session
+      responses:
+        '200':
+          description: Logout processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccess'
+        '403':
+          description: Cross-origin logout rejected.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /mobile-auth/token-exchange:
+    post:
+      tags: [Auth]
+      operationId: exchangeMobileAuthorizationCode
+      summary: Exchange a mobile OIDC code for a session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTokenExchangeRequest'
+      responses:
+        '200':
+          description: Session created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenExchangeSuccess'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Token did not contain usable claims.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Token exchange failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /mobile-auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logoutMobileSession
+      summary: Delete a mobile session token
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+      responses:
+        '200':
+          description: Logout processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccess'
+  /intake/session:
+    get:
+      operationId: getIntakeSession
+      responses:
+        "200":
+          description: Signed-in intake user or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntakeSession"
+  /intake/records:
+    get:
+      operationId: listIntakeRecords
+      responses:
+        "200":
+          description: Current user's intakes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/IntakeRecord" }
+    post:
+      operationId: createIntakeRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntakeRecordInput" }
+      responses:
+        "201":
+          description: Created intake
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntakeRecord" }
+  /intake/records/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getIntakeRecord
+      responses:
+        "200":
+          description: Intake
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntakeRecord" }
+    put:
+      operationId: saveIntakeRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntakeRecordUpdate" }
+      responses:
+        "200":
+          description: Saved with incremented revision; 409 on conflict
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntakeRecord" }
+    delete:
+      operationId: deleteIntakeRecord
+      responses:
+        "204": { description: Deleted }
+  /intake/records/{id}/interpret:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: interpretIntakeRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntakeRevisionInput" }
+      responses:
+        "200":
+          description: AI interpreted saved inputs, preserving confirmed unaffected content
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntakeRecord" }
+  /intake/records/{id}/confirm:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: confirmIntakeRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntakeRevisionInput" }
+      responses:
+        "200":
+          description: Confirmed if all required reviews and gap acknowledgements complete
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntakeRecord" }
+  /intake/records/{id}/files:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: uploadIntakeFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/IntakeFileInput" }
+      responses:
+        "201":
+          description: Uploaded attachment and extraction result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IntakeAttachment" }
+  /intake/files/{fileId}:
+    parameters:
+      - { name: fileId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: downloadIntakeFile
+      responses:
+        "200":
+          description: Original attachment (owner-only)
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
   /healthz:
     get:
       operationId: healthCheck
@@ -1663,7 +1929,140 @@ paths:
                 $ref: "#/components/schemas/DemoState"
 
 components:
+  parameters:
+    AuthorizationSessionHeader:
+      name: Authorization
+      in: header
+      required: false
+      description: Opaque session token, Bearer sid.
+      schema:
+        type: string
+    SessionCookie:
+      name: sid
+      in: cookie
+      required: false
+      description: Browser session cookie.
+      schema:
+        type: string
   schemas:
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: [string, 'null']
+          format: email
+        firstName:
+          type: [string, 'null']
+        lastName:
+          type: [string, 'null']
+        profileImageUrl:
+          type: [string, 'null']
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: 'null'
+    MobileTokenExchangeRequest:
+      type: object
+      required: [code, code_verifier, redirect_uri, state]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        code_verifier:
+          type: string
+          minLength: 1
+        redirect_uri:
+          type: string
+          minLength: 1
+          format: uri
+        state:
+          type: string
+          minLength: 1
+        nonce:
+          type: string
+          minLength: 1
+    MobileTokenExchangeSuccess:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    LogoutSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          const: true
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    IntakeSession:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: [object, "null"]
+          properties:
+            id: { type: string }
+            name: { type: string }
+    IntakeRecord:
+      type: object
+      required: [id, title, model, revision, status, updatedAt, attachments]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        model: { type: object, additionalProperties: true }
+        revision: { type: integer }
+        status: { type: string, enum: [draft, review, confirmed] }
+        updatedAt: { type: string }
+        attachments:
+          type: array
+          items: { $ref: "#/components/schemas/IntakeAttachment" }
+    IntakeRecordInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+    IntakeRecordUpdate:
+      type: object
+      required: [title, model, revision]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        model: { type: object, additionalProperties: true }
+        revision: { type: integer, minimum: 1 }
+    IntakeRevisionInput:
+      type: object
+      required: [revision]
+      properties:
+        revision: { type: integer, minimum: 1 }
+    IntakeFileInput:
+      type: object
+      required: [file, sourceId]
+      properties:
+        file: { type: string, format: binary }
+        sourceId: { type: string, enum: [problem, prototype, agent] }
+    IntakeAttachment:
+      type: object
+      required: [id, name, sourceId, size, status, text, error]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        sourceId: { type: string, enum: [problem, prototype, agent] }
+        size: { type: integer }
+        status: { type: string, enum: [extracted, reference, failed] }
+        text: { type: string }
+        error: { type: [string, "null"] }
     HealthStatus:
       type: object
       properties:

@@ -9,6 +9,311 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentAuthUserHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token, Bearer sid.')
+})
+
+export const GetCurrentAuthUserResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "email": zod.string().email().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "profileImageUrl": zod.string().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Start the browser OIDC login flow
+ */
+export const BeginBrowserLoginQueryParams = zod.object({
+  "returnTo": zod.coerce.string().optional().describe('Relative path to redirect to after login.')
+})
+
+export const BeginBrowserLoginResponse = zod.void()
+
+
+/**
+ * @summary Complete the browser OIDC login flow
+ */
+export const HandleBrowserLoginCallbackQueryParams = zod.object({
+  "code": zod.coerce.string().optional(),
+  "state": zod.coerce.string().optional(),
+  "iss": zod.coerce.string().url().optional()
+})
+
+export const HandleBrowserLoginCallbackResponse = zod.void()
+
+
+/**
+ * @summary Clear the session and begin OIDC logout
+ */
+export const logoutBrowserSessionQueryReturnToDefault = `/`;
+
+export const LogoutBrowserSessionQueryParams = zod.object({
+  "returnTo": zod.coerce.string().default(logoutBrowserSessionQueryReturnToDefault)
+})
+
+export const LogoutBrowserSessionHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token, Bearer sid.')
+})
+
+export const LogoutBrowserSessionResponse = zod.void()
+
+
+/**
+ * @summary Clear the browser session
+ */
+export const LogoutIntakeSessionResponse = zod.object({
+  "success": zod.literal(true)
+})
+
+
+/**
+ * @summary Exchange a mobile OIDC code for a session token
+ */
+
+
+
+
+
+
+
+export const ExchangeMobileAuthorizationCodeBody = zod.object({
+  "code": zod.string().min(1),
+  "code_verifier": zod.string().min(1),
+  "redirect_uri": zod.string().url().min(1),
+  "state": zod.string().min(1),
+  "nonce": zod.string().min(1).optional()
+})
+
+export const ExchangeMobileAuthorizationCodeResponse = zod.object({
+  "token": zod.string()
+})
+
+
+/**
+ * @summary Delete a mobile session token
+ */
+export const LogoutMobileSessionHeader = zod.object({
+  "Authorization": zod.string().optional().describe('Opaque session token, Bearer sid.')
+})
+
+export const LogoutMobileSessionResponse = zod.object({
+  "success": zod.literal(true)
+})
+
+
+export const GetIntakeSessionResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().optional(),
+  "name": zod.string().optional()
+}).nullable()
+})
+
+
+export const ListIntakeRecordsResponseItem = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "model": zod.record(zod.string(), zod.unknown()),
+  "revision": zod.number().int(),
+  "status": zod.enum(['draft', 'review', 'confirmed']),
+  "updatedAt": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "size": zod.number().int(),
+  "status": zod.enum(['extracted', 'reference', 'failed']),
+  "text": zod.string(),
+  "error": zod.string().nullable()
+}))
+})
+export const ListIntakeRecordsResponse = zod.array(ListIntakeRecordsResponseItem)
+
+
+export const createIntakeRecordBodyTitleMax = 200;
+
+
+
+export const CreateIntakeRecordBody = zod.object({
+  "title": zod.string().min(1).max(createIntakeRecordBodyTitleMax)
+})
+
+export const CreateIntakeRecordResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "model": zod.record(zod.string(), zod.unknown()),
+  "revision": zod.number().int(),
+  "status": zod.enum(['draft', 'review', 'confirmed']),
+  "updatedAt": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "size": zod.number().int(),
+  "status": zod.enum(['extracted', 'reference', 'failed']),
+  "text": zod.string(),
+  "error": zod.string().nullable()
+}))
+})
+
+
+export const GetIntakeRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetIntakeRecordResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "model": zod.record(zod.string(), zod.unknown()),
+  "revision": zod.number().int(),
+  "status": zod.enum(['draft', 'review', 'confirmed']),
+  "updatedAt": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "size": zod.number().int(),
+  "status": zod.enum(['extracted', 'reference', 'failed']),
+  "text": zod.string(),
+  "error": zod.string().nullable()
+}))
+})
+
+
+export const SaveIntakeRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const saveIntakeRecordBodyTitleMax = 200;
+
+
+
+
+export const SaveIntakeRecordBody = zod.object({
+  "title": zod.string().min(1).max(saveIntakeRecordBodyTitleMax),
+  "model": zod.record(zod.string(), zod.unknown()),
+  "revision": zod.number().int().min(1)
+})
+
+export const SaveIntakeRecordResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "model": zod.record(zod.string(), zod.unknown()),
+  "revision": zod.number().int(),
+  "status": zod.enum(['draft', 'review', 'confirmed']),
+  "updatedAt": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "size": zod.number().int(),
+  "status": zod.enum(['extracted', 'reference', 'failed']),
+  "text": zod.string(),
+  "error": zod.string().nullable()
+}))
+})
+
+
+export const DeleteIntakeRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteIntakeRecordResponse = zod.void()
+
+
+export const InterpretIntakeRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const InterpretIntakeRecordBody = zod.object({
+  "revision": zod.number().int().min(1)
+})
+
+export const InterpretIntakeRecordResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "model": zod.record(zod.string(), zod.unknown()),
+  "revision": zod.number().int(),
+  "status": zod.enum(['draft', 'review', 'confirmed']),
+  "updatedAt": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "size": zod.number().int(),
+  "status": zod.enum(['extracted', 'reference', 'failed']),
+  "text": zod.string(),
+  "error": zod.string().nullable()
+}))
+})
+
+
+export const ConfirmIntakeRecordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const ConfirmIntakeRecordBody = zod.object({
+  "revision": zod.number().int().min(1)
+})
+
+export const ConfirmIntakeRecordResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "model": zod.record(zod.string(), zod.unknown()),
+  "revision": zod.number().int(),
+  "status": zod.enum(['draft', 'review', 'confirmed']),
+  "updatedAt": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "size": zod.number().int(),
+  "status": zod.enum(['extracted', 'reference', 'failed']),
+  "text": zod.string(),
+  "error": zod.string().nullable()
+}))
+})
+
+
+export const UploadIntakeFileParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UploadIntakeFileBody = zod.object({
+  "file": zod.instanceof(Blob),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent'])
+})
+
+export const UploadIntakeFileResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "size": zod.number().int(),
+  "status": zod.enum(['extracted', 'reference', 'failed']),
+  "text": zod.string(),
+  "error": zod.string().nullable()
+})
+
+
+export const DownloadIntakeFileParams = zod.object({
+  "fileId": zod.coerce.string()
+})
+
+export const DownloadIntakeFileResponse = zod.unknown()
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

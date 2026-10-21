@@ -5,6 +5,151 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  /** @nullable */
+  profileImageUrl: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface MobileTokenExchangeRequest {
+  /** @minLength 1 */
+  code: string;
+  /** @minLength 1 */
+  code_verifier: string;
+  /** @minLength 1 */
+  redirect_uri: string;
+  /** @minLength 1 */
+  state: string;
+  /** @minLength 1 */
+  nonce?: string;
+}
+
+export interface MobileTokenExchangeSuccess {
+  token: string;
+}
+
+export const LogoutSuccessValue = {
+  success: true,
+} as const;
+export type LogoutSuccess = typeof LogoutSuccessValue;
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
+/**
+ * @nullable
+ */
+export type IntakeSessionUser = {
+  id?: string;
+  name?: string;
+} | null;
+
+export interface IntakeSession {
+  /** @nullable */
+  user: IntakeSessionUser;
+}
+
+export type IntakeRecordModel = { [key: string]: unknown };
+
+export type IntakeRecordStatus = typeof IntakeRecordStatus[keyof typeof IntakeRecordStatus];
+
+
+export const IntakeRecordStatus = {
+  draft: 'draft',
+  review: 'review',
+  confirmed: 'confirmed',
+} as const;
+
+export type IntakeAttachmentSourceId = typeof IntakeAttachmentSourceId[keyof typeof IntakeAttachmentSourceId];
+
+
+export const IntakeAttachmentSourceId = {
+  problem: 'problem',
+  prototype: 'prototype',
+  agent: 'agent',
+} as const;
+
+export type IntakeAttachmentStatus = typeof IntakeAttachmentStatus[keyof typeof IntakeAttachmentStatus];
+
+
+export const IntakeAttachmentStatus = {
+  extracted: 'extracted',
+  reference: 'reference',
+  failed: 'failed',
+} as const;
+
+export interface IntakeAttachment {
+  id: string;
+  name: string;
+  sourceId: IntakeAttachmentSourceId;
+  size: number;
+  status: IntakeAttachmentStatus;
+  text: string;
+  /** @nullable */
+  error: string | null;
+}
+
+export interface IntakeRecord {
+  id: string;
+  title: string;
+  model: IntakeRecordModel;
+  revision: number;
+  status: IntakeRecordStatus;
+  updatedAt: string;
+  attachments: IntakeAttachment[];
+}
+
+export interface IntakeRecordInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  title: string;
+}
+
+export type IntakeRecordUpdateModel = { [key: string]: unknown };
+
+export interface IntakeRecordUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  title: string;
+  model: IntakeRecordUpdateModel;
+  /** @minimum 1 */
+  revision: number;
+}
+
+export interface IntakeRevisionInput {
+  /** @minimum 1 */
+  revision: number;
+}
+
+export type IntakeFileInputSourceId = typeof IntakeFileInputSourceId[keyof typeof IntakeFileInputSourceId];
+
+
+export const IntakeFileInputSourceId = {
+  problem: 'problem',
+  prototype: 'prototype',
+  agent: 'agent',
+} as const;
+
+export interface IntakeFileInput {
+  file: Blob;
+  sourceId: IntakeFileInputSourceId;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -2399,6 +2544,28 @@ export interface PrototypeDetail {
   solution: Solution;
   analysis: PrototypeAnalysis;
 }
+
+/**
+ * Opaque session token, Bearer sid.
+ */
+export type AuthorizationSessionHeaderParameter = string;
+
+export type BeginBrowserLoginParams = {
+/**
+ * Relative path to redirect to after login.
+ */
+returnTo?: string;
+};
+
+export type HandleBrowserLoginCallbackParams = {
+code?: string;
+state?: string;
+iss?: string;
+};
+
+export type LogoutBrowserSessionParams = {
+returnTo?: string;
+};
 
 export type ListSolutionsParams = {
 q?: string;
