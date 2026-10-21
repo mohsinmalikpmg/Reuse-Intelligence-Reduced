@@ -1,0 +1,30 @@
+/* Cenovus | Solutions brand tokens, copied from the main app (artifacts/workbench/src/index.css). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.cv-root {
+  --cv-slate: #365860;
+  --cv-slate-ink: #2c4a51;
+  --cv-sienna: #C5683B;
+  --cv-sienna-ink: #9a4f2b;
+  --cv-sienna-bg: #fbf1ec;
+  --cv-green: #8A9A36;
+  --cv-green-ink: #5f6e1f;
+  --cv-green-bg: #eef0e2;
+  --cv-sky: #6E9EAF;
+  --cv-sky-ink: #3c6472;
+  --cv-sky-bg: #eaf2f5;
+  --cv-bg: #F7F8F6;
+  --cv-card: #ffffff;
+  --cv-text: #26373B;
+  --cv-muted: #647174;
+  --cv-border: #E3E8E7;
+  --cv-input: #d3dbd9;
+  --cv-secondary: #ecf1f2;
+  --cv-muted-bg: #eef0ee;
+  --cv-radius: 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--cv-text);
+  background: var(--cv-bg);
+  -webkit-font-smoothing: antialiased;
+}
+.cv-root .cv-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
