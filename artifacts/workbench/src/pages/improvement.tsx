@@ -3,7 +3,7 @@ import { Link, useParams } from "wouter";
 import { ArrowLeft, Check, GitCompare } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetImprovementGroupQueryKey, useGetImprovementGroup, useRecordGroupDecision, type DecisionAction, type ImprovementApproach } from "@workspace/api-client-react";
-import { ErrorView, LoadingView, Page, Tag, btn, useUndoToast } from "@/components/bits";
+import { ErrorView, LoadingView, Page, Tag, btn, useUndoToast, StageEyebrow } from "@/components/bits";
 import { ACTION_LABEL, caseStatusLabel } from "@/components/wb-pilot";
 import { groupSentence } from "@/pages/my-solutions";
 import { errMsg, useInvalidateCase } from "@/lib/case";
@@ -50,9 +50,9 @@ export default function ImprovementPage() {
     <Page>
       <Link href="/my-solutions" className={cn(btn.quiet, "-ml-3 mb-3")} data-testid="link-back"><ArrowLeft className="h-4 w-4" /> My Solutions</Link>
       <div className="mb-6">
-        <div className="eyebrow mb-2">Shared improvement to {d.solution.name} v{d.solution.currentVersion}</div>
-        <h1 data-testid="text-headline" className="text-[30px] font-bold leading-tight md:text-[38px]">{g.intent}</h1>
-        <p className="mt-2 text-[16px] text-muted-foreground" data-testid="text-group-sentence">{groupSentence(g)}</p>
+        <StageEyebrow stage="converge" className="mb-3" note={<>Shared improvement to {d.solution.name} v{d.solution.currentVersion}</>} />
+        <h1 data-testid="text-headline" className="text-[30px] md:text-[38px]">{g.intent}</h1>
+        <p className="mt-3 text-[16px] text-skyink" data-testid="text-group-sentence">{groupSentence(g)}</p>
         <p className="mt-1 text-[13px] text-muted-foreground">Counts use votes on the current configuration of each experiment only. Demo experiments are labelled.</p>
       </div>
 

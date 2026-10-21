@@ -8,7 +8,7 @@ import {
   type Brief, type BriefFieldValues, type SolutionMatch,
 } from "@workspace/api-client-react";
 import { Textarea } from "@/components/ui/textarea";
-import { Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
+import { Page, Skel, StatusPill, Tag, btn, useUndoToast, Headline } from "@/components/bits";
 import { errMsg } from "@/lib/case";
 import { CoverageTable, RequirementChips } from "@/components/reuse-check";
 import { MetaTags, isLive } from "@/components/enterprise";
@@ -39,13 +39,13 @@ export default function Discover() {
 
   return (
     <Page className="max-w-[1000px] md:pt-14">
-      <h1 data-testid="text-headline" className="text-[34px] font-bold leading-tight md:text-[44px]">What are you trying to solve?</h1>
-      <p className="mt-2 text-[16px] text-muted-foreground">Describe it the way you would to a colleague. We will look for something that already exists.</p>
-      <p className="mt-1.5 text-[14px] text-muted-foreground" data-testid="text-enterprise-framing">
+      <Headline stage="trace" size="lg" title="Follow the" accent="current." className="mb-0"
+        sub="What are you trying to solve? Describe it the way you would to a colleague. We look for something that already exists before anything new is built." />
+      <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-enterprise-framing">
         The library spans Operations, Finance, Investor relations, ESG &amp; Regulatory, Supply chain &amp; Planning, Commercial &amp; Legal and Corporate &amp; Executive.
         Work Order Intelligence is one example of the model, the one wired to run on real input in this demo. <Link href="/library" className="font-semibold text-primary underline-offset-2 hover:underline" data-testid="link-framing-library">See the whole library</Link>.
       </p>
-      <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="card-soft mt-7 p-2 focus-within:border-primary/50">
+      <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="card-soft mt-7 p-2 focus-within:border-primary/50 focus-within:shadow-md">
         <Textarea
           data-testid="input-problem"
           value={text}

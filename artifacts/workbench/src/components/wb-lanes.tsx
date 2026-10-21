@@ -267,7 +267,7 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
   );
   if (narrow) {
     return (
-      <div id={`row-${r.id}`} data-testid={`row-${r.id}`} className="scroll-mt-[11.5rem]">
+      <div id={`row-${r.id}`} data-testid={`row-${r.id}`} className="scroll-mt-[calc(var(--shell-top)+5.25rem)]">
         {showA && <div className="mb-1"><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">A</div>{aCell}{open && bodyA}</div>}
         <div><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-siennaink">B · step {no}</div>{bCell}{open && bodyB}</div>
         {open && explanation.length > 0 && <div className="mt-2 rounded-lg bg-[hsl(196_30%_93%)] px-3 py-2 text-[13px] text-skyink">{explanation.map((x, i) => <div key={i}>{x}</div>)}</div>}
@@ -276,7 +276,7 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
     );
   }
   return (
-    <div id={`row-${r.id}`} data-testid={`row-${r.id}`} className="scroll-mt-[11.5rem]">
+    <div id={`row-${r.id}`} data-testid={`row-${r.id}`} className="scroll-mt-[calc(var(--shell-top)+5.25rem)]">
       <div className={laneGrid}>
         {aCell}
         {spine(true, r.deviation === "added" ? "+" : no)}
@@ -363,7 +363,7 @@ export function RequestRow({ req, narrow, showA, editable, busy, onRemove }: { r
   const aCell = <div data-testid={`block-a-${id}`} className="grid min-h-[52px] place-items-center rounded-[14px] border border-dashed border-input px-3 text-center text-[12.5px] text-muted-foreground">Not in the current product</div>;
   if (narrow) {
     return (
-      <div id={`row-${id}`} data-testid={`row-${id}`} className="scroll-mt-[11.5rem]">
+      <div id={`row-${id}`} data-testid={`row-${id}`} className="scroll-mt-[calc(var(--shell-top)+5.25rem)]">
         {showA && <div className="mb-1"><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">A</div>{aCell}</div>}
         <div><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-siennaink">B · requested</div>{bCell}</div>
         <div className="h-3" />
@@ -371,7 +371,7 @@ export function RequestRow({ req, narrow, showA, editable, busy, onRemove }: { r
     );
   }
   return (
-    <div id={`row-${id}`} data-testid={`row-${id}`} className="scroll-mt-[11.5rem]">
+    <div id={`row-${id}`} data-testid={`row-${id}`} className="scroll-mt-[calc(var(--shell-top)+5.25rem)]">
       <div className={laneGrid}>
         {aCell}
         <div className="relative flex justify-center"><span aria-hidden className="absolute inset-y-0 w-px bg-border" /><span className="relative z-10 mt-[15px] grid h-6 w-6 place-items-center rounded-full border border-dashed border-sienna/60 bg-card text-[11px] font-semibold text-siennaink">?</span></div>
@@ -421,7 +421,7 @@ export function LaneHeaders({ editTools, narrow, showA, setShowA, controls, aLab
 
 export function BandRow({ id, label, icon, narrow, children, dim }: { id: string; label: string; icon: ReactNode; narrow: boolean; children: ReactNode; dim?: boolean }) {
   return (
-    <section id={`row-${id}`} data-testid={`row-${id}`} className={cn("scroll-mt-[11.5rem]", dim && "opacity-70")} aria-label={label}>
+    <section id={`row-${id}`} data-testid={`row-${id}`} className={cn("scroll-mt-[calc(var(--shell-top)+5.25rem)]", dim && "opacity-70")} aria-label={label}>
       {narrow ? (
         <div className="mt-4"><div className="mb-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">{icon}{label}</div>{children}</div>
       ) : (

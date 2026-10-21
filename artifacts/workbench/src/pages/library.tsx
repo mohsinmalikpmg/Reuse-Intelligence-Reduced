@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, LayoutGrid, Lock, Network, Search, SlidersHorizontal, X } from "lucide-react";
 import { useListBusinessProblems, useListCapabilities, useListSolutionFamilies, useListSolutions, type Capability, type Solution, type SolutionFamily, type SolutionStatus } from "@workspace/api-client-react";
-import { DispositionBadge, Drawer, Empty, ErrorView, Page, Skel, StatusPill, Tag, btn } from "@/components/bits";
+import { DispositionBadge, Drawer, Empty, ErrorView, Headline, Page, Skel, StatusPill, Tag, btn } from "@/components/bits";
 import { FamilyCard } from "@/components/family-card";
 import { LibrarySchematic, type SchematicFilter } from "@/components/library-schematic";
 import { EnterpriseSchematic } from "@/components/enterprise-schematic";
@@ -30,6 +30,12 @@ const TABS = [
   { k: "all", label: "All solutions" },
 ] as const;
 
+/** The Library opens on the schematic (Trace); the Cards choice is remembered per browser. */
+const VIEW_KEY = "reuse-workbench.library.view";
+function readView(): "cards" | "schematic" {
+  try { return localStorage.getItem(VIEW_KEY) === "cards" ? "cards" : "schematic"; } catch { return "schematic"; }
+}
+
 /** Plain text a family can be found by: its problem, its products, approved configurations and reusable capabilities. */
 function familyText(f: SolutionFamily): string {
   return [
@@ -47,7 +53,8 @@ export default function Library() {
   const [tab, setTab] = useState<(typeof TABS)[number]["k"]>("families");
   const families = useListSolutionFamilies();
   const [chip, setChip] = useState<(typeof CHIPS)[number]["k"]>("all");
-  const [view, setView] = useState<"cards" | "schematic">("cards");
+  const [view, setViewState] = useState<"cards" | "schematic">(readView);
+  const setView = (v: "cards" | "schematic") => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* session only */ } };
   const [schematicFilter, setSchematicFilter] = useState<SchematicFilter>("all");
   const [problemId, setProblemId] = useState<string>("");
   const [fnChip, setFnChip] = useState<string>("");
@@ -129,8 +136,8 @@ export default function Library() {
 
   return (
     <Page>
-      <h1 data-testid="text-headline" className="text-[32px] font-bold md:text-[40px]">Explore what already exists</h1>
-      <div className="relative mt-5 max-w-3xl">
+      <Headline stage="trace" title="Explore what" accent="already exists." className="mb-0" sub="Every business function, the product to use for each problem, and the capabilities that can be reused around it." />
+      <div className="relative mt-6 max-w-3xl">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <input data-testid="input-library-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by problem, solution name, capability or owner"
           className="h-14 w-full rounded-xl border border-input bg-card pl-12 pr-4 text-[16.5px] outline-none transition-colors focus:border-primary" />
@@ -142,7 +149,7 @@ export default function Library() {
           ))}
         </div>
         <div className="flex rounded-xl border border-input bg-card p-0.5" role="radiogroup" aria-label="How to show the records">
-            {([["cards", LayoutGrid, "Cards"], ["schematic", Network, "Schematic"]] as const).map(([k, I, l]) => (
+            {([["schematic", Network, "Schematic"], ["cards", LayoutGrid, "Cards"]] as const).map(([k, I, l]) => (
               <button key={k} role="radio" aria-checked={view === k} data-testid={`button-view-${k}`} onClick={() => setView(k)} className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[14px] font-medium", view === k ? "bg-secondary text-primary" : "text-muted-foreground hover:text-foreground")}><I className="h-4 w-4" />{l}</button>
             ))}
         </div>

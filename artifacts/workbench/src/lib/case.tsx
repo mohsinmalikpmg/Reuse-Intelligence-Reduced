@@ -41,6 +41,12 @@ export function useMe(): Persona | undefined {
   return personas.data?.find((p) => p.id === persona?.id) ?? personas.data?.find((p) => p.role === persona?.role);
 }
 
+/** HTTP status of a failed request, when the error carries one. */
+export function httpStatus(e: unknown): number | null {
+  const st = e && typeof e === "object" ? (e as { status?: unknown }).status : undefined;
+  return typeof st === "number" ? st : null;
+}
+
 export function errMsg(e: unknown): string {
   if (e && typeof e === "object") {
     const d = (e as { data?: unknown }).data;

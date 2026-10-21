@@ -108,7 +108,7 @@ export function EnterpriseSchematic({ families, onProblem }: { families: Solutio
         </div>
       </div>
 
-      <aside className="card-soft p-4 lg:sticky lg:top-[116px]" data-testid="enterprise-shared">
+      <aside className="card-soft p-4 lg:sticky lg:top-[calc(var(--shell-top)+16px)]" data-testid="enterprise-shared">
         <div className="eyebrow">Shared across functions</div>
         <p className="mt-1 text-[13.5px] text-muted-foreground">Capabilities more than one business problem already runs on. Point at one to light up every product that carries it.</p>
         {shared.length === 0 ? (

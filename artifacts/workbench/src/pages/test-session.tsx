@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Check, EyeOff } from "lucide-react";
 import { getGetTestSessionQueryKey, useGetTestSession, useRespondToTestSession, type TestResponseInputPick } from "@workspace/api-client-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ErrorView, LoadingView, Page, Tag, btn, useUndoToast } from "@/components/bits";
+import { ErrorView, LoadingView, Page, Tag, btn, useUndoToast, StageEyebrow } from "@/components/bits";
 import { OutputView } from "@/components/output-view";
 import { SummaryCounts } from "@/components/wb-parts";
 import { errMsg, useMe } from "@/lib/case";
@@ -46,9 +46,9 @@ export default function TestSessionPage() {
 
   return (
     <Page>
-      <div className="eyebrow flex items-center gap-1.5"><EyeOff className="h-3.5 w-3.5" /> Blind test</div>
-      <h1 data-testid="text-headline" className="mt-1 text-[28px] font-bold md:text-[34px]">{s.title}</h1>
-      <p className="mt-1 text-[15px] text-muted-foreground">Two outputs from the same input. You are not told which version made which. Pick the one that better solves the problem.</p>
+      <StageEyebrow stage="connect" note={<span className="inline-flex items-center gap-1.5"><EyeOff className="h-3.5 w-3.5" /> Blind test</span>} />
+      <h1 data-testid="text-headline" className="mt-3 text-[28px] md:text-[34px]">{s.title}</h1>
+      <p className="mt-2 text-[15px] text-skyink">Two outputs from the same input. You are not told which version made which. Pick the one that better solves the problem.</p>
 
       {s.pairs.length > 1 && (
         <div className="mt-5 flex flex-wrap gap-2">{s.pairs.map((p, i) => (

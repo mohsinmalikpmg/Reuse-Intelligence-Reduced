@@ -282,7 +282,7 @@ function SchematicList({ nodes, edges, sel, onSelect }: { nodes: SNode[]; edges:
 /* ---------- inspector: provenance first, then the one action that makes sense ---------- */
 function Inspector({ node, family, edges, nodes, onClose }: { node: SNode | null; family: SolutionFamily; edges: SEdge[]; nodes: SNode[]; onClose: () => void }) {
   const { go, busy } = useTry();
-  const box = "card-soft p-4 lg:sticky lg:top-[116px]";
+  const box = "card-soft p-4 lg:sticky lg:top-[calc(var(--shell-top)+16px)]";
   if (!node) {
     return (
       <aside className={cn(box, "text-[14px] text-muted-foreground")} data-testid="schematic-inspector-empty">

@@ -1,7 +1,7 @@
 import { Link, useParams } from "wouter";
 import { ArrowRight, CheckCircle2, FileText, Lock, ShieldCheck } from "lucide-react";
 import { getGetCaseDecisionViewQueryKey, useGetCaseDecisionView, type DecisionView } from "@workspace/api-client-react";
-import { ErrorView, LoadingView, Page, StatusPill, Tag, btn } from "@/components/bits";
+import { ErrorView, LoadingView, Page, StatusPill, Tag, btn, StageEyebrow } from "@/components/bits";
 import { RiskTag } from "@/components/enterprise";
 import { caseStatusLabel } from "@/components/wb-pilot";
 import { cn } from "@/lib/utils";
@@ -49,8 +49,9 @@ export default function DecisionPage() {
             <Tag tone={st.tone} testid="tag-decision-status">{st.l}</Tag>
             <span className="text-[13px] text-muted-foreground">Prepared {new Date(v.generatedAt).toLocaleString()}</span>
           </div>
-          <h1 data-testid="text-headline" className="mt-2 text-[30px] font-bold leading-tight md:text-[36px]">{v.title}</h1>
-          <p className="mt-1.5 text-[15px] text-muted-foreground">{v.businessProblem.businessFunction} · {v.businessProblem.title} · primary user: {v.businessProblem.primaryUser}</p>
+          <StageEyebrow stage="converge" className="mt-3" note="One stronger circuit. Not another app." />
+          <h1 data-testid="text-headline" className="mt-2 text-[30px] md:text-[36px]">{v.title}</h1>
+          <p className="mt-2 text-[15px] text-skyink">{v.businessProblem.businessFunction} · {v.businessProblem.title} · primary user: {v.businessProblem.primaryUser}</p>
         </div>
         <Link href={`/workbench/${v.caseId}?mode=compare`} className={btn.secondary} data-testid="link-decision-workbench"><FileText className="h-4 w-4" /> Open the evidence in the workbench</Link>
       </div>

@@ -5,7 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { PersonaProvider } from '@/lib/persona';
-import { CaseProvider } from '@/lib/case';
+import { CaseProvider, httpStatus } from '@/lib/case';
+import { MotionProvider } from '@/lib/motion';
 import { Frame } from '@/components/frame';
 import NotFound from '@/pages/not-found';
 import SignIn from '@/pages/signin';
@@ -20,7 +21,8 @@ import ImprovementPage from '@/pages/improvement';
 import Portfolio from '@/pages/portfolio';
 import DecisionPage from '@/pages/decision';
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: false } } });
+// A 4xx answer is final (a missing or removed record); retrying only leaves the page on a skeleton for seconds.
+const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: false, retry: (count, err) => { const st = httpStatus(err); return !(st && st >= 400 && st < 500) && count < 2; } } } });
 
 function Router() {
   const [location] = useLocation();
@@ -55,13 +57,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <PersonaProvider>
-          <CaseProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-              <Router />
-            </WouterRouter>
-          </CaseProvider>
-        </PersonaProvider>
+        <MotionProvider>
+          <PersonaProvider>
+            <CaseProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+                <Router />
+              </WouterRouter>
+            </CaseProvider>
+          </PersonaProvider>
+        </MotionProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

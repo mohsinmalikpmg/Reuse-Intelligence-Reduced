@@ -17,7 +17,7 @@ export default function MySolutions() {
   const test = (id: string) => create.mutate({ data: { baseSolutionId: id, createdByRole: "owner" } }, { onSuccess: (c) => { setCaseId(c.id); setLocation(`/workbench/${c.id}?mode=edit`); }, onError: (e) => say(errMsg(e)) });
   return (
     <Page>
-      <Headline eyebrow={me ? `${me.name} · ${me.team}` : "Owner"} title="My Solutions" sub="Your products, the improvements people are testing on them, and the evidence behind each one." />
+      <Headline stage="converge" title="Review the evidence." accent="Keep what works." sub={<>{me ? `${me.name} · ${me.team}. ` : ""}Your products, the improvements people are testing on them, and the evidence behind each one.</>} />
       {q.data.length === 0 ? <Empty title="You do not own any solutions yet" sub="Switch to the Own role to see the demo owner's products." /> : (
         <div className="space-y-5">
           {q.data.map((o) => (

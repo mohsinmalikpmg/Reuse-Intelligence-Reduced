@@ -5,7 +5,7 @@ import { Link } from "wouter";
 import {
   getGetSolutionQueryKey, getGetSolutionWorkbenchQueryKey, useCreateCase, useGetSolution, useGetSolutionWorkbench, useListSolutions, type Capability,
 } from "@workspace/api-client-react";
-import { DSection, DispositionBadge, Drawer, ErrorView, LoadingView, Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
+import { DSection, DispositionBadge, Drawer, ErrorView, LoadingView, Page, Skel, StatusPill, Tag, btn, useUndoToast, StageEyebrow } from "@/components/bits";
 import { caseStatusLabel } from "@/components/wb-pilot";
 import { OutputView, RunMeta } from "@/components/output-view";
 import { blocksFromWorkbench, type FlowBlock } from "@/components/flow";
@@ -56,7 +56,8 @@ export default function SolutionPage() {
             <DispositionBadge disposition={s.disposition} solutionId={s.id} />
             <span className="text-[13.5px] text-muted-foreground" data-testid="text-version">v{s.currentVersion} · Owner {s.ownerName}, {s.ownerTeam}</span>
           </div>
-          <h1 data-testid="text-headline" className="mt-2 text-[32px] font-bold leading-tight md:text-[40px]">{s.name}</h1>
+          <StageEyebrow stage="trace" className="mt-3" />
+          <h1 data-testid="text-headline" className="mt-2 text-[32px] md:text-[40px]">{s.name}</h1>
           <p data-testid="text-outcome" className="mt-2 text-[17px] leading-relaxed">{s.outcome}</p>
           <div className="mt-3"><MetaTags s={s} testid="meta-tags" /></div>
           {draft && (

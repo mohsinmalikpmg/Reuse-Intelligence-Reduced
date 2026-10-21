@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -95,14 +95,19 @@
   --card: 0 0% 100%;
   --card-foreground: 191 22% 19%;
   --card-border: 168 11% 90%;
-  --sidebar: 191 28% 29%;
+  /* Electric Ink chrome (Power Cube kit): navy shell, raised navy panels, cyan ring */
+  --sidebar: 199 70% 9%;
   --sidebar-foreground: 90 11% 97%;
-  --sidebar-border: 191 25% 36%;
+  --sidebar-border: 197 40% 18%;
   --sidebar-primary: 20 54% 50%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 191 30% 23%;
+  --sidebar-accent: 197 52% 15%;
   --sidebar-accent-foreground: 90 11% 97%;
-  --sidebar-ring: 196 29% 56%;
+  --sidebar-ring: 187 70% 65%;
+  /* Shell geometry: the top bar height drives every sticky offset in the pages */
+  --shell-top: 56px;
+  --shell-side: 224px;
+  --shell-rail: 72px;
   --popover: 0 0% 100%;
   --popover-foreground: 191 22% 19%;
   --popover-border: 168 11% 88%;
@@ -124,7 +129,7 @@
   --chart-4: 196 29% 56%;
   --chart-5: 191 7% 60%;
   --app-font-sans: 'Inter', system-ui, sans-serif;
-  --app-font-display: 'Inter', system-ui, sans-serif;
+  --app-font-display: 'Sora', 'Inter', system-ui, sans-serif;
   --app-font-serif: 'Inter', system-ui, sans-serif;
   --app-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --ok: 70 50% 30%;
@@ -141,7 +146,7 @@
   --warn: 20 56% 38%;
   --bad: 2 62% 45%;
   --ink: 191 22% 19%;
-  --radius: 0.625rem;
+  --radius: 0.75rem; /* 12px block corners; panels use 20px (.card-soft) */
   --primary-border: hsl(191 28% 24%);
   --secondary-border: hsl(190 18% 88%);
   --muted-border: hsl(150 9% 88%);
@@ -274,18 +279,25 @@
 }
 
 @layer base {
-  h1, h2, h3, .font-display { font-family: var(--app-font-display); letter-spacing: -0.02em; color: hsl(var(--primary)); }
+  /* Sora is the editorial display face (page headlines only); every other heading and all UI text stays Inter. */
+  h1, .font-display { font-family: var(--app-font-display); font-weight: 700; letter-spacing: -0.03em; line-height: 1.06; color: hsl(var(--primary)); }
+  h2, h3 { font-family: var(--app-font-sans); letter-spacing: -0.02em; color: hsl(var(--primary)); }
   body { font-feature-settings: "cv11", "tnum"; }
   #root { position: relative; z-index: 1; }
+  :focus-visible { outline: 2px solid hsl(var(--orange)); outline-offset: 2px; }
 }
 .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
-.card-soft { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 14px; box-shadow: 0 1px 2px hsl(191 22% 19% / .04); }
+/* Kit stage eyebrow: sienna hairline + mono label ("01 / TRACE") */
+.stage-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--app-font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: hsl(var(--siennaink)); }
+.stage-eyebrow::before { content: ""; width: 28px; height: 2px; border-radius: 2px; background: hsl(var(--sienna)); }
+.display-accent { color: hsl(var(--siennaink)); }
+.card-soft { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 20px; box-shadow: 0 1px 2px hsl(191 22% 19% / .04), 0 8px 24px -20px hsl(191 22% 19% / .25); }
+.card-block { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; }
 .lift { box-shadow: 0 2px 4px hsl(191 22% 19% / .08), 0 14px 28px -12px hsl(191 22% 19% / .28); }
 @keyframes drop-pop { 0% { transform: scale(.96); opacity: .5 } 100% { transform: scale(1); opacity: 1 } }
 .drop-pop { animation: drop-pop .28s ease-out both; }
 @keyframes reveal { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
 .reveal { animation: reveal .25s ease-out both; }
-@media (prefers-reduced-motion: reduce) { .drop-pop, .reveal { animation: none } }
 
 /* ---------- Circuit motion: every effect confirms a real state change; reduced motion keeps the information ---------- */
 .circuit-grid { background-color: hsl(var(--navy)); background-image: linear-gradient(hsl(187 70% 65% / .06) 1px, transparent 1px), linear-gradient(90deg, hsl(187 70% 65% / .06) 1px, transparent 1px); background-size: 24px 24px; }
@@ -311,10 +323,21 @@
 @keyframes cube-spark { 0% { opacity: 0; transform: scale(.6); } 40% { opacity: 1; transform: scale(1.08); } 100% { opacity: .85; transform: scale(1); } }
 .cube-spark { animation: cube-spark .6s ease-out .55s both; }
 .press:active { transform: scale(.985); }
+/* Tactile motion off: the persisted preference (defaults to the OS reduced-motion setting) sets data-motion on <html>.
+   Every effect is removed; the state it confirmed stays visible. */
+:root[data-motion="off"] .seat, :root[data-motion="off"] .weld, :root[data-motion="off"] .socket-over, :root[data-motion="off"] .current-on,
+:root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out, :root[data-motion="off"] .cube-spark,
+:root[data-motion="off"] .drop-pop, :root[data-motion="off"] .reveal, :root[data-motion="off"] [style*="running-bar"] { animation: none !important; }
+:root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
+:root[data-motion="off"] .current-on { stroke-dasharray: none; }
+:root[data-motion="off"] .weld { display: none; }
+:root[data-motion="off"] .cube-spark { opacity: .85; }
+:root[data-motion="off"] .press:active { transform: none; }
+/* OS reduced-motion applies unless the person explicitly turned tactile motion on. */
 @media (prefers-reduced-motion: reduce) {
-  .seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, [style*="running-bar"] { animation: none !important; }
-  .trace-in, .converge-in, .converge-out { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
-  .current-on { stroke-dasharray: none; }
-  .weld { display: none; }
-  .cube-spark { opacity: .85; }
+  :root:not([data-motion="on"]) :is(.seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, .drop-pop, .reveal, [style*="running-bar"]) { animation: none !important; }
+  :root:not([data-motion="on"]) :is(.trace-in, .converge-in, .converge-out) { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
+  :root:not([data-motion="on"]) .current-on { stroke-dasharray: none; }
+  :root:not([data-motion="on"]) .weld { display: none; }
+  :root:not([data-motion="on"]) .cube-spark { opacity: .85; }
 }

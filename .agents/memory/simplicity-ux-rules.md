@@ -14,7 +14,7 @@ Verification lessons:
 - The testing subagent reported a false Undo failure and "clipped" drawers — both were stale/mid-animation screenshots. A scripted playwright-core run (chromium at /repl/tools/bin/chromium, `npm i playwright-core` in /tmp) is a cheap way to confirm before changing code.
 
 ## Shell navigation decision (Oct 21, 2026)
-The user reversed the earlier "keep the top nav" rule: the shell moves to the Power Cube kit's 224px Electric Ink left sidebar (icon rail on tablet, top bar with menu on mobile), still with the same six destinations and no added controls. Once that lands, the 101px two-band header offset noted in the lanes-layout memory no longer applies; sticky offsets come from the slim top bar.
+The user reversed the earlier "keep the top nav" rule: the shell moves to the Power Cube kit's 224px Electric Ink left sidebar (icon rail on tablet, top bar with menu on mobile), still with the same six destinations and no added controls. Landed Oct 21, 2026: sticky offsets now derive from the `--shell-top` CSS variable (top-bar height), never a hard-coded pixel value. Only one sidebar variant (full or icon rail, chosen with matchMedia) is mounted at a time — rendering both with CSS `hidden` duplicated every `link-nav-*`/`button-reset-demo` test id and broke strict-mode locators. Sora is for the page h1 only; h2/h3 stay Inter so cards do not get heavier.
 **Why:** the user felt the kit's design theme was invisible in the app and chose the sidebar when asked.
 **How to apply:** do not reintroduce a top primary nav; group destinations under the stages 01 Trace / 02 Connect + Energize / 03 Converge.
 

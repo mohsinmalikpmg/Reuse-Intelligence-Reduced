@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useParams, useSearch } from "wouter";
+import { Link, useLocation, useParams, useSearch } from "wouter";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, rectIntersection, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Equal, FileText, GitBranch, Info, ListPlus, Lock, Pencil, Play, RotateCcw, Save, Undo2 } from "lucide-react";
 import {
+  useGetDemoState,
   getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetCaseBaselineQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
   getSimilarExperiments, useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseBaseline, useGetCaseConfiguration, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
   useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
@@ -11,7 +12,7 @@ import {
 } from "@workspace/api-client-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SimilarPrompt } from "@/components/wb-similar";
-import { ErrorView, LoadingView, Skel, Tag, btn, useUndoToast } from "@/components/bits";
+import { ErrorView, LoadingView, Page, Skel, Tag, btn, useUndoToast, StageEyebrow } from "@/components/bits";
 import { blocksFromConfig, blocksFromWorkbench, controlsFromConfig } from "@/components/flow";
 import { OutputView, RunMeta, diffKey, marksFrom } from "@/components/output-view";
 import { InputPanel, SummaryCounts, Tray } from "@/components/wb-parts";
@@ -19,7 +20,7 @@ import { Measures, StaleHint, Vote } from "@/components/wb-compare";
 import { AddSlot, BandRow, LaneHeaders, RequestRow, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type LaneRow, type MapEntry } from "@/components/wb-lanes";
 import { RequirementAdder, StepPicker, type ReuseActions } from "@/components/wb-reuse";
 import { InviteTesters, OwnerDecision, PROMOTION_LABEL, ProposeActions, caseStatusLabel, lineageChanges } from "@/components/wb-pilot";
-import { errMsg, useInvalidateCase } from "@/lib/case";
+import { errMsg, httpStatus, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,32 @@ function scrollToRow(id: string) {
   document.getElementById(`row-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+/** The experiment at this address no longer exists: forget it and open the demo experiment instead. */
+function GoneView({ caseId }: { caseId: string }) {
+  const demo = useGetDemoState();
+  const [, setLocation] = useLocation();
+  const target = demo.data?.demoCaseId && demo.data.demoCaseId !== caseId ? demo.data.demoCaseId : null;
+  // Navigating is enough: the shell remembers whichever experiment the address bar shows.
+  useEffect(() => {
+    if (!target) return;
+    const t = window.setTimeout(() => setLocation(`/workbench/${target}`, { replace: true }), 1200);
+    return () => window.clearTimeout(t);
+  }, [target, caseId, setLocation]);
+  return (
+    <Page>
+      <div className="card-soft max-w-xl p-7" data-testid="state-case-gone">
+        <StageEyebrow stage="connect" />
+        <h1 className="mt-3 text-[26px]">That experiment is no longer here.</h1>
+        <p className="mt-2 text-[15px] text-skyink">It was removed, most likely by a demo reset. {target ? "Opening the demo experiment instead." : "Start again from the library."}</p>
+        <div className="mt-5 flex gap-2">
+          {target && <Link href={`/workbench/${target}`} className={btn.primary} data-testid="link-demo-case">Open the demo experiment</Link>}
+          <Link href="/library" className={btn.secondary} data-testid="link-library">Library</Link>
+        </div>
+      </div>
+    </Page>
+  );
+}
+
 export default function Workbench() {
   const { caseId } = useParams<{ caseId: string }>();
   const initialMode = new URLSearchParams(useSearch()).get("mode");
@@ -61,6 +88,8 @@ export default function Workbench() {
   const samplesQ = useListSampleInputs({ solutionId: baseId }, { query: { enabled: !!baseId, queryKey: getListSampleInputsQueryKey({ solutionId: baseId }) } });
   const cmpQ = useGetCaseComparison(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseComparisonQueryKey(caseId) } });
   const evalsQ = useListCaseEvaluations(caseId, { query: { enabled: !!caseId, queryKey: getListCaseEvaluationsQueryKey(caseId) } });
+  // The remembered experiment can stop existing (a demo reset removes everything but the demo case). Say so and move on.
+  const gone = (caseQ.isError && httpStatus(caseQ.error) === 404) || (cfgQ.isError && httpStatus(cfgQ.error) === 404);
   const put = useUpdateCaseConfiguration();
   const runOne = useRunWorkflow();
   const runBoth = useRunCaseComparison();
@@ -278,6 +307,7 @@ export default function Workbench() {
   }, [rows.length, cmpQ.isLoading, initialMode, cmp]);
 
   if (caseQ.isLoading || cfgQ.isLoading) return <LoadingView />;
+  if (gone) return <GoneView caseId={caseId} />;
   if (caseQ.isError || cfgQ.isError || !caseQ.data || !cfg) return <ErrorView onRetry={() => { caseQ.refetch(); cfgQ.refetch(); }} message="This workbench could not load." />;
   const theCase = caseQ.data;
   const standardA = !!wbQ.data && wbQ.data.liveVersion !== wbQ.data.solution.currentVersion;
@@ -331,6 +361,7 @@ export default function Workbench() {
     <DndContext sensors={sensors} collisionDetection={dropUnderPointer} onDragStart={(e) => setDragging(String(e.active.id))} onDragCancel={() => setDragging(null)} onDragEnd={onDragEnd}>
       <div className="mx-auto max-w-[1400px] px-4 pb-24 pt-5 md:px-6">
         {/* Title: an experimental branch of the parent product, never a product of its own */}
+        <StageEyebrow stage="connect" note="Make the connection. Feel the change." className="mb-2" />
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
@@ -339,7 +370,7 @@ export default function Workbench() {
               {theCase.saved && <Tag tone="slate">Saved</Tag>}
               {theCase.demo && <Tag>Demo</Tag>}
             </div>
-            <h1 data-testid="text-headline" className="mt-0.5 truncate text-[24px] font-bold md:text-[28px]">{theCase.title}</h1>
+            <h1 data-testid="text-headline" className="mt-0.5 truncate text-[24px] md:text-[28px]">{theCase.title}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
               <span className="inline-flex items-center gap-1.5" data-testid="text-promotion-state"><GitBranch className="h-3.5 w-3.5" /> {PROMOTION_LABEL[theCase.promotionState]}</span>
               <span>·</span>
@@ -375,7 +406,7 @@ export default function Workbench() {
         </Dialog>
 
         {/* Pinned input bar */}
-        <div id="row-input" className="sticky top-[101px] z-30 mt-4 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur-sm">
+        <div id="row-input" className="sticky top-[var(--shell-top)] z-30 mt-4 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur-sm">
           <section className="card-soft flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5" data-testid="panel-shared-input">
             <FileText className="h-5 w-5 shrink-0 text-primary" />
             <div className="min-w-0">
@@ -402,7 +433,7 @@ export default function Workbench() {
 
         {/* Map + lanes */}
         <div className={cn("mt-5", narrow ? "space-y-4" : "grid grid-cols-[224px_minmax(0,1fr)] items-start gap-6")}>
-          <div className={narrow ? "" : "sticky top-[12rem] max-h-[calc(100dvh-13rem)] overflow-y-auto pr-1"}>
+          <div className={narrow ? "" : "sticky top-[calc(var(--shell-top)+5.75rem)] max-h-[calc(100dvh-var(--shell-top)-6.75rem)] overflow-y-auto pr-1"}>
             <WorkflowMap entries={entries} current={current} open={open} onJump={jump} horizontal={narrow} lit={energized}
               onExpandAll={() => setOpen(new Set(rows.map((r) => r.id)))} onCollapseAll={() => setOpen(new Set())}>
               {!narrow && editable && <div className="mt-4 border-t border-border px-2 pt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled={editable} onAdd={add} /></div>}

@@ -21,13 +21,35 @@ export function Page({ children, className }: { children: ReactNode; className?:
   return <div className={cn("mx-auto w-full max-w-[1200px] px-5 pb-20 pt-8 md:px-8", className)}>{children}</div>;
 }
 
-export function Headline({ eyebrow, title, sub, testid, right }: { eyebrow?: string; title: ReactNode; sub?: ReactNode; testid?: string; right?: ReactNode }) {
+/** Circuit stages (Power Cube kit). The eyebrow reads `01 / TRACE`, `02 / CONNECT + ENERGIZE`, `03 / GOVERN + CONVERGE`. */
+export type Stage = "trace" | "connect" | "converge";
+const STAGE_EYEBROW: Record<Stage, string> = { trace: "01 / Trace", connect: "02 / Connect + Energize", converge: "03 / Govern + Converge" };
+
+export function StageEyebrow({ stage, note, className }: { stage: Stage; note?: ReactNode; className?: string }) {
   return (
-    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+    <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-1", className)} data-testid="text-stage">
+      <span className="stage-eyebrow">{STAGE_EYEBROW[stage]}</span>
+      {note && <span className="text-[13px] text-muted-foreground">{note}</span>}
+    </div>
+  );
+}
+
+/**
+ * Editorial page headline: stage eyebrow, Sora display line with the closing phrase in sienna, slate subline.
+ * `accent` is rendered after `title` inside the same h1 so the full sentence stays one accessible heading.
+ */
+export function Headline({ stage, eyebrow, title, accent, sub, testid, right, size = "md", className }: {
+  stage?: Stage; eyebrow?: string; title: ReactNode; accent?: ReactNode; sub?: ReactNode; testid?: string; right?: ReactNode; size?: "md" | "lg"; className?: string;
+}) {
+  return (
+    <div className={cn("mb-7 flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="max-w-3xl">
-        {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
-        <h1 data-testid={testid ?? "text-headline"} className="text-[30px] font-bold leading-tight md:text-[38px]">{title}</h1>
-        {sub && <p data-testid="text-summary" className="mt-2 text-[16px] leading-relaxed text-muted-foreground">{sub}</p>}
+        {stage && <StageEyebrow stage={stage} className="mb-3" />}
+        {!stage && eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
+        <h1 data-testid={testid ?? "text-headline"} className={cn("text-balance", size === "lg" ? "text-[34px] md:text-[44px]" : "text-[30px] md:text-[38px]")}>
+          {title}{accent && <> <span className="display-accent">{accent}</span></>}
+        </h1>
+        {sub && <p data-testid="text-summary" className="mt-3 max-w-2xl text-[16px] leading-relaxed text-skyink">{sub}</p>}
       </div>
       {right}
     </div>
@@ -108,10 +130,10 @@ export function Empty({ title, sub, children }: { title: string; sub?: string; c
 export function Drawer({ open, onClose, title, sub, children, testid }: { open: boolean; onClose: () => void; title: string; sub?: string; children: ReactNode; testid?: string }) {
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent data-testid={testid ?? "drawer"} className="w-full overflow-y-auto bg-background sm:max-w-[500px]">
+      <SheetContent data-testid={testid ?? "drawer"} className="w-full overflow-y-auto bg-background sm:max-w-[500px] sm:rounded-l-[20px]">
         <SheetHeader className="mb-5 text-left">
           <div className="eyebrow">Details</div>
-          <SheetTitle className="text-2xl font-bold text-primary">{title}</SheetTitle>
+          <SheetTitle className="font-display text-2xl text-primary">{title}</SheetTitle>
           {sub && <SheetDescription className="text-[15px]">{sub}</SheetDescription>}
         </SheetHeader>
         <div className="space-y-6">{children}</div>

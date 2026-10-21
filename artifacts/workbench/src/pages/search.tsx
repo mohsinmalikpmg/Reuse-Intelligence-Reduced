@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { ArrowRight, Search as SearchIcon } from "lucide-react";
 import { useListBusinessProblems, useListSolutions, useSearchLibrary, type SolutionKind, type SolutionStatus } from "@workspace/api-client-react";
-import { DispositionBadge, Empty, ErrorView, Page, Skel, StatusPill, Tag } from "@/components/bits";
+import { DispositionBadge, Empty, ErrorView, Page, Skel, StatusPill, Tag, StageEyebrow } from "@/components/bits";
 import { CapabilityRow } from "@/components/family-card";
 
 export default function SearchPage() {
@@ -22,7 +22,7 @@ export default function SearchPage() {
   const sel = "h-10 rounded-lg border border-input bg-card px-2.5 text-[14px]";
   return (
     <Page>
-      <div className="eyebrow">Search</div>
+      <StageEyebrow stage="trace" note="Search every record" className="mb-1" />
       <form onSubmit={(e) => { e.preventDefault(); setLocation(`/search?q=${encodeURIComponent(draft.trim())}`); }} className="relative mt-2 max-w-3xl">
         <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <input data-testid="input-search-page" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Try: identify recurring work-order issues"

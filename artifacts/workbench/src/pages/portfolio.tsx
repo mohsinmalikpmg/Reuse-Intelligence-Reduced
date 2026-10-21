@@ -30,7 +30,7 @@ export default function Portfolio() {
   const setOpen = (id: string | null) => { setTouched(id); setPinned(id ? (queue.find((i) => i.id === id) ?? null) : null); };
   return (
     <Page>
-      <Headline eyebrow="IT portfolio" title={p.headline} sub={p.valueStatement} />
+      <Headline stage="converge" title="One stronger circuit." accent="Not another app." sub={<>{p.headline} {p.valueStatement}</>} />
       <div className="grid gap-3 sm:grid-cols-2" data-testid="section-questions">{QUESTIONS.map((k) => <Metric key={k} m={p.metrics[k]} question />)}</div>
 
       <h2 className="mb-1 mt-10 text-[22px] font-semibold">Where it still fails</h2>
