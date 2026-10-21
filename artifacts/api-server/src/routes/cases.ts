@@ -9,9 +9,10 @@ import {
 } from "@workspace/api-zod";
 import { getSolution, personas } from "../data/catalog";
 import { ConfigurationError, applyConfigurationUpdate, buildConfiguration, caseContext } from "../lib/configuration";
-import { allowedActions, buildComparison, buildRecommendation, buildReview, nextStatus } from "../lib/analysis";
+import { allowedActions, buildConsolidation, buildRecommendation, buildReview, nextStatus } from "../lib/analysis";
 import { buildExperimentPlan, runSimulation } from "../lib/simulation";
 import { matchBrief } from "../lib/matching";
+import { caseEvidence } from "../lib/evidence";
 import {
   createCase,
   getBrief,
@@ -82,9 +83,10 @@ router.patch("/cases/:caseId", async (req, res) => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const patch: { title?: string; saved?: boolean } = {};
+  const patch: { title?: string; saved?: boolean; pilotPercent?: number } = {};
   if (parsed.data.title !== undefined) patch.title = parsed.data.title;
   if (parsed.data.saved !== undefined) patch.saved = parsed.data.saved;
+  if (parsed.data.pilotPercent !== undefined) patch.pilotPercent = parsed.data.pilotPercent;
   res.json(await updateCaseRow(c.id, patch));
 });
 
@@ -98,12 +100,6 @@ router.get("/cases/:caseId/recommendation", async (req, res) => {
     if (brief) fit = matchBrief(brief).matches.find((m) => m.solution.id === c.baseSolutionId)?.fitScore ?? null;
   }
   res.json(buildRecommendation(c, ctx, fit));
-});
-
-router.get("/cases/:caseId/compare", async (req, res) => {
-  const c = await loadCase(String(req.params["caseId"]), res);
-  if (!c) return;
-  res.json(buildComparison(c, caseContext(c)));
 });
 
 router.get("/cases/:caseId/configuration", async (req, res) => {
@@ -127,7 +123,7 @@ router.put("/cases/:caseId/configuration", async (req, res) => {
   const ctx = caseContext(c);
   try {
     const next = applyConfigurationUpdate(c, ctx, parsed.data);
-    // Any configuration change invalidates the previous simulation.
+    // Any configuration change invalidates the previous test: the case must be run again.
     const status: Case["status"] = c.status === "draft" || c.status === "changes_requested" ? c.status : "draft";
     const updated = await updateCaseRow(c.id, {
       moduleStates: next.moduleStates,
@@ -156,7 +152,7 @@ router.post("/cases/:caseId/experiments", async (req, res) => {
   if (!c) return;
   const ctx = caseContext(c);
   const experiment = await insertExperiment(runSimulation(c, ctx, newId("exp")));
-  const status: Case["status"] = c.status === "rejected" ? "rejected" : "simulated";
+  const status: Case["status"] = c.status === "rejected" ? "rejected" : "tested";
   await updateCaseRow(c.id, { experimentId: experiment.id, status });
   res.status(201).json(experiment);
 });
@@ -167,7 +163,15 @@ router.get("/cases/:caseId/review", async (req, res) => {
   const ctx = caseContext(c);
   const experiment = c.experimentId ? await getExperiment(c.experimentId) : null;
   const decisions = await listDecisions(c.id);
-  res.json(buildReview(c, ctx, experiment, decisions));
+  res.json(buildReview(c, ctx, experiment, decisions, await caseEvidence(c)));
+});
+
+router.get("/cases/:caseId/consolidation", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const ctx = caseContext(c);
+  const decisions = await listDecisions(c.id);
+  res.json(buildConsolidation(c, ctx, decisions, await caseEvidence(c)));
 });
 
 router.post("/cases/:caseId/decisions", async (req, res) => {
@@ -191,8 +195,7 @@ router.post("/cases/:caseId/decisions", async (req, res) => {
   }
   const actor = personas.find((p) => p.role === role)?.name ?? role;
   await insertDecision({ id: newId("dec"), caseId: c.id, role, actor, action, reason: reason?.trim() || null });
-  // IT consolidation approval does not downgrade an owner-approved case.
-  const status = action === "approve_consolidation" && c.status === "approved" ? "approved" : nextStatus(c, action);
+  const status = nextStatus(c, action);
   const updated = await updateCaseRow(c.id, { status, saved: true });
   res.status(201).json(updated);
 });

@@ -13,5 +13,6 @@ export interface VersionSnapshot {
   workflowSteps: string[];
   capabilities: string[];
   userGroups: string[];
-  performance: Metrics;
+  /** Measured production metrics; null for a proposed version that has not run in production */
+  performance: Metrics | null;
 }

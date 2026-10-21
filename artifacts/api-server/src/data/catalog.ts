@@ -57,7 +57,7 @@ type CapabilitySeed = Omit<Capability, "sourceSolutionName" | "ownerName"> & {
 };
 
 const capabilitySeeds: CapabilitySeed[] = [
-  // ---- WorkOrder Insight (A) ----
+  // ---- Work Order Triage (A) ----
   {
     id: "cap-identity",
     name: "Identity and access control",
@@ -81,7 +81,7 @@ const capabilitySeeds: CapabilitySeed[] = [
   },
   {
     id: "cap-wo-ingest",
-    name: "Work-order ingestion",
+    name: "Read work orders",
     description: "Pulls work-order notes from the enterprise maintenance system using the approved data definitions.",
     category: "Data ingestion",
     sourceSolutionId: "sol-workorder-insight",
@@ -103,7 +103,7 @@ const capabilitySeeds: CapabilitySeed[] = [
   },
   {
     id: "cap-summarize",
-    name: "AI note summarization",
+    name: "Summarize notes",
     description: "Summarizes free-text work-order notes into structured issue statements.",
     category: "Summarization",
     sourceSolutionId: "sol-workorder-insight",
@@ -125,7 +125,7 @@ const capabilitySeeds: CapabilitySeed[] = [
   },
   {
     id: "cap-recurring",
-    name: "Recurring-issue detection",
+    name: "Identify equipment concerns",
     description: "Flags equipment issues that reappear across work orders within a site.",
     category: "Analysis",
     sourceSolutionId: "sol-workorder-insight",
@@ -319,10 +319,10 @@ const capabilitySeeds: CapabilitySeed[] = [
     evidence: "Piloted with one plant director; feedback positive but unmeasured.",
   },
 
-  // ---- Site Pattern Finder (B) ----
+  // ---- Pattern Finder (B) ----
   {
     id: "cap-clustering",
-    name: "Issue clustering across sites",
+    name: "Cluster similar issues",
     description: "Groups similar equipment issues across sites so supervisors see one pattern instead of many notes.",
     category: "Analysis",
     sourceSolutionId: "sol-site-pattern-finder",
@@ -344,7 +344,7 @@ const capabilitySeeds: CapabilitySeed[] = [
   },
   {
     id: "cap-similarity",
-    name: "Equipment similarity search",
+    name: "Rank problem frequency",
     description: "Finds historical work orders with similar symptoms for a selected asset.",
     category: "Analysis",
     sourceSolutionId: "sol-site-pattern-finder",
@@ -367,7 +367,7 @@ const capabilitySeeds: CapabilitySeed[] = [
   {
     id: "cap-b-summarize",
     name: "Pattern Finder summarization",
-    description: "Site Pattern Finder's own note summarizer, built before the enterprise model was approved.",
+    description: "Pattern Finder's own note summarizer, built before the enterprise model was approved.",
     category: "Summarization",
     sourceSolutionId: "sol-site-pattern-finder",
     controlType: "optional",
@@ -407,10 +407,10 @@ const capabilitySeeds: CapabilitySeed[] = [
     evidence: "Bypasses enterprise data definitions; not approved by data governance.",
   },
 
-  // ---- Maintenance Action Tracker (C) ----
+  // ---- Action Tracker (C) ----
   {
     id: "cap-action-tracking",
-    name: "Action tracking",
+    name: "Follow-up actions",
     description: "Tracks each approved finding through to a completed maintenance action with owner and due date.",
     category: "Tracking",
     sourceSolutionId: "sol-action-tracker",
@@ -573,7 +573,7 @@ type SolutionSeed = Solution & {
 const solutionSeeds: SolutionSeed[] = [
   {
     id: "sol-workorder-insight",
-    name: "WorkOrder Insight",
+    name: "Work Order Triage",
     outcome: "Turns work-order notes into reviewed, approved recurring-issue findings for maintenance supervisors.",
     description:
       "The certified production product for recurring equipment issue identification. Ingests work-order notes from the enterprise maintenance system, summarizes them with the approved model, detects recurring issues within a site, and routes findings through supervisor approval and site routing.",
@@ -639,7 +639,7 @@ const solutionSeeds: SolutionSeed[] = [
   },
   {
     id: "sol-site-pattern-finder",
-    name: "Site Pattern Finder",
+    name: "Pattern Finder",
     outcome: "Clusters similar equipment issues across sites so supervisors review one pattern instead of many notes.",
     description:
       "A configurable analytics product built by Site Analytics for Plant Ops South. Strong at cross-site clustering and similarity search, but it has its own summarizer and a manual CSV ingestion path that bypass enterprise data definitions.",
@@ -674,7 +674,7 @@ const solutionSeeds: SolutionSeed[] = [
   },
   {
     id: "sol-action-tracker",
-    name: "Maintenance Action Tracker",
+    name: "Action Tracker",
     outcome: "Tracks approved maintenance findings through to a closed action with an owner and due date.",
     description:
       "An experimental prototype built at Fleet Depot 4 to follow up on recurring-issue findings. The action-tracking capability is valuable, but the prototype has no owner, duplicates reporting, and sends SMS alerts outside enterprise channels.",

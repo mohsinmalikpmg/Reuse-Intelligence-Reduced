@@ -236,3 +236,16 @@ function capitalize(s: string): string {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/** The two editable cards shown on Discover: what happens today and what better looks like. Derived, never invented. */
+export function deriveTodayBetter(fields: BriefFields): { today: string; better: string } {
+  const sentence = (s: string) => {
+    const t = s.trim().replace(/\s+/g, " ");
+    if (!t) return "";
+    const first = t.charAt(0).toUpperCase() + t.slice(1);
+    return /[.!?]$/.test(first) ? first : `${first}.`;
+  };
+  const today = sentence(fields.painPoint.value) || sentence(fields.currentProcess.value);
+  const better = sentence(fields.desiredOutcome.value) || sentence(fields.successMeasures.value);
+  return { today, better };
+}

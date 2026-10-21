@@ -5,16 +5,13 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { PortfolioMetric } from './portfolioMetric';
 
 export interface PortfolioMetrics {
-  activeSolutions: number;
-  overlappingGroups: number;
-  certified: number;
-  experimental: number;
-  withoutOwner: number;
-  consolidationOpportunities: number;
-  retirementCandidates: number;
-  /** Capabilities used by more than one solution */
-  sharedCapabilityReuse: number;
-  pendingReviews: number;
+  searchToReuse: PortfolioMetric;
+  duplicateGroups: PortfolioMetric;
+  consolidationsCompleted: PortfolioMetric;
+  abTestsWithPreference: PortfolioMetric;
+  activeVsRetired: PortfolioMetric;
+  needsAttention: PortfolioMetric;
 }

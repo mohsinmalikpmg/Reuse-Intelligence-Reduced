@@ -10,6 +10,8 @@ export const briefsTable = pgTable("briefs", {
   clarification: text("clarification"),
   source: text("source").notNull(),
   valueStatement: text("value_statement").notNull(),
+  today: text("today").notNull().default(""),
+  better: text("better").notNull().default(""),
   confirmed: boolean("confirmed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

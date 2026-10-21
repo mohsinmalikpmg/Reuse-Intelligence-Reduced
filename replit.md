@@ -1,6 +1,6 @@
-# Reuse Workbench
+# Cenovus | Solutions (Reuse Workbench)
 
-A reuse-first AI solution discovery and consolidation decision workbench: a seeker describes a pain point in plain language, the app shows what already exists, lets them assemble and simulate a consolidated version, and routes the proposal through owner and IT decisions.
+A reuse-first solution discovery and A/B workbench: a maintenance supervisor describes a problem in plain language, finds that a governed solution already exists, tries it on real sample data, and proves a proposed change side by side against the current product (real outputs, real diff, recorded human preference) before owner and IT decisions.
 
 ## Run & Operate
 
@@ -9,47 +9,58 @@ A reuse-first AI solution discovery and consolidation decision workbench: a seek
 - `pnpm run typecheck` — full typecheck. Run `pnpm run typecheck:libs` first after changing anything in `lib/` or the api-server typecheck sees stale lib output.
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate React Query hooks and Zod schemas after editing `lib/api-spec/openapi.yaml`
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL`. Optional: `AI_INTEGRATIONS_OPENAI_API_KEY` / `AI_INTEGRATIONS_OPENAI_BASE_URL` (Replit OpenAI integration) — without them the interpreter falls back to cached/rule-based parsing and the demo still works.
-- Reset the demo: "Reset demo" button in the header, or `POST /api/demo/reset`.
+- Required env: `DATABASE_URL`. Optional: `AI_INTEGRATIONS_OPENAI_API_KEY` / `AI_INTEGRATIONS_OPENAI_BASE_URL` — without them the interpreter falls back to cached/rule-based parsing and the demo still works.
+- Reset the demo: "Reset demo" in the header, or `POST /api/demo/reset`.
 - Demo deep links: append `?as=seeker|owner|it` to any route to sign in as that persona.
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5; DB: PostgreSQL + Drizzle ORM; Validation: Zod v4; codegen: Orval
-- Frontend: React 19 + Vite, Tailwind, shadcn/ui, wouter, TanStack Query, framer-motion
-- AI: OpenAI via Replit AI Integrations (brief interpretation only)
+- Frontend: React 19 + Vite, Tailwind, shadcn/ui, wouter, TanStack Query, dnd-kit (drag), @xyflow/react (Library tree view)
+- AI: OpenAI via Replit AI Integrations (brief interpretation only; never produces numbers or outputs)
 
 ## Where things live
 
 - `lib/api-spec/openapi.yaml` — API contract (source of truth); generated clients in `lib/api-client-react`, `lib/api-zod`
-- `lib/db/src/schema/` — persisted tables: `briefs`, `cases`, `experiments`, `decisions`
-- `artifacts/api-server/src/data/catalog.ts` — solution catalog: personas, 7 solutions, capabilities, business problems, synthetic user profiles, demo prompt (TS constants, not DB)
-- `artifacts/api-server/src/lib/` — `matching` (brief → ranked solutions), `brief-parser` (AI / cached / rule-based), `configuration` (module toggles, conflicts, impact), `simulation` (seeded synthetic test), `analysis` (recommendation, compare, review, pilot plan, decision rules), `seed` (demo reset), `store` (DB access)
-- `artifacts/api-server/src/routes/` — `library`, `briefs`, `cases`, `overview` (home views, portfolio, decision queue, demo reset)
-- `artifacts/workbench/src/pages/` — login, home (per role), discover, brief, library, solution, cases, workspace (Overview/Compare/Configure/Test), review, experiments, portfolio, queue
-- `artifacts/workbench/src/lib/persona.tsx` — persona stored in localStorage; role drives navigation and allowed actions
+- `lib/db/src/schema/` — persisted tables: `briefs` (with `today`/`better`), `cases`, `decisions`, `runs`, `evaluations`, `test_sessions`, `search_events` (`experiments` is legacy synthetic simulation, unused by the UI)
+- `artifacts/api-server/src/data/catalog.ts` — solution catalog: personas, 7 solutions, capabilities, business problems (TS constants, not DB)
+- `artifacts/api-server/src/engine/` — the executable workflow engine: `workorders.ts` (16 seeded work orders, sample inputs incl. labelled expected findings), `steps.ts` (one deterministic executor per capability id; `EXECUTORS` order = execution order; capabilities without an executor are controls), `run.ts` (`executeWorkflow`), `diff.ts` (line diff by stable item keys + precision/recall vs labelled findings)
+- `artifacts/api-server/src/lib/` — `workbench` (Version A = base defaults, Version B = case config; runs, comparison, explanation), `workbench-store` (runs/evaluations/sessions/search events), `evidence` (defensible A/B evidence from persisted data only), `matching` (brief → ranked solutions; `searchLibrary` hybrid global search), `brief-parser` (AI / cached / rule-based; `deriveTodayBetter`), `configuration` (module toggles, conflicts), `analysis` (recommendation, review, pilot plan, decision rules), `seed` (demo reset), `store` (DB access)
+- `artifacts/api-server/src/routes/` — `library` (solutions, `/search`), `briefs`, `cases`, `workbench` (solution workbench, sample inputs, runs, compare, evaluations, blind sessions), `overview` (my-solutions, portfolio, demo reset)
+- `artifacts/workbench/src/pages/` — `/` sign-in, `/discover`, `/library`, `/solutions/:id`, `/search`, `/workbench/:caseId` (Run / Create B / Compare A/B), `/test/:sessionId` (blind tester view), `/my-solutions`, `/portfolio`. `components/frame.tsx` = header (nav, global search, Find/Own/Govern switcher, Reset demo)
+- `artifacts/workbench/src/lib/persona.tsx` — persona in localStorage (`?as=` deep link); `lib/case.tsx` — current case id in localStorage, defaults to the demo case
+
+## UX rules (spec + user mandate: simplicity and tactile interaction above everything)
+
+- Six destinations only: Discover, Library, Workbench, My Solutions, Portfolio, plus the global search page. Roles never get separate dashboards; Find/Own/Govern only changes the available actions.
+- One question or recommendation per screen, ≤3 primary objects, one dominant action; details behind expand / drawer. Every double-click action has a single-click alternative.
+- Brand: slate blue #365860 (nav, primary, headings), sienna #C5683B (recommendations, A/B accents), green #8A9A36 (certified/approved), light blue #6E9EAF, bg #F7F8F6, text #26373B / #647174, borders #E3E8E7, Inter. No purple, no gradients.
+- Drag-and-drop (dnd-kit) always has a click alternative; every change offers Undo. Drop target is decided by the pointer (`pointerWithin`), not by rect overlap.
+- Discover shows editable "Today" and "Better" cards (not Pain/Need sections).
 
 ## Architecture decisions
 
-- The catalog is code, not data: solutions/capabilities are constants so the demo is deterministic and resettable. Only briefs, cases, experiments and decisions are persisted.
-- Simulation numbers never come from the LLM. `runSimulation` uses a mulberry32 PRNG seeded from a fixed constant XOR a hash of the configuration, so the same configuration always produces the same result. Seeds are masked to 31 bits to fit a Postgres `integer` column.
-- AI is used only to interpret the pain point into the "What I heard" brief. The demo prompt uses a cached interpretation; any other text goes to OpenAI with a 15s timeout and falls back to rule-based parsing. `source` on the brief records which path ran.
-- Matching: readiness and evidence are scaled by relevance (semantic score), so a mature product for a different problem cannot outrank a relevant pilot. A solution is only "recommended" with fit ≥ 30; results below fit 20 are dropped.
-- Candidate modules for a case are capabilities from other solutions sharing the base's business problem. A candidate conflicting with a base capability is "incompatible" if its risk class is high, otherwise "duplicate/retiring". Any configuration change invalidates the previous simulation (case returns to draft).
-- Decision flow: draft → simulated → pilot_proposed → approved / changes_requested / deferred / rejected. Seeker can only approve a simulation; owner approves pilots; IT approves consolidation. Rejections require a reason. Owner approval is not downgraded by IT approval.
+- Never fabricate an A/B advantage. Outputs are produced by actually executing both versions on the same input; the diff and the responsible steps come from the run traces; precision/recall appear only for inputs with labelled expected findings; summaries are computed only from recorded votes (blind votes and demo votes are labelled). The proposed version's production `performance` is `null` on purpose.
+- The catalog is code, not data. Persisted: briefs, cases, decisions, runs, evaluations, test sessions, search events.
+- A case doubles as a change proposal / A-B experiment: Version A = base solution production defaults, Version B = the case's moduleStates/configValues. Every new case starts with B equal to A (additions from other solutions off) so "Try this solution" shows the product as it is; the tray marks the recommended additions. The first `POST /cases/{id}/compare` moves a draft case to `tested`; any configuration change returns it to `draft` and marks older comparisons `staleB`.
+- jsonb does not preserve key order: compare config objects by sorted entries, never by `JSON.stringify`.
+- Blind sessions store pairs as `sampleInputId:runAId:runBId:left`; left/right is derived from the run id so it is stable but not guessable from order. Session responses are evaluations with `blind=true`.
+- Decision flow: draft → tested → pilot_proposed → approved / changes_requested / deferred / rejected. Seeker proposes the pilot; owner approves/requests changes/rejects/defers; IT approves the consolidation direction (does not change case status). Rejections require a reason.
+- AI is used only to interpret the pain point into the brief (cached for the demo prompt, 15s timeout, rule-based fallback). Editing Today/Better writes back into `painPoint`/`desiredOutcome` so matching follows the user's words.
 
 ## Product
 
-- Personas: Alex Romero (seeker), Priya Natarajan (owner of WorkOrder Insight, ProcedureFinder, Incident Commander), Jordan Okafor (IT). No passwords; switch roles from the header.
-- Anchor demo: maintenance work-order triage with three overlapping products (WorkOrder Insight certified, Site Pattern Finder pilot, Maintenance Action Tracker unowned prototype). Recommended path: base on WorkOrder Insight, add clustering + action tracking, retire Action Tracker.
-- Demo reset seeds `brief_demo` (confirmed), `case_demo` (draft, recommended config) and `case_procedure_search` (already simulated and proposed, so the owner and IT queues are populated).
+- Personas: Alex Romero (seeker), Priya Natarajan (owner of Work Order Triage, ProcedureFinder, Incident Commander), Jordan Okafor (IT). No passwords; switch roles from the header.
+- Anchor demo: Work Order Triage (certified) + Pattern Finder (pilot) + Action Tracker (unowned prototype) → consolidated "Work Order Intelligence". Turning clustering off removes pattern findings; removing action tracking removes the action output; a different input changes the findings.
+- Demo reset seeds `brief_demo` (confirmed), `case_demo` (draft; Version B equals Version A until the seeker adds clustering/actions) and `case_procedure_search` (run on the sample question, two demo-labelled votes for B, pilot proposed).
 
 ## Gotchas
 
 - Run `pnpm run typecheck:libs` before `pnpm --filter @workspace/api-server run typecheck`.
 - Restart the API workflow after backend edits (it runs a build, not a watcher).
-- Pilot plan thresholds and guardrails are derived from the base solution's locked capabilities; keep catalog `controlType`/`category` accurate.
+- Orval: an operation with both path and query params generates `XxxParams` in both the types and zod outputs and the re-exports collide; avoid that combination (return a list instead and filter client-side).
+- Pilot plan thresholds and guardrails are derived from recorded evidence and the base solution's locked capabilities; keep catalog `controlType`/`category` accurate.
 
 ## Pointers
 

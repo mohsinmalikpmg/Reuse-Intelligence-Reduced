@@ -9,6 +9,8 @@ import type { BriefFieldValues } from './briefFieldValues';
 
 export interface BriefUpdate {
   fields?: BriefFieldValues;
+  today?: string;
+  better?: string;
   confirmed?: boolean;
   clarification?: string;
 }

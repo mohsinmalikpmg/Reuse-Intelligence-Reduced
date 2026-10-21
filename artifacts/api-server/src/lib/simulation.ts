@@ -143,6 +143,8 @@ export function buildExperimentPlan(c: Case, ctx: CaseContext): ExperimentPlan {
 
 export function proposedName(ctx: CaseContext, added: Capability[]): string {
   const next = bumpVersion(ctx.base.currentVersion);
+  // The consolidated maintenance product has a name of its own; everything else is "base + modules".
+  if (ctx.base.id === "sol-workorder-insight" && added.length > 0) return `Work Order Intelligence v${next} (proposed)`;
   return added.length === 0
     ? `${ctx.base.name} v${next} (proposed configuration)`
     : `${ctx.base.name} v${next} + ${added.map((a) => a.name.toLowerCase()).join(" + ")} (proposed)`;

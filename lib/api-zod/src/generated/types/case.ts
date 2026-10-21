@@ -25,6 +25,8 @@ export interface Case {
   configValues: CaseConfigValues;
   /** @nullable */
   experimentId: string | null;
+  /** Pilot exposure chosen for this case (5 */
+  pilotPercent: number;
   createdByRole: Role;
   saved: boolean;
   createdAt: string;

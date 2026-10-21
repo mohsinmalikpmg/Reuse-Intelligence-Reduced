@@ -5,9 +5,11 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { CaseUpdatePilotPercent } from './caseUpdatePilotPercent';
 
 export interface CaseUpdate {
   /** @minLength 1 */
   title?: string;
   saved?: boolean;
+  pilotPercent?: CaseUpdatePilotPercent;
 }

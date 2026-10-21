@@ -11,6 +11,7 @@ import type {
   WorkflowStepConfig,
 } from "@workspace/api-zod";
 import { WORKFLOW_STEPS, getCapability, getSolution, solutionCapabilities } from "../data/catalog";
+import { isExecutable } from "../engine/steps";
 
 export class ConfigurationError extends Error {}
 
@@ -150,6 +151,7 @@ export function buildComponents(c: Case, ctx: CaseContext): ComponentConfig[] {
       controlType: isBase ? cap.controlType : "optional",
       state,
       active: state === "incompatible" ? false : active,
+      executable: isExecutable(cap.id),
       value: cap.controlType === "configurable" && isBase ? (c.configValues[cap.id] ?? cap.defaultOption) : null,
       options: cap.controlType === "configurable" && isBase ? cap.options : null,
       recommended,
@@ -226,16 +228,17 @@ export function computeImpact(c: Case, ctx: CaseContext): Impact {
   const valueScore = 50 + timeGain * 120 + successGain * 150 + errorGain * 100;
   const userValue = dim(
     valueScore,
-    valueScore >= 70 ? "High" : valueScore >= 55 ? "Moderate" : valueScore >= 45 ? "Neutral" : "Negative",
+    valueScore >= 60 ? "Higher" : valueScore >= 45 ? "Same" : "Lower",
     timeGain > 0.02
       ? `Task time ${Math.round(timeGain * 100)}% lower and success rate ${projected.successRate - baseline.successRate >= 0 ? "+" : ""}${round1(projected.successRate - baseline.successRate)} points versus today.`
       : "Little change in task time versus today.",
   );
 
-  const effortPoints = added.reduce((sum, cap) => sum + RISK_WEIGHT[cap.riskClass] * 12 + (isUnsupported(cap) ? 10 : 0), 0);
+  // Effort grows with the risk class of what is added; an unsupported source adds an ownership transfer.
+  const effortPoints = added.reduce((sum, cap) => sum + RISK_WEIGHT[cap.riskClass] * 8 + (isUnsupported(cap) ? 6 : 0), 0);
   const effort = dim(
     10 + effortPoints,
-    effortPoints <= 15 ? "Low" : effortPoints <= 40 ? "Medium" : "High",
+    effortPoints <= 30 ? "Low" : effortPoints <= 55 ? "Moderate" : "High",
     added.length === 0
       ? "No modules added from other products; configuration only."
       : `${added.length} module${added.length === 1 ? "" : "s"} from ${new Set(added.map((a) => a.sourceSolutionName)).size} other product${new Set(added.map((a) => a.sourceSolutionName)).size === 1 ? "" : "s"} must be integrated and owned.`,
@@ -247,8 +250,8 @@ export function computeImpact(c: Case, ctx: CaseContext): Impact {
   );
   const risk = dim(
     riskPoints,
-    riskPoints <= 20 ? "Low" : riskPoints <= 45 ? "Medium" : "High",
-    riskPoints <= 20
+    riskPoints <= 45 ? "Controlled" : riskPoints <= 70 ? "Watch" : "High",
+    riskPoints <= 45
       ? "All mandatory controls remain in place; added modules are low to medium risk."
       : "Added modules raise risk; review ownership and evidence before pilot.",
   );
@@ -289,7 +292,11 @@ export function buildConfiguration(c: Case, ctx: CaseContext): Configuration {
     added.length === 0
       ? `${ctx.base.name} v${ctx.base.currentVersion} with no modules added from other products.`
       : `${ctx.base.name} v${ctx.base.currentVersion} plus ${added.map((a) => `${a.name} (from ${a.sourceSolutionName})`).join(" and ")}. ${lockedCount} locked controls unchanged.`;
-  return { caseId: c.id, summary, steps, impact: computeImpact(c, ctx), activeModuleCount, lockedCount };
+  const recommended = { moduleStates: defaultModuleStates(ctx), configValues: defaultConfigValues(ctx) };
+  const isRecommended =
+    Object.entries(recommended.moduleStates).every(([id, on]) => (c.moduleStates[id] ?? false) === on) &&
+    Object.entries(recommended.configValues).every(([id, v]) => (c.configValues[id] ?? v) === v);
+  return { caseId: c.id, summary, steps, impact: computeImpact(c, ctx), activeModuleCount, lockedCount, recommended, isRecommended };
 }
 
 /** Validates a configuration update against the governance rules and returns the new case fields. */

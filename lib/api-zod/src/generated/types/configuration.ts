@@ -5,6 +5,7 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { ConfigurationUpdate } from './configurationUpdate';
 import type { Impact } from './impact';
 import type { WorkflowStepConfig } from './workflowStepConfig';
 
@@ -15,4 +16,8 @@ export interface Configuration {
   impact: Impact;
   activeModuleCount: number;
   lockedCount: number;
+  /** The recommended module states and settings; send it back to reset the case */
+  recommended: ConfigurationUpdate;
+  /** True when the current configuration equals the recommended one */
+  isRecommended: boolean;
 }

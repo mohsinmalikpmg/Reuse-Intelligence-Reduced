@@ -38,6 +38,8 @@ export const GetSeekerOverviewResponse = zod.object({
   "recentBriefs": zod.array(zod.object({
   "id": zod.string(),
   "rawText": zod.string(),
+  "today": zod.string().describe('What is happening now'),
+  "better": zod.string().describe('The outcome the user wants'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -130,10 +132,11 @@ export const GetSeekerOverviewResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -186,7 +189,7 @@ export const GetSeekerOverviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -255,10 +258,11 @@ export const GetOwnerOverviewResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -311,7 +315,7 @@ export const GetOwnerOverviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -377,10 +381,11 @@ export const GetOwnerOverviewResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -433,7 +438,7 @@ export const GetOwnerOverviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -490,6 +495,576 @@ export const ListSolutionsResponseItem = zod.object({
   "lastReviewedAt": zod.string()
 })
 export const ListSolutionsResponse = zod.array(ListSolutionsResponseItem)
+
+
+/**
+ * @summary The executable production workflow of a solution, its sample inputs and a saved example run
+ */
+export const GetSolutionWorkbenchParams = zod.object({
+  "solutionId": zod.coerce.string()
+})
+
+export const GetSolutionWorkbenchResponse = zod.object({
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "blocks": zod.array(zod.object({
+  "capability": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}),
+  "stage": zod.string(),
+  "kind": zod.enum(['required', 'configurable', 'optional']),
+  "active": zod.boolean(),
+  "executable": zod.boolean().describe('False for controls (identity'),
+  "value": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "origin": zod.enum(['base', 'added']),
+  "blockedReason": zod.string().nullable()
+})).describe('Executable steps in execution order'),
+  "controls": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+})).describe('Locked controls preserved around the workflow'),
+  "sampleInputs": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "solutionIds": zod.array(zod.string()),
+  "text": zod.string(),
+  "hasExpected": zod.boolean().describe('True when labelled expected findings exist for objective scoring'),
+  "noteCount": zod.number().int()
+})),
+  "exampleRun": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Seeded sample inputs, optionally for one solution
+ */
+export const ListSampleInputsQueryParams = zod.object({
+  "solutionId": zod.coerce.string().optional()
+})
+
+export const ListSampleInputsResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "solutionIds": zod.array(zod.string()),
+  "text": zod.string(),
+  "hasExpected": zod.boolean().describe('True when labelled expected findings exist for objective scoring'),
+  "noteCount": zod.number().int()
+})
+export const ListSampleInputsResponse = zod.array(ListSampleInputsResponseItem)
+
+
+/**
+ * @summary Execute one workflow version against an input and persist the result
+ */
+export const RunWorkflowBody = zod.object({
+  "solutionId": zod.string().optional().describe('Run the production workflow of a solution (version A)'),
+  "caseId": zod.string().optional().describe('Run a case; version A is the base product'),
+  "version": zod.enum(['A', 'B']),
+  "sampleInputId": zod.string().optional(),
+  "inputText": zod.string().optional().describe('Overrides the sample text; used as-is when no sample is given')
+})
+
+export const RunWorkflowResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary A persisted run
+ */
+export const GetRunParams = zod.object({
+  "runId": zod.coerce.string()
+})
+
+export const GetRunResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Global hybrid search across solutions and capabilities
+ */
+export const SearchLibraryQueryParams = zod.object({
+  "q": zod.coerce.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']).optional(),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']).optional(),
+  "owner": zod.coerce.string().optional(),
+  "businessProblemId": zod.coerce.string().optional()
+})
+
+export const SearchLibraryResponse = zod.object({
+  "query": zod.string(),
+  "results": zod.array(zod.object({
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "matchedCapabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}))
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+})).describe('Reusable capabilities matching the query on their own'),
+  "source": zod.enum(['keyword', 'hybrid'])
+})
+
+
+/**
+ * @summary The owner's solutions with proposed changes and open tests
+ */
+export const GetMySolutionsResponseItem = zod.object({
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "proposals": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string(),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "baseSolution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "businessProblemTitle": zod.string(),
+  "addedCapabilities": zod.array(zod.string()),
+  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "latestDecision": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "nextStep": zod.string().describe('Plain-language next action for the current state')
+})),
+  "openTests": zod.number().int().describe('Cases with runs but no owner decision yet'),
+  "evaluations": zod.number().int().describe('Recorded preference votes across proposals'),
+  "recentRuns": zod.number().int().describe('Runs recorded in the last 30 days')
+})
+export const GetMySolutionsResponse = zod.array(GetMySolutionsResponseItem)
 
 
 /**
@@ -585,10 +1160,11 @@ export const GetSolutionResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -641,7 +1217,7 @@ export const GetSolutionResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -706,6 +1282,8 @@ export const ListBusinessProblemsResponse = zod.array(ListBusinessProblemsRespon
 export const ListBriefsResponseItem = zod.object({
   "id": zod.string(),
   "rawText": zod.string(),
+  "today": zod.string().describe('What is happening now'),
+  "better": zod.string().describe('The outcome the user wants'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -768,6 +1346,8 @@ export const CreateBriefBody = zod.object({
 export const CreateBriefResponse = zod.object({
   "id": zod.string(),
   "rawText": zod.string(),
+  "today": zod.string().describe('What is happening now'),
+  "better": zod.string().describe('The outcome the user wants'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -825,6 +1405,8 @@ export const GetBriefParams = zod.object({
 export const GetBriefResponse = zod.object({
   "id": zod.string(),
   "rawText": zod.string(),
+  "today": zod.string().describe('What is happening now'),
+  "better": zod.string().describe('The outcome the user wants'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -891,6 +1473,8 @@ export const UpdateBriefBody = zod.object({
   "requiredControls": zod.string().optional(),
   "successMeasures": zod.string().optional()
 }).optional(),
+  "today": zod.string().optional(),
+  "better": zod.string().optional(),
   "confirmed": zod.boolean().optional(),
   "clarification": zod.string().optional()
 })
@@ -898,6 +1482,8 @@ export const UpdateBriefBody = zod.object({
 export const UpdateBriefResponse = zod.object({
   "id": zod.string(),
   "rawText": zod.string(),
+  "today": zod.string().describe('What is happening now'),
+  "better": zod.string().describe('The outcome the user wants'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -1053,7 +1639,7 @@ export const GetBriefMatchesResponse = zod.object({
  * @summary Consolidation cases
  */
 export const ListCasesQueryParams = zod.object({
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']).optional()
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']).optional()
 })
 
 export const ListCasesResponseItem = zod.object({
@@ -1064,10 +1650,11 @@ export const ListCasesResponseItem = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -1120,7 +1707,7 @@ export const ListCasesResponseItem = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -1146,10 +1733,11 @@ export const CreateCaseResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -1171,10 +1759,11 @@ export const GetCaseResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -1194,7 +1783,8 @@ export const UpdateCaseParams = zod.object({
 
 export const UpdateCaseBody = zod.object({
   "title": zod.string().min(1).optional(),
-  "saved": zod.boolean().optional()
+  "saved": zod.boolean().optional(),
+  "pilotPercent": zod.union([zod.literal(5),zod.literal(10),zod.literal(20)]).optional()
 })
 
 export const UpdateCaseResponse = zod.object({
@@ -1204,10 +1794,11 @@ export const UpdateCaseResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -1499,95 +2090,761 @@ export const GetCaseRecommendationResponse = zod.object({
 
 
 /**
- * @summary Capability comparison across overlapping solutions (Compare tab)
+ * @summary Latest A/B comparison per input for this case, newest first
  */
 export const GetCaseComparisonParams = zod.object({
   "caseId": zod.coerce.string()
 })
 
-export const GetCaseComparisonResponse = zod.object({
+export const GetCaseComparisonResponseItem = zod.object({
   "caseId": zod.string(),
-  "baseSolutionId": zod.string(),
-  "solutions": zod.array(zod.object({
+  "staleB": zod.boolean().describe('True when Version B has changed since this run; rerun to refresh'),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "runA": zod.object({
   "id": zod.string(),
-  "name": zod.string(),
-  "outcome": zod.string().describe('One-sentence outcome'),
-  "description": zod.string(),
-  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
-  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
-  "ownerName": zod.string(),
-  "ownerTeam": zod.string(),
-  "businessUnits": zod.array(zod.string()),
-  "activeUsers": zod.number().int(),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "timeToAdopt": zod.string(),
-  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
-  "workflowSteps": zod.array(zod.string()),
-  "currentVersion": zod.string(),
-  "versions": zod.array(zod.object({
-  "version": zod.string(),
-  "releasedAt": zod.string(),
-  "summary": zod.string()
-})),
-  "knownGaps": zod.array(zod.string()),
-  "dependencies": zod.array(zod.string()),
-  "capabilityIds": zod.array(zod.string()),
-  "businessProblemIds": zod.array(zod.string()),
-  "baselineMetrics": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version'),
-  "retirementCandidate": zod.boolean(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "supportModel": zod.string(),
-  "lastReviewedAt": zod.string()
-})),
-  "rows": zod.array(zod.object({
-  "capability": zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "description": zod.string(),
-  "category": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "ownerName": zod.string(),
-  "controlType": zod.enum(['locked', 'configurable', 'optional']),
-  "workflowStep": zod.string(),
-  "riskClass": zod.enum(['low', 'medium', 'high']),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "lockedReason": zod.string().nullable(),
-  "options": zod.array(zod.string()).nullable(),
-  "defaultOption": zod.string().nullable(),
-  "effects": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Expected deltas applied when the capability is active'),
-  "incompatibleWith": zod.array(zod.string()),
-  "dependsOn": zod.array(zod.string()),
-  "testCoverage": zod.string(),
-  "supportStatus": zod.string(),
-  "version": zod.string(),
-  "evidence": zod.string()
-}),
-  "presence": zod.array(zod.object({
+  "caseId": zod.string().nullable(),
   "solutionId": zod.string(),
-  "present": zod.boolean(),
-  "strength": zod.enum(['strong', 'standard', 'weak', 'none'])
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
 })),
-  "verdict": zod.enum(['common', 'unique', 'stronger', 'unsupported', 'retire']),
-  "verdictNote": zod.string(),
-  "evidence": zod.string()
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+}),
+  "runB": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
 })),
-  "summary": zod.string()
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+}),
+  "diff": zod.object({
+  "entries": zod.array(zod.object({
+  "change": zod.enum(['added', 'removed', 'changed']),
+  "sectionKey": zod.string(),
+  "sectionTitle": zod.string(),
+  "stepId": zod.string(),
+  "stepName": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "before": zod.string().nullable(),
+  "after": zod.string().nullable(),
+  "itemKey": zod.string(),
+  "kind": zod.string()
+})),
+  "added": zod.number().int(),
+  "removed": zod.number().int(),
+  "changed": zod.number().int(),
+  "unchanged": zod.number().int(),
+  "stepsResponsible": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "changes": zod.number().int()
+}))
+}),
+  "scoreA": zod.union([zod.object({
+  "expected": zod.number().int(),
+  "identified": zod.number().int(),
+  "missed": zod.number().int(),
+  "falsePositives": zod.number().int(),
+  "precision": zod.number().nullable(),
+  "recall": zod.number().nullable(),
+  "identifiedLabels": zod.array(zod.string()),
+  "missedLabels": zod.array(zod.string()),
+  "falsePositiveLabels": zod.array(zod.string())
+}),zod.null()]),
+  "scoreB": zod.union([zod.object({
+  "expected": zod.number().int(),
+  "identified": zod.number().int(),
+  "missed": zod.number().int(),
+  "falsePositives": zod.number().int(),
+  "precision": zod.number().nullable(),
+  "recall": zod.number().nullable(),
+  "identifiedLabels": zod.array(zod.string()),
+  "missedLabels": zod.array(zod.string()),
+  "falsePositiveLabels": zod.array(zod.string())
+}),zod.null()]),
+  "explanation": zod.array(zod.string()).describe('Plain-language lines explaining what changed and which step caused it'),
+  "evaluation": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "sessionId": zod.string().nullable(),
+  "sampleInputId": zod.string().nullable(),
+  "inputHash": zod.string(),
+  "runAId": zod.string(),
+  "runBId": zod.string(),
+  "choice": zod.enum(['A', 'B', 'neither']),
+  "reason": zod.string().nullable(),
+  "rating": zod.number().int().nullable(),
+  "evaluator": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "blind": zod.boolean(),
+  "demo": zod.boolean().describe('True for simulated demo accounts'),
+  "createdAt": zod.string()
+}),zod.null()]).describe('The current user\'s recorded preference for this exact pair, if any')
+})
+export const GetCaseComparisonResponse = zod.array(GetCaseComparisonResponseItem)
+
+
+/**
+ * @summary Run Version A (current product) and Version B (proposed) on the same input
+ */
+export const RunCaseComparisonParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const RunCaseComparisonBody = zod.object({
+  "sampleInputId": zod.string().optional(),
+  "inputText": zod.string().optional()
+})
+
+export const RunCaseComparisonResponse = zod.object({
+  "caseId": zod.string(),
+  "staleB": zod.boolean().describe('True when Version B has changed since this run; rerun to refresh'),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "runA": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+}),
+  "runB": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+}),
+  "diff": zod.object({
+  "entries": zod.array(zod.object({
+  "change": zod.enum(['added', 'removed', 'changed']),
+  "sectionKey": zod.string(),
+  "sectionTitle": zod.string(),
+  "stepId": zod.string(),
+  "stepName": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "before": zod.string().nullable(),
+  "after": zod.string().nullable(),
+  "itemKey": zod.string(),
+  "kind": zod.string()
+})),
+  "added": zod.number().int(),
+  "removed": zod.number().int(),
+  "changed": zod.number().int(),
+  "unchanged": zod.number().int(),
+  "stepsResponsible": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "changes": zod.number().int()
+}))
+}),
+  "scoreA": zod.union([zod.object({
+  "expected": zod.number().int(),
+  "identified": zod.number().int(),
+  "missed": zod.number().int(),
+  "falsePositives": zod.number().int(),
+  "precision": zod.number().nullable(),
+  "recall": zod.number().nullable(),
+  "identifiedLabels": zod.array(zod.string()),
+  "missedLabels": zod.array(zod.string()),
+  "falsePositiveLabels": zod.array(zod.string())
+}),zod.null()]),
+  "scoreB": zod.union([zod.object({
+  "expected": zod.number().int(),
+  "identified": zod.number().int(),
+  "missed": zod.number().int(),
+  "falsePositives": zod.number().int(),
+  "precision": zod.number().nullable(),
+  "recall": zod.number().nullable(),
+  "identifiedLabels": zod.array(zod.string()),
+  "missedLabels": zod.array(zod.string()),
+  "falsePositiveLabels": zod.array(zod.string())
+}),zod.null()]),
+  "explanation": zod.array(zod.string()).describe('Plain-language lines explaining what changed and which step caused it'),
+  "evaluation": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "sessionId": zod.string().nullable(),
+  "sampleInputId": zod.string().nullable(),
+  "inputHash": zod.string(),
+  "runAId": zod.string(),
+  "runBId": zod.string(),
+  "choice": zod.enum(['A', 'B', 'neither']),
+  "reason": zod.string().nullable(),
+  "rating": zod.number().int().nullable(),
+  "evaluator": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "blind": zod.boolean(),
+  "demo": zod.boolean().describe('True for simulated demo accounts'),
+  "createdAt": zod.string()
+}),zod.null()]).describe('The current user\'s recorded preference for this exact pair, if any')
+})
+
+
+/**
+ * @summary Recorded human preferences for this case with a summary computed only from them
+ */
+export const ListCaseEvaluationsParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const ListCaseEvaluationsResponse = zod.object({
+  "summary": zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "sessionId": zod.string().nullable(),
+  "sampleInputId": zod.string().nullable(),
+  "inputHash": zod.string(),
+  "runAId": zod.string(),
+  "runBId": zod.string(),
+  "choice": zod.enum(['A', 'B', 'neither']),
+  "reason": zod.string().nullable(),
+  "rating": zod.number().int().nullable(),
+  "evaluator": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "blind": zod.boolean(),
+  "demo": zod.boolean().describe('True for simulated demo accounts'),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Record which output better solves the problem
+ */
+export const RecordEvaluationParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const recordEvaluationBodyRatingMax = 5;
+
+
+
+export const RecordEvaluationBody = zod.object({
+  "runAId": zod.string(),
+  "runBId": zod.string(),
+  "choice": zod.enum(['A', 'B', 'neither']),
+  "reason": zod.string().optional(),
+  "rating": zod.number().int().min(1).max(recordEvaluationBodyRatingMax).optional(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "evaluator": zod.string()
+})
+
+export const RecordEvaluationResponse = zod.object({
+  "summary": zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "sessionId": zod.string().nullable(),
+  "sampleInputId": zod.string().nullable(),
+  "inputHash": zod.string(),
+  "runAId": zod.string(),
+  "runBId": zod.string(),
+  "choice": zod.enum(['A', 'B', 'neither']),
+  "reason": zod.string().nullable(),
+  "rating": zod.number().int().nullable(),
+  "evaluator": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "blind": zod.boolean(),
+  "demo": zod.boolean().describe('True for simulated demo accounts'),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Blind test sessions for this case
+ */
+export const ListTestSessionsParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const ListTestSessionsResponseItem = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "createdBy": zod.string(),
+  "title": zod.string(),
+  "closed": zod.boolean(),
+  "pairs": zod.array(zod.object({
+  "sampleInputId": zod.string(),
+  "inputName": zod.string(),
+  "inputText": zod.string(),
+  "left": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "right": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "responses": zod.number().int()
+})),
+  "responseCount": zod.number().int(),
+  "results": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+  "createdAt": zod.string()
+})
+export const ListTestSessionsResponse = zod.array(ListTestSessionsResponseItem)
+
+
+/**
+ * @summary Create a blind test session from the latest comparisons (owner)
+ */
+export const CreateTestSessionParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const CreateTestSessionBody = zod.object({
+  "createdBy": zod.string(),
+  "title": zod.string().optional()
+})
+
+export const CreateTestSessionResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "createdBy": zod.string(),
+  "title": zod.string(),
+  "closed": zod.boolean(),
+  "pairs": zod.array(zod.object({
+  "sampleInputId": zod.string(),
+  "inputName": zod.string(),
+  "inputText": zod.string(),
+  "left": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "right": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "responses": zod.number().int()
+})),
+  "responseCount": zod.number().int(),
+  "results": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary A blind session with its unlabelled output pairs
+ */
+export const GetTestSessionParams = zod.object({
+  "sessionId": zod.coerce.string()
+})
+
+export const GetTestSessionResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "createdBy": zod.string(),
+  "title": zod.string(),
+  "closed": zod.boolean(),
+  "pairs": zod.array(zod.object({
+  "sampleInputId": zod.string(),
+  "inputName": zod.string(),
+  "inputText": zod.string(),
+  "left": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "right": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "responses": zod.number().int()
+})),
+  "responseCount": zod.number().int(),
+  "results": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Record a blind tester's choice for one pair
+ */
+export const RespondToTestSessionParams = zod.object({
+  "sessionId": zod.coerce.string()
+})
+
+export const respondToTestSessionBodyRatingMax = 5;
+
+
+
+export const RespondToTestSessionBody = zod.object({
+  "sampleInputId": zod.string(),
+  "pick": zod.enum(['left', 'right', 'neither']),
+  "rating": zod.number().int().min(1).max(respondToTestSessionBodyRatingMax).optional(),
+  "comment": zod.string().optional(),
+  "tester": zod.string(),
+  "demo": zod.boolean().optional().describe('Mark as a simulated demo account vote')
+})
+
+export const RespondToTestSessionResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "createdBy": zod.string(),
+  "title": zod.string(),
+  "closed": zod.boolean(),
+  "pairs": zod.array(zod.object({
+  "sampleInputId": zod.string(),
+  "inputName": zod.string(),
+  "inputText": zod.string(),
+  "left": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "right": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "responses": zod.number().int()
+})),
+  "responseCount": zod.number().int(),
+  "results": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+  "createdAt": zod.string()
 })
 
 
@@ -1635,6 +2892,7 @@ export const GetCaseConfigurationResponse = zod.object({
   "evidence": zod.string()
 }),
   "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "executable": zod.boolean().describe('True when the capability is a workflow step that transforms the input; false for controls'),
   "state": zod.enum(['required', 'configurable', 'optional', 'incompatible', 'recommended', 'retiring']),
   "active": zod.boolean(),
   "value": zod.string().nullable(),
@@ -1680,7 +2938,12 @@ export const GetCaseConfigurationResponse = zod.object({
 }).describe('Projected metrics with the current configuration applied')
 }),
   "activeModuleCount": zod.number().int(),
-  "lockedCount": zod.number().int()
+  "lockedCount": zod.number().int(),
+  "recommended": zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()).optional(),
+  "configValues": zod.record(zod.string(), zod.string()).optional()
+}).describe('The recommended module states and settings; send it back to reset the case'),
+  "isRecommended": zod.boolean().describe('True when the current configuration equals the recommended one')
 })
 
 
@@ -1733,6 +2996,7 @@ export const UpdateCaseConfigurationResponse = zod.object({
   "evidence": zod.string()
 }),
   "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "executable": zod.boolean().describe('True when the capability is a workflow step that transforms the input; false for controls'),
   "state": zod.enum(['required', 'configurable', 'optional', 'incompatible', 'recommended', 'retiring']),
   "active": zod.boolean(),
   "value": zod.string().nullable(),
@@ -1778,7 +3042,12 @@ export const UpdateCaseConfigurationResponse = zod.object({
 }).describe('Projected metrics with the current configuration applied')
 }),
   "activeModuleCount": zod.number().int(),
-  "lockedCount": zod.number().int()
+  "lockedCount": zod.number().int(),
+  "recommended": zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()).optional(),
+  "configValues": zod.record(zod.string(), zod.string()).optional()
+}).describe('The recommended module states and settings; send it back to reset the case'),
+  "isRecommended": zod.boolean().describe('True when the current configuration equals the recommended one')
 })
 
 
@@ -1887,10 +3156,11 @@ export const GetCaseReviewResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -1941,14 +3211,14 @@ export const GetCaseReviewResponse = zod.object({
   "workflowSteps": zod.array(zod.string()),
   "capabilities": zod.array(zod.string()),
   "userGroups": zod.array(zod.string()),
-  "performance": zod.object({
+  "performance": zod.union([zod.object({
   "taskMinutes": zod.number().describe('Average minutes to complete the task'),
   "successRate": zod.number().describe('0-100 percent'),
   "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
   "errorRate": zod.number().describe('0-100 percent exceptions'),
   "adoption": zod.number().describe('0-100 percent expected adoption'),
   "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version')
+}).describe('Operating metrics for one task on one solution version'),zod.null()]).describe('Measured production metrics; null for a proposed version that has not run in production')
 }),
   "proposedVersion": zod.object({
   "version": zod.string(),
@@ -1956,14 +3226,14 @@ export const GetCaseReviewResponse = zod.object({
   "workflowSteps": zod.array(zod.string()),
   "capabilities": zod.array(zod.string()),
   "userGroups": zod.array(zod.string()),
-  "performance": zod.object({
+  "performance": zod.union([zod.object({
   "taskMinutes": zod.number().describe('Average minutes to complete the task'),
   "successRate": zod.number().describe('0-100 percent'),
   "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
   "errorRate": zod.number().describe('0-100 percent exceptions'),
   "adoption": zod.number().describe('0-100 percent expected adoption'),
   "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version')
+}).describe('Operating metrics for one task on one solution version'),zod.null()]).describe('Measured production metrics; null for a proposed version that has not run in production')
 }),
   "added": zod.array(zod.object({
   "capability": zod.object({
@@ -2119,14 +3389,87 @@ export const GetCaseReviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 })),
   "availableActions": zod.array(zod.object({
   "role": zod.enum(['seeker', 'owner', 'it']),
-  "actions": zod.array(zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']))
+  "actions": zod.array(zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']))
 })).describe('Decision actions currently permitted per role')
+})
+
+
+/**
+ * @summary Current-state to future-state consolidation summary for the Decide view
+ */
+export const GetCaseConsolidationParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const GetCaseConsolidationResponse = zod.object({
+  "caseId": zod.string(),
+  "headline": zod.string().describe('e.g. Three solutions can become one governed product.'),
+  "current": zod.array(zod.object({
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "fate": zod.enum(['base', 'folded', 'retired']),
+  "note": zod.string().describe('One sentence on what happens to this product')
+})),
+  "future": zod.object({
+  "name": zod.string(),
+  "core": zod.string().describe('One line describing the certified core workflow'),
+  "modules": zod.array(zod.object({
+  "name": zod.string(),
+  "sourceSolutionName": zod.string()
+})).describe('Optional modules carried into the future product'),
+  "controls": zod.array(zod.string()).describe('Locked controls that stay in place')
+}),
+  "outcomes": zod.array(zod.string()).describe('At most four plain-language outcomes'),
+  "risk": zod.string().describe('The single most important risk'),
+  "evidence": zod.array(zod.string()).describe('Supporting evidence for the detail drawer'),
+  "availableActions": zod.array(zod.object({
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actions": zod.array(zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']))
+})).describe('Decision actions currently permitted per role'),
+  "decided": zod.string().nullable().describe('Summary of the IT consolidation decision, if one exists')
 })
 
 
@@ -2139,7 +3482,7 @@ export const RecordCaseDecisionParams = zod.object({
 
 export const RecordCaseDecisionBody = zod.object({
   "role": zod.enum(['seeker', 'owner', 'it']),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().optional()
 })
 
@@ -2150,10 +3493,11 @@ export const RecordCaseDecisionResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -2287,15 +3631,60 @@ export const GetPortfolioResponse = zod.object({
   "headline": zod.string(),
   "valueStatement": zod.string(),
   "metrics": zod.object({
-  "activeSolutions": zod.number().int(),
-  "overlappingGroups": zod.number().int(),
-  "certified": zod.number().int(),
-  "experimental": zod.number().int(),
-  "withoutOwner": zod.number().int(),
-  "consolidationOpportunities": zod.number().int(),
-  "retirementCandidates": zod.number().int(),
-  "sharedCapabilityReuse": zod.number().int().describe('Capabilities used by more than one solution'),
-  "pendingReviews": zod.number().int()
+  "searchToReuse": zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string(),
+  "numerator": zod.number().nullable(),
+  "denominator": zod.number().nullable(),
+  "definition": zod.string(),
+  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+}),
+  "duplicateGroups": zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string(),
+  "numerator": zod.number().nullable(),
+  "denominator": zod.number().nullable(),
+  "definition": zod.string(),
+  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+}),
+  "consolidationsCompleted": zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string(),
+  "numerator": zod.number().nullable(),
+  "denominator": zod.number().nullable(),
+  "definition": zod.string(),
+  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+}),
+  "abTestsWithPreference": zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string(),
+  "numerator": zod.number().nullable(),
+  "denominator": zod.number().nullable(),
+  "definition": zod.string(),
+  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+}),
+  "activeVsRetired": zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string(),
+  "numerator": zod.number().nullable(),
+  "denominator": zod.number().nullable(),
+  "definition": zod.string(),
+  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+}),
+  "needsAttention": zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "value": zod.string(),
+  "numerator": zod.number().nullable(),
+  "denominator": zod.number().nullable(),
+  "definition": zod.string(),
+  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+})
 }),
   "rows": zod.array(zod.object({
   "businessProblem": zod.object({
@@ -2358,10 +3747,11 @@ export const GetPortfolioResponse = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -2613,10 +4003,11 @@ export const GetDecisionQueueResponseItem = zod.object({
   "businessProblemId": zod.string(),
   "baseSolutionId": zod.string(),
   "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'simulated', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
   "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
   "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
   "createdAt": zod.string(),
@@ -2669,7 +4060,7 @@ export const GetDecisionQueueResponseItem = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['approve_simulation', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),

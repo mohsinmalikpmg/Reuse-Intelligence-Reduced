@@ -1,13 +1,13 @@
 import type {
   AffectedGroup,
   Capability,
-  CapabilityPresence,
   CapabilityProvenance,
   Case,
   ChangeReview,
-  CompareRow,
-  Comparison,
   ConfigChange,
+  ConsolidationDecisionView,
+  ConsolidationSolution,
+  FutureProduct,
   Decision,
   DecisionAction,
   Experiment,
@@ -17,6 +17,7 @@ import type {
   Solution,
   VersionSnapshot,
 } from "@workspace/api-zod";
+import { describeEvidence, votesFavourB, type ABEvidence } from "./evidence";
 import { OWNER_PERSONA_NAME, getCapability, solutionCapabilities } from "../data/catalog";
 import {
   type CaseContext,
@@ -28,7 +29,6 @@ import {
   defaultModuleStates,
   isRecommendedModule,
   isUnsupported,
-  projectedMetrics,
 } from "./configuration";
 import { bumpVersion, proposedName } from "./simulation";
 
@@ -77,6 +77,7 @@ export function buildRecommendation(c: Case, ctx: CaseContext, fitFromBrief: num
 
   const retirementCandidates = ctx.candidates.filter((s) => s.retirementCandidate);
   const recommendedAdds = toAdd.filter((p) => p.state === "recommended");
+  const currentAdds = addedExternalModules(c, ctx);
   const overallFit = Math.round(
     Math.min(94, (fitFromBrief ?? 70) * 0.5 + (READINESS[ctx.base.status] * 25 + EVIDENCE[ctx.base.evidenceLevel] * 12 + Math.min(recommendedAdds.length, 2) * 5) + 8),
   );
@@ -111,7 +112,10 @@ export function buildRecommendation(c: Case, ctx: CaseContext, fitFromBrief: num
     rationale,
     roleSummaries: {
       seeker: `${ctx.base.name} already does most of what you described. With ${recommendedAdds.length} added module${recommendedAdds.length === 1 ? "" : "s"} it covers the full workflow, and you can test it before anyone commits.`,
-      owner: `Your product stays the base. Proposed changes add ${recommendedAdds.length} module${recommendedAdds.length === 1 ? "" : "s"} from other teams; locked controls and approvals are unchanged.`,
+      owner:
+        currentAdds.length === 0
+          ? `Your product stays the base. Nothing has been added from other teams yet; locked controls and approvals are unchanged.`
+          : `Your product stays the base. Proposed changes add ${currentAdds.length} module${currentAdds.length === 1 ? "" : "s"} from other teams; locked controls and approvals are unchanged.`,
       it: `Consolidates ${ctx.candidates.length + 1} overlapping products into one certified base, retires ${retirementCandidates.length}, and reuses ${recommendedAdds.length} capabilit${recommendedAdds.length === 1 ? "y" : "ies"} instead of rebuilding.`,
     },
     adoptionEffort: `${ctx.base.adoptionEffort === "low" ? "Low" : ctx.base.adoptionEffort === "medium" ? "Medium" : "High"} for existing ${ctx.base.name} users; ${ctx.base.timeToAdopt} for new sites. Added modules need ${recommendedAdds.some((p) => isUnsupported(p.capability)) ? "an ownership transfer and " : ""}integration work by Operations Platforms.`,
@@ -123,92 +127,24 @@ function addReason(cap: Capability, ctx: CaseContext): string {
   return gap ? `Closes a known gap in ${ctx.base.name}: ${gap}` : `Adds ${cap.name.toLowerCase()} that ${ctx.base.name} lacks, with ${cap.evidenceLevel} evidence.`;
 }
 
-export function buildComparison(c: Case, ctx: CaseContext): Comparison {
-  const solutionsList = [ctx.base, ...ctx.candidates];
-  const rows: CompareRow[] = [];
-  const consumed = new Set<string>();
 
-  const strengthOf = (cap: Capability): CapabilityPresence["strength"] =>
-    cap.evidenceLevel === "strong" ? "strong" : cap.evidenceLevel === "moderate" ? "standard" : "weak";
-
-  for (const baseCap of ctx.baseCapabilities) {
-    const presence: CapabilityPresence[] = solutionsList.map((s) => {
-      if (s.id === ctx.base.id) return { solutionId: s.id, present: true, strength: strengthOf(baseCap) };
-      const dup = solutionCapabilities(s).find((cap) => conflictingBaseCapability(cap, ctx)?.id === baseCap.id && isDuplicate(cap, ctx));
-      if (dup) {
-        consumed.add(dup.id);
-        return { solutionId: s.id, present: true, strength: "weak" };
-      }
-      return { solutionId: s.id, present: false, strength: "none" };
-    });
-    const dupCount = presence.filter((p) => p.present).length - 1;
-    rows.push({
-      capability: baseCap,
-      presence,
-      verdict: dupCount > 0 ? "common" : "unique",
-      verdictNote: dupCount > 0 ? `Also built in ${dupCount} other product${dupCount === 1 ? "" : "s"} with weaker evidence. Keep the ${ctx.base.name} version.` : `Only ${ctx.base.name} provides this; ${baseCap.controlType === "locked" ? "locked control" : "retained"}.`,
-      evidence: baseCap.evidence,
-    });
-  }
-
-  for (const cap of ctx.candidateCapabilities) {
-    if (consumed.has(cap.id)) continue;
-    const presence: CapabilityPresence[] = solutionsList.map((s) => ({
-      solutionId: s.id,
-      present: s.capabilityIds.includes(cap.id),
-      strength: s.capabilityIds.includes(cap.id) ? strengthOf(cap) : "none",
-    }));
-    const conflict = conflictingBaseCapability(cap, ctx);
-    let verdict: CompareRow["verdict"];
-    let note: string;
-    const source = ctx.candidates.find((s) => s.capabilityIds.includes(cap.id));
-    if (conflict) {
-      verdict = "unsupported";
-      note = `Conflicts with ${conflict.name}. Not carried forward.`;
-    } else if (isRecommendedModule(cap, ctx)) {
-      verdict = "stronger";
-      note = `Not in ${ctx.base.name}. Recommended to add as a module.`;
-    } else if (isUnsupported(cap) || cap.evidenceLevel === "none") {
-      verdict = source?.retirementCandidate ? "retire" : "unsupported";
-      note = `${cap.supportStatus}; ${cap.evidenceLevel} evidence. ${source?.retirementCandidate ? "Retire with its source product." : "Not carried forward."}`;
-    } else {
-      verdict = "unique";
-      note = `Only in ${cap.sourceSolutionName}; optional with ${cap.evidenceLevel} evidence.`;
-    }
-    rows.push({ capability: cap, presence, verdict, verdictNote: note, evidence: cap.evidence });
-  }
-
-  const stronger = rows.filter((r) => r.verdict === "stronger").length;
-  const common = rows.filter((r) => r.verdict === "common").length;
-  const dropped = rows.filter((r) => r.verdict === "unsupported" || r.verdict === "retire").length;
-  return {
-    caseId: c.id,
-    baseSolutionId: ctx.base.id,
-    solutions: solutionsList,
-    rows,
-    summary: `${solutionsList.length} products compared across ${rows.length} capabilities: ${common} duplicated in weaker form, ${stronger} worth adding to ${ctx.base.name}, ${dropped} not carried forward.`,
-  };
-}
-
-export function buildPilotPlan(c: Case, ctx: CaseContext, experiment: Experiment | null): PilotPlan {
+export function buildPilotPlan(c: Case, ctx: CaseContext, evidence: ABEvidence): PilotPlan {
   const eligibleGroup = ctx.base.businessUnits[0] ?? "Primary business unit";
-  const pilotPercent = 20;
+  const pilotPercent = c.pilotPercent;
   const pilotUsers = Math.max(10, Math.round(ctx.base.activeUsers * (pilotPercent / 100)));
-  const time = experiment?.metrics.find((m) => m.key === "taskMinutes");
-  const success = experiment?.metrics.find((m) => m.key === "successRate");
-  const errors = experiment?.metrics.find((m) => m.key === "errorRate");
   const added = addedExternalModules(c, ctx);
   const locked = ctx.baseCapabilities.filter((cap) => cap.controlType === "locked");
   const approval = locked.find((cap) => cap.category === "Approval");
+  const recallFloor = evidence.labelled ? Math.max(evidence.labelled.recallA, evidence.labelled.recallB) : null;
   return {
     eligibleGroup,
     pilotPercent,
     pilotUsers,
     durationWeeks: 4,
     successThresholds: [
-      time ? `Task time at least ${Math.max(10, Math.round(Math.abs(time.deltaPct) * 0.6))}% lower than baseline` : "Task time at least 15% lower than baseline",
-      success ? `Success rate no lower than baseline (${success.baseline}%)` : "Success rate no lower than baseline",
-      errors ? `Exception rate at or below ${Math.round(errors.baseline + 1)}%` : "Exception rate no higher than baseline",
+      "Pilot users prefer the proposed output in at least 60% of recorded side-by-side comparisons (minimum 20 votes).",
+      recallFloor !== null ? `Recall on labelled work-order sets stays at or above ${recallFloor} (the better of the two versions today).` : "Recall on labelled work-order sets no lower than the current version once labelled inputs exist.",
+      evidence.runtimeB !== null && evidence.runtimeA !== null ? `Runtime per input no more than twice the current version (${evidence.runtimeA} ms measured).` : "Runtime per input no more than twice the current version.",
       ...(approval ? [`${approval.name} completed on 100% of items`] : []),
     ],
     guardrails: [
@@ -218,19 +154,19 @@ export function buildPilotPlan(c: Case, ctx: CaseContext, experiment: Experiment
       ...(added.some((a) => isUnsupported(a)) ? ["Ownership of prototype-sourced modules transfers to Operations Platforms before day one."] : []),
     ],
     monitoring: [
-      "Daily: task time and success rate per pilot user versus the control group.",
-      "Weekly: exception rate, approval completion, and segment-level flags (new users, incomplete data).",
+      "Daily: recorded A/B preferences and runtime per input for pilot users.",
+      "Weekly: recall and precision on any labelled input sets, approval completion, and reported issues.",
       "Continuous: audit log completeness and control checks.",
     ],
-    rollbackTrigger: `Exception rate rises more than 3 points above baseline for 5 consecutive days, any control check fails, or success rate falls below baseline for 2 consecutive weeks. Rollback restores v${ctx.base.currentVersion} for pilot users within one business day.`,
+    rollbackTrigger: `Any control check fails, recorded preference for the current version exceeds 50% over a full week, or a locked step errors on more than 1% of inputs. Rollback restores v${ctx.base.currentVersion} for pilot users within one business day.`,
     ownerApprovalRequired: true,
     itApprovalRequired: true,
   };
 }
 
 const ROLE_ACTIONS: Record<Role, DecisionAction[]> = {
-  seeker: ["approve_simulation"],
-  owner: ["approve_simulation", "approve_pilot", "request_changes", "defer", "reject"],
+  seeker: ["propose_pilot"],
+  owner: ["propose_pilot", "approve_pilot", "request_changes", "defer", "reject"],
   it: ["approve_consolidation", "defer", "reject"],
 };
 
@@ -240,13 +176,14 @@ export function allowedActions(c: Case, decisions: Decision[]): { role: Role; ac
     const candidates = ROLE_ACTIONS[role];
     return candidates.filter((action) => {
       switch (action) {
-        case "approve_simulation":
-          return c.status === "simulated";
+        case "propose_pilot":
+          return c.status === "tested";
         case "approve_pilot":
         case "request_changes":
           return c.status === "pilot_proposed" || c.status === "deferred";
         case "approve_consolidation":
-          return (c.status === "pilot_proposed" || c.status === "approved" || c.status === "deferred") && !itApproved;
+          // IT approves the consolidation direction once a simulated test exists; it does not replace the owner's pilot decision.
+          return (c.status === "tested" || c.status === "pilot_proposed" || c.status === "approved" || c.status === "deferred") && !itApproved;
         case "defer":
           return c.status === "pilot_proposed" || c.status === "approved";
         case "reject":
@@ -259,12 +196,12 @@ export function allowedActions(c: Case, decisions: Decision[]): { role: Role; ac
 
 export function nextStatus(c: Case, action: DecisionAction): Case["status"] {
   switch (action) {
-    case "approve_simulation":
+    case "propose_pilot":
       return "pilot_proposed";
     case "approve_pilot":
       return "approved";
     case "approve_consolidation":
-      return "approved";
+      return c.status;
     case "request_changes":
       return "changes_requested";
     case "defer":
@@ -274,20 +211,23 @@ export function nextStatus(c: Case, action: DecisionAction): Case["status"] {
   }
 }
 
-export function nextStep(c: Case, experimentRec: Experiment["recommendation"] | null, latest: Decision | null): string {
+export function nextStep(c: Case, evidence: ABEvidence, latest: Decision | null, itApproved = false): string {
+  const favour = votesFavourB(evidence);
   switch (c.status) {
     case "draft":
-      return "Configure the proposed version and run the simulated test.";
-    case "simulated":
-      return experimentRec === "proceed_to_pilot"
-        ? "Simulation supports a pilot. Create the controlled pilot recommendation."
-        : "Review the simulation and revise the configuration before proposing a pilot.";
+      return "Build Version B in the workbench and run both versions on the same input.";
+    case "tested":
+      return favour === null
+        ? "Record which output better solves the problem, then propose a limited pilot."
+        : favour
+          ? "Recorded votes favour the proposed version. Propose a limited pilot."
+          : "Recorded votes do not favour the proposed version yet. Revise Version B or test more inputs before proposing a pilot.";
     case "pilot_proposed":
-      return "Awaiting owner review of the proposed version and pilot plan.";
+      return itApproved ? "IT approved the direction. Awaiting the owner's pilot decision." : "Awaiting owner review of the proposed version and pilot plan.";
     case "approved":
-      return latest?.action === "approve_consolidation" ? "Approved by owner and IT. Pilot can start." : "Owner approved the pilot. Awaiting IT consolidation decision.";
+      return itApproved ? "Approved by owner and IT. Pilot can start." : "Owner approved the pilot. Awaiting IT consolidation decision.";
     case "changes_requested":
-      return `Owner requested changes${latest?.reason ? `: ${latest.reason}` : ""}. Revise and re-run the simulation.`;
+      return `Owner requested changes${latest?.reason ? `: ${latest.reason}` : ""}. Revise Version B and run the comparison again.`;
     case "deferred":
       return "Deferred. Revisit at the next portfolio review.";
     case "rejected":
@@ -295,7 +235,7 @@ export function nextStep(c: Case, experimentRec: Experiment["recommendation"] | 
   }
 }
 
-export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | null, decisions: Decision[]): ChangeReview {
+export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | null, decisions: Decision[], evidence: ABEvidence): ChangeReview {
   const defaults = defaultModuleStates(ctx);
   const defaultValues = defaultConfigValues(ctx);
   const components = buildComponents(c, ctx);
@@ -320,7 +260,6 @@ export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | 
     .filter((cap) => cap.controlType !== "optional" && !changedConfig.some((ch) => ch.capabilityName === cap.name))
     .map((cap) => cap.name);
 
-  const projected = experiment ? metricsFromExperiment(experiment) : projectedMetrics(c, ctx);
   const currentVersion: VersionSnapshot = {
     version: ctx.base.currentVersion,
     label: `${ctx.base.name} v${ctx.base.currentVersion} (current production)`,
@@ -337,7 +276,8 @@ export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | 
     workflowSteps: ["Ingest", "Analyze", "Review", "Decide", "Track"].filter((s) => proposedSteps.includes(s)),
     capabilities: proposedCaps.map((cap) => cap.name),
     userGroups: Array.from(new Set([...ctx.base.businessUnits, ...ctx.candidates.filter((s) => s.retirementCandidate).flatMap((s) => s.businessUnits)])),
-    performance: projected,
+    // Never projected: the proposed version has no production measurements until it is piloted.
+    performance: null,
   };
 
   const share = ctx.base.activeUsers / Math.max(1, ctx.base.businessUnits.length);
@@ -361,10 +301,8 @@ export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | 
     ),
   );
 
-  const pilotPlan = buildPilotPlan(c, ctx, experiment);
-  const ownerSummary = `${c.title}: ${added.length} capabilit${added.length === 1 ? "y" : "ies"} added, ${removed.length} removed, ${changedConfig.length} setting${changedConfig.length === 1 ? "" : "s"} changed. ${unchanged.length} locked or configurable controls unchanged. ${
-    experiment ? `Simulated test: ${experiment.narrative.split(". ")[0]}.` : "No simulated test has been run yet."
-  } Pilot proposed for ${pilotPlan.pilotUsers} users in ${pilotPlan.eligibleGroup} over ${pilotPlan.durationWeeks} weeks.`;
+  const pilotPlan = buildPilotPlan(c, ctx, evidence);
+  const ownerSummary = `${c.title}: ${added.length} capabilit${added.length === 1 ? "y" : "ies"} added, ${removed.length} removed, ${changedConfig.length} setting${changedConfig.length === 1 ? "" : "s"} changed. ${unchanged.length} locked or configurable controls unchanged. ${describeEvidence(evidence)} Pilot proposed for ${pilotPlan.pilotUsers} users in ${pilotPlan.eligibleGroup} over ${pilotPlan.durationWeeks} weeks.`;
 
   return {
     case: c,
@@ -406,3 +344,92 @@ export function ownerOf(solution: Solution): string {
 }
 
 export { getCapability };
+
+const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+function numberWord(n: number): string {
+  return NUMBER_WORDS[n] ?? String(n);
+}
+
+/** Current-state to future-state summary for the Decide view. Deliberately limited to what an IT leader needs first. */
+export function buildConsolidation(c: Case, ctx: CaseContext, decisions: Decision[], evidence: ABEvidence): ConsolidationDecisionView {
+  // Recommendation-first: before the seeker has added anything, the direction shown is the recommended configuration.
+  const configured = addedExternalModules(c, ctx);
+  const recommendedStates = defaultModuleStates(ctx);
+  const added = configured.length ? configured : ctx.candidateCapabilities.filter((cap) => recommendedStates[cap.id]);
+  const planned = configured.length === 0 && added.length > 0;
+  const addedSources = new Set(added.map((cap) => cap.sourceSolutionId));
+  const retiring = ctx.candidates.filter((s) => s.retirementCandidate);
+  const locked = ctx.baseCapabilities.filter((cap) => cap.controlType === "locked");
+  const totalProducts = ctx.candidates.length + 1;
+
+  const current: ConsolidationSolution[] = [
+    { solution: ctx.base, fate: "base", note: `Becomes the certified core of the future product.` },
+    ...ctx.candidates.map((s): ConsolidationSolution => {
+      const reused = added.filter((cap) => cap.sourceSolutionId === s.id);
+      if (s.retirementCandidate) {
+        return {
+          solution: s,
+          fate: "retired",
+          note: reused.length
+            ? `${reused.map((cap) => cap.name).join(" and ")} carried over; the product itself is retired after the pilot.`
+            : `Retired after the pilot; its ${s.activeUsers} users move to the consolidated version.`,
+        };
+      }
+      return {
+        solution: s,
+        fate: addedSources.has(s.id) ? "folded" : "retired",
+        note: reused.length
+          ? `${reused.map((cap) => cap.name).join(" and ")} ${reused.length === 1 ? "becomes" : "become"} optional module${reused.length === 1 ? "" : "s"} of the future product.`
+          : `Nothing unique is carried forward; standalone use ends after the pilot.`,
+      };
+    }),
+  ];
+
+  const future: FutureProduct = {
+    name: proposedName(ctx, added),
+    core: `Certified ${ctx.base.name} workflow (${ctx.base.workflowSteps.join(" → ")})`,
+    modules: added.map((cap) => ({ name: cap.name, sourceSolutionName: cap.sourceSolutionName })),
+    controls: locked.map((cap) => cap.name),
+  };
+
+  const outcomes = [
+    `${numberWord(totalProducts)} solution${totalProducts === 1 ? "" : "s"} become${totalProducts === 1 ? "s" : ""} one governed product`,
+    added.length
+      ? `${numberWord(added.length)} useful capabilit${added.length === 1 ? "y is" : "ies are"} ${planned ? "kept" : "preserved"} as optional modules`
+      : "No duplicate capabilities are rebuilt",
+    `${numberWord(ctx.candidates.length)} standalone product${ctx.candidates.length === 1 ? "" : "s"} can be retired`,
+    `Existing controls remain in place (${locked.length} locked)`,
+  ];
+
+  const unowned = added.find((cap) => ctx.candidates.find((s) => s.id === cap.sourceSolutionId)?.ownerName === "Unassigned");
+  const favour = votesFavourB(evidence);
+  const risk = unowned
+    ? `${unowned.name} comes from an unowned product; ${ctx.base.ownerTeam} must take ownership before the pilot.`
+    : favour === false
+      ? "Recorded votes do not yet favour the proposed version; the direction rests on reuse, not on a demonstrated output improvement."
+      : evidence.inputsTested === 0
+        ? "No side-by-side run has been recorded; the direction rests on catalog evidence alone."
+        : "Infrequent users may require additional guidance during the pilot.";
+
+  const itDecision = decisions.find((d) => d.action === "approve_consolidation");
+  const evidenceLines = [
+    `${ctx.base.name} is ${ctx.base.status} with ${ctx.base.evidenceLevel} evidence and ${ctx.base.activeUsers} active users.`,
+    ...added.map((cap) => `${cap.name} (from ${cap.sourceSolutionName}): ${cap.evidence}`),
+    describeEvidence(evidence),
+    ...(planned ? ["The modules shown are the recommended additions; none have been added to the case configuration yet."] : []),
+    ...retiring.map((s) => `${s.name}: ${s.ownerName === "Unassigned" ? "no active owner" : "limited evidence"}, ${s.activeUsers} users, ${s.evidenceLevel} evidence.`),
+    ...decisions.map((d) => `${d.actor} (${d.role}): ${d.action.replace(/_/g, " ")}${d.reason ? ` — ${d.reason}` : ""}`),
+  ];
+
+  return {
+    caseId: c.id,
+    headline: `${numberWord(totalProducts)} solutions can become one governed product.`,
+    current,
+    future,
+    outcomes,
+    risk,
+    evidence: evidenceLines,
+    availableActions: allowedActions(c, decisions),
+    decided: itDecision ? `${itDecision.actor} approved the consolidation direction on ${new Date(itDecision.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.` : null,
+  };
+}

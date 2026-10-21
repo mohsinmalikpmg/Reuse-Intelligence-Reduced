@@ -1,0 +1,550 @@
+NON-NEGOTIABLE SIMPLICITY OVERRIDE
+
+Simplicity and usability are the highest priorities.
+
+The interface must be understandable by a first-time user with no training. It should feel as intuitive as arranging blocks, not operating enterprise software.
+
+At every moment, show only:
+
+1. One question or decision
+2. One clear recommendation
+3. One primary next action
+
+Do not show all available information by default.
+
+Use three levels of progressive disclosure:
+
+LEVEL 1 — ANSWER
+
+Show:
+- What the platform understood
+- What it recommends
+- The immediate value
+- One primary action
+
+LEVEL 2 — VISUAL EXPLANATION
+
+Opened by clicking:
+- “Show me why”
+- “Explore”
+- A solution
+- A capability
+- A workflow step
+
+Show:
+- Simple solution tree
+- Simple workflow
+- Before-and-after comparison
+- Capability source
+- Top supporting reasons
+
+LEVEL 3 — DETAIL
+
+Opened through:
+- A details button
+- Double-click
+- Expand icon
+- Side drawer
+
+Show:
+- Evidence
+- Detailed scoring
+- Ownership
+- Dependencies
+- Technical metadata
+- Cost
+- Risk
+- Version history
+- Full experiment data
+
+Level 3 information must never clutter the default screen.
+
+DOUBLE-CLICK BEHAVIOR
+
+Double-click may be used as a shortcut to open detailed information, but it must not be the only way to access it.
+
+Also provide:
+- A visible details icon
+- A “View details” action
+- A keyboard-accessible alternative
+
+Use single-click for all essential actions.
+
+INFORMATION LIMITS
+
+On the default view, show no more than:
+
+- Three solution choices
+- Five requirement chips at one time
+- Five workflow steps
+- Three performance metrics
+- Three reasons supporting a recommendation
+- One warning or risk
+- One primary call to action
+- Two secondary actions
+
+Hide additional items behind:
+- “Show more”
+- Expand
+- Side drawer
+- Filter
+- Zoom
+- Double-click
+
+Do not show:
+
+- Large tables
+- Dense dashboards
+- Long descriptions
+- Full metadata panels
+- Technical architecture
+- Complex scorecards
+- Multiple charts
+- Long filter bars
+- More than one open drawer
+- More than one active decision
+
+CORE EXPERIENCE
+
+Reduce the product to five main views:
+
+1. DESCRIBE
+2. MATCH
+3. SHAPE
+4. TEST
+5. DECIDE
+
+Do not create separate complex applications for each persona.
+
+All personas work on the same consolidation case.
+
+The role switcher changes:
+- The language
+- The available actions
+- The summary shown
+- The approval authority
+
+It should not introduce a completely different interface.
+
+SCREEN 1 — DESCRIBE
+
+Purpose:
+Understand the problem.
+
+Show only:
+- One large pain-point input
+- A small set of extracted requirement chips
+- One clear confirmation action
+
+Headline:
+“What is getting in the way?”
+
+Primary action:
+“Find what already exists”
+
+After processing, show:
+“Here is what I heard.”
+
+Display four simple groups:
+- Who
+- Pain
+- Need
+- Success
+
+Show only one or two chips in each group.
+
+Additional chips remain hidden behind:
+“Show all details”
+
+Allow users to:
+- Drag chips between groups
+- Remove a chip
+- Edit a chip
+- Add one missing detail
+
+Do not show confidence scores unless the user opens details.
+
+SCREEN 2 — MATCH
+
+Purpose:
+Give the user an immediate answer.
+
+Headline:
+“A proven solution already covers most of this need.”
+
+Show one large recommended solution.
+
+Below it, show no more than two alternatives.
+
+The recommended solution must visually dominate the page.
+
+Show only:
+- Solution name
+- One-sentence outcome
+- Certified, pilot, or experimental status
+- Three reasons it matched
+- One primary action
+
+Primary action:
+“Use this as the starting point”
+
+Secondary actions:
+- “Show me why”
+- “Explore alternatives”
+
+Do not show a detailed comparison table.
+
+When the user selects “Show me why,” open a small visual explanation showing:
+- Required capabilities
+- Capabilities already covered
+- One missing capability
+
+When the user selects “Explore alternatives,” reveal a simple three-branch solution tree.
+
+Keep the tree collapsed by default.
+
+SCREEN 3 — SHAPE
+
+Purpose:
+Improve the recommended solution without forcing the user to build from scratch.
+
+Headline:
+“Add only what improves it.”
+
+Show one horizontal workflow with no more than five steps.
+
+Show only two recommended additional capabilities.
+
+Example:
+
+Workflow:
+Read notes → Find patterns → Review → Assign action → Track
+
+Recommended additions:
+- Issue clustering
+- Action tracking
+
+Allow the user to drag each recommended capability onto the workflow.
+
+Do not show a large capability library by default.
+
+Place the full library behind:
+“Explore more features”
+
+Each workflow step must have one clear state:
+
+- Required
+- Optional
+- Configurable
+
+Use:
+- Lock icon for required
+- Toggle for optional
+- Slider icon for configurable
+
+Do not display detailed settings until the user clicks a workflow step.
+
+Show a simple live preview beside the workflow.
+
+The preview should immediately change when a capability is added or removed.
+
+Show only three impact indicators:
+- User value
+- Change effort
+- Risk
+
+Use plain labels:
+- Higher
+- Low
+- Controlled
+
+Do not show numeric scoring unless the user opens details.
+
+Primary action:
+“Test this version”
+
+SCREEN 4 — TEST
+
+Purpose:
+Make the proposed improvement understandable before rollout.
+
+Headline:
+“Test the change before users see it.”
+
+Show a clear before-and-after comparison:
+
+CURRENT
+versus
+PROPOSED
+
+Show only three result metrics:
+- Time to complete
+- Success rate
+- User effort
+
+Show one warning, if relevant.
+
+Clearly label the results:
+“Simulated result — not production evidence”
+
+Use one visual recommendation:
+
+- Proceed to pilot
+- Revise
+- Gather more evidence
+- Stop
+
+Do not show detailed experiment settings by default.
+
+Place the following behind “Experiment details”:
+- Synthetic user segments
+- Test assumptions
+- Calculation method
+- Full result set
+- Confidence
+- Edge cases
+
+Show one pilot slider:
+5 percent, 10 percent, or 20 percent
+
+Primary action:
+“Approve 10 percent pilot”
+
+SCREEN 5 — DECIDE
+
+Purpose:
+Help the IT leader understand consolidation immediately.
+
+Headline:
+“Three solutions can become one governed product.”
+
+Show one simple current-state-to-future-state visual.
+
+CURRENT
+
+Work Order Triage
+Pattern Finder
+Action Tracker
+
+FUTURE
+
+Work Order Intelligence
+- Certified core workflow
+- Optional issue-clustering module
+- Optional action-tracking module
+
+Use a simple tree or convergence diagram.
+
+Show only four outcomes:
+
+- Three solutions become one product
+- Two useful capabilities are preserved
+- Two standalone products can be retired
+- Existing controls remain in place
+
+Show one concise risk:
+“Infrequent users may require additional guidance.”
+
+Primary action:
+“Approve consolidation direction”
+
+Secondary action:
+“Show supporting evidence”
+
+Do not show a large portfolio dashboard on this screen.
+
+Place portfolio metrics and detailed architecture behind:
+“Portfolio details”
+
+PERSONA EXPERIENCE
+
+SOLUTION SEEKER
+
+The seeker should primarily experience:
+
+1. Describe the pain
+2. See the recommended solution
+3. Add recommended capabilities
+4. Preview the result
+5. Submit it for testing
+
+Their default interface must not show:
+- Portfolio metrics
+- Architecture
+- Product retirement controls
+- Detailed risk scoring
+- Technical dependencies
+
+SOLUTION OWNER
+
+The owner should primarily experience:
+
+1. See what changed
+2. See why it changed
+3. Compare current and proposed behavior
+4. Review the simulated result
+5. Approve or reject a pilot
+
+Their default interface must not show:
+- The full enterprise library
+- All consolidation opportunities
+- Detailed IT governance controls
+- Unrelated solutions
+
+IT LEADER
+
+The IT leader should primarily experience:
+
+1. See the duplicate solution group
+2. See the recommended future product
+3. See which capabilities are retained
+4. See what can be retired
+5. Approve or request evidence
+
+Their default interface must not show:
+- Detailed user configuration
+- Full experiment mechanics
+- Every solution capability
+- Every search result
+- Every technical dependency
+
+ROLE SWITCHING
+
+Use a simple three-state role switcher:
+
+- Find
+- Own
+- Govern
+
+Changing roles should keep the same consolidation case open.
+
+Only change:
+- The page summary
+- The primary action
+- Relevant controls
+- Supporting information
+
+Do not send the user to a separate dashboard unless they deliberately navigate away.
+
+VISUAL SIMPLICITY
+
+Use:
+- Large whitespace
+- Large type
+- Large interaction targets
+- Direct labels
+- Simple connected blocks
+- Simple trees
+- Clear before-and-after views
+- One accent color for selection
+- Consistent semantic colors
+- Immediate visual feedback
+- Undo after every drag or toggle
+
+Avoid:
+- Dense card grids
+- Many colors
+- Small badges
+- Multiple navigation levels
+- Long forms
+- Large sidebars
+- Multi-column dashboards
+- Complex node graphs
+- Technical visualizations
+- Decorative animation
+- More than one chart per screen
+
+DRAG-AND-DROP
+
+Use drag-and-drop only where it makes the relationship easier to understand.
+
+Good uses:
+- Move requirement chips
+- Add a capability to a workflow
+- Reorder a small number of workflow items
+- Explore which capability belongs to which solution
+
+Do not require drag-and-drop to complete an essential action.
+
+Also provide:
+- Click to add
+- Click to move
+- Undo
+- Reset
+
+The user should never be able to break the workflow through dragging.
+
+Use clear valid and invalid drop zones.
+
+RECOMMENDATION-FIRST DESIGN
+
+Never make the user start from an empty canvas.
+
+Always begin with:
+- A recommended solution
+- A recommended workflow
+- Recommended capabilities
+- Recommended test settings
+- A recommended pilot size
+- A recommended consolidation decision
+
+The user refines the recommendation rather than constructing everything manually.
+
+SMART DEFAULTS
+
+Preselect:
+
+- The strongest base solution
+- The two most useful additional capabilities
+- The most appropriate experiment metrics
+- A safe pilot percentage
+- The likely retirement candidates
+
+Advanced users may change these choices after opening additional controls.
+
+ONE-SENTENCE RULE
+
+Each card, node, panel, or recommendation should contain no more than one explanatory sentence in its default state.
+
+Longer explanations belong in a detail drawer.
+
+ONE-SCREEN RULE
+
+The main action and recommendation should fit within the first screen without scrolling.
+
+Scrolling may reveal supporting material, but it must not be required to understand or complete the primary task.
+
+DEMO FLOW
+
+The complete prototype journey should feel like five simple questions:
+
+1. What is the problem?
+2. What already exists?
+3. What should we improve?
+4. Does the change perform better?
+5. Should we consolidate?
+
+The user should never feel that they are operating:
+- A software development environment
+- An architecture tool
+- A data catalogue
+- A project management system
+- A complex AI agent
+
+They should feel that the platform is guiding them toward the next obvious decision.
+
+FINAL STANDARD
+
+A first-time user should be able to complete the complete journey without instruction.
+
+After each screen, they should be able to state:
+
+- What the platform understood
+- What it recommends
+- What happens next
+
+When forced to choose between additional information and simplicity, choose simplicity.
+
+When forced to choose between flexibility and a clear recommendation, show the recommendation first and place flexibility behind exploration.
+
+When forced to choose between another feature and a clearer experience, remove the feature.

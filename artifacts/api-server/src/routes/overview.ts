@@ -3,9 +3,11 @@ import type {
   Capability,
   ConsolidationSummary,
   EvidenceEvent,
+  OwnedSolution,
   OwnerOverview,
   OwnerSolution,
   Portfolio,
+  PortfolioMetric,
   PortfolioRow,
   SeekerOverview,
 } from "@workspace/api-zod";
@@ -14,6 +16,7 @@ import { addedExternalModules, caseContext, isUnsupported } from "../lib/configu
 import { matchBrief } from "../lib/matching";
 import { demoState, resetDemo } from "../lib/seed";
 import { getExperiment, listAllDecisions, listBriefs, listCaseRows, listExperiments, summarizeAll } from "../lib/store";
+import { countSearches, listAllEvaluations, listAllRuns, summarizeEvaluations } from "../lib/workbench-store";
 
 const router: IRouter = Router();
 
@@ -48,21 +51,21 @@ router.get("/home/owner", async (_req, res) => {
 
   const mySolutions: OwnerSolution[] = mine.map((solution) => {
     const solutionCases = open.filter((c) => c.baseSolutionId === solution.id);
-    const pending = solutionCases.filter((c) => ["simulated", "pilot_proposed", "deferred"].includes(c.status));
+    const pending = solutionCases.filter((c) => ["tested", "pilot_proposed", "deferred"].includes(c.status));
     const latest = solutionCases
       .map((c) => decisions.find((d) => d.caseId === c.id))
       .find((d) => d);
     return {
       solution,
       pendingChanges: pending.length,
-      openExperiments: solutionCases.filter((c) => c.experimentId && c.status === "simulated").length,
+      openExperiments: solutionCases.filter((c) => c.experimentId && c.status === "tested").length,
       sharedCapabilityCount: solution.capabilityIds.filter((id) => solutions.some((o) => o.id !== solution.id && o.capabilityIds.includes(id))).length,
       proposedDecision: pending.length === 0 ? null : latest ? `${latest.actor}: ${latest.action.replace(/_/g, " ")}` : "Awaiting your review",
     };
   });
 
-  const proposedChanges = await summarizeAll(open.filter((c) => ["simulated", "pilot_proposed", "changes_requested", "deferred"].includes(c.status)));
-  const pendingExperiments = experiments.filter((e) => open.find((c) => c.id === e.caseId)?.status === "simulated");
+  const proposedChanges = await summarizeAll(open.filter((c) => ["tested", "pilot_proposed", "changes_requested", "deferred"].includes(c.status)));
+  const pendingExperiments = experiments.filter((e) => open.find((c) => c.id === e.caseId)?.status === "tested");
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
   const overview: OwnerOverview = {
     headline: `You own ${plural(mine.length, "product")}. ${plural(proposedChanges.length, "proposed change")} and ${plural(pendingExperiments.length, "simulation")} are waiting for your decision.`,
@@ -73,6 +76,29 @@ router.get("/home/owner", async (_req, res) => {
     versionsRequiringReview: await summarizeAll(open.filter((c) => c.status === "pilot_proposed")),
   };
   res.json(overview);
+});
+
+router.get("/my-solutions", async (_req, res) => {
+  const mine = solutions.filter((s) => s.ownerName === OWNER_PERSONA_NAME);
+  const cases = (await listCaseRows()).filter((c) => c.status !== "rejected");
+  const runs = await listAllRuns();
+  const evaluations = await listAllEvaluations();
+  const decisions = await listAllDecisions();
+  const since = Date.now() - 30 * 24 * 3600 * 1000;
+  const out: OwnedSolution[] = [];
+  for (const solution of mine) {
+    const proposals = cases.filter((c) => c.baseSolutionId === solution.id && c.status !== "draft");
+    const proposalIds = new Set(proposals.map((c) => c.id));
+    const ownerDecided = new Set(decisions.filter((d) => d.role === "owner").map((d) => d.caseId));
+    out.push({
+      solution,
+      proposals: await summarizeAll(proposals),
+      openTests: proposals.filter((c) => runs.some((r) => r.caseId === c.id) && !ownerDecided.has(c.id)).length,
+      evaluations: evaluations.filter((e) => proposalIds.has(e.caseId)).length,
+      recentRuns: runs.filter((r) => r.solutionId === solution.id && new Date(r.createdAt).getTime() >= since).length,
+    });
+  }
+  res.json(out);
 });
 
 async function consolidationSummaries(): Promise<ConsolidationSummary[]> {
@@ -152,23 +178,85 @@ router.get("/portfolio", async (_req, res) => {
       capabilities: caps.filter((cap, index) => caps.findIndex((o) => o.sourceSolutionId === cap.sourceSolutionId) === index),
     }));
 
-  const sharedCapabilityReuse = capabilities.filter((cap) => solutions.filter((s) => s.capabilityIds.includes(cap.id)).length > 1).length;
   const overlapping = businessProblems.filter((bp) => bp.activeSolutionIds.length > 1).length;
+
+  // Every number below is computed from persisted or catalog data and carries its own definition.
+  const searches = await countSearches();
+  const briefs = await listBriefs();
+  const searchEvents = searches + briefs.length;
+  // Distinct briefs that led to a case: can never exceed the number of briefs, so the ratio stays honest.
+  const reuseCases = [...new Set(cases.map((c) => c.briefId).filter((id): id is string => id !== null))];
+  const evaluations = await listAllEvaluations();
+  const abCases = cases.filter((c) => c.status !== "draft");
+  const withPreference = abCases.filter((c) => {
+    const summary = summarizeEvaluations(evaluations.filter((e) => e.caseId === c.id));
+    return summary.tests > 0 && summary.aPreferred !== summary.bPreferred;
+  });
+  const consolidated = cases.filter((c) => decisions.some((d) => d.caseId === c.id && d.action === "approve_consolidation"));
+  const retired = solutions.filter((s) => s.status === "deprecated").length;
+  const demoVotes = evaluations.filter((e) => e.demo).length;
+  const metric = (key: string, label: string, numerator: number | null, denominator: number | null, value: string, definition: string, demo: boolean): PortfolioMetric => ({ key, label, value, numerator, denominator, definition, demo });
+  const metrics = {
+    searchToReuse: metric(
+      "searchToReuse",
+      "Search to reuse",
+      reuseCases.length,
+      searchEvents,
+      searchEvents ? `${reuseCases.length} of ${searchEvents}` : "No searches yet",
+      "Numerator: interpreted briefs that led to at least one case being opened. Denominator: global searches plus interpreted briefs recorded in this workspace.",
+      briefs.length > 0 && cases.some((c) => c.id.startsWith("case_demo")),
+    ),
+    duplicateGroups: metric(
+      "duplicateGroups",
+      "Duplicate groups",
+      overlapping,
+      businessProblems.length,
+      `${overlapping} of ${businessProblems.length}`,
+      "Numerator: business problems with more than one active solution. Denominator: business problems in the catalog. Catalog is seeded demonstration data.",
+      true,
+    ),
+    consolidationsCompleted: metric(
+      "consolidationsCompleted",
+      "Consolidations approved",
+      consolidated.length,
+      summaries.length,
+      `${consolidated.length} of ${summaries.length}`,
+      "Numerator: cases where IT recorded an approve-consolidation decision. Denominator: open consolidation cases.",
+      consolidated.some((c) => c.id.startsWith("case_demo")),
+    ),
+    abTestsWithPreference: metric(
+      "abTestsWithPreference",
+      "A/B tests with a recorded preference",
+      withPreference.length,
+      abCases.length,
+      `${withPreference.length} of ${abCases.length}`,
+      `Numerator: tested cases where recorded votes favour one version. Denominator: cases with at least one A/B run. ${demoVotes} vote${demoVotes === 1 ? "" : "s"} are labelled demo.`,
+      demoVotes > 0,
+    ),
+    activeVsRetired: metric(
+      "activeVsRetired",
+      "Active vs retired",
+      solutions.length - retired,
+      solutions.length,
+      `${solutions.length - retired} active, ${retired} retired`,
+      "Numerator: solutions not deprecated. Denominator: all solutions in the catalog. Catalog is seeded demonstration data.",
+      true,
+    ),
+    needsAttention: metric(
+      "needsAttention",
+      "Needs attention",
+      unsupported.length + pendingReviews,
+      null,
+      `${unsupported.length} unowned, ${pendingReviews} awaiting IT`,
+      "Solutions with no owner or support model plus cases waiting for an IT consolidation decision.",
+      unsupported.length > 0,
+    ),
+  };
 
   const portfolio: Portfolio = {
     headline: personas.find((p) => p.role === "it")?.headline ?? "",
     valueStatement: `${solutions.length} active solutions across ${businessProblems.length} business problems. ${overlapping} problems have overlapping solutions; ${summaries.filter((s) => s.case.status !== "rejected").length} consolidation case${summaries.length === 1 ? "" : "s"} in progress.`,
-    metrics: {
-      activeSolutions: solutions.length,
-      overlappingGroups: overlapping,
-      certified: solutions.filter((s) => s.status === "certified").length,
-      experimental: solutions.filter((s) => s.status === "experimental").length,
-      withoutOwner: solutions.filter((s) => s.ownerName === "Unassigned").length,
-      consolidationOpportunities: businessProblems.filter((bp) => bp.recommendedAction === "consolidate" || bp.recommendedAction === "standardize").length,
-      retirementCandidates: solutions.filter((s) => s.retirementCandidate).length,
-      sharedCapabilityReuse,
-      pendingReviews,
-    },
+    metrics,
     rows,
     consolidationCases: summaries,
     unsupportedSolutions: unsupported,
@@ -211,8 +299,8 @@ function caseStatusLabel(status: string): string {
   switch (status) {
     case "draft":
       return "Case open";
-    case "simulated":
-      return "Simulated";
+    case "tested":
+      return "Tested";
     case "pilot_proposed":
       return "Decision pending";
     case "approved":

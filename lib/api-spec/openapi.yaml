@@ -98,6 +98,162 @@ paths:
                 items:
                   $ref: "#/components/schemas/Solution"
 
+  /solutions/{solutionId}/workbench:
+    get:
+      operationId: getSolutionWorkbench
+      tags: [workbench]
+      summary: The executable production workflow of a solution, its sample inputs and a saved example run
+      parameters:
+        - name: solutionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workbench
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionWorkbench"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sample-inputs:
+    get:
+      operationId: listSampleInputs
+      tags: [workbench]
+      summary: Seeded sample inputs, optionally for one solution
+      parameters:
+        - name: solutionId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sample inputs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SampleInput"
+
+  /runs:
+    post:
+      operationId: runWorkflow
+      tags: [workbench]
+      summary: Execute one workflow version against an input and persist the result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunRequest"
+      responses:
+        "201":
+          description: Run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /runs/{runId}:
+    get:
+      operationId: getRun
+      tags: [workbench]
+      summary: A persisted run
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /search:
+    get:
+      operationId: searchLibrary
+      tags: [library]
+      summary: Global hybrid search across solutions and capabilities
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/SolutionStatus"
+        - name: kind
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/SolutionKind"
+        - name: owner
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: businessProblemId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ranked results with reasons
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
+  /my-solutions:
+    get:
+      operationId: getMySolutions
+      tags: [home]
+      summary: The owner's solutions with proposed changes and open tests
+      responses:
+        "200":
+          description: Owned solutions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnedSolution"
+
   /solutions/{solutionId}:
     get:
       operationId: getSolution
@@ -396,8 +552,8 @@ paths:
   /cases/{caseId}/compare:
     get:
       operationId: getCaseComparison
-      tags: [cases]
-      summary: Capability comparison across overlapping solutions (Compare tab)
+      tags: [workbench]
+      summary: Latest A/B comparison per input for this case, newest first
       parameters:
         - name: caseId
           in: path
@@ -406,11 +562,226 @@ paths:
             type: string
       responses:
         "200":
-          description: Comparison
+          description: Latest comparison for each input that has been run
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Comparison"
+                type: array
+                items:
+                  $ref: "#/components/schemas/ABComparison"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: runCaseComparison
+      tags: [workbench]
+      summary: Run Version A (current product) and Version B (proposed) on the same input
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompareRequest"
+      responses:
+        "200":
+          description: Both runs, their diff and defensible measures
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ABComparison"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/evaluations:
+    get:
+      operationId: listCaseEvaluations
+      tags: [workbench]
+      summary: Recorded human preferences for this case with a summary computed only from them
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Evaluations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationList"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: recordEvaluation
+      tags: [workbench]
+      summary: Record which output better solves the problem
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationInput"
+      responses:
+        "201":
+          description: Recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationList"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/test-sessions:
+    get:
+      operationId: listTestSessions
+      tags: [workbench]
+      summary: Blind test sessions for this case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestSession"
+    post:
+      operationId: createTestSession
+      tags: [workbench]
+      summary: Create a blind test session from the latest comparisons (owner)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestSessionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSession"
+        "400":
+          description: Nothing to test yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /test-sessions/{sessionId}:
+    get:
+      operationId: getTestSession
+      tags: [workbench]
+      summary: A blind session with its unlabelled output pairs
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSession"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /test-sessions/{sessionId}/responses:
+    post:
+      operationId: respondToTestSession
+      tags: [workbench]
+      summary: Record a blind tester's choice for one pair
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestResponseInput"
+      responses:
+        "201":
+          description: Recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSession"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Not found
           content:
@@ -546,6 +917,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ChangeReview"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/consolidation:
+    get:
+      operationId: getCaseConsolidation
+      tags: [cases]
+      summary: Current-state to future-state consolidation summary for the Decide view
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Consolidation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsolidationDecisionView"
         "404":
           description: Not found
           content:
@@ -730,11 +1126,11 @@ components:
 
     CaseStatus:
       type: string
-      enum: [draft, simulated, pilot_proposed, approved, changes_requested, deferred, rejected]
+      enum: [draft, tested, pilot_proposed, approved, changes_requested, deferred, rejected]
 
     DecisionAction:
       type: string
-      enum: [approve_simulation, approve_pilot, request_changes, defer, reject, approve_consolidation]
+      enum: [propose_pilot, approve_pilot, request_changes, defer, reject, approve_consolidation]
 
     ExperimentRecommendation:
       type: string
@@ -967,11 +1363,15 @@ components:
         - clarification
         - source
         - valueStatement
+        - today
+        - better
         - confirmed
         - createdAt
       properties:
         id: { type: string }
         rawText: { type: string }
+        today: { type: string, description: What is happening now, one sentence, editable }
+        better: { type: string, description: The outcome the user wants, one sentence, editable }
         fields: { $ref: "#/components/schemas/BriefFields" }
         clarifyingQuestion:
           type: ["string", "null"]
@@ -1010,6 +1410,8 @@ components:
       type: object
       properties:
         fields: { $ref: "#/components/schemas/BriefFieldValues" }
+        today: { type: string }
+        better: { type: string }
         confirmed: { type: boolean }
         clarification: { type: string }
 
@@ -1087,6 +1489,7 @@ components:
         - moduleStates
         - configValues
         - experimentId
+        - pilotPercent
         - createdByRole
         - saved
         - createdAt
@@ -1110,6 +1513,7 @@ components:
           description: Configurable capability id -> selected option
           additionalProperties: { type: string }
         experimentId: { type: ["string", "null"] }
+        pilotPercent: { type: integer, description: Pilot exposure chosen for this case (5, 10 or 20) }
         createdByRole: { $ref: "#/components/schemas/Role" }
         saved: { type: boolean }
         createdAt: { type: string }
@@ -1129,6 +1533,80 @@ components:
       properties:
         title: { type: string, minLength: 1 }
         saved: { type: boolean }
+        pilotPercent: { type: integer, enum: [5, 10, 20] }
+
+    ConsolidationSolution:
+      type: object
+      required: [solution, fate, note]
+      properties:
+        solution: { $ref: "#/components/schemas/Solution" }
+        fate:
+          type: string
+          enum: [base, folded, retired]
+        note: { type: string, description: One sentence on what happens to this product }
+
+    FutureProduct:
+      type: object
+      required: [name, core, modules, controls]
+      properties:
+        name: { type: string }
+        core: { type: string, description: One line describing the certified core workflow }
+        modules:
+          type: array
+          description: Optional modules carried into the future product
+          items:
+            type: object
+            required: [name, sourceSolutionName]
+            properties:
+              name: { type: string }
+              sourceSolutionName: { type: string }
+        controls:
+          type: array
+          description: Locked controls that stay in place
+          items: { type: string }
+
+    ConsolidationDecisionView:
+      type: object
+      required:
+        - caseId
+        - headline
+        - current
+        - future
+        - outcomes
+        - risk
+        - evidence
+        - availableActions
+        - decided
+      properties:
+        caseId: { type: string }
+        headline: { type: string, description: e.g. Three solutions can become one governed product. }
+        current:
+          type: array
+          items: { $ref: "#/components/schemas/ConsolidationSolution" }
+        future: { $ref: "#/components/schemas/FutureProduct" }
+        outcomes:
+          type: array
+          description: At most four plain-language outcomes
+          items: { type: string }
+        risk: { type: string, description: The single most important risk }
+        evidence:
+          type: array
+          description: Supporting evidence for the detail drawer
+          items: { type: string }
+        availableActions:
+          type: array
+          description: Decision actions currently permitted per role
+          items:
+            type: object
+            required: [role, actions]
+            properties:
+              role: { $ref: "#/components/schemas/Role" }
+              actions:
+                type: array
+                items: { $ref: "#/components/schemas/DecisionAction" }
+        decided:
+          type: ["string", "null"]
+          description: Summary of the IT consolidation decision, if one exists
 
     Decision:
       type: object
@@ -1242,50 +1720,416 @@ components:
         roleSummaries: { $ref: "#/components/schemas/RoleSummaries" }
         adoptionEffort: { type: string }
 
-    CapabilityPresence:
+    SampleInput:
       type: object
-      required: [solutionId, present, strength]
+      required: [id, name, description, solutionIds, text, hasExpected, noteCount]
       properties:
-        solutionId: { type: string }
-        present: { type: boolean }
-        strength:
-          type: string
-          enum: [strong, standard, weak, none]
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        solutionIds:
+          type: array
+          items: { type: string }
+        text: { type: string }
+        hasExpected: { type: boolean, description: True when labelled expected findings exist for objective scoring }
+        noteCount: { type: integer }
 
-    CompareRow:
+    OutputItem:
       type: object
-      required: [capability, presence, verdict, verdictNote, evidence]
+      required: [id, key, kind, text, detail, stepId, refs]
+      properties:
+        id: { type: string }
+        key: { type: string, description: Stable across runs so A and B lines can be matched }
+        kind: { type: string }
+        text: { type: string }
+        detail: { type: ["string", "null"] }
+        stepId: { type: string, description: Capability id of the step that produced this line }
+        refs:
+          type: array
+          items: { type: string }
+
+    OutputSection:
+      type: object
+      required: [key, title, stepId, items]
+      properties:
+        key: { type: string }
+        title: { type: string }
+        stepId: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OutputItem" }
+
+    RunOutput:
+      type: object
+      required: [headline, sections]
+      properties:
+        headline: { type: string }
+        sections:
+          type: array
+          items: { $ref: "#/components/schemas/OutputSection" }
+
+    StepTrace:
+      type: object
+      required: [stepId, name, stage, status, inputSummary, transformation, outputSummary, itemCount, durationMs, error]
+      properties:
+        stepId: { type: string }
+        name: { type: string }
+        stage: { type: string }
+        status:
+          type: string
+          enum: [ran, skipped, error]
+        inputSummary: { type: string }
+        transformation: { type: string }
+        outputSummary: { type: string }
+        itemCount: { type: integer }
+        durationMs: { type: integer }
+        error: { type: ["string", "null"] }
+
+    RunStats:
+      type: object
+      required: [steps, sections, items, issues, patterns, actions, errors]
+      properties:
+        steps: { type: integer }
+        sections: { type: integer }
+        items: { type: integer }
+        issues: { type: integer }
+        patterns: { type: integer }
+        actions: { type: integer }
+        errors: { type: integer }
+
+    Run:
+      type: object
+      required: [id, caseId, solutionId, version, versionLabel, sampleInputId, inputText, inputHash, enabledCapabilityIds, configValues, output, trace, stats, durationMs, errors, createdAt]
+      properties:
+        id: { type: string }
+        caseId: { type: ["string", "null"] }
+        solutionId: { type: string }
+        version:
+          type: string
+          enum: [A, B]
+        versionLabel: { type: string }
+        sampleInputId: { type: ["string", "null"] }
+        inputText: { type: string }
+        inputHash: { type: string }
+        enabledCapabilityIds:
+          type: array
+          items: { type: string }
+        configValues:
+          type: object
+          additionalProperties: { type: string }
+        output: { $ref: "#/components/schemas/RunOutput" }
+        trace:
+          type: array
+          items: { $ref: "#/components/schemas/StepTrace" }
+        stats: { $ref: "#/components/schemas/RunStats" }
+        durationMs: { type: integer }
+        errors:
+          type: array
+          items: { type: string }
+        createdAt: { type: string }
+
+    RunRequest:
+      type: object
+      required: [version]
+      properties:
+        solutionId: { type: string, description: Run the production workflow of a solution (version A) }
+        caseId: { type: string, description: Run a case; version A is the base product, version B the proposed configuration }
+        version:
+          type: string
+          enum: [A, B]
+        sampleInputId: { type: string }
+        inputText: { type: string, description: Overrides the sample text; used as-is when no sample is given }
+
+    WorkflowBlock:
+      type: object
+      required: [capability, stage, kind, active, executable, value, options, origin, blockedReason]
       properties:
         capability: { $ref: "#/components/schemas/Capability" }
-        presence:
-          type: array
-          items: { $ref: "#/components/schemas/CapabilityPresence" }
-        verdict:
+        stage: { type: string }
+        kind:
           type: string
-          enum: [common, unique, stronger, unsupported, retire]
-        verdictNote: { type: string }
-        evidence: { type: string }
+          enum: [required, configurable, optional]
+        active: { type: boolean }
+        executable: { type: boolean, description: False for controls (identity, audit) that do not transform the input }
+        value: { type: ["string", "null"] }
+        options:
+          type: ["array", "null"]
+          items: { type: string }
+        origin:
+          type: string
+          enum: [base, added]
+        blockedReason: { type: ["string", "null"] }
 
-    Comparison:
+    SolutionWorkbench:
       type: object
-      required: [caseId, baseSolutionId, solutions, rows, summary]
+      required: [solution, blocks, controls, sampleInputs, exampleRun]
+      properties:
+        solution: { $ref: "#/components/schemas/Solution" }
+        blocks:
+          type: array
+          description: Executable steps in execution order
+          items: { $ref: "#/components/schemas/WorkflowBlock" }
+        controls:
+          type: array
+          description: Locked controls preserved around the workflow
+          items: { $ref: "#/components/schemas/Capability" }
+        sampleInputs:
+          type: array
+          items: { $ref: "#/components/schemas/SampleInput" }
+        exampleRun: { $ref: "#/components/schemas/Run" }
+
+    DiffEntry:
+      type: object
+      required: [change, sectionKey, sectionTitle, stepId, stepName, sourceSolutionName, before, after, itemKey, kind]
+      properties:
+        change:
+          type: string
+          enum: [added, removed, changed]
+        sectionKey: { type: string }
+        sectionTitle: { type: string }
+        stepId: { type: string }
+        stepName: { type: string }
+        sourceSolutionName: { type: string }
+        before: { type: ["string", "null"] }
+        after: { type: ["string", "null"] }
+        itemKey: { type: string }
+        kind: { type: string }
+
+    OutputDiff:
+      type: object
+      required: [entries, added, removed, changed, unchanged, stepsResponsible]
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/DiffEntry" }
+        added: { type: integer }
+        removed: { type: integer }
+        changed: { type: integer }
+        unchanged: { type: integer }
+        stepsResponsible:
+          type: array
+          items:
+            type: object
+            required: [stepId, name, sourceSolutionName, changes]
+            properties:
+              stepId: { type: string }
+              name: { type: string }
+              sourceSolutionName: { type: string }
+              changes: { type: integer }
+
+    ObjectiveScore:
+      type: object
+      required: [expected, identified, missed, falsePositives, precision, recall, identifiedLabels, missedLabels, falsePositiveLabels]
+      properties:
+        expected: { type: integer }
+        identified: { type: integer }
+        missed: { type: integer }
+        falsePositives: { type: integer }
+        precision: { type: ["number", "null"] }
+        recall: { type: ["number", "null"] }
+        identifiedLabels:
+          type: array
+          items: { type: string }
+        missedLabels:
+          type: array
+          items: { type: string }
+        falsePositiveLabels:
+          type: array
+          items: { type: string }
+
+    ABComparison:
+      type: object
+      required: [caseId, sampleInputId, inputText, inputHash, runA, runB, diff, scoreA, scoreB, explanation, evaluation, staleB]
       properties:
         caseId: { type: string }
-        baseSolutionId: { type: string }
-        solutions:
+        staleB: { type: boolean, description: True when Version B has changed since this run; rerun to refresh }
+        sampleInputId: { type: ["string", "null"] }
+        inputText: { type: string }
+        inputHash: { type: string }
+        runA: { $ref: "#/components/schemas/Run" }
+        runB: { $ref: "#/components/schemas/Run" }
+        diff: { $ref: "#/components/schemas/OutputDiff" }
+        scoreA:
+          oneOf:
+            - $ref: "#/components/schemas/ObjectiveScore"
+            - type: "null"
+        scoreB:
+          oneOf:
+            - $ref: "#/components/schemas/ObjectiveScore"
+            - type: "null"
+        explanation:
           type: array
-          items: { $ref: "#/components/schemas/Solution" }
-        rows:
+          description: Plain-language lines explaining what changed and which step caused it
+          items: { type: string }
+        evaluation:
+          oneOf:
+            - $ref: "#/components/schemas/Evaluation"
+            - type: "null"
+          description: The current user's recorded preference for this exact pair, if any
+
+    CompareRequest:
+      type: object
+      properties:
+        sampleInputId: { type: string }
+        inputText: { type: string }
+
+    Evaluation:
+      type: object
+      required: [id, caseId, sessionId, sampleInputId, inputHash, runAId, runBId, choice, reason, rating, evaluator, role, blind, demo, createdAt]
+      properties:
+        id: { type: string }
+        caseId: { type: string }
+        sessionId: { type: ["string", "null"] }
+        sampleInputId: { type: ["string", "null"] }
+        inputHash: { type: string }
+        runAId: { type: string }
+        runBId: { type: string }
+        choice:
+          type: string
+          enum: [A, B, neither]
+        reason: { type: ["string", "null"] }
+        rating: { type: ["integer", "null"] }
+        evaluator: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        blind: { type: boolean }
+        demo: { type: boolean, description: True for simulated demo accounts }
+        createdAt: { type: string }
+
+    EvaluationInput:
+      type: object
+      required: [runAId, runBId, choice, role, evaluator]
+      properties:
+        runAId: { type: string }
+        runBId: { type: string }
+        choice:
+          type: string
+          enum: [A, B, neither]
+        reason: { type: string }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        role: { $ref: "#/components/schemas/Role" }
+        evaluator: { type: string }
+
+    EvaluationSummary:
+      type: object
+      required: [tests, aPreferred, bPreferred, neither, averageRating, distinctInputs, blindVotes, demoVotes]
+      properties:
+        tests: { type: integer, description: Recorded evaluations; computed only from stored votes }
+        aPreferred: { type: integer }
+        bPreferred: { type: integer }
+        neither: { type: integer }
+        averageRating: { type: ["number", "null"] }
+        distinctInputs: { type: integer }
+        blindVotes: { type: integer }
+        demoVotes: { type: integer }
+
+    EvaluationList:
+      type: object
+      required: [summary, items]
+      properties:
+        summary: { $ref: "#/components/schemas/EvaluationSummary" }
+        items:
           type: array
-          items: { $ref: "#/components/schemas/CompareRow" }
-        summary: { type: string }
+          items: { $ref: "#/components/schemas/Evaluation" }
+
+    TestSessionInput:
+      type: object
+      required: [createdBy]
+      properties:
+        createdBy: { type: string }
+        title: { type: string }
+
+    TestPair:
+      type: object
+      required: [sampleInputId, inputName, inputText, left, right, responses]
+      properties:
+        sampleInputId: { type: string }
+        inputName: { type: string }
+        inputText: { type: string }
+        left: { $ref: "#/components/schemas/RunOutput" }
+        right: { $ref: "#/components/schemas/RunOutput" }
+        responses: { type: integer }
+
+    TestSession:
+      type: object
+      required: [id, caseId, createdBy, title, closed, pairs, responseCount, results, createdAt]
+      properties:
+        id: { type: string }
+        caseId: { type: string }
+        createdBy: { type: string }
+        title: { type: string }
+        closed: { type: boolean }
+        pairs:
+          type: array
+          items: { $ref: "#/components/schemas/TestPair" }
+        responseCount: { type: integer }
+        results:
+          oneOf:
+            - $ref: "#/components/schemas/EvaluationSummary"
+            - type: "null"
+          description: Aggregate preference, revealed only once responses exist
+        createdAt: { type: string }
+
+    TestResponseInput:
+      type: object
+      required: [sampleInputId, pick, tester]
+      properties:
+        sampleInputId: { type: string }
+        pick:
+          type: string
+          enum: [left, right, neither]
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+        tester: { type: string }
+        demo: { type: boolean, description: Mark as a simulated demo account vote }
+
+    SearchResult:
+      type: object
+      required: [solution, score, reasons, matchedCapabilities]
+      properties:
+        solution: { $ref: "#/components/schemas/Solution" }
+        score: { type: number }
+        reasons:
+          type: array
+          items: { type: string }
+        matchedCapabilities:
+          type: array
+          items: { $ref: "#/components/schemas/Capability" }
+
+    SearchResults:
+      type: object
+      required: [query, results, capabilities, source]
+      properties:
+        query: { type: string }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/SearchResult" }
+        capabilities:
+          type: array
+          description: Reusable capabilities matching the query on their own
+          items: { $ref: "#/components/schemas/Capability" }
+        source:
+          type: string
+          enum: [keyword, hybrid]
+
+    OwnedSolution:
+      type: object
+      required: [solution, proposals, openTests, evaluations, recentRuns]
+      properties:
+        solution: { $ref: "#/components/schemas/Solution" }
+        proposals:
+          type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+        openTests: { type: integer, description: Cases with runs but no owner decision yet }
+        evaluations: { type: integer, description: Recorded preference votes across proposals }
+        recentRuns: { type: integer, description: Runs recorded in the last 30 days }
 
     ComponentConfig:
       type: object
-      required: [capability, controlType, state, active, value, options, recommended, blockedReason, sourceSolutionName]
+      required: [capability, controlType, state, active, executable, value, options, recommended, blockedReason, sourceSolutionName]
       properties:
         capability: { $ref: "#/components/schemas/Capability" }
         controlType: { $ref: "#/components/schemas/ControlType" }
+        executable: { type: boolean, description: True when the capability is a workflow step that transforms the input; false for controls }
         state: { $ref: "#/components/schemas/FeatureState" }
         active: { type: boolean }
         value: { type: ["string", "null"] }
@@ -1328,7 +2172,7 @@ components:
 
     Configuration:
       type: object
-      required: [caseId, summary, steps, impact, activeModuleCount, lockedCount]
+      required: [caseId, summary, steps, impact, activeModuleCount, lockedCount, recommended, isRecommended]
       properties:
         caseId: { type: string }
         summary: { type: string }
@@ -1338,6 +2182,10 @@ components:
         impact: { $ref: "#/components/schemas/Impact" }
         activeModuleCount: { type: integer }
         lockedCount: { type: integer }
+        recommended:
+          $ref: "#/components/schemas/ConfigurationUpdate"
+          description: The recommended module states and settings; send it back to reset the case
+        isRecommended: { type: boolean, description: True when the current configuration equals the recommended one }
 
     ConfigurationUpdate:
       type: object
@@ -1468,7 +2316,11 @@ components:
         userGroups:
           type: array
           items: { type: string }
-        performance: { $ref: "#/components/schemas/Metrics" }
+        performance:
+          description: Measured production metrics; null for a proposed version that has not run in production
+          oneOf:
+            - $ref: "#/components/schemas/Metrics"
+            - type: "null"
 
     ConfigChange:
       type: object
@@ -1579,28 +2431,28 @@ components:
                 type: array
                 items: { $ref: "#/components/schemas/DecisionAction" }
 
+    PortfolioMetric:
+      type: object
+      required: [key, label, value, numerator, denominator, definition, demo]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: string }
+        numerator: { type: ["number", "null"] }
+        denominator: { type: ["number", "null"] }
+        definition: { type: string }
+        demo: { type: boolean, description: True when the number comes from seeded demonstration data }
+
     PortfolioMetrics:
       type: object
-      required:
-        - activeSolutions
-        - overlappingGroups
-        - certified
-        - experimental
-        - withoutOwner
-        - consolidationOpportunities
-        - retirementCandidates
-        - sharedCapabilityReuse
-        - pendingReviews
+      required: [searchToReuse, duplicateGroups, consolidationsCompleted, abTestsWithPreference, activeVsRetired, needsAttention]
       properties:
-        activeSolutions: { type: integer }
-        overlappingGroups: { type: integer }
-        certified: { type: integer }
-        experimental: { type: integer }
-        withoutOwner: { type: integer }
-        consolidationOpportunities: { type: integer }
-        retirementCandidates: { type: integer }
-        sharedCapabilityReuse: { type: integer, description: Capabilities used by more than one solution }
-        pendingReviews: { type: integer }
+        searchToReuse: { $ref: "#/components/schemas/PortfolioMetric" }
+        duplicateGroups: { $ref: "#/components/schemas/PortfolioMetric" }
+        consolidationsCompleted: { $ref: "#/components/schemas/PortfolioMetric" }
+        abTestsWithPreference: { $ref: "#/components/schemas/PortfolioMetric" }
+        activeVsRetired: { $ref: "#/components/schemas/PortfolioMetric" }
+        needsAttention: { $ref: "#/components/schemas/PortfolioMetric" }
 
     PortfolioRow:
       type: object

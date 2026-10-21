@@ -1,23 +1,12 @@
 import type { DemoState } from "@workspace/api-zod";
 import { DEMO_PROMPT } from "../data/catalog";
-import { DEMO_BRIEF_FIELDS, aiAvailable } from "./brief-parser";
+import { DEMO_BRIEF_FIELDS, aiAvailable, deriveTodayBetter } from "./brief-parser";
 import { matchBrief } from "./matching";
-import { caseContext } from "./configuration";
-import { runSimulation } from "./simulation";
 import { nextStatus } from "./analysis";
 import { logger } from "./logger";
-import {
-  briefsTable,
-  clearAll,
-  createCase,
-  db,
-  getCase,
-  insertDecision,
-  insertExperiment,
-  newId,
-  toBrief,
-  updateCaseRow,
-} from "./store";
+import { briefsTable, clearAll, createCase, db, getCase, insertDecision, newId, toBrief, updateCaseRow } from "./store";
+import { runComparison } from "./workbench";
+import { clearWorkbench, insertEvaluation } from "./workbench-store";
 
 export const DEMO_BRIEF_ID = "brief_demo";
 export const DEMO_CASE_ID = "case_demo";
@@ -34,13 +23,17 @@ export async function ensureSeeded(): Promise<void> {
 }
 
 export async function resetDemo(): Promise<DemoState> {
+  await clearWorkbench();
   await clearAll();
 
   // Demo brief: the anchor pain point, already interpreted and confirmed.
+  const { today, better } = deriveTodayBetter(DEMO_BRIEF_FIELDS);
   const provisional = {
     id: DEMO_BRIEF_ID,
     rawText: DEMO_PROMPT,
     fields: DEMO_BRIEF_FIELDS,
+    today,
+    better,
     clarifyingQuestion: null,
     clarification: null,
     source: "cached" as const,
@@ -55,6 +48,8 @@ export async function resetDemo(): Promise<DemoState> {
       id: DEMO_BRIEF_ID,
       rawText: DEMO_PROMPT,
       fields: DEMO_BRIEF_FIELDS,
+      today,
+      better,
       clarifyingQuestion: null,
       clarification: null,
       source: "cached",
@@ -64,17 +59,22 @@ export async function resetDemo(): Promise<DemoState> {
     .returning();
   logger.info({ brief: toBrief(briefRow!).id }, "Seeded demo brief");
 
-  // Demo case: WorkOrder Insight as the base with the recommended configuration, ready to walk through.
-  await createCase({ id: DEMO_CASE_ID, baseSolutionId: "sol-workorder-insight", briefId: DEMO_BRIEF_ID, title: "Work-order issue identification consolidation", createdByRole: "seeker" });
+  // Demo case: Work Order Triage as the base. Version B starts equal to Version A (recommended additions switched
+  // off) so the seeker gets to add them in the workbench and see the output change.
+  await createCase({ id: DEMO_CASE_ID, baseSolutionId: "sol-workorder-insight", briefId: DEMO_BRIEF_ID, title: "Work Order Intelligence", createdByRole: "seeker" });
 
-  // Secondary case already in the owner's queue: Procedure search, simulated and proposed for pilot.
+  // Secondary case already in the owner's queue: Procedure search with conversational answers, run on the sample
+  // question, with two demo-labelled votes, and proposed for pilot.
   const procedureCase = await createCase({ id: PROCEDURE_CASE_ID, baseSolutionId: "sol-procedure-finder", title: "Procedure search: add conversational answers", createdByRole: "seeker" });
-  const ctx = caseContext(procedureCase);
   const withAnswers = await updateCaseRow(procedureCase.id, { moduleStates: { ...procedureCase.moduleStates, "cap-proc-answers": true } });
-  const experiment = await insertExperiment(runSimulation(withAnswers, ctx, newId("exp")));
-  const simulated = await updateCaseRow(procedureCase.id, { experimentId: experiment.id, status: "simulated", saved: true });
-  await insertDecision({ id: newId("dec"), caseId: simulated.id, role: "seeker", actor: "Alex Romero", action: "approve_simulation", reason: null });
-  await updateCaseRow(simulated.id, { status: nextStatus(simulated, "approve_simulation") });
+  const { runA, runB } = await runComparison(withAnswers, "sop-query", undefined);
+  const demoVote = (choice: "A" | "B" | "neither", evaluator: string, reason: string) =>
+    insertEvaluation({ caseId: withAnswers.id, sessionId: null, sampleInputId: "sop-query", inputHash: runA.inputHash, runAId: runA.id, runBId: runB.id, choice, reason, rating: null, evaluator, role: "seeker", blind: false, demo: true });
+  await demoVote("B", "Alex Romero", "The answer names the isolation steps instead of only listing the document.");
+  await demoVote("B", "Demo tester", "Shorter path to the actual sequence.");
+  const tested = await updateCaseRow(procedureCase.id, { status: "tested", saved: true });
+  await insertDecision({ id: newId("dec"), caseId: tested.id, role: "seeker", actor: "Alex Romero", action: "propose_pilot", reason: null });
+  await updateCaseRow(tested.id, { status: nextStatus(tested, "propose_pilot") });
 
   logger.info("Demo scenario reset");
   return demoState();

@@ -1,13 +1,16 @@
 import { Link } from "wouter";
-import { btnPrimary } from "@/components/kit";
+import { Page, btn } from "@/components/bits";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-[70dvh] flex-col items-center justify-center text-center">
-      <div className="font-display text-[120px] font-extrabold leading-none text-primary">404</div>
-      <h1 className="mt-2 text-2xl font-bold">No product lives at this address.</h1>
-      <p className="mt-2 max-w-sm text-muted-foreground">Which, for once, is not a duplicate. Head back and pick up where you left off.</p>
-      <Link href="/home" className={`${btnPrimary} mt-6`} data-testid="link-go-home">Back to home</Link>
-    </div>
+    <Page className="md:pt-20">
+      <div className="eyebrow">404</div>
+      <h1 data-testid="text-headline" className="mt-2 text-[38px] font-bold leading-tight">This page does not exist.</h1>
+      <p className="mt-2 text-lg text-muted-foreground">The link may be old. The library is a good place to start again.</p>
+      <div className="mt-8 flex gap-3">
+        <Link href="/library" data-testid="link-library" className={btn.primary}>Open the library</Link>
+        <Link href="/discover" data-testid="link-discover" className={btn.secondary}>Describe a problem</Link>
+      </div>
+    </Page>
   );
 }

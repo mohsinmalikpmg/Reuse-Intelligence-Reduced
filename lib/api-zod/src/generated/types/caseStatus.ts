@@ -11,7 +11,7 @@ export type CaseStatus = typeof CaseStatus[keyof typeof CaseStatus];
 
 export const CaseStatus = {
   draft: 'draft',
-  simulated: 'simulated',
+  tested: 'tested',
   pilot_proposed: 'pilot_proposed',
   approved: 'approved',
   changes_requested: 'changes_requested',

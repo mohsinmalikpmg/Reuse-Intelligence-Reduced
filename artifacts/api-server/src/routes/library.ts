@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import { ListSolutionsQueryParams, type SolutionDetail } from "@workspace/api-zod";
+import { ListSolutionsQueryParams, SearchLibraryQueryParams, type SearchResults, type SolutionDetail } from "@workspace/api-zod";
 import { businessProblems, capabilities, getSolution, personas, solutionCapabilities } from "../data/catalog";
-import { searchSolutions } from "../lib/matching";
+import { searchLibrary, searchSolutions } from "../lib/matching";
 import { listCaseRows, summarizeAll } from "../lib/store";
+import { recordSearch } from "../lib/workbench-store";
 
 const router: IRouter = Router();
 
@@ -17,6 +18,19 @@ router.get("/solutions", (req, res) => {
     return;
   }
   res.json(searchSolutions(parsed.data.q, parsed.data.status));
+});
+
+router.get("/search", async (req, res) => {
+  const parsed = SearchLibraryQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { q, status, kind, owner, businessProblemId } = parsed.data;
+  const { hits, capabilities: caps } = searchLibrary(q, { status, kind, owner, businessProblemId });
+  if (q.trim().length >= 2) await recordSearch(q.trim(), hits.length, "global");
+  const body: SearchResults = { query: q, results: hits, capabilities: caps, source: "hybrid" };
+  res.json(body);
 });
 
 router.get("/solutions/:solutionId", async (req, res) => {

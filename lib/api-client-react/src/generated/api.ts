@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ABComparison,
   Brief,
   BriefInput,
   BriefUpdate,
@@ -30,25 +31,39 @@ import type {
   CaseSummary,
   CaseUpdate,
   ChangeReview,
-  Comparison,
+  CompareRequest,
   Configuration,
   ConfigurationUpdate,
+  ConsolidationDecisionView,
   DecisionInput,
   DemoState,
   ErrorResponse,
+  EvaluationInput,
+  EvaluationList,
   Experiment,
   ExperimentPlan,
   HealthStatus,
   ListCasesParams,
+  ListSampleInputsParams,
   ListSolutionsParams,
   MatchResult,
+  OwnedSolution,
   OwnerOverview,
   Persona,
   Portfolio,
   Recommendation,
+  Run,
+  RunRequest,
+  SampleInput,
+  SearchLibraryParams,
+  SearchResults,
   SeekerOverview,
   Solution,
-  SolutionDetail
+  SolutionDetail,
+  SolutionWorkbench,
+  TestResponseInput,
+  TestSession,
+  TestSessionInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -458,6 +473,493 @@ export function useListSolutions<TData = Awaited<ReturnType<typeof listSolutions
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListSolutionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSolutionWorkbenchUrl = (solutionId: string,) => {
+
+
+
+
+  return `/api/solutions/${solutionId}/workbench`
+}
+
+/**
+ * @summary The executable production workflow of a solution, its sample inputs and a saved example run
+ */
+export const getSolutionWorkbench = async (solutionId: string, options?: Parameters<typeof customFetch>[1]): Promise<SolutionWorkbench> => {
+
+  return customFetch<SolutionWorkbench>(getGetSolutionWorkbenchUrl(solutionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSolutionWorkbenchQueryKey = (solutionId: string,) => {
+    return [
+    `/api/solutions/${solutionId}/workbench`
+    ] as const;
+    }
+
+
+export const getGetSolutionWorkbenchQueryOptions = <TData = Awaited<ReturnType<typeof getSolutionWorkbench>>, TError = ErrorType<ErrorResponse>>(solutionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSolutionWorkbench>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSolutionWorkbenchQueryKey(solutionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSolutionWorkbench>>> = ({ signal }) => getSolutionWorkbench(solutionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: solutionId !== null && solutionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSolutionWorkbench>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSolutionWorkbenchQueryResult = NonNullable<Awaited<ReturnType<typeof getSolutionWorkbench>>>
+export type GetSolutionWorkbenchQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary The executable production workflow of a solution, its sample inputs and a saved example run
+ */
+
+export function useGetSolutionWorkbench<TData = Awaited<ReturnType<typeof getSolutionWorkbench>>, TError = ErrorType<ErrorResponse>>(
+ solutionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSolutionWorkbench>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSolutionWorkbenchQueryOptions(solutionId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSampleInputsUrl = (params?: ListSampleInputsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/sample-inputs?${stringifiedParams}` : `/api/sample-inputs`
+}
+
+/**
+ * @summary Seeded sample inputs, optionally for one solution
+ */
+export const listSampleInputs = async (params?: ListSampleInputsParams, options?: Parameters<typeof customFetch>[1]): Promise<SampleInput[]> => {
+
+  return customFetch<SampleInput[]>(getListSampleInputsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSampleInputsQueryKey = (params?: ListSampleInputsParams,) => {
+    return [
+    `/api/sample-inputs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSampleInputsQueryOptions = <TData = Awaited<ReturnType<typeof listSampleInputs>>, TError = ErrorType<unknown>>(params?: ListSampleInputsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSampleInputs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSampleInputsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSampleInputs>>> = ({ signal }) => listSampleInputs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSampleInputs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSampleInputsQueryResult = NonNullable<Awaited<ReturnType<typeof listSampleInputs>>>
+export type ListSampleInputsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Seeded sample inputs, optionally for one solution
+ */
+
+export function useListSampleInputs<TData = Awaited<ReturnType<typeof listSampleInputs>>, TError = ErrorType<unknown>>(
+ params?: ListSampleInputsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSampleInputs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSampleInputsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRunWorkflowUrl = () => {
+
+
+
+
+  return `/api/runs`
+}
+
+/**
+ * @summary Execute one workflow version against an input and persist the result
+ */
+export const runWorkflow = async (runRequest: RunRequest, options?: Parameters<typeof customFetch>[1]): Promise<Run> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Run>(getRunWorkflowUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(runRequest)
+  }
+);}
+
+
+
+
+
+export const getRunWorkflowMutationKey = () => ['runWorkflow'] as const;
+
+export const getRunWorkflowMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runWorkflow>>, TError,RunWorkflowMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runWorkflow>>, TError,RunWorkflowMutationVariables, TContext> => {
+
+const mutationKey = getRunWorkflowMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runWorkflow>>, RunWorkflowMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  runWorkflow(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunWorkflowMutationResult = NonNullable<Awaited<ReturnType<typeof runWorkflow>>>
+    export type RunWorkflowMutationBody = BodyType<RunRequest>
+    export type RunWorkflowMutationError = ErrorType<ErrorResponse>
+    export type RunWorkflowMutationVariables = {data: BodyType<RunRequest>}
+
+    /**
+ * @summary Execute one workflow version against an input and persist the result
+ */
+export const useRunWorkflow = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runWorkflow>>, TError,RunWorkflowMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runWorkflow>>,
+        TError,
+        RunWorkflowMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRunWorkflowMutationOptions(options));
+    }
+
+export const getGetRunUrl = (runId: string,) => {
+
+
+
+
+  return `/api/runs/${runId}`
+}
+
+/**
+ * @summary A persisted run
+ */
+export const getRun = async (runId: string, options?: Parameters<typeof customFetch>[1]): Promise<Run> => {
+
+  return customFetch<Run>(getGetRunUrl(runId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRunQueryKey = (runId: string,) => {
+    return [
+    `/api/runs/${runId}`
+    ] as const;
+    }
+
+
+export const getGetRunQueryOptions = <TData = Awaited<ReturnType<typeof getRun>>, TError = ErrorType<ErrorResponse>>(runId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRunQueryKey(runId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRun>>> = ({ signal }) => getRun(runId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: runId !== null && runId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRun>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRunQueryResult = NonNullable<Awaited<ReturnType<typeof getRun>>>
+export type GetRunQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary A persisted run
+ */
+
+export function useGetRun<TData = Awaited<ReturnType<typeof getRun>>, TError = ErrorType<ErrorResponse>>(
+ runId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRunQueryOptions(runId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchLibraryUrl = (params: SearchLibraryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/search?${stringifiedParams}` : `/api/search`
+}
+
+/**
+ * @summary Global hybrid search across solutions and capabilities
+ */
+export const searchLibrary = async (params: SearchLibraryParams, options?: Parameters<typeof customFetch>[1]): Promise<SearchResults> => {
+
+  return customFetch<SearchResults>(getSearchLibraryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchLibraryQueryKey = (params?: SearchLibraryParams,) => {
+    return [
+    `/api/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchLibraryQueryOptions = <TData = Awaited<ReturnType<typeof searchLibrary>>, TError = ErrorType<unknown>>(params: SearchLibraryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchLibrary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchLibraryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchLibrary>>> = ({ signal }) => searchLibrary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchLibrary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchLibraryQueryResult = NonNullable<Awaited<ReturnType<typeof searchLibrary>>>
+export type SearchLibraryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Global hybrid search across solutions and capabilities
+ */
+
+export function useSearchLibrary<TData = Awaited<ReturnType<typeof searchLibrary>>, TError = ErrorType<unknown>>(
+ params: SearchLibraryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchLibrary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchLibraryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMySolutionsUrl = () => {
+
+
+
+
+  return `/api/my-solutions`
+}
+
+/**
+ * @summary The owner's solutions with proposed changes and open tests
+ */
+export const getMySolutions = async ( options?: Parameters<typeof customFetch>[1]): Promise<OwnedSolution[]> => {
+
+  return customFetch<OwnedSolution[]>(getGetMySolutionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMySolutionsQueryKey = () => {
+    return [
+    `/api/my-solutions`
+    ] as const;
+    }
+
+
+export const getGetMySolutionsQueryOptions = <TData = Awaited<ReturnType<typeof getMySolutions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySolutions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMySolutionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMySolutions>>> = ({ signal }) => getMySolutions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMySolutions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMySolutionsQueryResult = NonNullable<Awaited<ReturnType<typeof getMySolutions>>>
+export type GetMySolutionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary The owner's solutions with proposed changes and open tests
+ */
+
+export function useGetMySolutions<TData = Awaited<ReturnType<typeof getMySolutions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySolutions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMySolutionsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -1533,11 +2035,11 @@ export const getGetCaseComparisonUrl = (caseId: string,) => {
 }
 
 /**
- * @summary Capability comparison across overlapping solutions (Compare tab)
+ * @summary Latest A/B comparison per input for this case, newest first
  */
-export const getCaseComparison = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<Comparison> => {
+export const getCaseComparison = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<ABComparison[]> => {
 
-  return customFetch<Comparison>(getGetCaseComparisonUrl(caseId),
+  return customFetch<ABComparison[]>(getGetCaseComparisonUrl(caseId),
   {
     ...options,
     method: 'GET'
@@ -1580,7 +2082,7 @@ export type GetCaseComparisonQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Capability comparison across overlapping solutions (Compare tab)
+ * @summary Latest A/B comparison per input for this case, newest first
  */
 
 export function useGetCaseComparison<TData = Awaited<ReturnType<typeof getCaseComparison>>, TError = ErrorType<ErrorResponse>>(
@@ -1600,6 +2102,593 @@ export function useGetCaseComparison<TData = Awaited<ReturnType<typeof getCaseCo
 
 
 
+
+export const getRunCaseComparisonUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/compare`
+}
+
+/**
+ * @summary Run Version A (current product) and Version B (proposed) on the same input
+ */
+export const runCaseComparison = async (caseId: string,
+    compareRequest: CompareRequest, options?: Parameters<typeof customFetch>[1]): Promise<ABComparison> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ABComparison>(getRunCaseComparisonUrl(caseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(compareRequest)
+  }
+);}
+
+
+
+
+
+export const getRunCaseComparisonMutationKey = () => ['runCaseComparison'] as const;
+
+export const getRunCaseComparisonMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runCaseComparison>>, TError,RunCaseComparisonMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runCaseComparison>>, TError,RunCaseComparisonMutationVariables, TContext> => {
+
+const mutationKey = getRunCaseComparisonMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runCaseComparison>>, RunCaseComparisonMutationVariables> = (props) => {
+          const {caseId,data} = props ?? {};
+
+          return  runCaseComparison(caseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunCaseComparisonMutationResult = NonNullable<Awaited<ReturnType<typeof runCaseComparison>>>
+    export type RunCaseComparisonMutationBody = BodyType<CompareRequest>
+    export type RunCaseComparisonMutationError = ErrorType<ErrorResponse>
+    export type RunCaseComparisonMutationVariables = {caseId: string;data: BodyType<CompareRequest>}
+
+    /**
+ * @summary Run Version A (current product) and Version B (proposed) on the same input
+ */
+export const useRunCaseComparison = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runCaseComparison>>, TError,RunCaseComparisonMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runCaseComparison>>,
+        TError,
+        RunCaseComparisonMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRunCaseComparisonMutationOptions(options));
+    }
+
+export const getListCaseEvaluationsUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/evaluations`
+}
+
+/**
+ * @summary Recorded human preferences for this case with a summary computed only from them
+ */
+export const listCaseEvaluations = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<EvaluationList> => {
+
+  return customFetch<EvaluationList>(getListCaseEvaluationsUrl(caseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCaseEvaluationsQueryKey = (caseId: string,) => {
+    return [
+    `/api/cases/${caseId}/evaluations`
+    ] as const;
+    }
+
+
+export const getListCaseEvaluationsQueryOptions = <TData = Awaited<ReturnType<typeof listCaseEvaluations>>, TError = ErrorType<ErrorResponse>>(caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCaseEvaluations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCaseEvaluationsQueryKey(caseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCaseEvaluations>>> = ({ signal }) => listCaseEvaluations(caseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: caseId !== null && caseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCaseEvaluations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCaseEvaluationsQueryResult = NonNullable<Awaited<ReturnType<typeof listCaseEvaluations>>>
+export type ListCaseEvaluationsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Recorded human preferences for this case with a summary computed only from them
+ */
+
+export function useListCaseEvaluations<TData = Awaited<ReturnType<typeof listCaseEvaluations>>, TError = ErrorType<ErrorResponse>>(
+ caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCaseEvaluations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCaseEvaluationsQueryOptions(caseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordEvaluationUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/evaluations`
+}
+
+/**
+ * @summary Record which output better solves the problem
+ */
+export const recordEvaluation = async (caseId: string,
+    evaluationInput: EvaluationInput, options?: Parameters<typeof customFetch>[1]): Promise<EvaluationList> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<EvaluationList>(getRecordEvaluationUrl(caseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(evaluationInput)
+  }
+);}
+
+
+
+
+
+export const getRecordEvaluationMutationKey = () => ['recordEvaluation'] as const;
+
+export const getRecordEvaluationMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordEvaluation>>, TError,RecordEvaluationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordEvaluation>>, TError,RecordEvaluationMutationVariables, TContext> => {
+
+const mutationKey = getRecordEvaluationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordEvaluation>>, RecordEvaluationMutationVariables> = (props) => {
+          const {caseId,data} = props ?? {};
+
+          return  recordEvaluation(caseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordEvaluationMutationResult = NonNullable<Awaited<ReturnType<typeof recordEvaluation>>>
+    export type RecordEvaluationMutationBody = BodyType<EvaluationInput>
+    export type RecordEvaluationMutationError = ErrorType<ErrorResponse>
+    export type RecordEvaluationMutationVariables = {caseId: string;data: BodyType<EvaluationInput>}
+
+    /**
+ * @summary Record which output better solves the problem
+ */
+export const useRecordEvaluation = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordEvaluation>>, TError,RecordEvaluationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordEvaluation>>,
+        TError,
+        RecordEvaluationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordEvaluationMutationOptions(options));
+    }
+
+export const getListTestSessionsUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/test-sessions`
+}
+
+/**
+ * @summary Blind test sessions for this case
+ */
+export const listTestSessions = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<TestSession[]> => {
+
+  return customFetch<TestSession[]>(getListTestSessionsUrl(caseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTestSessionsQueryKey = (caseId: string,) => {
+    return [
+    `/api/cases/${caseId}/test-sessions`
+    ] as const;
+    }
+
+
+export const getListTestSessionsQueryOptions = <TData = Awaited<ReturnType<typeof listTestSessions>>, TError = ErrorType<unknown>>(caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTestSessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTestSessionsQueryKey(caseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTestSessions>>> = ({ signal }) => listTestSessions(caseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: caseId !== null && caseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTestSessions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTestSessionsQueryResult = NonNullable<Awaited<ReturnType<typeof listTestSessions>>>
+export type ListTestSessionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Blind test sessions for this case
+ */
+
+export function useListTestSessions<TData = Awaited<ReturnType<typeof listTestSessions>>, TError = ErrorType<unknown>>(
+ caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTestSessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTestSessionsQueryOptions(caseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateTestSessionUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/test-sessions`
+}
+
+/**
+ * @summary Create a blind test session from the latest comparisons (owner)
+ */
+export const createTestSession = async (caseId: string,
+    testSessionInput: TestSessionInput, options?: Parameters<typeof customFetch>[1]): Promise<TestSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TestSession>(getCreateTestSessionUrl(caseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(testSessionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateTestSessionMutationKey = () => ['createTestSession'] as const;
+
+export const getCreateTestSessionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTestSession>>, TError,CreateTestSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTestSession>>, TError,CreateTestSessionMutationVariables, TContext> => {
+
+const mutationKey = getCreateTestSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTestSession>>, CreateTestSessionMutationVariables> = (props) => {
+          const {caseId,data} = props ?? {};
+
+          return  createTestSession(caseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTestSessionMutationResult = NonNullable<Awaited<ReturnType<typeof createTestSession>>>
+    export type CreateTestSessionMutationBody = BodyType<TestSessionInput>
+    export type CreateTestSessionMutationError = ErrorType<ErrorResponse>
+    export type CreateTestSessionMutationVariables = {caseId: string;data: BodyType<TestSessionInput>}
+
+    /**
+ * @summary Create a blind test session from the latest comparisons (owner)
+ */
+export const useCreateTestSession = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTestSession>>, TError,CreateTestSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTestSession>>,
+        TError,
+        CreateTestSessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateTestSessionMutationOptions(options));
+    }
+
+export const getGetTestSessionUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/test-sessions/${sessionId}`
+}
+
+/**
+ * @summary A blind session with its unlabelled output pairs
+ */
+export const getTestSession = async (sessionId: string, options?: Parameters<typeof customFetch>[1]): Promise<TestSession> => {
+
+  return customFetch<TestSession>(getGetTestSessionUrl(sessionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTestSessionQueryKey = (sessionId: string,) => {
+    return [
+    `/api/test-sessions/${sessionId}`
+    ] as const;
+    }
+
+
+export const getGetTestSessionQueryOptions = <TData = Awaited<ReturnType<typeof getTestSession>>, TError = ErrorType<ErrorResponse>>(sessionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTestSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTestSessionQueryKey(sessionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTestSession>>> = ({ signal }) => getTestSession(sessionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: sessionId !== null && sessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTestSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTestSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getTestSession>>>
+export type GetTestSessionQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary A blind session with its unlabelled output pairs
+ */
+
+export function useGetTestSession<TData = Awaited<ReturnType<typeof getTestSession>>, TError = ErrorType<ErrorResponse>>(
+ sessionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTestSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTestSessionQueryOptions(sessionId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRespondToTestSessionUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/test-sessions/${sessionId}/responses`
+}
+
+/**
+ * @summary Record a blind tester's choice for one pair
+ */
+export const respondToTestSession = async (sessionId: string,
+    testResponseInput: TestResponseInput, options?: Parameters<typeof customFetch>[1]): Promise<TestSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TestSession>(getRespondToTestSessionUrl(sessionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(testResponseInput)
+  }
+);}
+
+
+
+
+
+export const getRespondToTestSessionMutationKey = () => ['respondToTestSession'] as const;
+
+export const getRespondToTestSessionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToTestSession>>, TError,RespondToTestSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof respondToTestSession>>, TError,RespondToTestSessionMutationVariables, TContext> => {
+
+const mutationKey = getRespondToTestSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondToTestSession>>, RespondToTestSessionMutationVariables> = (props) => {
+          const {sessionId,data} = props ?? {};
+
+          return  respondToTestSession(sessionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RespondToTestSessionMutationResult = NonNullable<Awaited<ReturnType<typeof respondToTestSession>>>
+    export type RespondToTestSessionMutationBody = BodyType<TestResponseInput>
+    export type RespondToTestSessionMutationError = ErrorType<ErrorResponse>
+    export type RespondToTestSessionMutationVariables = {sessionId: string;data: BodyType<TestResponseInput>}
+
+    /**
+ * @summary Record a blind tester's choice for one pair
+ */
+export const useRespondToTestSession = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToTestSession>>, TError,RespondToTestSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof respondToTestSession>>,
+        TError,
+        RespondToTestSessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRespondToTestSessionMutationOptions(options));
+    }
 
 export const getGetCaseConfigurationUrl = (caseId: string,) => {
 
@@ -1983,6 +3072,83 @@ export function useGetCaseReview<TData = Awaited<ReturnType<typeof getCaseReview
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCaseReviewQueryOptions(caseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCaseConsolidationUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/consolidation`
+}
+
+/**
+ * @summary Current-state to future-state consolidation summary for the Decide view
+ */
+export const getCaseConsolidation = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationDecisionView> => {
+
+  return customFetch<ConsolidationDecisionView>(getGetCaseConsolidationUrl(caseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCaseConsolidationQueryKey = (caseId: string,) => {
+    return [
+    `/api/cases/${caseId}/consolidation`
+    ] as const;
+    }
+
+
+export const getGetCaseConsolidationQueryOptions = <TData = Awaited<ReturnType<typeof getCaseConsolidation>>, TError = ErrorType<ErrorResponse>>(caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCaseConsolidation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCaseConsolidationQueryKey(caseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCaseConsolidation>>> = ({ signal }) => getCaseConsolidation(caseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: caseId !== null && caseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCaseConsolidation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCaseConsolidationQueryResult = NonNullable<Awaited<ReturnType<typeof getCaseConsolidation>>>
+export type GetCaseConsolidationQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Current-state to future-state consolidation summary for the Decide view
+ */
+
+export function useGetCaseConsolidation<TData = Awaited<ReturnType<typeof getCaseConsolidation>>, TError = ErrorType<ErrorResponse>>(
+ caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCaseConsolidation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCaseConsolidationQueryOptions(caseId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

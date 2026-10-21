@@ -5,45 +5,40 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { PersonaProvider } from '@/lib/persona';
-import { Shell } from '@/components/shell';
+import { CaseProvider } from '@/lib/case';
+import { Frame } from '@/components/frame';
 import NotFound from '@/pages/not-found';
-import Login from '@/pages/login';
-import Home from '@/pages/home';
+import SignIn from '@/pages/signin';
 import Discover from '@/pages/discover';
-import BriefPage from '@/pages/brief';
 import Library from '@/pages/library';
 import SolutionPage from '@/pages/solution';
-import Cases from '@/pages/cases';
-import Workspace from '@/pages/workspace';
-import Review from '@/pages/review';
-import Experiments from '@/pages/experiments';
+import SearchPage from '@/pages/search';
+import Workbench from '@/pages/workbench';
+import TestSessionPage from '@/pages/test-session';
+import MySolutions from '@/pages/my-solutions';
 import Portfolio from '@/pages/portfolio';
-import Queue from '@/pages/queue';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: false } } });
 
 function Router() {
   const [location] = useLocation();
-  if (location === '/') return <Login />;
+  if (location === '/') return <SignIn />;
   return (
-    <Shell>
+    <Frame>
       <RoutedErrorBoundary>
         <Switch>
-          <Route path="/home" component={Home} />
           <Route path="/discover" component={Discover} />
-          <Route path="/discover/:briefId" component={BriefPage} />
           <Route path="/library" component={Library} />
-          <Route path="/library/:solutionId" component={SolutionPage} />
-          <Route path="/cases" component={Cases} />
-          <Route path="/cases/:caseId/review" component={Review} />
-          <Route path="/cases/:caseId" component={Workspace} />
-          <Route path="/experiments" component={Experiments} />
+          <Route path="/solutions/:id" component={SolutionPage} />
+          <Route path="/search" component={SearchPage} />
+          <Route path="/workbench/:caseId" component={Workbench} />
+          <Route path="/test/:sessionId" component={TestSessionPage} />
+          <Route path="/my-solutions" component={MySolutions} />
           <Route path="/portfolio" component={Portfolio} />
-          <Route path="/portfolio/queue" component={Queue} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>
-    </Shell>
+    </Frame>
   );
 }
 
@@ -57,9 +52,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <PersonaProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
+          <CaseProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <Router />
+            </WouterRouter>
+          </CaseProvider>
         </PersonaProvider>
         <Toaster />
       </TooltipProvider>

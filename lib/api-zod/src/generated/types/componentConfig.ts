@@ -12,6 +12,8 @@ import type { FeatureState } from './featureState';
 export interface ComponentConfig {
   capability: Capability;
   controlType: ControlType;
+  /** True when the capability is a workflow step that transforms the input; false for controls */
+  executable: boolean;
   state: FeatureState;
   active: boolean;
   /** @nullable */

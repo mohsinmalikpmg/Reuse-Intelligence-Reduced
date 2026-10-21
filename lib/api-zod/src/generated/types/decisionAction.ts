@@ -10,7 +10,7 @@ export type DecisionAction = typeof DecisionAction[keyof typeof DecisionAction];
 
 
 export const DecisionAction = {
-  approve_simulation: 'approve_simulation',
+  propose_pilot: 'propose_pilot',
   approve_pilot: 'approve_pilot',
   request_changes: 'request_changes',
   defer: 'defer',

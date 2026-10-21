@@ -11,6 +11,10 @@ import type { BriefSource } from './briefSource';
 export interface Brief {
   id: string;
   rawText: string;
+  /** What is happening now */
+  today: string;
+  /** The outcome the user wants */
+  better: string;
   fields: BriefFields;
   /**
      * At most one clarifying question, only when necessary

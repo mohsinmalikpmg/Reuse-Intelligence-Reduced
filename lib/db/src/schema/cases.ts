@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -13,6 +13,7 @@ export const casesTable = pgTable("cases", {
   moduleStates: jsonb("module_states").$type<Record<string, boolean>>().notNull(),
   configValues: jsonb("config_values").$type<Record<string, string>>().notNull(),
   experimentId: text("experiment_id"),
+  pilotPercent: integer("pilot_percent").notNull().default(10),
   createdByRole: text("created_by_role").notNull().default("seeker"),
   saved: boolean("saved").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

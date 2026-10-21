@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { db, briefsTable, casesTable, experimentsTable, decisionsTable } from "@workspace/db";
 import type { BriefRow, CaseRow, ExperimentRow, DecisionRow } from "@workspace/db";
@@ -7,10 +6,10 @@ import { businessProblemById, getSolution, solutions } from "../data/catalog";
 import { type CaseContext, addedExternalModules, caseContext, defaultConfigValues, defaultModuleStates } from "./configuration";
 import { SIMULATION_LABEL } from "./simulation";
 import { nextStep } from "./analysis";
+import { caseEvidence } from "./evidence";
 
-export function newId(prefix: string): string {
-  return `${prefix}_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
-}
+import { newId } from "./ids";
+export { newId };
 
 // ---------- Serializers ----------
 
@@ -19,6 +18,8 @@ export function toBrief(row: BriefRow): Brief {
     id: row.id,
     rawText: row.rawText,
     fields: row.fields as Brief["fields"],
+    today: row.today,
+    better: row.better,
     clarifyingQuestion: row.clarifyingQuestion,
     clarification: row.clarification,
     source: row.source as Brief["source"],
@@ -40,6 +41,7 @@ export function toCase(row: CaseRow): Case {
     moduleStates: row.moduleStates,
     configValues: row.configValues,
     experimentId: row.experimentId,
+    pilotPercent: row.pilotPercent,
     createdByRole: row.createdByRole as Role,
     saved: row.saved,
     createdAt: row.createdAt.toISOString(),
@@ -120,21 +122,25 @@ export async function createCase(input: { baseSolutionId: string; briefId?: stri
   const candidateSolutionIds = candidatesFor(base);
   const ctx = caseContext({ baseSolutionId: base.id, candidateSolutionIds });
   const businessProblemId = base.businessProblemIds[0] ?? "bp-unknown";
-  const problem = businessProblemById.get(businessProblemId);
   const id = input.id ?? newId("case");
+  // Version B starts equal to Version A: base optional modules follow their evidence, additions from other
+  // solutions stay off until the user adds them. The tray still marks the recommended ones.
+  const moduleStates = defaultModuleStates(ctx);
+  for (const cap of ctx.candidateCapabilities) moduleStates[cap.id] = false;
   const [row] = await db
     .insert(casesTable)
     .values({
       id,
       briefId: input.briefId ?? null,
-      title: input.title ?? `${problem?.title ?? base.name} consolidation`,
+      title: input.title ?? `${base.name}: proposed change`,
       businessProblemId,
       baseSolutionId: base.id,
       candidateSolutionIds,
       status: "draft",
-      moduleStates: defaultModuleStates(ctx),
+      moduleStates,
       configValues: defaultConfigValues(ctx),
       experimentId: null,
+      pilotPercent: 10,
       createdByRole: input.createdByRole ?? "seeker",
       saved: false,
     })
@@ -202,6 +208,7 @@ export async function summarize(c: Case, ctx?: CaseContext): Promise<CaseSummary
   const context = ctx ?? caseContext(c);
   const experiment = c.experimentId ? await getExperiment(c.experimentId) : null;
   const decisions = await listDecisions(c.id);
+  const evidence = await caseEvidence(c);
   const latestDecision = decisions[0] ?? null;
   return {
     case: c,
@@ -210,7 +217,7 @@ export async function summarize(c: Case, ctx?: CaseContext): Promise<CaseSummary
     addedCapabilities: addedExternalModules(c, context).map((cap) => cap.name),
     experimentRecommendation: experiment?.recommendation ?? null,
     latestDecision,
-    nextStep: nextStep(c, experiment?.recommendation ?? null, latestDecision),
+    nextStep: nextStep(c, evidence, latestDecision, decisions.some((d) => d.action === "approve_consolidation")),
   };
 }
 

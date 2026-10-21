@@ -1,5 +1,6 @@
 import type {
   Brief,
+  Capability,
   Solution,
   SolutionMatch,
   CapabilityMatch,
@@ -300,4 +301,89 @@ export function searchSolutions(q: string | undefined, status: Solution["status"
     });
   }
   return sortByMaturity(list);
+}
+
+// ---------- Global search ----------
+
+export interface SearchFilters {
+  status?: Solution["status"];
+  kind?: Solution["kind"];
+  owner?: string;
+  businessProblemId?: string;
+}
+
+export interface SearchHit {
+  solution: Solution;
+  score: number;
+  reasons: string[];
+  matchedCapabilities: Capability[];
+}
+
+/**
+ * Hybrid search: exact phrase and token overlap on names (keyword) plus overlap with the problem, workflow,
+ * intended users and capability descriptions (semantic-ish). Every reason shown is one the data supports.
+ */
+export function searchLibrary(q: string, filters: SearchFilters): { hits: SearchHit[]; capabilities: Capability[] } {
+  const qLower = q.trim().toLowerCase();
+  const qTokens = new Set(tokenize(q));
+  let list = solutions;
+  if (filters.status) list = list.filter((s) => s.status === filters.status);
+  if (filters.kind) list = list.filter((s) => s.kind === filters.kind);
+  if (filters.owner) list = list.filter((s) => s.ownerName === filters.owner || s.ownerTeam === filters.owner);
+  if (filters.businessProblemId) list = list.filter((s) => s.businessProblemIds.includes(filters.businessProblemId!));
+
+  const capHits = capabilities
+    .map((cap) => {
+      const kw = capabilityKeywords.get(cap.id) ?? [];
+      const sim = overlap(qTokens, new Set(tokenize([cap.name, cap.description, ...kw].join(" "))));
+      const exact = qLower.length > 2 && cap.name.toLowerCase().includes(qLower);
+      return { cap, sim: exact ? Math.max(sim, 0.6) : sim };
+    })
+    .filter((c) => c.sim >= 0.2)
+    .sort((a, b) => b.sim - a.sim);
+
+  const hits: SearchHit[] = list
+    .map((s) => {
+      const meta = solutionSearchMeta.get(s.id);
+      const reasons: string[] = [];
+      let score = 0;
+      if (qLower.length > 1 && s.name.toLowerCase().includes(qLower)) {
+        score += 60;
+        reasons.push(`Name matches "${q.trim()}".`);
+      }
+      const problemSim = overlap(qTokens, new Set(tokenize([s.outcome, s.description, ...(meta?.keywords ?? [])].join(" "))));
+      if (problemSim >= 0.15) {
+        score += Math.round(problemSim * 60);
+        reasons.push(`Addresses the same problem: ${s.outcome}`);
+      }
+      const workflowSim = overlap(qTokens, new Set(tokenize(s.workflowSteps.join(" "))));
+      if (workflowSim >= 0.2) {
+        score += Math.round(workflowSim * 25);
+        reasons.push(`Covers workflow steps ${s.workflowSteps.join(" > ")}.`);
+      }
+      const userSim = overlap(qTokens, new Set(tokenize([...(meta?.intendedUsers ?? []), ...s.businessUnits].join(" "))));
+      if (userSim >= 0.2) {
+        score += Math.round(userSim * 20);
+        reasons.push(`Built for ${(meta?.intendedUsers ?? s.businessUnits).slice(0, 2).join(" and ").toLowerCase()}.`);
+      }
+      const matchedCapabilities = capHits.filter((c) => s.capabilityIds.includes(c.cap.id)).map((c) => c.cap);
+      if (matchedCapabilities.length) {
+        score += 15 + matchedCapabilities.length * 5;
+        reasons.push(`Includes ${matchedCapabilities.map((cap) => cap.name.toLowerCase()).slice(0, 2).join(" and ")}.`);
+      }
+      if (qLower.length > 2 && (s.ownerName.toLowerCase().includes(qLower) || s.ownerTeam.toLowerCase().includes(qLower))) {
+        score += 30;
+        reasons.push(`Owned by ${s.ownerName} (${s.ownerTeam}).`);
+      }
+      if (score > 0) {
+        if (s.status === "certified") score += 8;
+        else if (s.status === "pilot") score += 4;
+        reasons.push(s.status === "certified" ? `Certified, ${s.activeUsers} active users.` : `${s.status.charAt(0).toUpperCase()}${s.status.slice(1)}, ${s.activeUsers} users.`);
+      }
+      return { solution: s, score: Math.min(100, score), reasons: reasons.slice(0, 3), matchedCapabilities };
+    })
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return { hits, capabilities: capHits.slice(0, 5).map((c) => c.cap) };
 }

@@ -87,7 +87,7 @@ export type CaseStatus = typeof CaseStatus[keyof typeof CaseStatus];
 
 export const CaseStatus = {
   draft: 'draft',
-  simulated: 'simulated',
+  tested: 'tested',
   pilot_proposed: 'pilot_proposed',
   approved: 'approved',
   changes_requested: 'changes_requested',
@@ -99,7 +99,7 @@ export type DecisionAction = typeof DecisionAction[keyof typeof DecisionAction];
 
 
 export const DecisionAction = {
-  approve_simulation: 'approve_simulation',
+  propose_pilot: 'propose_pilot',
   approve_pilot: 'approve_pilot',
   request_changes: 'request_changes',
   defer: 'defer',
@@ -252,6 +252,8 @@ export interface Case {
   configValues: CaseConfigValues;
   /** @nullable */
   experimentId: string | null;
+  /** Pilot exposure chosen for this case (5 */
+  pilotPercent: number;
   createdByRole: Role;
   saved: boolean;
   createdAt: string;
@@ -320,6 +322,10 @@ export const BriefSource = {
 export interface Brief {
   id: string;
   rawText: string;
+  /** What is happening now */
+  today: string;
+  /** The outcome the user wants */
+  better: string;
   fields: BriefFields;
   /**
      * At most one clarifying question, only when necessary
@@ -355,6 +361,8 @@ export interface BriefFieldValues {
 
 export interface BriefUpdate {
   fields?: BriefFieldValues;
+  today?: string;
+  better?: string;
   confirmed?: boolean;
   clarification?: string;
 }
@@ -416,10 +424,77 @@ export interface CaseInput {
   createdByRole?: Role;
 }
 
+export type CaseUpdatePilotPercent = typeof CaseUpdatePilotPercent[keyof typeof CaseUpdatePilotPercent];
+
+
+export const CaseUpdatePilotPercent = {
+  NUMBER_5: 5,
+  NUMBER_10: 10,
+  NUMBER_20: 20,
+} as const;
+
 export interface CaseUpdate {
   /** @minLength 1 */
   title?: string;
   saved?: boolean;
+  pilotPercent?: CaseUpdatePilotPercent;
+}
+
+export type ConsolidationSolutionFate = typeof ConsolidationSolutionFate[keyof typeof ConsolidationSolutionFate];
+
+
+export const ConsolidationSolutionFate = {
+  base: 'base',
+  folded: 'folded',
+  retired: 'retired',
+} as const;
+
+export interface ConsolidationSolution {
+  solution: Solution;
+  fate: ConsolidationSolutionFate;
+  /** One sentence on what happens to this product */
+  note: string;
+}
+
+export type FutureProductModulesItem = {
+  name: string;
+  sourceSolutionName: string;
+};
+
+export interface FutureProduct {
+  name: string;
+  /** One line describing the certified core workflow */
+  core: string;
+  /** Optional modules carried into the future product */
+  modules: FutureProductModulesItem[];
+  /** Locked controls that stay in place */
+  controls: string[];
+}
+
+export type ConsolidationDecisionViewAvailableActionsItem = {
+  role: Role;
+  actions: DecisionAction[];
+};
+
+export interface ConsolidationDecisionView {
+  caseId: string;
+  /** e.g. Three solutions can become one governed product. */
+  headline: string;
+  current: ConsolidationSolution[];
+  future: FutureProduct;
+  /** At most four plain-language outcomes */
+  outcomes: string[];
+  /** The single most important risk */
+  risk: string;
+  /** Supporting evidence for the detail drawer */
+  evidence: string[];
+  /** Decision actions currently permitted per role */
+  availableActions: ConsolidationDecisionViewAvailableActionsItem[];
+  /**
+     * Summary of the IT consolidation decision, if one exists
+     * @nullable
+     */
+  decided: string | null;
 }
 
 export interface DecisionInput {
@@ -461,52 +536,408 @@ export interface Recommendation {
   adoptionEffort: string;
 }
 
-export type CapabilityPresenceStrength = typeof CapabilityPresenceStrength[keyof typeof CapabilityPresenceStrength];
+export interface SampleInput {
+  id: string;
+  name: string;
+  description: string;
+  solutionIds: string[];
+  text: string;
+  /** True when labelled expected findings exist for objective scoring */
+  hasExpected: boolean;
+  noteCount: number;
+}
+
+export interface OutputItem {
+  id: string;
+  /** Stable across runs so A and B lines can be matched */
+  key: string;
+  kind: string;
+  text: string;
+  /** @nullable */
+  detail: string | null;
+  /** Capability id of the step that produced this line */
+  stepId: string;
+  refs: string[];
+}
+
+export interface OutputSection {
+  key: string;
+  title: string;
+  stepId: string;
+  items: OutputItem[];
+}
+
+export interface RunOutput {
+  headline: string;
+  sections: OutputSection[];
+}
+
+export type StepTraceStatus = typeof StepTraceStatus[keyof typeof StepTraceStatus];
 
 
-export const CapabilityPresenceStrength = {
-  strong: 'strong',
-  standard: 'standard',
-  weak: 'weak',
-  none: 'none',
+export const StepTraceStatus = {
+  ran: 'ran',
+  skipped: 'skipped',
+  error: 'error',
 } as const;
 
-export interface CapabilityPresence {
+export interface StepTrace {
+  stepId: string;
+  name: string;
+  stage: string;
+  status: StepTraceStatus;
+  inputSummary: string;
+  transformation: string;
+  outputSummary: string;
+  itemCount: number;
+  durationMs: number;
+  /** @nullable */
+  error: string | null;
+}
+
+export interface RunStats {
+  steps: number;
+  sections: number;
+  items: number;
+  issues: number;
+  patterns: number;
+  actions: number;
+  errors: number;
+}
+
+export type RunVersion = typeof RunVersion[keyof typeof RunVersion];
+
+
+export const RunVersion = {
+  A: 'A',
+  B: 'B',
+} as const;
+
+export type RunConfigValues = {[key: string]: string};
+
+export interface Run {
+  id: string;
+  /** @nullable */
+  caseId: string | null;
   solutionId: string;
-  present: boolean;
-  strength: CapabilityPresenceStrength;
+  version: RunVersion;
+  versionLabel: string;
+  /** @nullable */
+  sampleInputId: string | null;
+  inputText: string;
+  inputHash: string;
+  enabledCapabilityIds: string[];
+  configValues: RunConfigValues;
+  output: RunOutput;
+  trace: StepTrace[];
+  stats: RunStats;
+  durationMs: number;
+  errors: string[];
+  createdAt: string;
 }
 
-export type CompareRowVerdict = typeof CompareRowVerdict[keyof typeof CompareRowVerdict];
+export type RunRequestVersion = typeof RunRequestVersion[keyof typeof RunRequestVersion];
 
 
-export const CompareRowVerdict = {
-  common: 'common',
-  unique: 'unique',
-  stronger: 'stronger',
-  unsupported: 'unsupported',
-  retire: 'retire',
+export const RunRequestVersion = {
+  A: 'A',
+  B: 'B',
 } as const;
 
-export interface CompareRow {
-  capability: Capability;
-  presence: CapabilityPresence[];
-  verdict: CompareRowVerdict;
-  verdictNote: string;
-  evidence: string;
+export interface RunRequest {
+  /** Run the production workflow of a solution (version A) */
+  solutionId?: string;
+  /** Run a case; version A is the base product */
+  caseId?: string;
+  version: RunRequestVersion;
+  sampleInputId?: string;
+  /** Overrides the sample text; used as-is when no sample is given */
+  inputText?: string;
 }
 
-export interface Comparison {
+export type WorkflowBlockKind = typeof WorkflowBlockKind[keyof typeof WorkflowBlockKind];
+
+
+export const WorkflowBlockKind = {
+  required: 'required',
+  configurable: 'configurable',
+  optional: 'optional',
+} as const;
+
+export type WorkflowBlockOrigin = typeof WorkflowBlockOrigin[keyof typeof WorkflowBlockOrigin];
+
+
+export const WorkflowBlockOrigin = {
+  base: 'base',
+  added: 'added',
+} as const;
+
+export interface WorkflowBlock {
+  capability: Capability;
+  stage: string;
+  kind: WorkflowBlockKind;
+  active: boolean;
+  /** False for controls (identity */
+  executable: boolean;
+  /** @nullable */
+  value: string | null;
+  /** @nullable */
+  options: string[] | null;
+  origin: WorkflowBlockOrigin;
+  /** @nullable */
+  blockedReason: string | null;
+}
+
+export interface SolutionWorkbench {
+  solution: Solution;
+  /** Executable steps in execution order */
+  blocks: WorkflowBlock[];
+  /** Locked controls preserved around the workflow */
+  controls: Capability[];
+  sampleInputs: SampleInput[];
+  exampleRun: Run;
+}
+
+export type DiffEntryChange = typeof DiffEntryChange[keyof typeof DiffEntryChange];
+
+
+export const DiffEntryChange = {
+  added: 'added',
+  removed: 'removed',
+  changed: 'changed',
+} as const;
+
+export interface DiffEntry {
+  change: DiffEntryChange;
+  sectionKey: string;
+  sectionTitle: string;
+  stepId: string;
+  stepName: string;
+  sourceSolutionName: string;
+  /** @nullable */
+  before: string | null;
+  /** @nullable */
+  after: string | null;
+  itemKey: string;
+  kind: string;
+}
+
+export type OutputDiffStepsResponsibleItem = {
+  stepId: string;
+  name: string;
+  sourceSolutionName: string;
+  changes: number;
+};
+
+export interface OutputDiff {
+  entries: DiffEntry[];
+  added: number;
+  removed: number;
+  changed: number;
+  unchanged: number;
+  stepsResponsible: OutputDiffStepsResponsibleItem[];
+}
+
+export interface ObjectiveScore {
+  expected: number;
+  identified: number;
+  missed: number;
+  falsePositives: number;
+  /** @nullable */
+  precision: number | null;
+  /** @nullable */
+  recall: number | null;
+  identifiedLabels: string[];
+  missedLabels: string[];
+  falsePositiveLabels: string[];
+}
+
+export type EvaluationChoice = typeof EvaluationChoice[keyof typeof EvaluationChoice];
+
+
+export const EvaluationChoice = {
+  A: 'A',
+  B: 'B',
+  neither: 'neither',
+} as const;
+
+export interface Evaluation {
+  id: string;
   caseId: string;
-  baseSolutionId: string;
-  solutions: Solution[];
-  rows: CompareRow[];
-  summary: string;
+  /** @nullable */
+  sessionId: string | null;
+  /** @nullable */
+  sampleInputId: string | null;
+  inputHash: string;
+  runAId: string;
+  runBId: string;
+  choice: EvaluationChoice;
+  /** @nullable */
+  reason: string | null;
+  /** @nullable */
+  rating: number | null;
+  evaluator: string;
+  role: Role;
+  blind: boolean;
+  /** True for simulated demo accounts */
+  demo: boolean;
+  createdAt: string;
+}
+
+export interface ABComparison {
+  caseId: string;
+  /** True when Version B has changed since this run; rerun to refresh */
+  staleB: boolean;
+  /** @nullable */
+  sampleInputId: string | null;
+  inputText: string;
+  inputHash: string;
+  runA: Run;
+  runB: Run;
+  diff: OutputDiff;
+  scoreA: ObjectiveScore | null;
+  scoreB: ObjectiveScore | null;
+  /** Plain-language lines explaining what changed and which step caused it */
+  explanation: string[];
+  /** The current user's recorded preference for this exact pair, if any */
+  evaluation: Evaluation | null;
+}
+
+export interface CompareRequest {
+  sampleInputId?: string;
+  inputText?: string;
+}
+
+export type EvaluationInputChoice = typeof EvaluationInputChoice[keyof typeof EvaluationInputChoice];
+
+
+export const EvaluationInputChoice = {
+  A: 'A',
+  B: 'B',
+  neither: 'neither',
+} as const;
+
+export interface EvaluationInput {
+  runAId: string;
+  runBId: string;
+  choice: EvaluationInputChoice;
+  reason?: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating?: number;
+  role: Role;
+  evaluator: string;
+}
+
+export interface EvaluationSummary {
+  /** Recorded evaluations; computed only from stored votes */
+  tests: number;
+  aPreferred: number;
+  bPreferred: number;
+  neither: number;
+  /** @nullable */
+  averageRating: number | null;
+  distinctInputs: number;
+  blindVotes: number;
+  demoVotes: number;
+}
+
+export interface EvaluationList {
+  summary: EvaluationSummary;
+  items: Evaluation[];
+}
+
+export interface TestSessionInput {
+  createdBy: string;
+  title?: string;
+}
+
+export interface TestPair {
+  sampleInputId: string;
+  inputName: string;
+  inputText: string;
+  left: RunOutput;
+  right: RunOutput;
+  responses: number;
+}
+
+export interface TestSession {
+  id: string;
+  caseId: string;
+  createdBy: string;
+  title: string;
+  closed: boolean;
+  pairs: TestPair[];
+  responseCount: number;
+  /** Aggregate preference, revealed only once responses exist */
+  results: EvaluationSummary | null;
+  createdAt: string;
+}
+
+export type TestResponseInputPick = typeof TestResponseInputPick[keyof typeof TestResponseInputPick];
+
+
+export const TestResponseInputPick = {
+  left: 'left',
+  right: 'right',
+  neither: 'neither',
+} as const;
+
+export interface TestResponseInput {
+  sampleInputId: string;
+  pick: TestResponseInputPick;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating?: number;
+  comment?: string;
+  tester: string;
+  /** Mark as a simulated demo account vote */
+  demo?: boolean;
+}
+
+export interface SearchResult {
+  solution: Solution;
+  score: number;
+  reasons: string[];
+  matchedCapabilities: Capability[];
+}
+
+export type SearchResultsSource = typeof SearchResultsSource[keyof typeof SearchResultsSource];
+
+
+export const SearchResultsSource = {
+  keyword: 'keyword',
+  hybrid: 'hybrid',
+} as const;
+
+export interface SearchResults {
+  query: string;
+  results: SearchResult[];
+  /** Reusable capabilities matching the query on their own */
+  capabilities: Capability[];
+  source: SearchResultsSource;
+}
+
+export interface OwnedSolution {
+  solution: Solution;
+  proposals: CaseSummary[];
+  /** Cases with runs but no owner decision yet */
+  openTests: number;
+  /** Recorded preference votes across proposals */
+  evaluations: number;
+  /** Runs recorded in the last 30 days */
+  recentRuns: number;
 }
 
 export interface ComponentConfig {
   capability: Capability;
   controlType: ControlType;
+  /** True when the capability is a workflow step that transforms the input; false for controls */
+  executable: boolean;
   state: FeatureState;
   active: boolean;
   /** @nullable */
@@ -541,15 +972,6 @@ export interface Impact {
   projected: Metrics;
 }
 
-export interface Configuration {
-  caseId: string;
-  summary: string;
-  steps: WorkflowStepConfig[];
-  impact: Impact;
-  activeModuleCount: number;
-  lockedCount: number;
-}
-
 export type ConfigurationUpdateModuleStates = {[key: string]: boolean};
 
 export type ConfigurationUpdateConfigValues = {[key: string]: string};
@@ -557,6 +979,19 @@ export type ConfigurationUpdateConfigValues = {[key: string]: string};
 export interface ConfigurationUpdate {
   moduleStates?: ConfigurationUpdateModuleStates;
   configValues?: ConfigurationUpdateConfigValues;
+}
+
+export interface Configuration {
+  caseId: string;
+  summary: string;
+  steps: WorkflowStepConfig[];
+  impact: Impact;
+  activeModuleCount: number;
+  lockedCount: number;
+  /** The recommended module states and settings; send it back to reset the case */
+  recommended: ConfigurationUpdate;
+  /** True when the current configuration equals the recommended one */
+  isRecommended: boolean;
 }
 
 export interface SyntheticPersona {
@@ -647,7 +1082,8 @@ export interface VersionSnapshot {
   workflowSteps: string[];
   capabilities: string[];
   userGroups: string[];
-  performance: Metrics;
+  /** Measured production metrics; null for a proposed version that has not run in production */
+  performance: Metrics | null;
 }
 
 export interface ConfigChange {
@@ -699,17 +1135,26 @@ export interface ChangeReview {
   availableActions: ChangeReviewAvailableActionsItem[];
 }
 
+export interface PortfolioMetric {
+  key: string;
+  label: string;
+  value: string;
+  /** @nullable */
+  numerator: number | null;
+  /** @nullable */
+  denominator: number | null;
+  definition: string;
+  /** True when the number comes from seeded demonstration data */
+  demo: boolean;
+}
+
 export interface PortfolioMetrics {
-  activeSolutions: number;
-  overlappingGroups: number;
-  certified: number;
-  experimental: number;
-  withoutOwner: number;
-  consolidationOpportunities: number;
-  retirementCandidates: number;
-  /** Capabilities used by more than one solution */
-  sharedCapabilityReuse: number;
-  pendingReviews: number;
+  searchToReuse: PortfolioMetric;
+  duplicateGroups: PortfolioMetric;
+  consolidationsCompleted: PortfolioMetric;
+  abTestsWithPreference: PortfolioMetric;
+  activeVsRetired: PortfolioMetric;
+  needsAttention: PortfolioMetric;
 }
 
 export interface PortfolioRow {
@@ -797,6 +1242,18 @@ export interface DemoState {
 export type ListSolutionsParams = {
 q?: string;
 status?: SolutionStatus;
+};
+
+export type ListSampleInputsParams = {
+solutionId?: string;
+};
+
+export type SearchLibraryParams = {
+q: string;
+status?: SolutionStatus;
+kind?: SolutionKind;
+owner?: string;
+businessProblemId?: string;
 };
 
 export type ListCasesParams = {

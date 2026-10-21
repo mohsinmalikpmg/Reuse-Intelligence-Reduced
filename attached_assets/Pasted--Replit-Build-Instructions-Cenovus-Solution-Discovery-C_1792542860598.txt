@@ -1,0 +1,1162 @@
+# Replit Build Instructions — Cenovus Solution Discovery & Consolidation Platform
+
+## Mission
+
+Modify the existing application. Do not rebuild it from scratch or discard working functionality.
+
+The product must help Cenovus employees discover existing solutions, visually understand how they work, combine useful capabilities, and **physically test how changing a workflow modifies the actual outputs**.
+
+Our competitive differentiator is the interactive A/B testing workbench.
+
+The experience must be extremely simple, visual, intuitive and engaging, with minimal information visible by default.
+
+**Design principle: One obvious action at a time.**
+
+**Core proposition: Find what exists. Improve what works. Test the difference.**
+
+---
+
+## 1. Non-negotiable correction: A/B testing
+
+The existing synthetic-prediction Test page is not sufficient.
+
+Replace it with a functional, hands-on workflow testing environment.
+
+The user must be able to:
+
+1. Select an existing solution.
+2. Inspect its actual workflow.
+3. Create a proposed Version B.
+4. Drag approved capabilities into Version B.
+5. Turn optional capabilities on or off.
+6. Configure approved behaviour.
+7. Select or edit a test input.
+8. Execute Version A and Version B against exactly the same input.
+9. See both outputs side by side.
+10. See how the outputs changed because of the workflow modification.
+11. Select the better output.
+12. Save the proposed configuration.
+13. Repeat the experiment using additional inputs.
+14. Request feedback from other users.
+15. Submit a proposed version for an owner-controlled pilot.
+
+This must be functional rather than merely visual.
+
+Changing a feature must change the actual execution path and resulting output.
+
+**Do not produce invented A/B performance numbers or fabricated evidence that a version performs better.**
+
+Synthetic prediction may remain as an optional future capability, but it must not be the core Test experience.
+
+---
+
+## 2. Primary navigation
+
+Keep six simple destinations:
+
+- Discover
+- Library
+- Workbench
+- My Solutions
+- Portfolio
+
+The sixth destination, Search, should be accessible from a persistent global search field rather than requiring a separate navigation tab.
+
+Search results must also have a dedicated full-page view with their own URL and filters.
+
+The three personas are:
+
+**Find:** Solution Seeker / Business Analyst
+
+**Own:** Existing Solution Owner
+
+**Govern:** IT Leader
+
+Use a role switcher in the header.
+
+Each role has different default content and permissions, but all roles use the same underlying application, solution library, workflows and experiments.
+
+No complicated persona dashboard is required.
+
+---
+
+## 3. Cenovus branding
+
+Replace the current generic product theme with a Cenovus-inspired interface.
+
+Use the following documented brand colors:
+
+Primary slate blue:
+#365860
+
+Sienna accent:
+#C5683B
+
+Green:
+#8A9A36
+
+Light blue:
+#6E9EAF
+
+Suggested supporting colors:
+
+Background:
+#F7F8F6
+
+Cards:
+#FFFFFF
+
+Primary text:
+#26373B
+
+Secondary text:
+#647174
+
+Soft borders:
+#E3E8E7
+
+Use slate blue for:
+
+- Navigation
+- Primary buttons
+- Selected workflow elements
+- Active links
+- Main headings
+
+Use sienna for:
+
+- Important recommendations
+- Active experimentation accents
+- Selected comparisons
+- Attention points
+
+Use green for:
+
+- Recommended solutions
+- Certified states
+- Approved decisions
+- Successful validation
+
+Use gray for:
+
+- Inactive components
+- Deprecated solutions
+- Secondary information
+
+Use red sparingly for actual incompatibilities and errors.
+
+Maintain WCAG AA contrast. Use text and icons alongside color.
+
+Use a clean, modern, professional font such as Inter.
+
+Use the official Cenovus logo asset if available. Do not redraw, recolor or distort the logo. If an approved logo file is unavailable, use a neutral "Cenovus | Solutions" text placeholder.
+
+No purple SaaS branding, oversized gradients, decorative backgrounds or excessively colorful cards.
+
+Use generous whitespace and large click targets.
+
+The visual style should feel like a modern Cenovus internal application.
+
+---
+
+## 4. Simplicity rules
+
+Never show everything at once.
+
+Default screens should show:
+
+- One clear question or recommendation
+- No more than three primary objects
+- One dominant action
+- Short explanations
+- Visual information wherever possible
+
+Place additional information behind:
+
+- Click to expand
+- View details
+- Double-click shortcut
+- Side drawer
+- Show more
+- Explore
+
+Every double-click interaction must also have a discoverable single-click alternative.
+
+Avoid:
+
+- Dense dashboards
+- Large tables
+- Long forms
+- Complex sidebars
+- Long chatbot transcripts
+- Huge workflow diagrams
+- Unnecessary animation
+- Blank-canvas workflow building
+
+The application should use guided defaults. Advanced exploration is optional.
+
+---
+
+## 5. Discover view
+
+### Screen objective
+
+Help the user go from a plain-language problem to a relevant existing solution with minimal effort.
+
+Headline:
+
+"What are you trying to solve?"
+
+Show one large natural-language input.
+
+Example:
+
+"We spend too much time reviewing maintenance work orders to identify recurring equipment problems."
+
+Allow submission through Enter or a large "Find solutions" button.
+
+### Requirement understanding
+
+Do not create separate Pain and Need sections.
+
+Use two simple concepts:
+
+**Today**
+What is happening now?
+
+**Better**
+What outcome does the user want?
+
+Example:
+
+Today:
+"Maintenance staff manually review notes and sometimes miss recurring issues."
+
+Better:
+"Identify recurring equipment problems quickly and consistently."
+
+The AI should produce editable cards for Today and Better.
+
+Allow:
+
+- Click to edit
+- Drag supporting requirement chips
+- Remove incorrect assumptions
+- Add missing information
+
+Internally extract the detailed requirements, stakeholders, desired outcomes, constraints and success measures.
+
+Do not expose all this information unless requested.
+
+Primary action:
+"Find existing solutions"
+
+### Results
+
+Immediately show:
+
+**Best match**
+
+One large recommended solution card.
+
+Below:
+"Other possibilities"
+
+Show up to two additional solutions.
+
+Each solution shows only:
+
+- Name
+- One-sentence description
+- Certification status
+- Why it matches
+- Primary action: "Explore solution"
+
+Support additional results behind "Show more."
+
+---
+
+## 6. Library view — mandatory
+
+Create a real, functional solution library.
+
+This is an important independent product feature, not just a screen used during discovery.
+
+The user must be able to enter the library without first describing a pain point.
+
+### Default library view
+
+Headline:
+"Explore what already exists"
+
+At the top:
+
+- Large search field
+- A few simple category chips
+- Grid / Tree view switch
+
+Default view:
+Clean solution cards.
+
+Card contents:
+
+- Solution name
+- One-sentence description
+- Business problem solved
+- Status
+- Owner
+- "Open" action
+
+Clicking a card opens its solution detail page.
+
+### Library filters
+
+Hide advanced filters behind "Filters".
+
+Support:
+
+- Business function
+- Business problem
+- Workflow
+- Status
+- Owner
+- Capabilities
+- Data sources
+
+Allow sorting by:
+
+- Recommended
+- Most used
+- Recently updated
+- Certified first
+
+### Interactive tree view
+
+Provide an alternative visual exploration mode.
+
+Organize the tree as:
+
+Business problem → Solutions → Capabilities
+
+Start collapsed.
+
+Only expand the branch the user clicks.
+
+Interactions:
+
+- Click problem to reveal solutions.
+- Click solution to reveal capabilities.
+- Click capability to reveal every solution using it.
+- Hover to preview a short description.
+- Double-click a solution to open its detail page.
+- Drag or pan to explore the tree.
+- Zoom controls.
+- "Return to overview" action.
+
+Use React Flow or an equivalent interactive diagram library.
+
+Do not create a massive visible graph by default.
+
+### Library data
+
+The library must use persistent structured records.
+
+Search, filtering, card view and tree view must operate on the same data.
+
+Seed multiple records spanning several realistic business problems, even if the live demo only explores one consolidation case.
+
+Include both:
+
+- Full workflow solutions
+- Reusable capabilities
+
+Clearly distinguish them.
+
+---
+
+## 7. Global search — mandatory
+
+The header search field must work from anywhere in the application.
+
+Users can search using:
+
+- Plain-language business problems
+- Solution names
+- Business function
+- Workflow tasks
+- Desired outcomes
+- Capabilities
+- Owner names
+
+Examples:
+
+"Identify recurring work-order issues"
+
+"Find something that summarizes documents"
+
+"Action tracking"
+
+"Maintenance"
+
+Search should return relevant results even when the user's wording differs from the stored solution names.
+
+Use a hybrid search approach:
+
+1. Structured metadata filtering.
+2. Keyword matching.
+3. Semantic search or AI-supported ranking where available.
+4. Transparent explanations of why results matched.
+
+Use a reliable keyword fallback if the AI service is unavailable.
+
+Search results must open real solution records and workflows.
+
+No placeholder cards.
+
+---
+
+## 8. Solution details
+
+Keep solution details initially simple.
+
+Header:
+
+- Solution name
+- Status
+- Owner
+- One-sentence outcome
+
+Main content:
+
+A visual horizontal workflow showing how the solution operates.
+
+Example:
+
+Read work orders → Analyze issues → Review → Produce actions
+
+Allow:
+
+- Click a step to preview its function.
+- Double-click for technical details.
+- Toggle "Show sample output."
+- Open version history.
+- See reusable capabilities.
+- See where a capability is also used.
+
+Default primary action:
+"Try this solution"
+
+Other actions:
+"Use as starting point"
+"Compare"
+"View details"
+
+The "Try this solution" action opens the actual execution environment with sample input loaded.
+
+Do not navigate to a static description-only page.
+
+---
+
+## 9. Workbench — the centerpiece
+
+Create one interactive Workbench where the user can explore, edit and execute workflows.
+
+The Workbench must support both inspection and A/B testing.
+
+### Layout
+
+Use three visually simple regions.
+
+LEFT — Inputs and capabilities
+
+CENTER — Interactive workflow
+
+RIGHT — Output preview
+
+Keep the center workflow visually dominant.
+
+Allow panels to collapse.
+
+### Initial experience
+
+When a solution is opened:
+
+- Load its current production workflow.
+- Load a realistic sample input.
+- Automatically show a saved example output if available.
+- Provide a large "Run" button.
+- Provide "Create B version."
+
+Do not begin with an empty canvas.
+
+### Inputs
+
+The user can:
+
+- Select an existing sample.
+- Edit the sample.
+- Paste text.
+- Load multiple seeded example records.
+- Upload supported sample input where implemented.
+
+For the maintenance scenario, include:
+
+- A single work-order note
+- Several related work-order notes
+- A larger set of notes with recurring patterns
+
+The same input must be used for both workflow versions during comparison.
+
+### Workflow
+
+Display connected executable workflow blocks.
+
+Example:
+
+Read notes → Summarize → Identify patterns → Human review → Produce actions
+
+Each block can be:
+
+- Required
+- Configurable
+- Optional
+
+Required blocks:
+Cannot be disabled.
+
+Configurable blocks:
+Click to open a compact settings drawer.
+
+Optional blocks:
+Can be switched on or off.
+
+Allow users to:
+
+- Drag approved capabilities into supported slots.
+- Enable or disable optional steps.
+- Reorder steps where compatibility rules permit.
+- Inspect a step.
+- Duplicate a workflow version.
+- Undo a change.
+- Restore the original version.
+
+A small expandable capability tray contains reusable library capabilities.
+
+The tray should default to showing only two recommended additions.
+
+### Real behaviour
+
+Workflow blocks are not decorative.
+
+Each executable block must correspond to a backend function or AI-powered transformation.
+
+The application must update the actual execution graph when the user changes a workflow.
+
+At minimum, implement these transformations:
+
+- Parse sample work orders.
+- Summarize work orders.
+- Extract equipment references and issues.
+- Cluster similar issues.
+- Rank recurring patterns.
+- Generate candidate follow-up actions.
+- Assign or track an action.
+- Format the final output.
+
+A combination of deterministic code and real AI calls is acceptable.
+
+Provide deterministic fallback implementations for demo reliability.
+
+Use actual intermediate outputs.
+
+---
+
+## 10. Interactive A/B workbench — highest priority
+
+Add a prominent "Compare A/B" mode inside the Workbench.
+
+This is the most important part of the application.
+
+### A/B layout
+
+Use:
+
+TOP:
+Shared input area
+
+MIDDLE:
+Two side-by-side workflows
+
+BOTTOM:
+Two side-by-side actual output previews
+
+Version A:
+Current product
+
+Version B:
+Proposed product
+
+Version A is locked as the baseline.
+
+Version B is editable.
+
+### Workflow editing
+
+The user can drag a recommended capability onto Version B.
+
+Example:
+
+Version A:
+Read → Summarize → Review
+
+Version B:
+Read → Summarize → Cluster issues → Review → Assign actions
+
+When a capability is added:
+
+- Update Version B's workflow.
+- Mark the changed step.
+- Explain its source solution on demand.
+- Mark Version B as needing rerun.
+- Allow the user to run B.
+
+The user can also:
+
+- Remove an optional component.
+- Turn it on or off.
+- Adjust permitted settings.
+- Reorder compatible components.
+- Reset B.
+
+### Execution
+
+Primary action:
+"Run both"
+
+Run the same input through A and B.
+
+Execution must produce actual output objects.
+
+Persist the results with:
+
+- Input identifier
+- Workflow version
+- Enabled capabilities
+- Configuration
+- Execution timestamp
+- Output
+- Step-level trace
+- Execution duration
+- Errors, if any
+
+Never fabricate execution results by displaying a hardcoded predicted advantage.
+
+### Output comparison
+
+Display Version A and Version B side by side.
+
+Show actual generated outputs.
+
+Highlight:
+
+- New content
+- Removed content
+- Changed content
+- New actions
+- Different classifications
+- Changed issue groupings
+
+Provide a simple visual diff.
+
+Click a highlighted change to identify the workflow step or capability responsible.
+
+Example:
+
+Version A output:
+"Pump P-104 shows vibration concerns."
+
+Version B output:
+"Pump P-104 has recurring vibration reports in four work orders. Recommend inspection of bearings and alignment."
+
+This difference must result from executing the corresponding capabilities on the selected input, not from switching between unrelated static text.
+
+### Intermediate output exploration
+
+Click a workflow block to open a small drawer showing:
+
+- Input received
+- Transformation performed
+- Output produced
+
+This lets users understand exactly why the final output differs.
+
+### Actual user evaluation
+
+Below the output comparison, ask:
+
+"Which result better solves the problem?"
+
+Provide three large actions:
+
+- A is better
+- B is better
+- Neither is good enough
+
+Optional:
+One-sentence reason.
+
+Persist the evaluation.
+
+Allow a user to run multiple test inputs and compare results.
+
+Show a very simple summary:
+
+- Tests completed
+- A preferred
+- B preferred
+- Neither preferred
+
+Only calculate these numbers from actual recorded evaluations.
+
+### Blind human A/B testing
+
+Allow the existing solution owner to create a small test session for colleagues.
+
+Present both real outputs without revealing which version generated each one.
+
+Randomize which output appears left or right, while maintaining the underlying mapping.
+
+Testers can:
+
+- Compare outputs
+- Select the better one
+- Rate usefulness
+- Leave a comment
+
+Persist each response.
+
+Reveal aggregate preference only after collecting evaluations.
+
+Support simulated demo accounts for the hackathon, but keep their votes clearly labelled as demonstration data.
+
+### Test metrics
+
+Only show defensible measures.
+
+Acceptable automatically recorded measures:
+
+- Runtime
+- Number of output sections
+- Number of actions produced
+- Number of issues identified
+- Number of errors
+- Number of steps executed
+
+If labelled expected outcomes are supplied, also calculate:
+
+- Correctly identified issues
+- Missed issues
+- False positives
+- Precision or recall
+
+If no ground truth exists, do not claim accuracy.
+
+Human-evaluation metrics:
+
+- Preference votes
+- Average usefulness rating
+- Comments
+
+Never imply that a generated output is more accurate solely because it is longer or more detailed.
+
+### Pilot
+
+After testing, provide:
+
+"Propose limited pilot"
+
+Show a compact pilot configuration:
+
+- Pilot group
+- Percentage
+- Success criteria
+- Rollback trigger
+
+The owner can approve, reject or request revisions.
+
+Real traffic splitting is not required for this hackathon.
+
+---
+
+## 11. My Solutions
+
+Create a simple page for the existing solution owner.
+
+Show their actual owned solutions.
+
+Each card displays:
+
+- Name
+- Status
+- Current version
+- Recent usage, where recorded
+- Proposed changes
+- Open tests
+
+Primary actions:
+
+- Open workflow
+- Test a change
+- Review proposal
+
+Opening a change proposal should launch the existing A/B workbench with A and B already loaded.
+
+The owner should see exactly what changed and compare output evidence before approving anything.
+
+No complicated dashboard is required.
+
+---
+
+## 12. IT Portfolio
+
+Create a simplified executive-level portfolio view.
+
+It must answer:
+
+1. Is the platform helping people find and reuse solutions?
+2. Are overlapping solutions actually being consolidated?
+3. Are proposed changes improving products?
+4. Which solutions need attention?
+
+Default metrics:
+
+- Search-to-reuse conversion
+- Duplicate solution groups
+- Consolidations completed
+- A/B tests with recorded user preference
+- Active versus retired solutions
+
+Show meaningful numerator/denominator or measurement definitions in the detail view.
+
+Do not show invented metrics as actual enterprise performance.
+
+Provide a seeded demo dataset clearly labelled as demonstration data.
+
+### Visual consolidation view
+
+Show a simple before-and-after diagram.
+
+Current:
+Three overlapping solutions.
+
+Proposed:
+One certified production product using selected reusable capabilities.
+
+Allow clicking each source solution to see:
+
+- Unique capability
+- Shared capability
+- Recommended disposition
+- Owner
+- Retirement status
+
+Use clear outcomes:
+
+- Retain
+- Reuse capability
+- Configure
+- Rebuild
+- Retire
+
+The IT leader should be able to approve a proposed consolidation direction.
+
+That approval should update the persisted consolidation case state.
+
+### Decision support
+
+Allow double-click or a Details action to open:
+
+- Supporting A/B evidence
+- Capability provenance
+- Dependencies
+- Costs, where available
+- Product ownership
+- Risk
+- Approval history
+- Retirement readiness
+
+Keep this hidden by default.
+
+---
+
+## 13. Seeded demo scenario
+
+Use maintenance work-order issue identification as the central scenario.
+
+Create three overlapping solutions.
+
+SOLUTION A:
+Work Order Triage
+
+Status:
+Certified
+
+Capabilities:
+- Read work-order notes
+- Summarize issues
+- Identify likely equipment concerns
+- Human review
+
+SOLUTION B:
+Pattern Finder
+
+Status:
+Pilot
+
+Capabilities:
+- Cluster similar issues
+- Detect recurring patterns
+- Rank problem frequency
+
+SOLUTION C:
+Action Tracker
+
+Status:
+Experimental
+
+Capabilities:
+- Create follow-up actions
+- Assign an owner
+- Track status
+
+Recommended consolidated product:
+Work Order Intelligence
+
+Use Work Order Triage as the base.
+
+Add:
+- Pattern clustering
+- Follow-up actions
+
+Preserve:
+- Data validation
+- Human review
+- Required controls
+
+Create a seeded dataset containing multiple work orders, equipment references, dates, recurring issues, and some distractor records.
+
+Include labelled expected findings for selected test inputs so that objective comparisons can be calculated.
+
+Crucially:
+
+The user must be able to manipulate B and observe output differences on this dataset.
+
+Turning off issue clustering must remove cluster-based findings.
+
+Turning it back on must restore them after execution.
+
+Removing action tracking must remove the action-management output.
+
+Changing the input must change the generated findings.
+
+All results must come from the execution logic.
+
+---
+
+## 14. Backend implementation
+
+Use the existing technology stack where practical.
+
+Suggested implementation:
+
+- React / Next.js
+- TypeScript
+- Tailwind CSS
+- React Flow for workflows and trees
+- dnd-kit for draggable capabilities
+- SQLite or PostgreSQL for persistence
+- Server-side API routes
+- Real LLM API for NLP and summarization
+- Deterministic transformations and fallback routines
+
+Create reusable services for:
+
+- Pain-point extraction
+- Solution search
+- Capability matching
+- Workflow validation
+- Workflow execution
+- Version management
+- A/B comparison
+- Human feedback collection
+- Approval workflow
+- Portfolio analytics
+
+Required data entities:
+
+- User
+- Role
+- Business problem
+- Solution
+- Solution version
+- Capability
+- Workflow step
+- Workflow configuration
+- Sample input
+- Execution run
+- Step execution
+- Output artifact
+- A/B experiment
+- Human evaluation
+- Change proposal
+- Consolidation case
+- Approval decision
+
+Do not implement a real enterprise login system.
+
+Use three seeded role accounts with a role switcher.
+
+Persist workflow changes, runs, votes and approval decisions.
+
+---
+
+## 15. AI requirements
+
+Use AI selectively.
+
+AI should support:
+
+- Understanding the user's problem
+- Producing Today and Better
+- Searching semantically
+- Explaining solution fit
+- Identifying overlapping capabilities
+- Recommending a base solution
+- Explaining workflow changes
+- Transforming text at applicable workflow steps
+- Explaining actual A/B output differences
+- Summarizing collected evaluation evidence
+
+AI must not invent:
+
+- Recorded human preference
+- Test execution outcomes
+- Accuracy metrics
+- Observed user adoption
+- Realized consolidation savings
+- Product certification
+
+Use deterministic backend logic for:
+
+- Execution order
+- Active/inactive state
+- Required controls
+- Capability compatibility
+- Persistence
+- Versioning
+- Approval states
+- Quantitative test calculations
+
+AI provides interpretation and recommendations, not fabricated evidence.
+
+---
+
+## 16. Essential working interactions
+
+All visible primary actions must function.
+
+The following must work end to end:
+
+1. Describe a problem.
+2. Receive Today and Better.
+3. Find matching solutions.
+4. Open a Library record.
+5. Explore its workflow.
+6. Select a sample input.
+7. Execute the workflow.
+8. Create Version B.
+9. Drag a new capability into B.
+10. Execute A and B on the same input.
+11. Observe changed outputs.
+12. Change an input and rerun.
+13. Toggle a B capability off and rerun.
+14. See its output contribution disappear.
+15. Cast an A/B preference vote.
+16. Save the experiment.
+17. Open the experiment as the solution owner.
+18. Approve a pilot proposal.
+19. Open the IT Portfolio.
+20. View the consolidation case and its supporting evidence.
+
+Avoid decorative interactions that don't change underlying state.
+
+Provide a one-click demo reset.
+
+Use seeded inputs and cached AI fallbacks so the live demonstration remains reliable.
+
+---
+
+## 17. Prioritization
+
+Build in this order.
+
+P0 — Must work:
+
+1. Searchable solution library.
+2. Solution details with executable workflow.
+3. Interactive A/B workbench.
+4. Real input-to-output changes from capability manipulation.
+5. Actual human preference selection.
+6. Role switching.
+7. Basic IT consolidation view.
+
+P1 — Important:
+
+1. AI pain-point understanding.
+2. Semantic search.
+3. Capability recommendation.
+4. Owner pilot approval.
+5. Blind multi-user preference testing.
+6. Persistent analytics.
+
+P2 — Optional:
+
+1. File uploads.
+2. Voice input.
+3. Advanced workflow design.
+4. Real production A/B traffic splitting.
+5. Advanced financial analytics.
+6. Enterprise authentication.
+
+Do not sacrifice the functionality or usability of P0 to build P2.
+
+---
+
+## 18. Acceptance criteria
+
+The implementation is successful when a user can demonstrate the following:
+
+- Find a solution using natural language.
+- Browse the Library independently.
+- Search by problem, solution name or capability.
+- Open a solution and visually understand its workflow.
+- Drag one capability into Version B.
+- Run both workflows on the same input.
+- See different outputs caused by the capability change.
+- Identify which step caused the difference.
+- Toggle that capability off and see the corresponding output difference disappear after rerun.
+- Compare outputs and record a preference.
+- Repeat with another test input.
+- Save the new version.
+- Review the change as the product owner.
+- See the consolidation relationship as the IT leader.
+
+The test screen must be genuinely interactive.
+
+It must not simply display synthetic projected metrics.
+
+The Library and Search must be functional product areas, even though they are not the centre of the live demonstration.
+
+The entire app must remain visually simple, consistently Cenovus-branded, and easy to understand without training.
+
+**Final design principle: Show users what changes, let them change it themselves, and let the resulting outputs provide the evidence.**
