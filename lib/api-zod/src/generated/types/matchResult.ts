@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CapabilityMatch } from './capabilityMatch';
+import type { RequirementCoverage } from './requirementCoverage';
 import type { SolutionMatch } from './solutionMatch';
 
 export interface MatchResult {
@@ -14,6 +15,8 @@ export interface MatchResult {
   matches: SolutionMatch[];
   capabilityMatches: CapabilityMatch[];
   missingRequirements: string[];
+  /** One row per brief requirement, measured against the recommended solution */
+  coverage: RequirementCoverage[];
   /**
      * Case already started from this brief, if any
      * @nullable

@@ -40,6 +40,11 @@ export const GetSeekerOverviewResponse = zod.object({
   "rawText": zod.string(),
   "today": zod.string().describe('What is happening now'),
   "better": zod.string().describe('The outcome the user wants'),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "source": zod.enum(['derived', 'added']).describe('derived = read from the brief\'s "Better" statement; added = typed by the user')
+})).describe('Short requirements derived from "Better" plus any the user added; editable'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -1284,6 +1289,11 @@ export const ListBriefsResponseItem = zod.object({
   "rawText": zod.string(),
   "today": zod.string().describe('What is happening now'),
   "better": zod.string().describe('The outcome the user wants'),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "source": zod.enum(['derived', 'added']).describe('derived = read from the brief\'s "Better" statement; added = typed by the user')
+})).describe('Short requirements derived from "Better" plus any the user added; editable'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -1348,6 +1358,11 @@ export const CreateBriefResponse = zod.object({
   "rawText": zod.string(),
   "today": zod.string().describe('What is happening now'),
   "better": zod.string().describe('The outcome the user wants'),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "source": zod.enum(['derived', 'added']).describe('derived = read from the brief\'s "Better" statement; added = typed by the user')
+})).describe('Short requirements derived from "Better" plus any the user added; editable'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -1407,6 +1422,11 @@ export const GetBriefResponse = zod.object({
   "rawText": zod.string(),
   "today": zod.string().describe('What is happening now'),
   "better": zod.string().describe('The outcome the user wants'),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "source": zod.enum(['derived', 'added']).describe('derived = read from the brief\'s "Better" statement; added = typed by the user')
+})).describe('Short requirements derived from "Better" plus any the user added; editable'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -1461,6 +1481,10 @@ export const UpdateBriefParams = zod.object({
   "briefId": zod.coerce.string()
 })
 
+export const updateBriefBodyRequirementsItemTextMin = 3;
+
+
+
 export const UpdateBriefBody = zod.object({
   "fields": zod.object({
   "user": zod.string().optional(),
@@ -1475,6 +1499,11 @@ export const UpdateBriefBody = zod.object({
 }).optional(),
   "today": zod.string().optional(),
   "better": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "text": zod.string().min(updateBriefBodyRequirementsItemTextMin),
+  "source": zod.enum(['derived', 'added']).optional()
+})).optional().describe('Full replacement of the requirements list'),
   "confirmed": zod.boolean().optional(),
   "clarification": zod.string().optional()
 })
@@ -1484,6 +1513,11 @@ export const UpdateBriefResponse = zod.object({
   "rawText": zod.string(),
   "today": zod.string().describe('What is happening now'),
   "better": zod.string().describe('The outcome the user wants'),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "source": zod.enum(['derived', 'added']).describe('derived = read from the brief\'s "Better" statement; added = typed by the user')
+})).describe('Short requirements derived from "Better" plus any the user added; editable'),
   "fields": zod.object({
   "user": zod.object({
   "value": zod.string(),
@@ -1631,6 +1665,15 @@ export const GetBriefMatchesResponse = zod.object({
   "whyMatched": zod.array(zod.string())
 })),
   "missingRequirements": zod.array(zod.string()),
+  "coverage": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "text": zod.string(),
+  "status": zod.enum(['covered', 'covered_reusable', 'uncovered']).describe('covered = the recommended solution has it; covered_reusable = a module from a sibling product has it; uncovered = nothing in the product family'),
+  "coveredBy": zod.string().nullable().describe('Name of the product that covers the requirement'),
+  "capabilityId": zod.string().nullable(),
+  "capabilityName": zod.string().nullable(),
+  "score": zod.number().nullable().describe('Reuse-fit score of the covering capability (0-100)')
+})).describe('One row per brief requirement, measured against the recommended solution'),
   "existingCaseId": zod.string().nullable().describe('Case already started from this brief, if any')
 })
 
@@ -1723,7 +1766,9 @@ export const CreateCaseBody = zod.object({
   "baseSolutionId": zod.string(),
   "briefId": zod.string().optional(),
   "title": zod.string().optional(),
-  "createdByRole": zod.enum(['seeker', 'owner', 'it']).optional()
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']).optional(),
+  "moduleIds": zod.array(zod.string()).optional().describe('Addable modules switched on in Version B from the start (e.g. from a reuse check)'),
+  "reuseEventId": zod.string().optional().describe('Reuse-check event this case acts on; recorded as the path taken')
 })
 
 export const CreateCaseResponse = zod.object({
@@ -4067,6 +4112,191 @@ export const GetDecisionQueueResponseItem = zod.object({
   "nextStep": zod.string().describe('Plain-language next action for the current state')
 })
 export const GetDecisionQueueResponse = zod.array(GetDecisionQueueResponseItem)
+
+
+/**
+ * Deterministic reuse-fit scoring with the published weights and hard exclusions. Records a reuse event.
+ * @summary Score existing capabilities, configurations and experiments against a plain-language need
+ */
+export const reuseCheckBodyNeedMin = 3;
+
+
+
+export const ReuseCheckBody = zod.object({
+  "need": zod.string().min(reuseCheckBodyNeedMin),
+  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed']),
+  "baseSolutionId": zod.string().optional(),
+  "caseId": zod.string().optional(),
+  "briefId": zod.string().optional(),
+  "requirementId": zod.string().optional(),
+  "workflowStep": zod.string().optional()
+})
+
+export const reuseCheckResponseOptionsMax = 3;
+
+
+
+export const ReuseCheckResponse = zod.object({
+  "eventId": zod.string(),
+  "need": zod.string(),
+  "options": zod.array(zod.object({
+  "kind": zod.enum(['capability', 'configuration', 'experiment', 'create']),
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "score": zod.number().nullable().describe('0-100 reuse-fit score; null for the create option'),
+  "path": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "reasons": zod.array(zod.string()),
+  "exclusions": zod.array(zod.string()).describe('Hard-exclusion rules that fired, in plain language'),
+  "dimensions": zod.union([zod.object({
+  "problemFit": zod.number(),
+  "inputOutput": zod.number(),
+  "workflowPosition": zod.number(),
+  "userContext": zod.number(),
+  "dataControl": zod.number(),
+  "maturityEvidence": zod.number()
+}).describe('Each dimension is 0-100; the weights are problem fit 30, input/output 20, workflow position 15, user context 10, data/control 15, maturity/evidence 10'),zod.null()]),
+  "capability": zod.union([zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}),zod.null()]),
+  "solutionId": zod.string().nullable(),
+  "solutionName": zod.string().nullable(),
+  "caseId": zod.string().nullable().describe('Set when the option is an active experiment'),
+  "addableTo": zod.string().nullable().describe('Base solution id the capability can be added to in the workbench, when the context allows it')
+})).max(reuseCheckResponseOptionsMax),
+  "best": zod.union([zod.object({
+  "kind": zod.enum(['capability', 'configuration', 'experiment', 'create']),
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "score": zod.number().nullable().describe('0-100 reuse-fit score; null for the create option'),
+  "path": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "reasons": zod.array(zod.string()),
+  "exclusions": zod.array(zod.string()).describe('Hard-exclusion rules that fired, in plain language'),
+  "dimensions": zod.union([zod.object({
+  "problemFit": zod.number(),
+  "inputOutput": zod.number(),
+  "workflowPosition": zod.number(),
+  "userContext": zod.number(),
+  "dataControl": zod.number(),
+  "maturityEvidence": zod.number()
+}).describe('Each dimension is 0-100; the weights are problem fit 30, input/output 20, workflow position 15, user context 10, data/control 15, maturity/evidence 10'),zod.null()]),
+  "capability": zod.union([zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}),zod.null()]),
+  "solutionId": zod.string().nullable(),
+  "solutionName": zod.string().nullable(),
+  "caseId": zod.string().nullable().describe('Set when the option is an active experiment'),
+  "addableTo": zod.string().nullable().describe('Base solution id the capability can be added to in the workbench, when the context allows it')
+}),zod.null()]),
+  "recommendedPath": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "surfaced": zod.boolean().describe('True when a credible existing option (score >= 60) exists and should be shown')
+})
+
+
+/**
+ * @summary Reuse-check events, newest first
+ */
+export const ListReuseEventsResponseItem = zod.object({
+  "id": zod.string(),
+  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed']),
+  "need": zod.string(),
+  "baseSolutionId": zod.string().nullable(),
+  "caseId": zod.string().nullable(),
+  "briefId": zod.string().nullable(),
+  "bestScore": zod.number().nullable(),
+  "bestTitle": zod.string().nullable(),
+  "bestSolutionId": zod.string().nullable(),
+  "bestCapabilityId": zod.string().nullable(),
+  "pathRecommended": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "pathTaken": zod.union([zod.enum(['use', 'improve', 'create', 'dismissed']),zod.null()]),
+  "actor": zod.string(),
+  "demo": zod.boolean().describe('Seeded demonstration data'),
+  "createdAt": zod.string()
+})
+export const ListReuseEventsResponse = zod.array(ListReuseEventsResponseItem)
+
+
+/**
+ * @summary Record which path the user took on a reuse check
+ */
+export const UpdateReuseEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const UpdateReuseEventBody = zod.object({
+  "pathTaken": zod.enum(['use', 'improve', 'create', 'dismissed'])
+})
+
+export const UpdateReuseEventResponse = zod.object({
+  "id": zod.string(),
+  "trigger": zod.enum(['discover_requirement', 'add_step', 'add_requirement', 'save', 'search', 'seed']),
+  "need": zod.string(),
+  "baseSolutionId": zod.string().nullable(),
+  "caseId": zod.string().nullable(),
+  "briefId": zod.string().nullable(),
+  "bestScore": zod.number().nullable(),
+  "bestTitle": zod.string().nullable(),
+  "bestSolutionId": zod.string().nullable(),
+  "bestCapabilityId": zod.string().nullable(),
+  "pathRecommended": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "pathTaken": zod.union([zod.enum(['use', 'improve', 'create', 'dismissed']),zod.null()]),
+  "actor": zod.string(),
+  "demo": zod.boolean().describe('Seeded demonstration data'),
+  "createdAt": zod.string()
+})
 
 
 /**

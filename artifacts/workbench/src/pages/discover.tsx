@@ -10,6 +10,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
 import { errMsg } from "@/lib/case";
+import { CoverageTable, RequirementChips } from "@/components/reuse-check";
 import { cn } from "@/lib/utils";
 
 const dropUnderPointer: CollisionDetection = (args) => { const hits = pointerWithin(args); return hits.length ? hits : rectIntersection(args); };
@@ -133,6 +134,7 @@ function Understanding({ briefId, showResults, onFind }: { briefId: string; show
           </div>
           {b.clarification && <p className="mt-2 text-[13.5px] text-muted-foreground">Also noted: {b.clarification}</p>}
         </div>
+        <RequirementChips items={b.requirements} busy={upd.isPending} onChange={(next, msg) => patch({ requirements: next }, msg, () => patch({ requirements: b.requirements }, "Undone"))} />
         <DragOverlay dropAnimation={null}>{dragging && <span className="lift inline-flex rounded-full bg-primary px-3 py-1.5 text-[13.5px] font-medium text-white">{chips.find((c) => c.key === dragging)?.value}</span>}</DragOverlay>
       </DndContext>
       {!showResults && (
@@ -198,6 +200,7 @@ function Results({ briefId }: { briefId: string }) {
     <section className="reveal mt-12" data-testid="section-results">
       <div className="eyebrow mb-2 !text-siennaink">Best match</div>
       <MatchCard m={best} big />
+      <CoverageTable rows={m.data.coverage} briefId={briefId} baseSolutionId={best.solution.id} baseSolutionName={best.solution.name} />
       {rest.length > 0 && <>
         <h3 className="mb-3 mt-8 text-[17px] font-semibold">Other possibilities</h3>
         <div className="grid gap-3 md:grid-cols-2">{rest.slice(0, 2).map((x) => <MatchCard key={x.solution.id} m={x} />)}</div>

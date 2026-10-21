@@ -319,6 +319,24 @@ export const BriefSource = {
   fallback: 'fallback',
 } as const;
 
+/**
+ * derived = read from the brief's "Better" statement; added = typed by the user
+ */
+export type BriefRequirementSource = typeof BriefRequirementSource[keyof typeof BriefRequirementSource];
+
+
+export const BriefRequirementSource = {
+  derived: 'derived',
+  added: 'added',
+} as const;
+
+export interface BriefRequirement {
+  id: string;
+  text: string;
+  /** derived = read from the brief's "Better" statement; added = typed by the user */
+  source: BriefRequirementSource;
+}
+
 export interface Brief {
   id: string;
   rawText: string;
@@ -326,6 +344,8 @@ export interface Brief {
   today: string;
   /** The outcome the user wants */
   better: string;
+  /** Short requirements derived from "Better" plus any the user added; editable */
+  requirements: BriefRequirement[];
   fields: BriefFields;
   /**
      * At most one clarifying question, only when necessary
@@ -359,10 +379,27 @@ export interface BriefFieldValues {
   successMeasures?: string;
 }
 
+export type BriefRequirementInputSource = typeof BriefRequirementInputSource[keyof typeof BriefRequirementInputSource];
+
+
+export const BriefRequirementInputSource = {
+  derived: 'derived',
+  added: 'added',
+} as const;
+
+export interface BriefRequirementInput {
+  id?: string;
+  /** @minLength 3 */
+  text: string;
+  source?: BriefRequirementInputSource;
+}
+
 export interface BriefUpdate {
   fields?: BriefFieldValues;
   today?: string;
   better?: string;
+  /** Full replacement of the requirements list */
+  requirements?: BriefRequirementInput[];
   confirmed?: boolean;
   clarification?: string;
 }
@@ -404,12 +441,46 @@ export interface CapabilityMatch {
   whyMatched: string[];
 }
 
+/**
+ * covered = the recommended solution has it; covered_reusable = a module from a sibling product has it; uncovered = nothing in the product family
+ */
+export type CoverageStatus = typeof CoverageStatus[keyof typeof CoverageStatus];
+
+
+export const CoverageStatus = {
+  covered: 'covered',
+  covered_reusable: 'covered_reusable',
+  uncovered: 'uncovered',
+} as const;
+
+export interface RequirementCoverage {
+  requirementId: string;
+  text: string;
+  status: CoverageStatus;
+  /**
+     * Name of the product that covers the requirement
+     * @nullable
+     */
+  coveredBy: string | null;
+  /** @nullable */
+  capabilityId: string | null;
+  /** @nullable */
+  capabilityName: string | null;
+  /**
+     * Reuse-fit score of the covering capability (0-100)
+     * @nullable
+     */
+  score: number | null;
+}
+
 export interface MatchResult {
   briefId: string;
   headline: string;
   matches: SolutionMatch[];
   capabilityMatches: CapabilityMatch[];
   missingRequirements: string[];
+  /** One row per brief requirement, measured against the recommended solution */
+  coverage: RequirementCoverage[];
   /**
      * Case already started from this brief, if any
      * @nullable
@@ -417,11 +488,155 @@ export interface MatchResult {
   existingCaseId: string | null;
 }
 
+export type ReuseTrigger = typeof ReuseTrigger[keyof typeof ReuseTrigger];
+
+
+export const ReuseTrigger = {
+  discover_requirement: 'discover_requirement',
+  add_step: 'add_step',
+  add_requirement: 'add_requirement',
+  save: 'save',
+  search: 'search',
+  seed: 'seed',
+} as const;
+
+/**
+ * try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option
+ */
+export type ReusePath = typeof ReusePath[keyof typeof ReusePath];
+
+
+export const ReusePath = {
+  try_existing: 'try_existing',
+  improve_existing: 'improve_existing',
+  new_experiment: 'new_experiment',
+  hard_exclusion: 'hard_exclusion',
+} as const;
+
+export type ReusePathTaken = typeof ReusePathTaken[keyof typeof ReusePathTaken];
+
+
+export const ReusePathTaken = {
+  use: 'use',
+  improve: 'improve',
+  create: 'create',
+  dismissed: 'dismissed',
+} as const;
+
+export type ReuseOptionKind = typeof ReuseOptionKind[keyof typeof ReuseOptionKind];
+
+
+export const ReuseOptionKind = {
+  capability: 'capability',
+  configuration: 'configuration',
+  experiment: 'experiment',
+  create: 'create',
+} as const;
+
+/**
+ * Each dimension is 0-100; the weights are problem fit 30, input/output 20, workflow position 15, user context 10, data/control 15, maturity/evidence 10
+ */
+export interface ReuseFitDimensions {
+  problemFit: number;
+  inputOutput: number;
+  workflowPosition: number;
+  userContext: number;
+  dataControl: number;
+  maturityEvidence: number;
+}
+
+export interface ReuseOption {
+  kind: ReuseOptionKind;
+  title: string;
+  subtitle: string;
+  /**
+     * 0-100 reuse-fit score; null for the create option
+     * @nullable
+     */
+  score: number | null;
+  path: ReusePath;
+  reasons: string[];
+  /** Hard-exclusion rules that fired, in plain language */
+  exclusions: string[];
+  dimensions: ReuseFitDimensions | null;
+  capability: Capability | null;
+  /** @nullable */
+  solutionId: string | null;
+  /** @nullable */
+  solutionName: string | null;
+  /**
+     * Set when the option is an active experiment
+     * @nullable
+     */
+  caseId: string | null;
+  /**
+     * Base solution id the capability can be added to in the workbench, when the context allows it
+     * @nullable
+     */
+  addableTo: string | null;
+}
+
+export interface ReuseCheckInput {
+  /** @minLength 3 */
+  need: string;
+  trigger: ReuseTrigger;
+  baseSolutionId?: string;
+  caseId?: string;
+  briefId?: string;
+  requirementId?: string;
+  workflowStep?: string;
+}
+
+export interface ReuseCheckResult {
+  eventId: string;
+  need: string;
+  /** @maxItems 3 */
+  options: ReuseOption[];
+  best: ReuseOption | null;
+  recommendedPath: ReusePath;
+  /** True when a credible existing option (score >= 60) exists and should be shown */
+  surfaced: boolean;
+}
+
+export interface ReuseEvent {
+  id: string;
+  trigger: ReuseTrigger;
+  need: string;
+  /** @nullable */
+  baseSolutionId: string | null;
+  /** @nullable */
+  caseId: string | null;
+  /** @nullable */
+  briefId: string | null;
+  /** @nullable */
+  bestScore: number | null;
+  /** @nullable */
+  bestTitle: string | null;
+  /** @nullable */
+  bestSolutionId: string | null;
+  /** @nullable */
+  bestCapabilityId: string | null;
+  pathRecommended: ReusePath;
+  pathTaken: ReusePathTaken | null;
+  actor: string;
+  /** Seeded demonstration data */
+  demo: boolean;
+  createdAt: string;
+}
+
+export interface ReuseEventUpdate {
+  pathTaken: ReusePathTaken;
+}
+
 export interface CaseInput {
   baseSolutionId: string;
   briefId?: string;
   title?: string;
   createdByRole?: Role;
+  /** Addable modules switched on in Version B from the start (e.g. from a reuse check) */
+  moduleIds?: string[];
+  /** Reuse-check event this case acts on; recorded as the path taken */
+  reuseEventId?: string;
 }
 
 export type CaseUpdatePilotPercent = typeof CaseUpdatePilotPercent[keyof typeof CaseUpdatePilotPercent];

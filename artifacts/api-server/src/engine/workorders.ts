@@ -31,6 +31,8 @@ export interface SampleInput {
   text: string;
   /** Labelled recurring findings a correct analysis should produce (null = no ground truth) */
   expected: ExpectedFinding[] | null;
+  /** Lines Safety Signals must produce for this input (ref = work order id or sentence number); null = none expected */
+  expectedSafetySignals: { ref: string; signal: string }[] | null;
   noteCount: number;
 }
 
@@ -70,6 +72,7 @@ export const sampleInputs: SampleInput[] = [
     solutionIds: MAINTENANCE,
     text: formatWorkOrders([workOrders[2]!]),
     expected: [],
+    expectedSafetySignals: null,
     noteCount: 1,
   },
   {
@@ -79,6 +82,7 @@ export const sampleInputs: SampleInput[] = [
     solutionIds: MAINTENANCE,
     text: formatWorkOrders([...byTag("P-104"), workOrders[3]!].sort((a, b) => a.date.localeCompare(b.date))),
     expected: [{ tag: "P-104", issue: "vibration", count: 4 }],
+    expectedSafetySignals: [{ ref: "WO-1056", signal: "possible loss of containment" }],
     noteCount: 5,
   },
   {
@@ -93,6 +97,13 @@ export const sampleInputs: SampleInput[] = [
       { tag: "C-301", issue: "high temperature", count: 3 },
       { tag: "P-220", issue: "vibration", count: 2 },
     ],
+    expectedSafetySignals: [
+      { ref: "WO-1049", signal: "equipment kept running with a known fault" },
+      { ref: "WO-1056", signal: "possible loss of containment" },
+      { ref: "WO-1070", signal: "protective trip repeated" },
+      { ref: "WO-1077", signal: "possible loss of containment" },
+      { ref: "WO-1105", signal: "equipment kept running with a known fault" },
+    ],
     noteCount: 16,
   },
   {
@@ -102,6 +113,7 @@ export const sampleInputs: SampleInput[] = [
     solutionIds: ["sol-procedure-finder", "sol-sop-chat"],
     text: "What is the approved isolation sequence before opening the HX-210 channel head for cleaning?",
     expected: null,
+    expectedSafetySignals: null,
     noteCount: 1,
   },
   {
@@ -111,6 +123,10 @@ export const sampleInputs: SampleInput[] = [
     solutionIds: ["sol-incident-commander"],
     text: "During the 06:00 round the operator found a small hydrocarbon drip at the HX-210 channel head. Area was barricaded and the unit was isolated by 06:40. Supervisor requested a gasket replacement before restart, an updated bolt torque procedure, and a toolbox talk for the night crew about reporting weeping flanges immediately.",
     expected: null,
+    expectedSafetySignals: [
+      { ref: "S1", signal: "possible loss of containment" },
+      { ref: "S2", signal: "area isolated or barricaded" },
+    ],
     noteCount: 1,
   },
   {
@@ -120,6 +136,7 @@ export const sampleInputs: SampleInput[] = [
     solutionIds: ["sol-handover-notes"],
     text: "22:10 C-301 load reduced to 80% after discharge temp climbed to 142C. 23:30 P-104 vibration alarm acknowledged, pump kept running. 01:15 Lab called, sample results delayed until morning. 04:00 Fence contractor arrived early, escorted to laydown yard. Day shift: watch C-301 and chase lab results.",
     expected: null,
+    expectedSafetySignals: null,
     noteCount: 1,
   },
 ];

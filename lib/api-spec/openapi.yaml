@@ -1054,6 +1054,78 @@ paths:
                 items:
                   $ref: "#/components/schemas/CaseSummary"
 
+  /reuse-check:
+    post:
+      operationId: reuseCheck
+      tags: [reuse]
+      summary: Score existing capabilities, configurations and experiments against a plain-language need
+      description: Deterministic reuse-fit scoring with the published weights and hard exclusions. Records a reuse event.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReuseCheckInput"
+      responses:
+        "200":
+          description: At most three options with scores, paths and reasons
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReuseCheckResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reuse-events:
+    get:
+      operationId: listReuseEvents
+      tags: [reuse]
+      summary: Reuse-check events, newest first
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReuseEvent"
+
+  /reuse-events/{eventId}:
+    patch:
+      operationId: updateReuseEvent
+      tags: [reuse]
+      summary: Record which path the user took on a reuse check
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReuseEventUpdate"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReuseEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /demo/reset:
     post:
       operationId: resetDemo
@@ -1365,6 +1437,7 @@ components:
         - valueStatement
         - today
         - better
+        - requirements
         - confirmed
         - createdAt
       properties:
@@ -1372,6 +1445,10 @@ components:
         rawText: { type: string }
         today: { type: string, description: What is happening now, one sentence, editable }
         better: { type: string, description: The outcome the user wants, one sentence, editable }
+        requirements:
+          type: array
+          description: Short requirements derived from "Better" plus any the user added; editable
+          items: { $ref: "#/components/schemas/BriefRequirement" }
         fields: { $ref: "#/components/schemas/BriefFields" }
         clarifyingQuestion:
           type: ["string", "null"]
@@ -1412,6 +1489,10 @@ components:
         fields: { $ref: "#/components/schemas/BriefFieldValues" }
         today: { type: string }
         better: { type: string }
+        requirements:
+          type: array
+          description: Full replacement of the requirements list
+          items: { $ref: "#/components/schemas/BriefRequirementInput" }
         confirmed: { type: boolean }
         clarification: { type: string }
 
@@ -1459,7 +1540,7 @@ components:
 
     MatchResult:
       type: object
-      required: [briefId, headline, matches, capabilityMatches, missingRequirements, existingCaseId]
+      required: [briefId, headline, matches, capabilityMatches, missingRequirements, coverage, existingCaseId]
       properties:
         briefId: { type: string }
         headline: { type: string }
@@ -1472,9 +1553,179 @@ components:
         missingRequirements:
           type: array
           items: { type: string }
+        coverage:
+          type: array
+          description: One row per brief requirement, measured against the recommended solution
+          items: { $ref: "#/components/schemas/RequirementCoverage" }
         existingCaseId:
           type: ["string", "null"]
           description: Case already started from this brief, if any
+
+    BriefRequirement:
+      type: object
+      required: [id, text, source]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        source:
+          type: string
+          enum: [derived, added]
+          description: derived = read from the brief's "Better" statement; added = typed by the user
+
+    BriefRequirementInput:
+      type: object
+      required: [text]
+      properties:
+        id: { type: string }
+        text: { type: string, minLength: 3 }
+        source:
+          type: string
+          enum: [derived, added]
+
+    CoverageStatus:
+      type: string
+      enum: [covered, covered_reusable, uncovered]
+      description: covered = the recommended solution has it; covered_reusable = a module from a sibling product has it; uncovered = nothing in the product family
+
+    RequirementCoverage:
+      type: object
+      required: [requirementId, text, status, coveredBy, capabilityId, capabilityName, score]
+      properties:
+        requirementId: { type: string }
+        text: { type: string }
+        status: { $ref: "#/components/schemas/CoverageStatus" }
+        coveredBy:
+          type: ["string", "null"]
+          description: Name of the product that covers the requirement
+        capabilityId: { type: ["string", "null"] }
+        capabilityName: { type: ["string", "null"] }
+        score:
+          type: ["number", "null"]
+          description: Reuse-fit score of the covering capability (0-100)
+
+    ReuseTrigger:
+      type: string
+      enum: [discover_requirement, add_step, add_requirement, save, search, seed]
+
+    ReusePath:
+      type: string
+      enum: [try_existing, improve_existing, new_experiment, hard_exclusion]
+      description: try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option
+
+    ReusePathTaken:
+      type: string
+      enum: [use, improve, create, dismissed]
+
+    ReuseOptionKind:
+      type: string
+      enum: [capability, configuration, experiment, create]
+
+    ReuseFitDimensions:
+      type: object
+      description: Each dimension is 0-100; the weights are problem fit 30, input/output 20, workflow position 15, user context 10, data/control 15, maturity/evidence 10
+      required: [problemFit, inputOutput, workflowPosition, userContext, dataControl, maturityEvidence]
+      properties:
+        problemFit: { type: number }
+        inputOutput: { type: number }
+        workflowPosition: { type: number }
+        userContext: { type: number }
+        dataControl: { type: number }
+        maturityEvidence: { type: number }
+
+    ReuseOption:
+      type: object
+      required: [kind, title, subtitle, score, path, reasons, exclusions, dimensions, capability, solutionId, solutionName, caseId, addableTo]
+      properties:
+        kind: { $ref: "#/components/schemas/ReuseOptionKind" }
+        title: { type: string }
+        subtitle: { type: string }
+        score:
+          type: ["number", "null"]
+          description: 0-100 reuse-fit score; null for the create option
+        path: { $ref: "#/components/schemas/ReusePath" }
+        reasons:
+          type: array
+          items: { type: string }
+        exclusions:
+          type: array
+          description: Hard-exclusion rules that fired, in plain language
+          items: { type: string }
+        dimensions:
+          oneOf:
+            - $ref: "#/components/schemas/ReuseFitDimensions"
+            - type: "null"
+        capability:
+          oneOf:
+            - $ref: "#/components/schemas/Capability"
+            - type: "null"
+        solutionId: { type: ["string", "null"] }
+        solutionName: { type: ["string", "null"] }
+        caseId:
+          type: ["string", "null"]
+          description: Set when the option is an active experiment
+        addableTo:
+          type: ["string", "null"]
+          description: Base solution id the capability can be added to in the workbench, when the context allows it
+
+    ReuseCheckInput:
+      type: object
+      required: [need, trigger]
+      properties:
+        need: { type: string, minLength: 3 }
+        trigger: { $ref: "#/components/schemas/ReuseTrigger" }
+        baseSolutionId: { type: string }
+        caseId: { type: string }
+        briefId: { type: string }
+        requirementId: { type: string }
+        workflowStep: { type: string }
+
+    ReuseCheckResult:
+      type: object
+      required: [eventId, need, options, best, recommendedPath, surfaced]
+      properties:
+        eventId: { type: string }
+        need: { type: string }
+        options:
+          type: array
+          maxItems: 3
+          items: { $ref: "#/components/schemas/ReuseOption" }
+        best:
+          oneOf:
+            - $ref: "#/components/schemas/ReuseOption"
+            - type: "null"
+        recommendedPath: { $ref: "#/components/schemas/ReusePath" }
+        surfaced:
+          type: boolean
+          description: True when a credible existing option (score >= 60) exists and should be shown
+
+    ReuseEvent:
+      type: object
+      required: [id, trigger, need, baseSolutionId, caseId, briefId, bestScore, bestTitle, bestSolutionId, bestCapabilityId, pathRecommended, pathTaken, actor, demo, createdAt]
+      properties:
+        id: { type: string }
+        trigger: { $ref: "#/components/schemas/ReuseTrigger" }
+        need: { type: string }
+        baseSolutionId: { type: ["string", "null"] }
+        caseId: { type: ["string", "null"] }
+        briefId: { type: ["string", "null"] }
+        bestScore: { type: ["number", "null"] }
+        bestTitle: { type: ["string", "null"] }
+        bestSolutionId: { type: ["string", "null"] }
+        bestCapabilityId: { type: ["string", "null"] }
+        pathRecommended: { $ref: "#/components/schemas/ReusePath" }
+        pathTaken:
+          oneOf:
+            - $ref: "#/components/schemas/ReusePathTaken"
+            - type: "null"
+        actor: { type: string }
+        demo: { type: boolean, description: Seeded demonstration data, not a real user action }
+        createdAt: { type: string }
+
+    ReuseEventUpdate:
+      type: object
+      required: [pathTaken]
+      properties:
+        pathTaken: { $ref: "#/components/schemas/ReusePathTaken" }
 
     Case:
       type: object
@@ -1527,6 +1778,13 @@ components:
         briefId: { type: string }
         title: { type: string }
         createdByRole: { $ref: "#/components/schemas/Role" }
+        moduleIds:
+          type: array
+          description: Addable modules switched on in Version B from the start (e.g. from a reuse check)
+          items: { type: string }
+        reuseEventId:
+          type: string
+          description: Reuse-check event this case acts on; recorded as the path taken
 
     CaseUpdate:
       type: object

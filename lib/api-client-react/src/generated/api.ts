@@ -52,6 +52,10 @@ import type {
   Persona,
   Portfolio,
   Recommendation,
+  ReuseCheckInput,
+  ReuseCheckResult,
+  ReuseEvent,
+  ReuseEventUpdate,
   Run,
   RunRequest,
   SampleInput,
@@ -3557,6 +3561,261 @@ export function useGetDecisionQueue<TData = Awaited<ReturnType<typeof getDecisio
 
 
 
+
+export const getReuseCheckUrl = () => {
+
+
+
+
+  return `/api/reuse-check`
+}
+
+/**
+ * Deterministic reuse-fit scoring with the published weights and hard exclusions. Records a reuse event.
+ * @summary Score existing capabilities, configurations and experiments against a plain-language need
+ */
+export const reuseCheck = async (reuseCheckInput: ReuseCheckInput, options?: Parameters<typeof customFetch>[1]): Promise<ReuseCheckResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReuseCheckResult>(getReuseCheckUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reuseCheckInput)
+  }
+);}
+
+
+
+
+
+export const getReuseCheckMutationKey = () => ['reuseCheck'] as const;
+
+export const getReuseCheckMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reuseCheck>>, TError,ReuseCheckMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reuseCheck>>, TError,ReuseCheckMutationVariables, TContext> => {
+
+const mutationKey = getReuseCheckMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reuseCheck>>, ReuseCheckMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  reuseCheck(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReuseCheckMutationResult = NonNullable<Awaited<ReturnType<typeof reuseCheck>>>
+    export type ReuseCheckMutationBody = BodyType<ReuseCheckInput>
+    export type ReuseCheckMutationError = ErrorType<ErrorResponse>
+    export type ReuseCheckMutationVariables = {data: BodyType<ReuseCheckInput>}
+
+    /**
+ * @summary Score existing capabilities, configurations and experiments against a plain-language need
+ */
+export const useReuseCheck = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reuseCheck>>, TError,ReuseCheckMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reuseCheck>>,
+        TError,
+        ReuseCheckMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReuseCheckMutationOptions(options));
+    }
+
+export const getListReuseEventsUrl = () => {
+
+
+
+
+  return `/api/reuse-events`
+}
+
+/**
+ * @summary Reuse-check events, newest first
+ */
+export const listReuseEvents = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReuseEvent[]> => {
+
+  return customFetch<ReuseEvent[]>(getListReuseEventsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListReuseEventsQueryKey = () => {
+    return [
+    `/api/reuse-events`
+    ] as const;
+    }
+
+
+export const getListReuseEventsQueryOptions = <TData = Awaited<ReturnType<typeof listReuseEvents>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listReuseEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReuseEventsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReuseEvents>>> = ({ signal }) => listReuseEvents({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReuseEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListReuseEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listReuseEvents>>>
+export type ListReuseEventsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Reuse-check events, newest first
+ */
+
+export function useListReuseEvents<TData = Awaited<ReturnType<typeof listReuseEvents>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listReuseEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListReuseEventsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateReuseEventUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/reuse-events/${eventId}`
+}
+
+/**
+ * @summary Record which path the user took on a reuse check
+ */
+export const updateReuseEvent = async (eventId: string,
+    reuseEventUpdate: ReuseEventUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ReuseEvent> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReuseEvent>(getUpdateReuseEventUrl(eventId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reuseEventUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateReuseEventMutationKey = () => ['updateReuseEvent'] as const;
+
+export const getUpdateReuseEventMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReuseEvent>>, TError,UpdateReuseEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateReuseEvent>>, TError,UpdateReuseEventMutationVariables, TContext> => {
+
+const mutationKey = getUpdateReuseEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReuseEvent>>, UpdateReuseEventMutationVariables> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  updateReuseEvent(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReuseEventMutationResult = NonNullable<Awaited<ReturnType<typeof updateReuseEvent>>>
+    export type UpdateReuseEventMutationBody = BodyType<ReuseEventUpdate>
+    export type UpdateReuseEventMutationError = ErrorType<ErrorResponse>
+    export type UpdateReuseEventMutationVariables = {eventId: string;data: BodyType<ReuseEventUpdate>}
+
+    /**
+ * @summary Record which path the user took on a reuse check
+ */
+export const useUpdateReuseEvent = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReuseEvent>>, TError,UpdateReuseEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateReuseEvent>>,
+        TError,
+        UpdateReuseEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateReuseEventMutationOptions(options));
+    }
 
 export const getResetDemoUrl = () => {
 

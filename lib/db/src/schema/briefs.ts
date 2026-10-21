@@ -12,6 +12,7 @@ export const briefsTable = pgTable("briefs", {
   valueStatement: text("value_statement").notNull(),
   today: text("today").notNull().default(""),
   better: text("better").notNull().default(""),
+  requirements: jsonb("requirements").$type<unknown>().notNull().default([]),
   confirmed: boolean("confirmed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

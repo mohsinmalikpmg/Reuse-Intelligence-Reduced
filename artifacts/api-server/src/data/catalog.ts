@@ -54,6 +54,11 @@ function effects(partial: Partial<Metrics>): Metrics {
 type CapabilitySeed = Omit<Capability, "sourceSolutionName" | "ownerName"> & {
   /** Internal: search terms that help semantic matching */
   keywords?: string[];
+  /** Internal: what the step reads and what it writes, for input/output fit in the reuse check */
+  consumes?: string[];
+  produces?: string[];
+  /** Internal: business problems whose products may add this module even though its source product addresses a different problem */
+  portableTo?: string[];
 };
 
 const capabilitySeeds: CapabilitySeed[] = [
@@ -541,6 +546,31 @@ const capabilitySeeds: CapabilitySeed[] = [
     keywords: ["incident", "corrective action", "register"],
   },
   {
+    id: "cap-safety-signals",
+    name: "Safety Signals",
+    description: "Flags maintenance notes whose wording points to a potential safety consequence (leaks, trips, equipment kept running with a known fault) so they are reviewed before a routine finding is.",
+    category: "Analysis",
+    sourceSolutionId: "sol-incident-commander",
+    controlType: "optional",
+    workflowStep: "Analyze",
+    riskClass: "medium",
+    evidenceLevel: "strong",
+    lockedReason: null,
+    options: null,
+    defaultOption: null,
+    effects: effects({ taskMinutes: 2, successRate: 2, errorRate: -2, effortScore: -0.1, costPerTask: 0.1 }),
+    incompatibleWith: [],
+    dependsOn: [],
+    testCoverage: "Full regression suite",
+    supportStatus: "Supported",
+    version: "4.2",
+    evidence: "In production inside Incident Commander since 4.2; precision reviewed quarterly by the safety team.",
+    keywords: ["safety", "safety risk", "hazard", "risk", "flag", "consequence", "leak", "trip", "injury", "maintenance", "work order", "notes", "issue", "escalate", "warning"],
+    consumes: ["work-order notes", "maintenance text", "incident reports", "free text"],
+    produces: ["safety flags", "flagged issues", "review items"],
+    portableTo: ["bp-workorder-issues"],
+  },
+  {
     id: "cap-handover-summary",
     name: "Shift handover summary",
     description: "Generates a shift handover note from logbook entries.",
@@ -781,11 +811,14 @@ const solutionSeeds: SolutionSeed[] = [
     timeToAdopt: "2 weeks",
     adoptionEffort: "low",
     workflowSteps: ["Ingest", "Review", "Decide", "Track"],
-    currentVersion: "4.1",
-    versions: [{ version: "4.1", releasedAt: "2026-05-30", summary: "Corrective action register improvements." }],
+    currentVersion: "4.2",
+    versions: [
+      { version: "4.2", releasedAt: "2026-09-15", summary: "Safety Signals: flags potential safety consequences in maintenance and incident text; offered as a reusable module." },
+      { version: "4.1", releasedAt: "2026-05-30", summary: "Corrective action register improvements." },
+    ],
     knownGaps: [],
     dependencies: ["Enterprise identity provider", "Safety management system"],
-    capabilityIds: ["cap-identity", "cap-incident-actions", "cap-audit", "cap-retention"],
+    capabilityIds: ["cap-identity", "cap-safety-signals", "cap-incident-actions", "cap-audit", "cap-retention"],
     businessProblemIds: ["bp-incident-actions"],
     baselineMetrics: { taskMinutes: 45, successRate: 90, effortScore: 5.0, errorRate: 4, adoption: 88, costPerTask: 2.1 },
     retirementCandidate: false,
@@ -936,7 +969,7 @@ export const DEMO_PROMPT =
 const solutionById = new Map(solutionSeeds.map((s) => [s.id, s]));
 
 export const capabilities: Capability[] = capabilitySeeds.map((seed) => {
-  const { keywords: _keywords, ...rest } = seed;
+  const { keywords: _keywords, consumes: _c, produces: _p, portableTo: _t, ...rest } = seed;
   const source = solutionById.get(seed.sourceSolutionId);
   return {
     ...rest,
@@ -946,6 +979,46 @@ export const capabilities: Capability[] = capabilitySeeds.map((seed) => {
 });
 
 export const capabilityKeywords = new Map(capabilitySeeds.map((c) => [c.id, c.keywords ?? []]));
+/** What each step reads and writes, in the words people use. Seeds may override; this table is the default. */
+const CAPABILITY_IO: Record<string, { consumes: string[]; produces: string[] }> = {
+  "cap-identity": { consumes: ["user identity"], produces: ["access decisions"] },
+  "cap-wo-ingest": { consumes: ["CMMS", "maintenance system"], produces: ["work-order notes", "work orders"] },
+  "cap-summarize": { consumes: ["work-order notes", "free text", "notes"], produces: ["issue summaries", "summary"] },
+  "cap-recurring": { consumes: ["work-order notes", "issue summaries"], produces: ["recurring issues", "equipment concerns", "findings"] },
+  "cap-review-queue": { consumes: ["findings", "recurring issues"], produces: ["review queue", "review items"] },
+  "cap-notify": { consumes: ["review items"], produces: ["notifications", "digest", "alerts"] },
+  "cap-approval": { consumes: ["review items"], produces: ["approved findings", "approval"] },
+  "cap-routing": { consumes: ["approved findings"], produces: ["routed findings", "planner assignment"] },
+  "cap-audit": { consumes: ["findings", "approvals"], produces: ["audit trail", "audit log"] },
+  "cap-retention": { consumes: ["notes", "findings"], produces: ["retention schedule"] },
+  "cap-reports": { consumes: ["findings", "recurring issues"], produces: ["weekly report", "report"] },
+  "cap-exec-digest": { consumes: ["findings", "trends"], produces: ["executive summary", "digest", "narrative"] },
+  "cap-clustering": { consumes: ["work-order notes", "issue summaries", "findings"], produces: ["patterns", "clusters", "cross-site patterns"] },
+  "cap-similarity": { consumes: ["work orders", "patterns"], produces: ["similar history", "ranking"] },
+  "cap-b-summarize": { consumes: ["work-order notes", "free text"], produces: ["issue summaries", "summary"] },
+  "cap-csv-ingest": { consumes: ["CSV", "spreadsheet", "export"], produces: ["work-order notes", "work orders"] },
+  "cap-action-tracking": { consumes: ["approved findings", "findings"], produces: ["actions", "follow-up actions", "owner", "due date"] },
+  "cap-sms-alerts": { consumes: ["findings"], produces: ["SMS alerts", "alerts"] },
+  "cap-export": { consumes: ["actions"], produces: ["spreadsheet", "export"] },
+  "cap-proc-index": { consumes: ["procedures", "documents", "SOP"], produces: ["procedure index", "search results"] },
+  "cap-proc-answers": { consumes: ["question", "procedures"], produces: ["answer", "citation"] },
+  "cap-incident-actions": { consumes: ["incident reports", "incident narrative"], produces: ["corrective actions", "action register"] },
+  "cap-handover-summary": { consumes: ["logbook", "shift log"], produces: ["handover summary", "watch points"] },
+};
+export const capabilityIO = new Map(
+  capabilitySeeds.map((c) => [
+    c.id,
+    { consumes: c.consumes ?? CAPABILITY_IO[c.id]?.consumes ?? [], produces: c.produces ?? CAPABILITY_IO[c.id]?.produces ?? [] },
+  ]),
+);
+
+/** Modules that other products may add even though their source product addresses a different business problem. */
+export function portableCapabilitiesFor(businessProblemIds: string[]): Capability[] {
+  return capabilitySeeds
+    .filter((c) => (c.portableTo ?? []).some((bp) => businessProblemIds.includes(bp)))
+    .map((c) => capabilityById.get(c.id))
+    .filter((c): c is Capability => !!c);
+}
 
 export const solutions: Solution[] = solutionSeeds.map((seed) => {
   const { intendedUsers: _u, dataSources: _d, keywords: _k, ...rest } = seed;

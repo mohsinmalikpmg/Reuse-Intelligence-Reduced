@@ -20,6 +20,7 @@ export function toBrief(row: BriefRow): Brief {
     fields: row.fields as Brief["fields"],
     today: row.today,
     better: row.better,
+    requirements: (Array.isArray(row.requirements) ? row.requirements : []) as Brief["requirements"],
     clarifyingQuestion: row.clarifyingQuestion,
     clarification: row.clarification,
     source: row.source as Brief["source"],
@@ -116,7 +117,7 @@ export function candidatesFor(base: Solution): string[] {
     .map((s) => s.id);
 }
 
-export async function createCase(input: { baseSolutionId: string; briefId?: string | null; title?: string; createdByRole?: Role; id?: string }): Promise<Case> {
+export async function createCase(input: { baseSolutionId: string; briefId?: string | null; title?: string; createdByRole?: Role; id?: string; moduleIds?: string[] }): Promise<Case> {
   const base = getSolution(input.baseSolutionId);
   if (!base) throw new Error(`Unknown solution ${input.baseSolutionId}`);
   const candidateSolutionIds = candidatesFor(base);
@@ -127,6 +128,8 @@ export async function createCase(input: { baseSolutionId: string; briefId?: stri
   // solutions stay off until the user adds them. The tray still marks the recommended ones.
   const moduleStates = defaultModuleStates(ctx);
   for (const cap of ctx.candidateCapabilities) moduleStates[cap.id] = false;
+  // Modules chosen through a reuse check start switched on in Version B, so the first run already shows them.
+  for (const id of input.moduleIds ?? []) if (ctx.candidateCapabilities.some((cap) => cap.id === id)) moduleStates[id] = true;
   const [row] = await db
     .insert(casesTable)
     .values({

@@ -12,4 +12,8 @@ export interface CaseInput {
   briefId?: string;
   title?: string;
   createdByRole?: Role;
+  /** Addable modules switched on in Version B from the start (e.g. from a reuse check) */
+  moduleIds?: string[];
+  /** Reuse-check event this case acts on; recorded as the path taken */
+  reuseEventId?: string;
 }

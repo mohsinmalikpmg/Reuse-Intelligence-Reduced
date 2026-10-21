@@ -5,6 +5,7 @@ import briefsRouter from "./briefs";
 import casesRouter from "./cases";
 import overviewRouter from "./overview";
 import workbenchRouter from "./workbench";
+import reuseRouter from "./reuse";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(briefsRouter);
 router.use(casesRouter);
 router.use(overviewRouter);
 router.use(workbenchRouter);
+router.use(reuseRouter);
 
 export default router;

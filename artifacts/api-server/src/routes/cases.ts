@@ -13,6 +13,7 @@ import { allowedActions, buildConsolidation, buildRecommendation, buildReview, n
 import { buildExperimentPlan, runSimulation } from "../lib/simulation";
 import { matchBrief } from "../lib/matching";
 import { caseEvidence } from "../lib/evidence";
+import { setReusePathTaken } from "../lib/reuse-store";
 import {
   createCase,
   getBrief,
@@ -66,7 +67,9 @@ router.post("/cases", async (req, res) => {
     briefId: parsed.data.briefId ?? null,
     title: parsed.data.title,
     createdByRole: parsed.data.createdByRole,
+    moduleIds: parsed.data.moduleIds,
   });
+  if (parsed.data.reuseEventId) await setReusePathTaken(parsed.data.reuseEventId, "use");
   res.status(201).json(created);
 });
 
@@ -105,7 +108,9 @@ router.get("/cases/:caseId/recommendation", async (req, res) => {
 router.get("/cases/:caseId/configuration", async (req, res) => {
   const c = await loadCase(String(req.params["caseId"]), res);
   if (!c) return;
-  res.json(buildConfiguration(c, caseContext(c)));
+  // The brief's requirements decide whether portable modules (e.g. Safety Signals) are recommended here.
+  const brief = c.briefId ? await getBrief(c.briefId) : null;
+  res.json(buildConfiguration(c, caseContext(c, brief?.requirements.map((r) => r.text) ?? [])));
 });
 
 router.put("/cases/:caseId/configuration", async (req, res) => {

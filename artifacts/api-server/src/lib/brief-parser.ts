@@ -1,11 +1,13 @@
 import OpenAI from "openai";
-import type { BriefFields, BriefSource } from "@workspace/api-zod";
+import type { BriefFields, BriefRequirement, BriefSource } from "@workspace/api-zod";
 import { DEMO_PROMPT } from "../data/catalog";
 import { logger } from "./logger";
 
 export interface ParsedBrief {
   fields: BriefFields;
   clarifyingQuestion: string | null;
+  /** Short requirement phrases, derived from the desired outcome and the controls it implies */
+  requirements: string[];
   source: BriefSource;
 }
 
@@ -39,6 +41,13 @@ export const DEMO_BRIEF_FIELDS: BriefFields = {
   requiredControls: { value: "Supervisor approval before a finding becomes a maintenance action; audit trail; site-level data access", confidence: 0.7 },
   successMeasures: { value: "Review time per week, recurring-issue detection rate, consistency across sites", confidence: 0.85 },
 };
+
+/** Requirements behind the demonstration prompt. Each one is checked against the catalogue on Discover. */
+export const DEMO_REQUIREMENTS: string[] = [
+  "Identify recurring equipment issues from work-order notes",
+  "Apply one standard review approach across all sites",
+  "Supervisor approval before a finding becomes a maintenance action",
+];
 
 export function isDemoPrompt(text: string): boolean {
   return normalize(text) === normalize(DEMO_PROMPT);
@@ -86,19 +95,21 @@ const RESPONSE_SCHEMA = {
       required: [...FIELD_KEYS],
     },
     clarifyingQuestion: { type: ["string", "null"] },
+    requirements: { type: "array", items: { type: "string" } },
   },
-  required: ["fields", "clarifyingQuestion"],
+  required: ["fields", "clarifyingQuestion", "requirements"],
 } as const;
 
 const SYSTEM_PROMPT = `You interpret plain-language business pain points for an enterprise solution-reuse platform.
 Extract a structured brief in plain business language (no technical jargon). Keep every value to one short sentence or phrase.
 Fields: user (primary user role), job (job to be done), currentProcess, painPoint, desiredOutcome, constraints, data (data involved), requiredControls (approvals, audit, access controls that are likely required), successMeasures.
 Give a confidence between 0 and 1 for each field; use lower confidence when you had to infer.
-Ask at most ONE clarifying question, and only if a critical ambiguity would change which solution fits. Otherwise return null.`;
+Ask at most ONE clarifying question, and only if a critical ambiguity would change which solution fits. Otherwise return null.
+Also list 2 to 4 requirements: short imperative phrases (under 12 words) that a solution must satisfy, taken only from what the text says or clearly implies (the desired outcome and any approvals, audit or access controls). Do not invent requirements.`;
 
 export async function parseBrief(text: string): Promise<ParsedBrief> {
   if (isDemoPrompt(text)) {
-    return { fields: DEMO_BRIEF_FIELDS, clarifyingQuestion: null, source: "cached" };
+    return { fields: DEMO_BRIEF_FIELDS, clarifyingQuestion: null, requirements: DEMO_REQUIREMENTS, source: "cached" };
   }
 
   const openai = getClient();
@@ -118,10 +129,12 @@ export async function parseBrief(text: string): Promise<ParsedBrief> {
       });
       const content = completion.choices[0]?.message?.content;
       if (content) {
-        const parsed = JSON.parse(content) as { fields: BriefFields; clarifyingQuestion: string | null };
+        const parsed = JSON.parse(content) as { fields: BriefFields; clarifyingQuestion: string | null; requirements?: unknown };
         const fields = sanitizeFields(parsed.fields);
         if (fields) {
-          return { fields, clarifyingQuestion: parsed.clarifyingQuestion ?? null, source: "ai" };
+          const fromModel = Array.isArray(parsed.requirements) ? parsed.requirements.filter((r): r is string => typeof r === "string" && r.trim().length >= 3).map((r) => r.trim()).slice(0, 4) : [];
+          const requirements = fromModel.length > 0 ? fromModel : deriveRequirements(fields);
+          return { fields, clarifyingQuestion: parsed.clarifyingQuestion ?? null, requirements, source: "ai" };
         }
       }
       logger.warn("AI brief parse returned an unusable payload; using deterministic fallback");
@@ -130,7 +143,8 @@ export async function parseBrief(text: string): Promise<ParsedBrief> {
     }
   }
 
-  return { ...fallbackParse(text), source: "fallback" };
+  const fallback = fallbackParse(text);
+  return { ...fallback, requirements: deriveRequirements(fallback.fields), source: "fallback" };
 }
 
 function sanitizeFields(raw: unknown): BriefFields | null {
@@ -172,7 +186,7 @@ const ROLE_WORDS = [
 ];
 
 /** Deterministic rule-based interpretation used when the model is unavailable. */
-export function fallbackParse(text: string): Omit<ParsedBrief, "source"> {
+export function fallbackParse(text: string): Omit<ParsedBrief, "source" | "requirements"> {
   const lower = text.toLowerCase();
   const sentences = text
     .split(/(?<=[.!?])\s+/)
@@ -248,4 +262,46 @@ export function deriveTodayBetter(fields: BriefFields): { today: string; better:
   const today = sentence(fields.painPoint.value) || sentence(fields.currentProcess.value);
   const better = sentence(fields.desiredOutcome.value) || sentence(fields.successMeasures.value);
   return { today, better };
+}
+
+/**
+ * Deterministic requirements list: the desired outcome split into its clauses, plus any stated control.
+ * Used for the rule-based path and whenever "Better" is edited by hand. Never invents a requirement.
+ */
+export function deriveRequirements(fields: BriefFields, better?: string): string[] {
+  const outcome = (better?.trim() || fields.desiredOutcome.value).replace(/[.!?]+$/, "");
+  const clauses = outcome
+    .split(/;|,\s+(?:and\s+)?|\s+and\s+(?=[a-z]{4,}\s)/i)
+    .map((c) => c.trim())
+    .filter((c) => c.split(/\s+/).length >= 2);
+  const controls = fields.requiredControls.value
+    .split(/;/)
+    .map((c) => c.trim())
+    .filter((c) => c && !/assumed|not stated/i.test(c));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of [...clauses, ...controls]) {
+    const text = r.charAt(0).toUpperCase() + r.slice(1);
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+    if (out.length === 4) break;
+  }
+  return out.length > 0 ? out : [outcome.charAt(0).toUpperCase() + outcome.slice(1)].filter((t) => t.trim());
+}
+
+export function toRequirements(texts: string[], source: BriefRequirement["source"] = "derived"): BriefRequirement[] {
+  const used = new Set<string>();
+  return texts.map((text) => {
+    let id = `req_${slug(text)}`;
+    let n = 2;
+    while (used.has(id)) id = `req_${slug(text)}_${n++}`;
+    used.add(id);
+    return { id, text, source };
+  });
+}
+
+function slug(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24);
 }

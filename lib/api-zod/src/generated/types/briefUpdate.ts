@@ -6,11 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BriefFieldValues } from './briefFieldValues';
+import type { BriefRequirementInput } from './briefRequirementInput';
 
 export interface BriefUpdate {
   fields?: BriefFieldValues;
   today?: string;
   better?: string;
+  /** Full replacement of the requirements list */
+  requirements?: BriefRequirementInput[];
   confirmed?: boolean;
   clarification?: string;
 }

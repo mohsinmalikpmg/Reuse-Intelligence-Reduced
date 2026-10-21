@@ -10,7 +10,8 @@ import type {
   Solution,
   WorkflowStepConfig,
 } from "@workspace/api-zod";
-import { WORKFLOW_STEPS, getCapability, getSolution, solutionCapabilities } from "../data/catalog";
+import { WORKFLOW_STEPS, capabilityKeywords, getCapability, getSolution, portableCapabilitiesFor, solutionCapabilities } from "../data/catalog";
+import { tokenize } from "./matching";
 import { isExecutable } from "../engine/steps";
 
 export class ConfigurationError extends Error {}
@@ -46,11 +47,15 @@ export interface CaseContext {
   base: Solution;
   candidates: Solution[];
   baseCapabilities: Capability[];
-  /** Capabilities from candidate solutions that may be added as modules */
+  /** Capabilities from candidate solutions, plus portable modules from elsewhere, that may be added as modules */
   candidateCapabilities: Capability[];
+  /** Portable modules (source product addresses a different problem); recommended only when the need calls for them */
+  portableIds: Set<string>;
+  /** Plain-language needs behind the case (brief requirements); decides whether portable modules are recommended */
+  needs: string[];
 }
 
-export function caseContext(c: Pick<Case, "baseSolutionId" | "candidateSolutionIds">): CaseContext {
+export function caseContext(c: Pick<Case, "baseSolutionId" | "candidateSolutionIds">, needs: string[] = []): CaseContext {
   const base = getSolution(c.baseSolutionId);
   if (!base) throw new ConfigurationError(`Unknown base solution ${c.baseSolutionId}`);
   const candidates = c.candidateSolutionIds
@@ -58,10 +63,30 @@ export function caseContext(c: Pick<Case, "baseSolutionId" | "candidateSolutionI
     .filter((s): s is Solution => !!s && s.id !== base.id);
   const baseCapabilities = solutionCapabilities(base);
   const baseIds = new Set(baseCapabilities.map((cap) => cap.id));
-  const candidateCapabilities = candidates
+  const fromCandidates = candidates
     .flatMap((s) => solutionCapabilities(s))
     .filter((cap, index, arr) => !baseIds.has(cap.id) && arr.findIndex((o) => o.id === cap.id) === index);
-  return { base, candidates, baseCapabilities, candidateCapabilities };
+  const seen = new Set(fromCandidates.map((cap) => cap.id));
+  const portable = portableCapabilitiesFor(base.businessProblemIds).filter((cap) => !baseIds.has(cap.id) && !seen.has(cap.id));
+  return {
+    base,
+    candidates,
+    baseCapabilities,
+    candidateCapabilities: [...fromCandidates, ...portable],
+    portableIds: new Set(portable.map((cap) => cap.id)),
+    needs,
+  };
+}
+
+/** A portable module is recommended only when one of the case's needs uses the words the module is about. */
+function needCallsFor(cap: Capability, needs: string[]): boolean {
+  if (needs.length === 0) return false;
+  const capTokens = new Set(tokenize([cap.name, ...(capabilityKeywords.get(cap.id) ?? [])].join(" ")));
+  return needs.some((need) => {
+    const t = tokenize(need);
+    const hits = t.filter((x) => capTokens.has(x)).length;
+    return hits >= 2 || (hits >= 1 && t.length <= 3);
+  });
 }
 
 export function isUnsupported(cap: Capability): boolean {
@@ -78,6 +103,7 @@ export function conflictingBaseCapability(cap: Capability, ctx: CaseContext): Ca
 
 export function isRecommendedModule(cap: Capability, ctx: CaseContext): boolean {
   if (conflictingBaseCapability(cap, ctx)) return false;
+  if (ctx.portableIds.has(cap.id) && !needCallsFor(cap, ctx.needs)) return false;
   if (isUnsupported(cap) && cap.evidenceLevel !== "moderate" && cap.evidenceLevel !== "strong") return false;
   return cap.evidenceLevel === "strong" || cap.evidenceLevel === "moderate";
 }

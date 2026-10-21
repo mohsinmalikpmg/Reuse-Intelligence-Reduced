@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BriefFields } from './briefFields';
+import type { BriefRequirement } from './briefRequirement';
 import type { BriefSource } from './briefSource';
 
 export interface Brief {
@@ -15,6 +16,8 @@ export interface Brief {
   today: string;
   /** The outcome the user wants */
   better: string;
+  /** Short requirements derived from "Better" plus any the user added; editable */
+  requirements: BriefRequirement[];
   fields: BriefFields;
   /**
      * At most one clarifying question, only when necessary
