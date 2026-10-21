@@ -175,6 +175,16 @@ export async function registerConsolidationSources(userId: string) {
   // Authorization belongs here as well as in the HTTP route: scripts cannot silently grant rights.
   const permission = await pool.query("SELECT can_manage_solution_packages FROM users WHERE id=$1", [userId]);
   if (permission.rows[0]?.can_manage_solution_packages !== true) throw new ConsolidationError(403, "Existing IT package-management permission is required to register sources.");
+  return registerBundledSources(userId);
+}
+
+/** Operator-only development seed; never exposed by an HTTP route or persona switch. */
+export async function seedDemoConsolidationSources() {
+  if (process.env.NODE_ENV !== "development") throw new ConsolidationError(403, "Demo source setup is development-only.");
+  return registerBundledSources("demo-setup:persona-it");
+}
+
+async function registerBundledSources(userId: string) {
   for (const source of sources) {
     const { bytes, evidence } = await currentSourceArchive(source);
     const sha256 = hash(bytes), version = `sha256:${sha256}`, objectPath = await savePackageOriginal(sha256,bytes);

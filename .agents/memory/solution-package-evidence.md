@@ -15,6 +15,12 @@ Source registration is IT setup, not a step for a solution seeker completing int
 
 **How to apply:** let seekers use the registered library; keep registration in the IT Owner view with a real account entitlement. Missing setup must be stated plainly, not bypassed by granting rights or relabeling every forbidden request as a permission failure.
 
+For the supplied demo packages, the user explicitly requested “just use the demo persona” rather than another account setup.
+
+**Why:** registering existing demonstration inputs must not block exploring consolidation.
+
+**How to apply:** allow an operator-run, development-only seed of the fixed bundled sources, attributed to demo IT setup. This exception does not make persona switching an authorization boundary or allow arbitrary uploads, production registration, or account permission grants.
+
 Keep uploader claims, static source mappings, and executed sandbox results distinct. Approval of a file mapping does not establish runtime behavior or make a preview product executable.
 
 **Why:** ZIP intake is intentionally non-executing. Human-reviewed source evidence cannot prove full requirements, integration compatibility, or production readiness.
