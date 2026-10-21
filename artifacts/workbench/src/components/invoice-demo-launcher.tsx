@@ -234,7 +234,7 @@ function Composer({ recipe, draft, setDraft, signedIn, authLoading, sourcesQ }: 
               <Layers className="h-4 w-4" /> {create.isPending ? "Preparing the map…" : "Combine in Workbench"} <ArrowRight className="h-4 w-4" />
             </button>
           )}
-          <p className="mt-2 text-[12px] text-muted-foreground">Synthetic data only; no real approvals, payments or ledgers.</p>
+          <div className="mt-2"><Tag tone="muted">Demo data</Tag></div>
         </div>
       </div>
     </div>

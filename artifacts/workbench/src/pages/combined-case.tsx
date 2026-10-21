@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Cable, Check, ExternalLink, Info, Minus, Play, RotateCcw, Save, Undo2, X } from "lucide-react";
+import { ArrowRight, Cable, Check, ExternalLink, Info, Minus, Play, RotateCcw, Save, Undo2, X } from "lucide-react";
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import { ErrorView, LoadingView, Page, StageEyebrow, Tag, btn, useUndoToast } from "@/components/bits";
 import { CaseExportHistory } from "@/components/solution-exports";
@@ -50,7 +50,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
   const [err, setErr] = useState<string | null>(null);
   const finance = recipe.id === "finance";
   const enabled = recipe.capabilities.filter((x) => c.capabilityIds.includes(x.id));
-  const missing = recipe.capabilities.filter((x) => !c.capabilityIds.includes(x.id));
+  const excluded = recipe.capabilities.filter((x) => !c.capabilityIds.includes(x.id));
   const edges = recipe.edges.filter((e) => c.wiring.edgeIds.includes(e.id));
 
   const save = (patch: Partial<CombinedCaseInput>, label: string, undoable = true) => {
@@ -84,6 +84,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
       <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
         <Link href="/library" className="hover:text-primary hover:underline">Library</Link><span>/</span><span>{recipe.name}</span>
         <Tag tone="sky" testid="text-revision">Saved · rev {c.revision}</Tag>
+        <Tag tone="muted" testid="label-demo-data">Demo data</Tag>
       </div>
       <h1 className="mt-0.5 break-words text-[24px] md:text-[30px]" data-testid="text-headline">{c.title}</h1>
       <blockquote className="mt-2 max-w-3xl border-l-4 border-sienna pl-3 text-[15px] text-muted-foreground" data-testid="text-need">{c.need}</blockquote>
@@ -91,7 +92,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         <section className="rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6" data-testid="panel-map" aria-label="Proposed map">
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <h2 className="text-[17px] font-semibold">The proposed map</h2>
+            <h2 className="text-[17px] font-semibold">Included capabilities</h2>
             <span className="text-[12.5px] opacity-75">Starts from {name(c.baseSolutionId)}. Click a connection for its adapter.</span>
             <button onClick={undo} disabled={!history.length || upd.isPending} className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium hover:bg-white/10 disabled:opacity-40" data-testid="button-undo"><Undo2 className="h-4 w-4" /> Undo</button>
           </div>
@@ -123,20 +124,24 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
         </section>
 
         <aside className="space-y-4">
-          <section className="card-soft p-5" data-testid="panel-missing">
-            <h2 className="flex items-center gap-2 text-[16px] font-semibold"><AlertTriangle className="h-4 w-4 text-siennaink" /> Not in this combination</h2>
-            {missing.length === 0 ? <p className="mt-2 text-[13.5px] text-muted-foreground">Every capability from the chosen sources is switched on.</p> : (
-              <ul className="mt-2 space-y-2">{missing.map((m) => {
+          {excluded.length > 0 && <section className="card-soft p-5" data-testid="panel-excluded">
+            <h2 className="text-[16px] font-semibold">Not selected</h2>
+              <ul className="mt-2 space-y-2">{excluded.map((m) => {
                 const has = c.selectedSources.some((s) => s.id === m.sourceId);
                 return (
                   <li key={m.id} className="flex flex-wrap items-center gap-2 text-[13.5px]" data-testid={`missing-${m.id}`}>
-                    <span className="min-w-0 flex-1"><span className="font-medium">{m.name}</span> <span className="text-muted-foreground">· {has ? "removed" : `needs ${name(m.sourceId)}, not chosen`}</span></span>
+                    <span className="min-w-0 flex-1"><span className="font-medium">{m.name}</span> <span className="text-muted-foreground">· {has ? "switched off" : `${name(m.sourceId)} not selected`}</span></span>
                     {has && <button className={btn.quiet} onClick={() => addCap(m.id)} disabled={upd.isPending} data-testid={`button-add-${m.id}`}>Add back</button>}
                   </li>
                 );
               })}</ul>
-            )}
-            <p className="mt-3 text-[12.5px] text-muted-foreground">Always missing: real approvals, payments and live ledgers. Data is synthetic.</p>
+          </section>}
+          <section className="card-soft p-5" data-testid="panel-requirement-gaps">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-[16px] font-semibold">Still needed</h2>
+              <Tag tone="muted">Not assessed yet</Tag>
+            </div>
+            <p className="mt-2 text-[13.5px] text-muted-foreground">Your requirements haven’t been checked against this combination yet.</p>
           </section>
           {finance && <FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Adjustment saved")} />}
           <section className="card-soft p-5">
