@@ -4,7 +4,7 @@ import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, pointerWithin, 
 import { ArrowRight, Check, CornerDownLeft, GripVertical, Pencil, Plus, Sparkles, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  getGetBriefQueryKey, getGetBriefMatchesQueryKey, useCreateBrief, useGetBrief, useGetBriefMatches, useGetDemoState, useUpdateBrief,
+  getGetBriefQueryKey, getGetBriefMatchesQueryKey, getGetCodeAssessmentQueryKey, useCreateBrief, useGetBrief, useGetBriefMatches, useGetDemoState, useUpdateBrief,
   type Brief, type BriefFieldValues, type SolutionMatch,
 } from "@workspace/api-client-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,7 @@ import { CoverageTable, RequirementChips } from "@/components/reuse-check";
 import { MetaTags, isLive } from "@/components/enterprise";
 import { PrototypeIntake } from "@/components/prototype-intake";
 import { cn } from "@/lib/utils";
+import { CodeAssessment } from "@/components/code-assessment";
 
 const dropUnderPointer: CollisionDetection = (args) => { const hits = pointerWithin(args); return hits.length ? hits : rectIntersection(args); };
 const FIELD_LABEL: Record<keyof BriefFieldValues, string> = {
@@ -38,6 +39,15 @@ export default function Discover() {
     if (text.trim().length < 10) { say("Add a little more detail, at least a sentence."); return; }
     create.mutate({ data: { text: text.trim() } }, { onSuccess: (b) => setLocation(`/discover?brief=${b.id}`), onError: (e) => say(errMsg(e)) });
   };
+
+  if (briefId && showResults) {
+    return <Page className="max-w-[1000px] md:pt-14">
+      <Link href="/discover" className="mb-4 inline-flex text-sm font-semibold text-primary underline-offset-2 hover:underline" data-testid="link-back-to-intake">← Back to intake</Link>
+      <Headline stage="trace" size="lg" title="Reuse what exists." accent="Build what’s missing." className="mb-0"
+        sub="Your validated priorities, assessed against the indexed demo code: a starting solution, reusable elements and the gaps that remain." />
+      <Results briefId={briefId} />
+    </Page>;
+  }
 
   if (prototypeMode) {
     return (
@@ -110,7 +120,7 @@ function Understanding({ briefId, showResults, onFind }: { briefId: string; show
 
   const patch = (data: Parameters<typeof upd.mutate>[0]["data"], msg: string, undo?: () => void) =>
     upd.mutate({ briefId, data }, {
-      onSuccess: (nb: Brief) => { qc.setQueryData(getGetBriefQueryKey(briefId), nb); qc.invalidateQueries({ queryKey: getGetBriefMatchesQueryKey(briefId) }); say(msg, undo); },
+      onSuccess: (nb: Brief) => { qc.setQueryData(getGetBriefQueryKey(briefId), nb); qc.invalidateQueries({ queryKey: getGetBriefMatchesQueryKey(briefId) }); qc.invalidateQueries({ queryKey: getGetCodeAssessmentQueryKey(briefId) }); say(msg, undo); },
       onError: (e) => say(errMsg(e)),
     });
 
@@ -216,6 +226,19 @@ function Chip({ k, value, picked, onPick, onRemove }: { k: keyof BriefFieldValue
 }
 
 function Results({ briefId }: { briefId: string }) {
+  return (
+    <>
+      <CodeAssessment briefId={briefId} />
+      <details className="card-soft mt-8 p-5" data-testid="catalog-descriptions">
+        <summary className="cursor-pointer text-[17px] font-semibold text-primary">Catalog descriptions (not source evidence)</summary>
+        <p className="mt-3 text-[14px] text-muted-foreground">Secondary comparison based on catalog descriptions, not implemented code. These suggestions do not override the code-grounded starting solution or establish verified coverage.</p>
+        <CatalogResults briefId={briefId} />
+      </details>
+    </>
+  );
+}
+
+function CatalogResults({ briefId }: { briefId: string }) {
   const m = useGetBriefMatches(briefId, { query: { enabled: !!briefId, queryKey: getGetBriefMatchesQueryKey(briefId) } });
   const [more, setMore] = useState(false);
   if (m.isLoading) return <div className="mt-10 space-y-3"><Skel className="h-44" /><div className="grid gap-3 md:grid-cols-2"><Skel className="h-32" /><Skel className="h-32" /></div></div>;
@@ -224,7 +247,7 @@ function Results({ briefId }: { briefId: string }) {
   if (!best) return <p className="mt-10 text-muted-foreground">Nothing in the library matches yet. Try wording it differently, or browse the <Link href="/library" className="text-primary underline">library</Link>.</p>;
   return (
     <section className="reveal mt-12" data-testid="section-results">
-      <div className="eyebrow mb-2 !text-siennaink">Best match</div>
+      <div className="eyebrow mb-2 !text-siennaink">Catalog suggestion · not source evidence</div>
       <MatchCard m={best} big />
       <CoverageTable rows={m.data.coverage} briefId={briefId} baseSolutionId={best.solution.id} baseSolutionName={best.solution.name} baseLive={isLive(best.solution)} />
       {rest.length > 0 && <>

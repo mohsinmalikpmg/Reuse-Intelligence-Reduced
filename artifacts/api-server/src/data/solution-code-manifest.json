@@ -1,0 +1,392 @@
+{
+  "packageId": "demo-engine-4753a2261827095e6db40d7abfd946c624235a3b3067babee1aafef692d99ca8",
+  "version": "1.0.0-catalog-2026.10",
+  "scope": "Implemented local seed demo engine with bundled Node runner; seed executor configurations and reference-only Workbench UI. Not live integrations, persisted governance export or standalone enterprise application.",
+  "createdAt": "2026-10-01T00:00:00.000Z",
+  "capabilities": [
+    {
+      "capabilityId": "cap-wo-ingest",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "readNotes",
+      "lines": [
+        86,
+        91
+      ],
+      "limitations": [
+        "Parses local pipe-delimited or free-text lines; no CMMS connection and not a general CSV parser."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-summarize",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "summarize",
+      "lines": [
+        93,
+        103
+      ],
+      "limitations": [
+        "First matching regex issue label plus leading sentence; no LLM. Both summarizer IDs share this executor and cap-summarize config key."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-recurring",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "identifyConcerns",
+      "lines": [
+        105,
+        128
+      ],
+      "limitations": [
+        "Counts exact site/tag/regex-issue groups; ignores untagged notes; not predictive detection."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-review-queue",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "humanReview",
+      "lines": [
+        227,
+        267
+      ],
+      "limitations": [
+        "In-memory queue using a parsed numeric threshold; safety grouping uses tag and issue, not site; no human task system."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-notify",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "notify",
+      "lines": [
+        293,
+        299
+      ],
+      "limitations": [
+        "Produces a digest sentence only; sends no notifications."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-approval",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "approvalGate",
+      "lines": [
+        269,
+        274
+      ],
+      "limitations": [
+        "Adds approval-required text only; does not enforce authorization or block downstream actions."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-routing",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "routeFindings",
+      "lines": [
+        276,
+        287
+      ],
+      "limitations": [
+        "Produces textual queue labels only; no dispatch or planner integration."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-reports",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "weeklyReport",
+      "lines": [
+        326,
+        331
+      ],
+      "limitations": [
+        "Produces a single totals line; no scheduled reporting or export."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-exec-digest",
+      "solutionId": "sol-workorder-insight",
+      "file": "engine/steps.ts",
+      "symbol": "execDigest",
+      "lines": [
+        333,
+        340
+      ],
+      "limitations": [
+        "Produces one templated headline from existing findings/clusters; no narrative generation."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-clustering",
+      "solutionId": "sol-site-pattern-finder",
+      "file": "engine/steps.ts",
+      "symbol": "clusterIssues",
+      "lines": [
+        130,
+        147
+      ],
+      "limitations": [
+        "Groups exact equipment class and regex issue with two reports, even within one site; skips general, wear and facility categories."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-similarity",
+      "solutionId": "sol-site-pattern-finder",
+      "file": "engine/steps.ts",
+      "symbol": "rankPatterns",
+      "lines": [
+        158,
+        166
+      ],
+      "limitations": [
+        "Sorts existing clusters by count then latest date; no semantic similarity or historical retrieval."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-b-summarize",
+      "solutionId": "sol-site-pattern-finder",
+      "file": "engine/steps.ts",
+      "symbol": "summarize",
+      "lines": [
+        93,
+        103
+      ],
+      "limitations": [
+        "First matching regex issue label plus leading sentence; no LLM. Both summarizer IDs share this executor and cap-summarize config key."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-csv-ingest",
+      "solutionId": "sol-site-pattern-finder",
+      "file": "engine/steps.ts",
+      "symbol": "readNotes",
+      "lines": [
+        86,
+        91
+      ],
+      "limitations": [
+        "Parses local pipe-delimited or free-text lines; no CMMS connection and not a general CSV parser."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-action-tracking",
+      "solutionId": "sol-action-tracker",
+      "file": "engine/steps.ts",
+      "symbol": "followUpActions",
+      "lines": [
+        301,
+        324
+      ],
+      "limitations": [
+        "Generates Open actions with templated owners and latest-report-plus-14-day due dates; no persistence, closure or enforced approval."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-incident-actions",
+      "solutionId": "sol-incident-commander",
+      "file": "engine/steps.ts",
+      "symbol": "incidentActions",
+      "lines": [
+        368,
+        376
+      ],
+      "limitations": [
+        "Regex-splits commitment sentences into Open action text; no lifecycle tracking, owners or system of record."
+      ],
+      "tested": true
+    },
+    {
+      "capabilityId": "cap-safety-signals",
+      "solutionId": "sol-incident-commander",
+      "file": "engine/steps.ts",
+      "symbol": "safetySignals",
+      "lines": [
+        199,
+        225
+      ],
+      "limitations": [
+        "Fixed keyword/regex lexicon with blanket not-safety-critical exclusion; not a safety assessment."
+      ],
+      "tested": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "base work-order seed: all nine executors and labelled recurring findings",
+      "passed": true
+    },
+    {
+      "name": "base plus borrowed clustering, ranking, safety and follow-up actions",
+      "passed": true
+    },
+    {
+      "name": "Pattern Finder seed aliases parse and summarize local text",
+      "passed": true
+    },
+    {
+      "name": "Incident Commander seed: narrative safety flags and extracted commitments",
+      "passed": true
+    },
+    {
+      "name": "Action Tracker seed alone honestly has no recurring input analysis",
+      "passed": true
+    },
+    {
+      "name": "compact config, threshold and safety-negative behavior",
+      "passed": true
+    },
+    {
+      "name": "identical ZIP bytes from fixed inputs",
+      "passed": true
+    },
+    {
+      "name": "extracted ZIP runs node demo.mjs without install and all file hashes match",
+      "passed": true
+    },
+    {
+      "name": "private immutable storage upload/download SHA-256 round trip",
+      "passed": true
+    }
+  ],
+  "configurations": [
+    {
+      "solutionId": "sol-workorder-insight",
+      "capabilityIds": [
+        "cap-wo-ingest",
+        "cap-summarize",
+        "cap-recurring",
+        "cap-review-queue",
+        "cap-notify",
+        "cap-approval",
+        "cap-routing",
+        "cap-reports",
+        "cap-exec-digest"
+      ]
+    },
+    {
+      "solutionId": "sol-site-pattern-finder",
+      "capabilityIds": [
+        "cap-clustering",
+        "cap-similarity",
+        "cap-b-summarize",
+        "cap-csv-ingest"
+      ]
+    },
+    {
+      "solutionId": "sol-action-tracker",
+      "capabilityIds": [
+        "cap-action-tracking"
+      ]
+    },
+    {
+      "solutionId": "sol-incident-commander",
+      "capabilityIds": [
+        "cap-safety-signals",
+        "cap-incident-actions"
+      ]
+    }
+  ],
+  "sha256": "4753a2261827095e6db40d7abfd946c624235a3b3067babee1aafef692d99ca8",
+  "objectPath": "solution-code/4753a2261827095e6db40d7abfd946c624235a3b3067babee1aafef692d99ca8.zip",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "eafa0b52056074c33aa35a6fca69ea6148f9348bf3a0b351d04a66773b649433"
+    },
+    {
+      "path": "configurations/capabilities.json",
+      "sha256": "1095622d6177c285d6e563bf254dea66c2f32d602153707398acf22ebe7a186f"
+    },
+    {
+      "path": "configurations/sol-action-tracker.json",
+      "sha256": "c10aa4b84135df5f9a525f38a83c123b59fb78cfa68b6caf205eb24f0a5146b4"
+    },
+    {
+      "path": "configurations/sol-incident-commander.json",
+      "sha256": "4cb143bd5e5422d695a11fc9834a6f03283ddc03598d4053394ee5e7773b84a2"
+    },
+    {
+      "path": "configurations/sol-site-pattern-finder.json",
+      "sha256": "72bdb996edabdd4297d645ac29070d5d2b66bd4b3f27b5efa381876529496e51"
+    },
+    {
+      "path": "configurations/sol-workorder-insight.json",
+      "sha256": "dcc02b5f7b4cbf16547dd6138d258576e9dabd1c620746668b072e38fbf2adf7"
+    },
+    {
+      "path": "data/catalog-enterprise.ts",
+      "sha256": "c028144b6bcc5e269815a7ff5967e37c9c6d75a0683ea66d44754d245add7845"
+    },
+    {
+      "path": "data/catalog.ts",
+      "sha256": "977c26b84597c5ad27a338414bc7416ba7b5805f3bca6844172448a7c969f02c"
+    },
+    {
+      "path": "demo-source.ts",
+      "sha256": "3c7e040a363370f21af0d59525ed8900ae36808fc8df6537a60c2f50a657d509"
+    },
+    {
+      "path": "demo.mjs",
+      "sha256": "22c02c2bf9ac32f13498cb73363f9c98f9731caeed22ab68ec0bbd2dfb131cbd"
+    },
+    {
+      "path": "engine/diff.ts",
+      "sha256": "b81f67e9d66f369896668c2bd9ac31e3dcabaa5b9d51c6d7c0c063ce2508ee70"
+    },
+    {
+      "path": "engine/run.ts",
+      "sha256": "1b6e2e5acaec4ea802b04b31082cf19110940fc76cd31398caf1ca10a4ce934a"
+    },
+    {
+      "path": "engine/steps.ts",
+      "sha256": "c2803495eda4afbb349279ece470544c3a67ab5cfafc44947a2647ff1a5726ad"
+    },
+    {
+      "path": "engine/types.ts",
+      "sha256": "4fca4b0f0575b04caac493eca15582fd7c9aed294550b97a22e4af8e5f091fe9"
+    },
+    {
+      "path": "engine/workorders.ts",
+      "sha256": "da0015842546011726c3aa5de58fdf99620ad01cc7d36fb1343da73d31b31f4c"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "5ec423d9ae23fcafb860442488e5d08825eb22b22e1ffd6d2d21a5b47da1e9d2"
+    },
+    {
+      "path": "package.json",
+      "sha256": "8132b5977ed271bce547d9590c04cc642990df9d0fa020b3c7a8560d78995244"
+    },
+    {
+      "path": "reference-ui/output-view.tsx",
+      "sha256": "6d0bdaef08cfdc776ac2dcc985ed89c8fcf9c129bd19b9d84250fd586865b85d"
+    },
+    {
+      "path": "reference-ui/wb-compare.tsx",
+      "sha256": "766bf5ea5551e5a739027479527f4ff06df629ebee15a54aa40cf2b959c44ecb"
+    },
+    {
+      "path": "reference-ui/wb-reuse.tsx",
+      "sha256": "f3b304a0e736bfdeac727183cd07b8df75833c43b09b542592e83cc3d88204d9"
+    }
+  ]
+}

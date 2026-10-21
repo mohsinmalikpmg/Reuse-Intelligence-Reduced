@@ -14,6 +14,7 @@ import { MetaGrid, MetaTags, OutputPreviewPanel, isLive } from "@/components/ent
 import { PrototypePanel, ComparedPrototypes } from "@/components/prototype-panel";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/persona";
+import { SolutionCodePackage } from "@/components/code-assessment";
 
 export default function SolutionPage() {
   const isOwner = useRole() === "it";
@@ -91,6 +92,7 @@ export default function SolutionPage() {
       </div>
 
       {prototype && <PrototypePanel prototype={prototype} />}
+      <SolutionCodePackage solutionId={s.id} />
 
       {!prototype && <section className="mt-10">
         <div className="mb-3 flex items-center gap-2">

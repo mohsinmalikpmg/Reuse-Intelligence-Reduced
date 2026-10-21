@@ -20,6 +20,37 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /briefs/{briefId}/code-assessment:
+    get:
+      operationId: getCodeAssessment
+      parameters:
+        - { name: briefId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Source-grounded reuse and gap assessment, not proof of integration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CodeAssessment" }
+  /library/code-package:
+    get:
+      operationId: getLibraryCodePackage
+      responses:
+        "200":
+          description: Immutable demo source package metadata
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LibraryCodePackage" }
+  /library/code-packages/{packageId}/download:
+    get:
+      operationId: downloadLibraryCodePackage
+      parameters:
+        - { name: packageId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Signed-in download of stored demo source archive
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
   /intake/records/{id}/compare:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1961,6 +1992,100 @@ components:
       schema:
         type: string
   schemas:
+    CodeAssessment:
+      type: object
+      required: [briefId, package, bestSolutionId, candidates, requirements, limitations]
+      properties:
+        briefId: { type: string }
+        package: { $ref: "#/components/schemas/LibraryCodePackage" }
+        bestSolutionId: { type: [string, "null"] }
+        candidates:
+          type: array
+          items: { $ref: "#/components/schemas/CodeCandidate" }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/CodeRequirementAssessment" }
+        limitations: { type: array, items: { type: string } }
+    LibraryCodePackage:
+      type: object
+      required: [packageId, version, sha256, scope, createdAt, files, capabilities, checks, configurations]
+      properties:
+        packageId: { type: string }
+        version: { type: string }
+        sha256: { type: string }
+        scope: { type: string }
+        createdAt: { type: string }
+        files:
+          type: array
+          items:
+            type: object
+            required: [path, sha256]
+            properties:
+              path: { type: string }
+              sha256: { type: string }
+        capabilities:
+          type: array
+          items: { $ref: "#/components/schemas/CodeCapabilityEvidence" }
+        checks:
+          type: array
+          items:
+            type: object
+            required: [name, passed]
+            properties:
+              name: { type: string }
+              passed: { type: boolean }
+        configurations:
+          type: array
+          items:
+            type: object
+            required: [solutionId, capabilityIds]
+            properties:
+              solutionId: { type: string }
+              capabilityIds: { type: array, items: { type: string } }
+    CodeCapabilityEvidence:
+      type: object
+      required: [capabilityId, solutionId, file, symbol, lines, limitations, tested]
+      properties:
+        capabilityId: { type: string }
+        solutionId: { type: string }
+        file: { type: string }
+        symbol: { type: string }
+        lines: { type: array, items: { type: integer } }
+        limitations: { type: array, items: { type: string } }
+        tested: { type: boolean }
+    CodeCandidate:
+      type: object
+      required: [solutionId, name, covered, borrowable, partial, missing, weightedCoverage]
+      properties:
+        solutionId: { type: string }
+        name: { type: string }
+        covered: { type: integer }
+        borrowable: { type: integer }
+        partial: { type: integer }
+        missing: { type: integer }
+        weightedCoverage: { type: number }
+    CodeRequirementAssessment:
+      type: object
+      required: [id, text, priority, status, matches, note]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        priority: { type: integer }
+        status: { type: string, enum: [covered, borrow, partial, missing, constraint] }
+        note: { type: string }
+        matches:
+          type: array
+          items: { $ref: "#/components/schemas/CodeAssessmentMatch" }
+    CodeAssessmentMatch:
+      type: object
+      required: [capabilityId, capabilityName, solutionId, solutionName, evidence, integration]
+      properties:
+        capabilityId: { type: string }
+        capabilityName: { type: string }
+        solutionId: { type: string }
+        solutionName: { type: string }
+        evidence: { $ref: "#/components/schemas/CodeCapabilityEvidence" }
+        integration: { type: string }
     IntakeComparison:
       type: object
       required: [briefId]

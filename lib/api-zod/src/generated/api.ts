@@ -8,6 +8,114 @@
 import * as zod from 'zod';
 
 
+export const GetCodeAssessmentParams = zod.object({
+  "briefId": zod.coerce.string()
+})
+
+export const GetCodeAssessmentResponse = zod.object({
+  "briefId": zod.string(),
+  "package": zod.object({
+  "packageId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string(),
+  "scope": zod.string(),
+  "createdAt": zod.string(),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "solutionId": zod.string(),
+  "file": zod.string(),
+  "symbol": zod.string(),
+  "lines": zod.array(zod.number().int()),
+  "limitations": zod.array(zod.string()),
+  "tested": zod.boolean()
+})),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean()
+})),
+  "configurations": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}))
+}),
+  "bestSolutionId": zod.string().nullable(),
+  "candidates": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "name": zod.string(),
+  "covered": zod.number().int(),
+  "borrowable": zod.number().int(),
+  "partial": zod.number().int(),
+  "missing": zod.number().int(),
+  "weightedCoverage": zod.number()
+})),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'borrow', 'partial', 'missing', 'constraint']),
+  "note": zod.string(),
+  "matches": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "capabilityName": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "evidence": zod.object({
+  "capabilityId": zod.string(),
+  "solutionId": zod.string(),
+  "file": zod.string(),
+  "symbol": zod.string(),
+  "lines": zod.array(zod.number().int()),
+  "limitations": zod.array(zod.string()),
+  "tested": zod.boolean()
+}),
+  "integration": zod.string()
+}))
+})),
+  "limitations": zod.array(zod.string())
+})
+
+
+export const GetLibraryCodePackageResponse = zod.object({
+  "packageId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string(),
+  "scope": zod.string(),
+  "createdAt": zod.string(),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "solutionId": zod.string(),
+  "file": zod.string(),
+  "symbol": zod.string(),
+  "lines": zod.array(zod.number().int()),
+  "limitations": zod.array(zod.string()),
+  "tested": zod.boolean()
+})),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean()
+})),
+  "configurations": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}))
+})
+
+
+export const DownloadLibraryCodePackageParams = zod.object({
+  "packageId": zod.coerce.string()
+})
+
+export const DownloadLibraryCodePackageResponse = zod.unknown()
+
+
 export const CompareIntakeRecordParams = zod.object({
   "id": zod.coerce.string()
 })

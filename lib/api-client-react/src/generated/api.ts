@@ -36,6 +36,7 @@ import type {
   CaseSummary,
   CaseUpdate,
   ChangeReview,
+  CodeAssessment,
   CompareRequest,
   Configuration,
   ConfigurationPreview,
@@ -63,6 +64,7 @@ import type {
   IntakeRecordUpdate,
   IntakeRevisionInput,
   IntakeSession,
+  LibraryCodePackage,
   ListCasesParams,
   ListPrototypesParams,
   ListSampleInputsParams,
@@ -128,6 +130,219 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetCodeAssessmentUrl = (briefId: string,) => {
+
+
+
+
+  return `/api/briefs/${briefId}/code-assessment`
+}
+
+export const getCodeAssessment = async (briefId: string, options?: Parameters<typeof customFetch>[1]): Promise<CodeAssessment> => {
+
+  return customFetch<CodeAssessment>(getGetCodeAssessmentUrl(briefId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCodeAssessmentQueryKey = (briefId: string,) => {
+    return [
+    `/api/briefs/${briefId}/code-assessment`
+    ] as const;
+    }
+
+
+export const getGetCodeAssessmentQueryOptions = <TData = Awaited<ReturnType<typeof getCodeAssessment>>, TError = ErrorType<unknown>>(briefId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCodeAssessment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCodeAssessmentQueryKey(briefId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCodeAssessment>>> = ({ signal }) => getCodeAssessment(briefId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: briefId !== null && briefId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCodeAssessment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCodeAssessmentQueryResult = NonNullable<Awaited<ReturnType<typeof getCodeAssessment>>>
+export type GetCodeAssessmentQueryError = ErrorType<unknown>
+
+
+
+export function useGetCodeAssessment<TData = Awaited<ReturnType<typeof getCodeAssessment>>, TError = ErrorType<unknown>>(
+ briefId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCodeAssessment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCodeAssessmentQueryOptions(briefId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetLibraryCodePackageUrl = () => {
+
+
+
+
+  return `/api/library/code-package`
+}
+
+export const getLibraryCodePackage = async ( options?: Parameters<typeof customFetch>[1]): Promise<LibraryCodePackage> => {
+
+  return customFetch<LibraryCodePackage>(getGetLibraryCodePackageUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLibraryCodePackageQueryKey = () => {
+    return [
+    `/api/library/code-package`
+    ] as const;
+    }
+
+
+export const getGetLibraryCodePackageQueryOptions = <TData = Awaited<ReturnType<typeof getLibraryCodePackage>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLibraryCodePackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLibraryCodePackageQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLibraryCodePackage>>> = ({ signal }) => getLibraryCodePackage({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLibraryCodePackage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLibraryCodePackageQueryResult = NonNullable<Awaited<ReturnType<typeof getLibraryCodePackage>>>
+export type GetLibraryCodePackageQueryError = ErrorType<unknown>
+
+
+
+export function useGetLibraryCodePackage<TData = Awaited<ReturnType<typeof getLibraryCodePackage>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLibraryCodePackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLibraryCodePackageQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadLibraryCodePackageUrl = (packageId: string,) => {
+
+
+
+
+  return `/api/library/code-packages/${packageId}/download`
+}
+
+export const downloadLibraryCodePackage = async (packageId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadLibraryCodePackageUrl(packageId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadLibraryCodePackageQueryKey = (packageId: string,) => {
+    return [
+    `/api/library/code-packages/${packageId}/download`
+    ] as const;
+    }
+
+
+export const getDownloadLibraryCodePackageQueryOptions = <TData = Awaited<ReturnType<typeof downloadLibraryCodePackage>>, TError = ErrorType<unknown>>(packageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadLibraryCodePackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadLibraryCodePackageQueryKey(packageId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadLibraryCodePackage>>> = ({ signal }) => downloadLibraryCodePackage(packageId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: packageId !== null && packageId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadLibraryCodePackage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadLibraryCodePackageQueryResult = NonNullable<Awaited<ReturnType<typeof downloadLibraryCodePackage>>>
+export type DownloadLibraryCodePackageQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadLibraryCodePackage<TData = Awaited<ReturnType<typeof downloadLibraryCodePackage>>, TError = ErrorType<unknown>>(
+ packageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadLibraryCodePackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadLibraryCodePackageQueryOptions(packageId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getCompareIntakeRecordUrl = (id: string,) => {
 

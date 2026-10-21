@@ -20,3 +20,9 @@ Intake's outcome is synthesis against the solution library, not a report or an I
 **Why:** The user explicitly corrected the report interpretation and confirmed this reuse-and-gap outcome. Descriptions alone are not the intended basis for comparison.
 
 **How to apply:** Ground capability mappings in versioned solution elements and source evidence. Distinguish code-inspected capability claims from runtime verification, and proposed combinations from proven integrations. Do not fabricate functioning ZIP packages for preview-only catalogue entries.
+
+The user chose the implemented demo solution as the first source-code-backed library assessment, before supplying external solution ZIPs.
+
+**Why:** The user explicitly selected this starting point to keep the work iterative.
+
+**How to apply:** Clearly scope coverage to the indexed local demo engine, not full enterprise integrations. Treat prohibitions such as “no automatic updates” as acceptance constraints to verify, never as missing features to build.

@@ -5,6 +5,92 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface CodeCapabilityEvidence {
+  capabilityId: string;
+  solutionId: string;
+  file: string;
+  symbol: string;
+  lines: number[];
+  limitations: string[];
+  tested: boolean;
+}
+
+export type LibraryCodePackageFilesItem = {
+  path: string;
+  sha256: string;
+};
+
+export type LibraryCodePackageChecksItem = {
+  name: string;
+  passed: boolean;
+};
+
+export type LibraryCodePackageConfigurationsItem = {
+  solutionId: string;
+  capabilityIds: string[];
+};
+
+export interface LibraryCodePackage {
+  packageId: string;
+  version: string;
+  sha256: string;
+  scope: string;
+  createdAt: string;
+  files: LibraryCodePackageFilesItem[];
+  capabilities: CodeCapabilityEvidence[];
+  checks: LibraryCodePackageChecksItem[];
+  configurations: LibraryCodePackageConfigurationsItem[];
+}
+
+export interface CodeCandidate {
+  solutionId: string;
+  name: string;
+  covered: number;
+  borrowable: number;
+  partial: number;
+  missing: number;
+  weightedCoverage: number;
+}
+
+export type CodeRequirementAssessmentStatus = typeof CodeRequirementAssessmentStatus[keyof typeof CodeRequirementAssessmentStatus];
+
+
+export const CodeRequirementAssessmentStatus = {
+  covered: 'covered',
+  borrow: 'borrow',
+  partial: 'partial',
+  missing: 'missing',
+  constraint: 'constraint',
+} as const;
+
+export interface CodeAssessmentMatch {
+  capabilityId: string;
+  capabilityName: string;
+  solutionId: string;
+  solutionName: string;
+  evidence: CodeCapabilityEvidence;
+  integration: string;
+}
+
+export interface CodeRequirementAssessment {
+  id: string;
+  text: string;
+  priority: number;
+  status: CodeRequirementAssessmentStatus;
+  note: string;
+  matches: CodeAssessmentMatch[];
+}
+
+export interface CodeAssessment {
+  briefId: string;
+  package: LibraryCodePackage;
+  /** @nullable */
+  bestSolutionId: string | null;
+  candidates: CodeCandidate[];
+  requirements: CodeRequirementAssessment[];
+  limitations: string[];
+}
+
 export interface IntakeComparison {
   briefId: string;
 }
