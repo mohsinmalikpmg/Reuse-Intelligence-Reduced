@@ -11,13 +11,14 @@ import type {
   Decision,
   DecisionAction,
   Experiment,
+  GateItem,
   PilotPlan,
   Recommendation,
   Role,
   Solution,
   VersionSnapshot,
 } from "@workspace/api-zod";
-import { describeEvidence, votesFavourB, type ABEvidence } from "./evidence";
+import { describeEvidence, evidenceSummary, votesFavourB, type ABEvidence } from "./evidence";
 import { OWNER_PERSONA_NAME, getCapability, solutionCapabilities } from "../data/catalog";
 import {
   type CaseContext,
@@ -235,6 +236,32 @@ export function nextStep(c: Case, evidence: ABEvidence, latest: Decision | null,
   }
 }
 
+/** Minimum distinct inputs the current configuration must have run on before promotion. */
+export const GATE_MIN_INPUTS = 3;
+
+/**
+ * Production-promotion checklist with the real values behind each check. Unmet items are returned, not hidden:
+ * the owner sees what is missing; nothing here blocks a pilot decision.
+ */
+export function promotionGate(c: Case, ctx: CaseContext, decisions: Decision[], evidence: ABEvidence): GateItem[] {
+  const components = buildComponents(c, ctx);
+  const violations = components.filter((comp) => (comp.state === "incompatible" && c.moduleStates[comp.capability.id] === true) || (comp.active && comp.blockedReason)).map((comp) => comp.capability.name);
+  const votes = evidence.votes?.tests ?? 0;
+  const ownerDecision = decisions.find((d) => d.role === "owner");
+  const businessOwner = ctx.base.ownerName.trim();
+  const technicalOwner = ctx.base.ownerTeam.trim();
+  const n = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+  return [
+    { key: "inputs", label: `Tested on at least ${GATE_MIN_INPUTS} representative inputs with the current configuration`, met: evidence.inputsTested >= GATE_MIN_INPUTS, value: `${n(evidence.inputsTested, "input")} run on the current configuration` },
+    { key: "controls", label: "No blocking control violation", met: violations.length === 0, value: violations.length === 0 ? "None" : `Blocked: ${violations.join(", ")}` },
+    { key: "current_only", label: "Evidence comes from the current configuration only", met: evidence.setAside === 0, value: evidence.setAside === 0 ? "No earlier-configuration votes" : `${n(evidence.setAside, "vote")} from earlier configurations (set aside)` },
+    { key: "reviewed", label: "Outputs reviewed by a person", met: evidence.humanVotes > 0, value: evidence.humanVotes > 0 ? `${n(evidence.humanVotes, "person")} compared both outputs` : votes > 0 ? "Only demo-account votes so far" : "No one has compared the outputs yet" },
+    { key: "evaluation", label: "At least one recorded evaluation", met: votes > 0, value: votes > 0 ? `${n(votes, "recorded vote")}${evidence.votes?.demoVotes ? ` (${evidence.votes.demoVotes} demo)` : ""}` : "No votes recorded" },
+    { key: "owners", label: "Named business and technical owner", met: businessOwner.length > 0 && technicalOwner.length > 0, value: [businessOwner || "Business owner missing", technicalOwner || "Technical owner missing"].join(" / ") },
+    { key: "decision", label: "Owner decision recorded", met: !!ownerDecision, value: ownerDecision ? `${ownerDecision.action.replace(/_/g, " ")} by ${ownerDecision.actor}` : "No owner decision yet" },
+  ];
+}
+
 export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | null, decisions: Decision[], evidence: ABEvidence): ChangeReview {
   const defaults = defaultModuleStates(ctx);
   const defaultValues = defaultConfigValues(ctx);
@@ -320,6 +347,8 @@ export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | 
     ownerSummary,
     decisions,
     availableActions: allowedActions(c, decisions),
+    evidence: evidenceSummary(evidence),
+    promotionGate: promotionGate(c, ctx, decisions, evidence),
   };
 
   function defaultBaseActive(cap: Capability): boolean {

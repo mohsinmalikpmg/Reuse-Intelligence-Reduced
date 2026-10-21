@@ -37,6 +37,8 @@ export const personas: Persona[] = [
 ];
 
 export const OWNER_PERSONA_NAME = "Priya Natarajan";
+/** Bump when capability behaviour changes so older run fingerprints stop matching. */
+export const CATALOG_VERSION = "2026.10";
 
 const zeroEffects: Metrics = {
   taskMinutes: 0,

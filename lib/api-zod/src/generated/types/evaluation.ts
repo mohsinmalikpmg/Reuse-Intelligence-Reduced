@@ -18,6 +18,10 @@ export interface Evaluation {
   inputHash: string;
   runAId: string;
   runBId: string;
+  /** Configuration fingerprint of run A when the vote was recorded */
+  fingerprintA: string;
+  /** Configuration fingerprint of run B when the vote was recorded */
+  fingerprintB: string;
   choice: EvaluationChoice;
   /** @nullable */
   reason: string | null;

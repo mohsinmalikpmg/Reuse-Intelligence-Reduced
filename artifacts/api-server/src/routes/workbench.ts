@@ -14,7 +14,7 @@ import {
 import type { TestSessionRow } from "@workspace/db";
 import { sampleInputById, sampleInputs, sampleInputsFor } from "../engine/workorders";
 import { getCase, updateCaseRow } from "../lib/store";
-import { WorkbenchError, buildComparison, buildSolutionWorkbench, latestPairs, runCaseVersion, runComparison, runSolution, solutionOr404, toSampleInput } from "../lib/workbench";
+import { WorkbenchError, buildComparison, buildSolutionWorkbench, currentFingerprints, latestPairs, pairRejection, runCaseVersion, runComparison, runSolution, solutionOr404, toSampleInput } from "../lib/workbench";
 import {
   decodePairs,
   getRun,
@@ -23,6 +23,7 @@ import {
   insertTestSession,
   listEvaluations,
   listTestSessionRows,
+  splitByFingerprint,
   summarizeEvaluations,
   type SessionPair,
 } from "../lib/workbench-store";
@@ -124,15 +125,18 @@ router.post("/cases/:caseId/compare", async (req, res) => {
   }
 });
 
-async function evaluationList(caseId: string): Promise<EvaluationList> {
-  const items = await listEvaluations(caseId);
-  return { summary: summarizeEvaluations(items), items };
+/** Votes against the current Version B count; votes against earlier configurations are reported as set aside, never merged. */
+async function evaluationList(c: Case): Promise<EvaluationList> {
+  const current = currentFingerprints(c);
+  const split = splitByFingerprint(await listEvaluations(c.id), current.b);
+  const items = split.current.filter((e) => e.fingerprintA === current.a);
+  return { summary: summarizeEvaluations(items), items, currentFingerprint: current.b, setAside: split.setAside.length + (split.current.length - items.length) };
 }
 
 router.get("/cases/:caseId/evaluations", async (req, res) => {
   const c = await loadCase(String(req.params["caseId"]), res);
   if (!c) return;
-  res.json(await evaluationList(c.id));
+  res.json(await evaluationList(c));
 });
 
 router.post("/cases/:caseId/evaluations", async (req, res) => {
@@ -146,12 +150,14 @@ router.post("/cases/:caseId/evaluations", async (req, res) => {
   const { runAId, runBId, choice, reason, rating, role, evaluator } = parsed.data;
   const runA = await getRun(runAId);
   const runB = await getRun(runBId);
-  if (!runA || !runB || runA.caseId !== c.id || runB.caseId !== c.id) {
+  if (!runA || !runB) {
     res.status(400).json({ error: "Both runs must belong to this case." });
     return;
   }
-  if (runA.inputHash !== runB.inputHash) {
-    res.status(400).json({ error: "The two runs used different inputs; compare outputs of the same input." });
+  // A vote only counts as evidence for the configuration it was cast on, so stale pairs are refused outright.
+  const rejection = pairRejection(c, runA, runB);
+  if (rejection) {
+    res.status(409).json({ error: rejection });
     return;
   }
   await insertEvaluation({
@@ -161,6 +167,8 @@ router.post("/cases/:caseId/evaluations", async (req, res) => {
     inputHash: runA.inputHash,
     runAId,
     runBId,
+    fingerprintA: runA.configFingerprint,
+    fingerprintB: runB.configFingerprint,
     choice,
     reason: reason?.trim() || null,
     rating: rating ?? null,
@@ -169,14 +177,16 @@ router.post("/cases/:caseId/evaluations", async (req, res) => {
     blind: false,
     demo: false,
   });
-  res.status(201).json(await evaluationList(c.id));
+  res.status(201).json(await evaluationList(c));
 });
 
 // ---------- Blind sessions ----------
 
-async function serializeSession(row: TestSessionRow): Promise<TestSession> {
+async function serializeSession(row: TestSessionRow, c: Case): Promise<TestSession> {
   const pairs = decodePairs(row);
-  const evaluations = (await listEvaluations(row.caseId)).filter((e) => e.sessionId === row.id);
+  const current = currentFingerprints(c);
+  const all = (await listEvaluations(row.caseId)).filter((e) => e.sessionId === row.id);
+  const evaluations = all.filter((e) => e.fingerprintA === current.a && e.fingerprintB === current.b);
   const out: TestSession["pairs"] = [];
   for (const p of pairs) {
     const runA = await getRun(p.runAId);
@@ -189,7 +199,8 @@ async function serializeSession(row: TestSessionRow): Promise<TestSession> {
       inputText: runA.inputText,
       left: p.left === "A" ? runA.output : runB.output,
       right: p.left === "A" ? runB.output : runA.output,
-      responses: evaluations.filter((e) => e.runAId === p.runAId && e.runBId === p.runBId).length,
+      responses: all.filter((e) => e.runAId === p.runAId && e.runBId === p.runBId).length,
+      expired: pairRejection(c, runA, runB) !== null,
     });
   }
   return {
@@ -201,6 +212,7 @@ async function serializeSession(row: TestSessionRow): Promise<TestSession> {
     pairs: out,
     responseCount: evaluations.length,
     results: evaluations.length > 0 ? summarizeEvaluations(evaluations) : null,
+    setAside: all.length - evaluations.length,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -209,7 +221,7 @@ router.get("/cases/:caseId/test-sessions", async (req, res) => {
   const c = await loadCase(String(req.params["caseId"]), res);
   if (!c) return;
   const rows = await listTestSessionRows(c.id);
-  res.json(await Promise.all(rows.map(serializeSession)));
+  res.json(await Promise.all(rows.map((row) => serializeSession(row, c))));
 });
 
 router.post("/cases/:caseId/test-sessions", async (req, res) => {
@@ -220,9 +232,10 @@ router.post("/cases/:caseId/test-sessions", async (req, res) => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const pairs = (await latestPairs(c.id)).filter((p) => p.runA.sampleInputId);
+  // Only pairs of the governed baseline and the current Version B go to testers.
+  const pairs = (await latestPairs(c.id)).filter((p) => p.runA.sampleInputId && pairRejection(c, p.runA, p.runB) === null);
   if (pairs.length === 0) {
-    res.status(400).json({ error: "Run both versions on at least one sample input before inviting testers." });
+    res.status(400).json({ error: "Run both versions of the current configuration on at least one sample input before inviting testers." });
     return;
   }
   // Left/right is decided once per pair from the run id so the mapping is stable but not guessable from order.
@@ -233,7 +246,7 @@ router.post("/cases/:caseId/test-sessions", async (req, res) => {
     left: parseInt(p.runB.id.slice(-2), 36) % 2 === 0 ? "B" : "A",
   }));
   const row = await insertTestSession({ caseId: c.id, createdBy: parsed.data.createdBy, title: parsed.data.title ?? `${c.title}: blind test`, pairs: sessionPairs });
-  res.status(201).json(await serializeSession(row));
+  res.status(201).json(await serializeSession(row, c));
 });
 
 router.get("/test-sessions/:sessionId", async (req, res) => {
@@ -242,7 +255,9 @@ router.get("/test-sessions/:sessionId", async (req, res) => {
     res.status(404).json({ error: "Session not found" });
     return;
   }
-  res.json(await serializeSession(row));
+  const c = await loadCase(row.caseId, res);
+  if (!c) return;
+  res.json(await serializeSession(row, c));
 });
 
 router.post("/test-sessions/:sessionId/responses", async (req, res) => {
@@ -261,9 +276,16 @@ router.post("/test-sessions/:sessionId/responses", async (req, res) => {
     res.status(400).json({ error: "That input is not part of this session." });
     return;
   }
+  const c = await loadCase(row.caseId, res);
+  if (!c) return;
   const runA = await getRun(pair.runAId);
-  if (!runA) {
+  const runB = await getRun(pair.runBId);
+  if (!runA || !runB) {
     res.status(400).json({ error: "The runs for this pair no longer exist." });
+    return;
+  }
+  if (pairRejection(c, runA, runB)) {
+    res.status(409).json({ error: "This pair has expired: Version B changed after these outputs were produced. Ask the owner for a fresh test." });
     return;
   }
   const { pick, rating, comment, tester, demo } = parsed.data;
@@ -275,6 +297,8 @@ router.post("/test-sessions/:sessionId/responses", async (req, res) => {
     inputHash: runA.inputHash,
     runAId: pair.runAId,
     runBId: pair.runBId,
+    fingerprintA: runA.configFingerprint,
+    fingerprintB: runB.configFingerprint,
     choice,
     reason: comment?.trim() || null,
     rating: rating ?? null,
@@ -283,7 +307,7 @@ router.post("/test-sessions/:sessionId/responses", async (req, res) => {
     blind: true,
     demo: demo ?? false,
   });
-  res.status(201).json(await serializeSession(row));
+  res.status(201).json(await serializeSession(row, c));
 });
 
 export default router;

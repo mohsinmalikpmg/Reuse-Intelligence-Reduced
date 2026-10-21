@@ -9,6 +9,9 @@ export const evaluationsTable = pgTable("evaluations", {
   inputHash: text("input_hash").notNull(),
   runAId: text("run_a_id").notNull(),
   runBId: text("run_b_id").notNull(),
+  /** Fingerprints of the two runs at vote time, so summaries can be stratified by configuration */
+  fingerprintA: text("fingerprint_a").notNull().default(""),
+  fingerprintB: text("fingerprint_b").notNull().default(""),
   choice: text("choice").notNull(), // "A" | "B" | "neither"
   reason: text("reason"),
   rating: integer("rating"),

@@ -14,4 +14,6 @@ export interface TestPair {
   left: RunOutput;
   right: RunOutput;
   responses: number;
+  /** True when Version B changed after these runs; the pair no longer accepts responses */
+  expired: boolean;
 }

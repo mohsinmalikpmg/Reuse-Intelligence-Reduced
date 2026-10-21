@@ -11,13 +11,18 @@ import type { Case } from './case';
 import type { ChangeReviewAvailableActionsItem } from './changeReviewAvailableActionsItem';
 import type { ConfigChange } from './configChange';
 import type { Decision } from './decision';
+import type { EvidenceSummary } from './evidenceSummary';
 import type { Experiment } from './experiment';
+import type { GateItem } from './gateItem';
 import type { PilotPlan } from './pilotPlan';
 import type { Solution } from './solution';
 import type { VersionSnapshot } from './versionSnapshot';
 
 export interface ChangeReview {
   case: Case;
+  evidence: EvidenceSummary;
+  /** The production-promotion checklist with live values; unmet items are shown, never hidden */
+  promotionGate: GateItem[];
   baseSolution: Solution;
   currentVersion: VersionSnapshot;
   proposedVersion: VersionSnapshot;

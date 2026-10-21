@@ -29,6 +29,7 @@ export default function TestSessionPage() {
   if (q.isError || !q.data) return <ErrorView onRetry={() => q.refetch()} message="This test session could not load." />;
   const s = q.data;
   const pair = s.pairs[idx];
+  const expired = pair?.expired ?? false;
   const name = tester.trim() || me?.name || "";
   const submit = () => {
     if (!pick || !pair) return;
@@ -52,24 +53,25 @@ export default function TestSessionPage() {
       {s.pairs.length > 1 && (
         <div className="mt-5 flex flex-wrap gap-2">{s.pairs.map((p, i) => (
           <button key={p.sampleInputId} data-testid={`pair-${i}`} onClick={() => { setIdx(i); setPick(null); }} className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13.5px] font-medium", i === idx ? "border-primary bg-primary text-white" : "border-input bg-card")}>
-            {answered.includes(p.sampleInputId) && <Check className="h-3.5 w-3.5" />}Pair {i + 1}: {p.inputName}
+            {answered.includes(p.sampleInputId) && <Check className="h-3.5 w-3.5" />}Pair {i + 1}: {p.inputName}{p.expired ? " (expired)" : ""}
           </button>
         ))}</div>
       )}
 
       {pair ? (
         <>
+          {expired && <p className="mt-5 rounded-xl bg-accent/70 px-4 py-3 text-[14px] text-accent-foreground" data-testid="text-pair-expired">This pair has expired: Version B changed after these outputs were produced, so responses are no longer accepted. The owner can start a fresh test.</p>}
           <details className="mt-5 rounded-xl bg-muted/60 p-4 text-[14px]"><summary className="cursor-pointer font-semibold text-primary">Input: {pair.inputName}</summary><pre className="mt-2 whitespace-pre-wrap font-mono text-[12.5px]">{pair.inputText}</pre></details>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             {(["left", "right"] as const).map((side) => (
-              <button key={side} data-testid={`card-${side}`} onClick={() => setPick(side)}
-                className={cn("card-soft p-5 text-left transition-[border-color,box-shadow]", pick === side ? "border-sienna shadow-[0_0_0_3px_hsl(var(--sienna)/.25)]" : "hover:border-primary/40")}>
+              <button key={side} data-testid={`card-${side}`} disabled={expired} onClick={() => setPick(side)}
+                className={cn("card-soft p-5 text-left transition-[border-color,box-shadow]", expired ? "opacity-60" : pick === side ? "border-sienna shadow-[0_0_0_3px_hsl(var(--sienna)/.25)]" : "hover:border-primary/40")}>
                 <div className="mb-3 flex items-center gap-2"><span className="text-[15px] font-bold uppercase tracking-wide text-primary">{side}</span>{pick === side && <Tag tone="sienna">Your pick</Tag>}</div>
                 <OutputView output={pair[side]} testid={`output-${side}`} />
               </button>
             ))}
           </div>
-          <section className="card-soft mt-5 p-5">
+          {!expired && <section className="card-soft mt-5 p-5">
             <div className="grid gap-2 sm:grid-cols-3">
               {(["left", "right", "neither"] as const).map((p) => (
                 <button key={p} data-testid={`pick-${p}`} onClick={() => setPick(p)} className={cn("min-h-12 rounded-xl border-2 text-[15.5px] font-semibold", pick === p ? "border-sienna bg-accent text-accent-foreground" : "border-input bg-card text-primary hover:border-primary")}>
@@ -87,7 +89,7 @@ export default function TestSessionPage() {
               <label className="inline-flex items-center gap-2 text-[14px]"><Checkbox data-testid="checkbox-demo" checked={demo} onCheckedChange={(v) => setDemo(v === true)} /> This is a demo account vote</label>
               <button data-testid="button-submit-response" disabled={!pick || respond.isPending} onClick={submit} className={cn(btn.primary, "ml-auto")}>Submit response</button>
             </div>
-          </section>
+          </section>}
         </>
       ) : <p className="mt-6 text-muted-foreground">This session has no pairs to compare.</p>}
 
@@ -97,7 +99,10 @@ export default function TestSessionPage() {
           <div className="card-soft p-5">
             <SummaryCounts s={s.results} testid="summary-session" />
             <p className="mt-2 text-[12.5px] text-muted-foreground">Left and right were randomised per pair; the counts above are mapped back to A and B. Demo votes are labelled as demonstration data.</p>
+            {s.setAside > 0 && <p className="mt-1 text-[12.5px] text-muted-foreground" data-testid="text-session-set-aside">{s.setAside} response{s.setAside === 1 ? "" : "s"} from earlier configurations (set aside, not counted above).</p>}
           </div>
+        ) : s.setAside > 0 ? (
+          <p className="text-[14px] text-muted-foreground" data-testid="text-session-set-aside">No responses yet for the current Version B. {s.setAside} response{s.setAside === 1 ? "" : "s"} from earlier configurations (set aside).</p>
         ) : <p className="text-[14px] text-muted-foreground">Results stay hidden until responses are collected.</p>}
       </section>
     </Page>

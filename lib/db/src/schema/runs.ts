@@ -12,6 +12,8 @@ export const runsTable = pgTable("runs", {
   inputHash: text("input_hash").notNull(),
   enabledCapabilityIds: text("enabled_capability_ids").array().notNull(),
   configValues: jsonb("config_values").$type<Record<string, string>>().notNull(),
+  /** Server-computed fingerprint of the exact configuration that ran (capability ids + versions + settings + catalog version) */
+  configFingerprint: text("config_fingerprint").notNull().default(""),
   output: jsonb("output").$type<unknown>().notNull(),
   trace: jsonb("trace").$type<unknown>().notNull(),
   stats: jsonb("stats").$type<unknown>().notNull(),

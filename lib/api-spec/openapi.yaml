@@ -2252,7 +2252,7 @@ components:
 
     Run:
       type: object
-      required: [id, caseId, solutionId, version, versionLabel, sampleInputId, inputText, inputHash, enabledCapabilityIds, configValues, output, trace, stats, durationMs, errors, createdAt]
+      required: [id, caseId, solutionId, version, versionLabel, sampleInputId, inputText, inputHash, enabledCapabilityIds, configValues, configFingerprint, output, trace, stats, durationMs, errors, createdAt]
       properties:
         id: { type: string }
         caseId: { type: ["string", "null"] }
@@ -2270,6 +2270,7 @@ components:
         configValues:
           type: object
           additionalProperties: { type: string }
+        configFingerprint: { type: string, description: Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions, settings, catalog version) }
         output: { $ref: "#/components/schemas/RunOutput" }
         trace:
           type: array
@@ -2432,7 +2433,7 @@ components:
 
     Evaluation:
       type: object
-      required: [id, caseId, sessionId, sampleInputId, inputHash, runAId, runBId, choice, reason, rating, evaluator, role, blind, demo, createdAt]
+      required: [id, caseId, sessionId, sampleInputId, inputHash, runAId, runBId, fingerprintA, fingerprintB, choice, reason, rating, evaluator, role, blind, demo, createdAt]
       properties:
         id: { type: string }
         caseId: { type: string }
@@ -2441,6 +2442,8 @@ components:
         inputHash: { type: string }
         runAId: { type: string }
         runBId: { type: string }
+        fingerprintA: { type: string, description: Configuration fingerprint of run A when the vote was recorded }
+        fingerprintB: { type: string, description: Configuration fingerprint of run B when the vote was recorded }
         choice:
           type: string
           enum: [A, B, neither]
@@ -2481,12 +2484,15 @@ components:
 
     EvaluationList:
       type: object
-      required: [summary, items]
+      required: [summary, items, currentFingerprint, setAside]
       properties:
-        summary: { $ref: "#/components/schemas/EvaluationSummary" }
+        summary: { $ref: "#/components/schemas/EvaluationSummary", description: Votes recorded against the case's current Version B configuration only }
         items:
           type: array
+          description: Votes for the current configuration
           items: { $ref: "#/components/schemas/Evaluation" }
+        currentFingerprint: { type: string, description: Fingerprint of the case's current Version B }
+        setAside: { type: integer, description: Votes recorded against earlier Version B configurations; reported, never merged }
 
     TestSessionInput:
       type: object
@@ -2497,7 +2503,7 @@ components:
 
     TestPair:
       type: object
-      required: [sampleInputId, inputName, inputText, left, right, responses]
+      required: [sampleInputId, inputName, inputText, left, right, responses, expired]
       properties:
         sampleInputId: { type: string }
         inputName: { type: string }
@@ -2505,10 +2511,11 @@ components:
         left: { $ref: "#/components/schemas/RunOutput" }
         right: { $ref: "#/components/schemas/RunOutput" }
         responses: { type: integer }
+        expired: { type: boolean, description: True when Version B changed after these runs; the pair no longer accepts responses }
 
     TestSession:
       type: object
-      required: [id, caseId, createdBy, title, closed, pairs, responseCount, results, createdAt]
+      required: [id, caseId, createdBy, title, closed, pairs, responseCount, results, setAside, createdAt]
       properties:
         id: { type: string }
         caseId: { type: string }
@@ -2518,12 +2525,13 @@ components:
         pairs:
           type: array
           items: { $ref: "#/components/schemas/TestPair" }
-        responseCount: { type: integer }
+        responseCount: { type: integer, description: Responses recorded against the case's current Version B configuration }
         results:
           oneOf:
             - $ref: "#/components/schemas/EvaluationSummary"
             - type: "null"
-          description: Aggregate preference, revealed only once responses exist
+          description: Aggregate preference for the current configuration, revealed only once responses exist
+        setAside: { type: integer, description: Responses recorded against earlier configurations; reported, never merged }
         createdAt: { type: string }
 
     TestResponseInput:
@@ -2570,14 +2578,15 @@ components:
 
     OwnedSolution:
       type: object
-      required: [solution, proposals, openTests, evaluations, recentRuns]
+      required: [solution, proposals, openTests, evaluations, evaluationsSetAside, recentRuns]
       properties:
         solution: { $ref: "#/components/schemas/Solution" }
         proposals:
           type: array
           items: { $ref: "#/components/schemas/CaseSummary" }
         openTests: { type: integer, description: Cases with runs but no owner decision yet }
-        evaluations: { type: integer, description: Recorded preference votes across proposals }
+        evaluations: { type: integer, description: Recorded preference votes across proposals, current configurations only }
+        evaluationsSetAside: { type: integer, description: Votes recorded against earlier configurations of those proposals }
         recentRuns: { type: integer, description: Runs recorded in the last 30 days }
 
     ComponentConfig:
@@ -2844,8 +2853,15 @@ components:
         - ownerSummary
         - decisions
         - availableActions
+        - evidence
+        - promotionGate
       properties:
         case: { $ref: "#/components/schemas/Case" }
+        evidence: { $ref: "#/components/schemas/EvidenceSummary" }
+        promotionGate:
+          type: array
+          description: The production-promotion checklist with live values; unmet items are shown, never hidden
+          items: { $ref: "#/components/schemas/GateItem" }
         baseSolution: { $ref: "#/components/schemas/Solution" }
         currentVersion: { $ref: "#/components/schemas/VersionSnapshot" }
         proposedVersion: { $ref: "#/components/schemas/VersionSnapshot" }
@@ -2887,6 +2903,41 @@ components:
               actions:
                 type: array
                 items: { $ref: "#/components/schemas/DecisionAction" }
+
+    EvidenceSummary:
+      type: object
+      description: Evidence for the case's current Version B configuration, plus what was set aside
+      required: [currentFingerprint, inputsTested, runtimeA, runtimeB, labelled, votes, setAside]
+      properties:
+        currentFingerprint: { type: string }
+        inputsTested: { type: integer, description: Distinct inputs on which the current configuration ran against the baseline }
+        runtimeA: { type: ["integer", "null"] }
+        runtimeB: { type: ["integer", "null"] }
+        labelled:
+          oneOf:
+            - type: object
+              required: [inputs, recallA, recallB, precisionA, precisionB]
+              properties:
+                inputs: { type: integer }
+                recallA: { type: number }
+                recallB: { type: number }
+                precisionA: { type: number }
+                precisionB: { type: number }
+            - type: "null"
+        votes:
+          oneOf:
+            - $ref: "#/components/schemas/EvaluationSummary"
+            - type: "null"
+        setAside: { type: integer, description: Votes from earlier configurations, reported separately }
+
+    GateItem:
+      type: object
+      required: [key, label, met, value]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        met: { type: boolean }
+        value: { type: string, description: The real value behind the check }
 
     PortfolioMetric:
       type: object

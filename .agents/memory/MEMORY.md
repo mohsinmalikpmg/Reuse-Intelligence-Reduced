@@ -1,6 +1,6 @@
 - [Typecheck order](typecheck-order.md) — run `pnpm run typecheck:libs` before api-server typecheck; api-client-react tsconfig needed `dom.iterable`.
 - [Demo determinism rules](demo-determinism.md) — simulation seeds must stay 31-bit for Postgres integer; LLM only interprets briefs, never produces numbers.
 - [Simplicity UX mandate](simplicity-ux-rules.md) — six destinations, info limits, undo everywhere; reuse checks submit explicitly (each is a logged event); dnd-kit needs pointerWithin; verify tester "failures" with a scripted browser.
-- [A/B evidence rules](ab-evidence-rules.md) — real execution only, no projected metrics; Orval path+query param name collision; jsonb key order; clamp durations ≥1 ms.
+- [A/B evidence rules](ab-evidence-rules.md) — real execution only, no projected metrics; votes count only for the exact config fingerprint, older ones "set aside"; Orval/jsonb/duration pitfalls.
 - [Workbench mapped-lanes layout](workbench-lanes-layout.md) — sticky offsets start at the 101px two-band header; base steps missing from Version A are "off", not "B-only"; drag checks need an in-viewport slot.
 - [Reuse-fit scoring lessons](reuse-fit-scoring.md) — IDF over a tiny catalogue inflates generic verbs; require ≥2 shared words, scale other dimensions by relevance; portable modules are never auto-"covered".

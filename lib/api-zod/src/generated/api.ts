@@ -678,6 +678,7 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "inputHash": zod.string(),
   "enabledCapabilityIds": zod.array(zod.string()),
   "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
   "output": zod.object({
   "headline": zod.string(),
   "sections": zod.array(zod.object({
@@ -764,6 +765,7 @@ export const RunWorkflowResponse = zod.object({
   "inputHash": zod.string(),
   "enabledCapabilityIds": zod.array(zod.string()),
   "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
   "output": zod.object({
   "headline": zod.string(),
   "sections": zod.array(zod.object({
@@ -826,6 +828,7 @@ export const GetRunResponse = zod.object({
   "inputHash": zod.string(),
   "enabledCapabilityIds": zod.array(zod.string()),
   "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
   "output": zod.object({
   "headline": zod.string(),
   "sections": zod.array(zod.object({
@@ -1119,6 +1122,7 @@ export const GetMySolutionsResponseItem = zod.object({
 })),
   "openTests": zod.number().int().describe('Cases with runs but no owner decision yet'),
   "evaluations": zod.number().int().describe('Recorded preference votes across proposals'),
+  "evaluationsSetAside": zod.number().int().describe('Votes recorded against earlier configurations of those proposals'),
   "recentRuns": zod.number().int().describe('Runs recorded in the last 30 days')
 })
 export const GetMySolutionsResponse = zod.array(GetMySolutionsResponseItem)
@@ -2579,6 +2583,7 @@ export const GetCaseComparisonResponseItem = zod.object({
   "inputHash": zod.string(),
   "enabledCapabilityIds": zod.array(zod.string()),
   "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
   "output": zod.object({
   "headline": zod.string(),
   "sections": zod.array(zod.object({
@@ -2632,6 +2637,7 @@ export const GetCaseComparisonResponseItem = zod.object({
   "inputHash": zod.string(),
   "enabledCapabilityIds": zod.array(zod.string()),
   "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
   "output": zod.object({
   "headline": zod.string(),
   "sections": zod.array(zod.object({
@@ -2733,6 +2739,8 @@ export const GetCaseComparisonResponseItem = zod.object({
   "inputHash": zod.string(),
   "runAId": zod.string(),
   "runBId": zod.string(),
+  "fingerprintA": zod.string().describe('Configuration fingerprint of run A when the vote was recorded'),
+  "fingerprintB": zod.string().describe('Configuration fingerprint of run B when the vote was recorded'),
   "choice": zod.enum(['A', 'B', 'neither']),
   "reason": zod.string().nullable(),
   "rating": zod.number().int().nullable(),
@@ -2775,6 +2783,7 @@ export const RunCaseComparisonResponse = zod.object({
   "inputHash": zod.string(),
   "enabledCapabilityIds": zod.array(zod.string()),
   "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
   "output": zod.object({
   "headline": zod.string(),
   "sections": zod.array(zod.object({
@@ -2828,6 +2837,7 @@ export const RunCaseComparisonResponse = zod.object({
   "inputHash": zod.string(),
   "enabledCapabilityIds": zod.array(zod.string()),
   "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
   "output": zod.object({
   "headline": zod.string(),
   "sections": zod.array(zod.object({
@@ -2929,6 +2939,8 @@ export const RunCaseComparisonResponse = zod.object({
   "inputHash": zod.string(),
   "runAId": zod.string(),
   "runBId": zod.string(),
+  "fingerprintA": zod.string().describe('Configuration fingerprint of run A when the vote was recorded'),
+  "fingerprintB": zod.string().describe('Configuration fingerprint of run B when the vote was recorded'),
   "choice": zod.enum(['A', 'B', 'neither']),
   "reason": zod.string().nullable(),
   "rating": zod.number().int().nullable(),
@@ -2958,7 +2970,7 @@ export const ListCaseEvaluationsResponse = zod.object({
   "distinctInputs": zod.number().int(),
   "blindVotes": zod.number().int(),
   "demoVotes": zod.number().int()
-}),
+}).describe('Votes recorded against the case\'s current Version B configuration only'),
   "items": zod.array(zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -2967,6 +2979,8 @@ export const ListCaseEvaluationsResponse = zod.object({
   "inputHash": zod.string(),
   "runAId": zod.string(),
   "runBId": zod.string(),
+  "fingerprintA": zod.string().describe('Configuration fingerprint of run A when the vote was recorded'),
+  "fingerprintB": zod.string().describe('Configuration fingerprint of run B when the vote was recorded'),
   "choice": zod.enum(['A', 'B', 'neither']),
   "reason": zod.string().nullable(),
   "rating": zod.number().int().nullable(),
@@ -2975,7 +2989,9 @@ export const ListCaseEvaluationsResponse = zod.object({
   "blind": zod.boolean(),
   "demo": zod.boolean().describe('True for simulated demo accounts'),
   "createdAt": zod.string()
-}))
+})).describe('Votes for the current configuration'),
+  "currentFingerprint": zod.string().describe('Fingerprint of the case\'s current Version B'),
+  "setAside": zod.number().int().describe('Votes recorded against earlier Version B configurations; reported')
 })
 
 
@@ -3010,7 +3026,7 @@ export const RecordEvaluationResponse = zod.object({
   "distinctInputs": zod.number().int(),
   "blindVotes": zod.number().int(),
   "demoVotes": zod.number().int()
-}),
+}).describe('Votes recorded against the case\'s current Version B configuration only'),
   "items": zod.array(zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -3019,6 +3035,8 @@ export const RecordEvaluationResponse = zod.object({
   "inputHash": zod.string(),
   "runAId": zod.string(),
   "runBId": zod.string(),
+  "fingerprintA": zod.string().describe('Configuration fingerprint of run A when the vote was recorded'),
+  "fingerprintB": zod.string().describe('Configuration fingerprint of run B when the vote was recorded'),
   "choice": zod.enum(['A', 'B', 'neither']),
   "reason": zod.string().nullable(),
   "rating": zod.number().int().nullable(),
@@ -3027,7 +3045,9 @@ export const RecordEvaluationResponse = zod.object({
   "blind": zod.boolean(),
   "demo": zod.boolean().describe('True for simulated demo accounts'),
   "createdAt": zod.string()
-}))
+})).describe('Votes for the current configuration'),
+  "currentFingerprint": zod.string().describe('Fingerprint of the case\'s current Version B'),
+  "setAside": zod.number().int().describe('Votes recorded against earlier Version B configurations; reported')
 })
 
 
@@ -3082,9 +3102,10 @@ export const ListTestSessionsResponseItem = zod.object({
 }))
 }))
 }),
-  "responses": zod.number().int()
+  "responses": zod.number().int(),
+  "expired": zod.boolean().describe('True when Version B changed after these runs; the pair no longer accepts responses')
 })),
-  "responseCount": zod.number().int(),
+  "responseCount": zod.number().int().describe('Responses recorded against the case\'s current Version B configuration'),
   "results": zod.union([zod.object({
   "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
   "aPreferred": zod.number().int(),
@@ -3094,7 +3115,8 @@ export const ListTestSessionsResponseItem = zod.object({
   "distinctInputs": zod.number().int(),
   "blindVotes": zod.number().int(),
   "demoVotes": zod.number().int()
-}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+}),zod.null()]).describe('Aggregate preference for the current configuration, revealed only once responses exist'),
+  "setAside": zod.number().int().describe('Responses recorded against earlier configurations; reported'),
   "createdAt": zod.string()
 })
 export const ListTestSessionsResponse = zod.array(ListTestSessionsResponseItem)
@@ -3156,9 +3178,10 @@ export const CreateTestSessionResponse = zod.object({
 }))
 }))
 }),
-  "responses": zod.number().int()
+  "responses": zod.number().int(),
+  "expired": zod.boolean().describe('True when Version B changed after these runs; the pair no longer accepts responses')
 })),
-  "responseCount": zod.number().int(),
+  "responseCount": zod.number().int().describe('Responses recorded against the case\'s current Version B configuration'),
   "results": zod.union([zod.object({
   "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
   "aPreferred": zod.number().int(),
@@ -3168,7 +3191,8 @@ export const CreateTestSessionResponse = zod.object({
   "distinctInputs": zod.number().int(),
   "blindVotes": zod.number().int(),
   "demoVotes": zod.number().int()
-}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+}),zod.null()]).describe('Aggregate preference for the current configuration, revealed only once responses exist'),
+  "setAside": zod.number().int().describe('Responses recorded against earlier configurations; reported'),
   "createdAt": zod.string()
 })
 
@@ -3224,9 +3248,10 @@ export const GetTestSessionResponse = zod.object({
 }))
 }))
 }),
-  "responses": zod.number().int()
+  "responses": zod.number().int(),
+  "expired": zod.boolean().describe('True when Version B changed after these runs; the pair no longer accepts responses')
 })),
-  "responseCount": zod.number().int(),
+  "responseCount": zod.number().int().describe('Responses recorded against the case\'s current Version B configuration'),
   "results": zod.union([zod.object({
   "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
   "aPreferred": zod.number().int(),
@@ -3236,7 +3261,8 @@ export const GetTestSessionResponse = zod.object({
   "distinctInputs": zod.number().int(),
   "blindVotes": zod.number().int(),
   "demoVotes": zod.number().int()
-}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+}),zod.null()]).describe('Aggregate preference for the current configuration, revealed only once responses exist'),
+  "setAside": zod.number().int().describe('Responses recorded against earlier configurations; reported'),
   "createdAt": zod.string()
 })
 
@@ -3305,9 +3331,10 @@ export const RespondToTestSessionResponse = zod.object({
 }))
 }))
 }),
-  "responses": zod.number().int()
+  "responses": zod.number().int(),
+  "expired": zod.boolean().describe('True when Version B changed after these runs; the pair no longer accepts responses')
 })),
-  "responseCount": zod.number().int(),
+  "responseCount": zod.number().int().describe('Responses recorded against the case\'s current Version B configuration'),
   "results": zod.union([zod.object({
   "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
   "aPreferred": zod.number().int(),
@@ -3317,7 +3344,8 @@ export const RespondToTestSessionResponse = zod.object({
   "distinctInputs": zod.number().int(),
   "blindVotes": zod.number().int(),
   "demoVotes": zod.number().int()
-}),zod.null()]).describe('Aggregate preference, revealed only once responses exist'),
+}),zod.null()]).describe('Aggregate preference for the current configuration, revealed only once responses exist'),
+  "setAside": zod.number().int().describe('Responses recorded against earlier configurations; reported'),
   "createdAt": zod.string()
 })
 
@@ -3653,6 +3681,36 @@ export const GetCaseReviewResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
+  "evidence": zod.object({
+  "currentFingerprint": zod.string(),
+  "inputsTested": zod.number().int().describe('Distinct inputs on which the current configuration ran against the baseline'),
+  "runtimeA": zod.number().int().nullable(),
+  "runtimeB": zod.number().int().nullable(),
+  "labelled": zod.union([zod.object({
+  "inputs": zod.number().int(),
+  "recallA": zod.number(),
+  "recallB": zod.number(),
+  "precisionA": zod.number(),
+  "precisionB": zod.number()
+}),zod.null()]),
+  "votes": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]),
+  "setAside": zod.number().int().describe('Votes from earlier configurations')
+}).describe('Evidence for the case\'s current Version B configuration, plus what was set aside'),
+  "promotionGate": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "met": zod.boolean(),
+  "value": zod.string().describe('The real value behind the check')
+})).describe('The production-promotion checklist with live values; unmet items are shown, never hidden'),
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),

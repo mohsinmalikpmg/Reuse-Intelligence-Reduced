@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Check, Rocket, Users } from "lucide-react";
+import { Check, Circle, Rocket, Users } from "lucide-react";
 import {
   getGetCaseReviewQueryKey, getListTestSessionsQueryKey, useCreateTestSession, useGetCaseReview, useListTestSessions, useRecordCaseDecision, useUpdateCase,
   type CaseStatus, type DecisionAction, type CaseUpdatePilotPercent,
@@ -78,6 +78,7 @@ export function OwnerDecision({ caseId }: { caseId: string }) {
     });
   };
   const last = r.decisions[r.decisions.length - 1];
+  const met = r.promotionGate.filter((g) => g.met).length;
   return (
     <div className="space-y-3" data-testid="panel-owner-decision">
       <p className="text-[14.5px]">{r.ownerSummary}</p>
@@ -85,6 +86,21 @@ export function OwnerDecision({ caseId }: { caseId: string }) {
         <span>Pilot: {r.pilotPlan.eligibleGroup}, {r.case.pilotPercent}%</span>
         <span>· Rollback if {r.pilotPlan.rollbackTrigger.charAt(0).toLowerCase() + r.pilotPlan.rollbackTrigger.slice(1)}</span>
       </div>
+      <details className="group rounded-xl border border-border bg-muted/40 px-3 py-2" data-testid="panel-promotion-gate">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[13.5px] font-semibold text-primary">
+          <span>Ready for production? {met} of {r.promotionGate.length} checks met</span>
+          <span className="text-[12.5px] font-normal text-muted-foreground group-open:hidden">Show</span>
+        </summary>
+        <ul className="mt-2 space-y-1.5 text-[13px]">
+          {r.promotionGate.map((g) => (
+            <li key={g.key} data-testid={`gate-${g.key}`} data-met={g.met} className="flex items-start gap-2">
+              {g.met ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-ok" aria-label="Met" /> : <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-label="Not yet" />}
+              <span><span className={g.met ? "" : "text-siennaink"}>{g.label}</span><span className="text-muted-foreground"> · {g.value}</span></span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-[12px] text-muted-foreground">A pilot can be approved before every check is met; production promotion cannot.</p>
+      </details>
       {actions.length === 0 ? (
         <p className="text-[13.5px] text-muted-foreground" data-testid="text-no-actions">{last ? <>Last decision: <span className="font-semibold">{ACTION_LABEL[last.action] ?? last.action.replace(/_/g, " ")}</span> by {last.actor}{last.reason ? ` - "${last.reason}"` : ""}</> : "Nothing to decide yet. The proposer needs to test and propose a pilot first."}</p>
       ) : (

@@ -39,6 +39,7 @@ export default function MySolutions() {
                   <div key={k} className="flex items-baseline gap-1.5"><dd data-testid={`text-${k}-${o.solution.id}`} className="text-[18px] font-bold text-primary">{v}</dd><dt className="text-muted-foreground">{l}</dt></div>
                 ))}
               </dl>
+              {o.evaluationsSetAside > 0 && <p className="mt-1 text-[12.5px] text-muted-foreground" data-testid={`text-set-aside-${o.solution.id}`}>Preference votes count the current configuration of each proposal; {o.evaluationsSetAside} vote{o.evaluationsSetAside === 1 ? "" : "s"} from earlier configurations (set aside).</p>}
               {o.proposals.length > 0 && <div className="mt-4 space-y-2 border-t border-border pt-4">{o.proposals.map((p) => <Proposal key={p.case.id} p={p} />)}</div>}
             </article>
           ))}

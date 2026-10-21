@@ -81,7 +81,7 @@ export async function resetDemo(): Promise<DemoState> {
   const withAnswers = await updateCaseRow(procedureCase.id, { moduleStates: { ...procedureCase.moduleStates, "cap-proc-answers": true } });
   const { runA, runB } = await runComparison(withAnswers, "sop-query", undefined);
   const demoVote = (choice: "A" | "B" | "neither", evaluator: string, reason: string) =>
-    insertEvaluation({ caseId: withAnswers.id, sessionId: null, sampleInputId: "sop-query", inputHash: runA.inputHash, runAId: runA.id, runBId: runB.id, choice, reason, rating: null, evaluator, role: "seeker", blind: false, demo: true });
+    insertEvaluation({ caseId: withAnswers.id, sessionId: null, sampleInputId: "sop-query", inputHash: runA.inputHash, runAId: runA.id, runBId: runB.id, fingerprintA: runA.configFingerprint, fingerprintB: runB.configFingerprint, choice, reason, rating: null, evaluator, role: "seeker", blind: false, demo: true });
   await demoVote("B", "Alex Romero", "The answer names the isolation steps instead of only listing the document.");
   await demoVote("B", "Demo tester", "Shorter path to the actual sequence.");
   const tested = await updateCaseRow(procedureCase.id, { status: "tested", saved: true });

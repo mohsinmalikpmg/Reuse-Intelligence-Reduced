@@ -21,6 +21,7 @@ export function toRun(row: RunRow): Run {
     inputHash: row.inputHash,
     enabledCapabilityIds: row.enabledCapabilityIds,
     configValues: row.configValues,
+    configFingerprint: row.configFingerprint,
     output: row.output as RunOutput,
     trace: row.trace as StepTrace[],
     stats: row.stats as RunStats,
@@ -39,6 +40,8 @@ export function toEvaluation(row: EvaluationRow): Evaluation {
     inputHash: row.inputHash,
     runAId: row.runAId,
     runBId: row.runBId,
+    fingerprintA: row.fingerprintA,
+    fingerprintB: row.fingerprintB,
     choice: row.choice as Evaluation["choice"],
     reason: row.reason,
     rating: row.rating,
@@ -107,6 +110,11 @@ export async function listEvaluationsForCases(caseIds: string[]): Promise<Evalua
   if (caseIds.length === 0) return [];
   const rows = await db.select().from(evaluationsTable).where(inArray(evaluationsTable.caseId, caseIds));
   return rows.map(toEvaluation);
+}
+
+/** Split votes into those recorded against the given Version B fingerprint (current) and everything earlier (set aside). */
+export function splitByFingerprint(items: Evaluation[], fingerprintB: string): { current: Evaluation[]; setAside: Evaluation[] } {
+  return { current: items.filter((e) => e.fingerprintB === fingerprintB), setAside: items.filter((e) => e.fingerprintB !== fingerprintB) };
 }
 
 /** Only ever computed from stored votes. */

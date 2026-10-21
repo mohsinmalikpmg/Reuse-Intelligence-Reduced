@@ -24,6 +24,8 @@ export interface Run {
   inputHash: string;
   enabledCapabilityIds: string[];
   configValues: RunConfigValues;
+  /** Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions */
+  configFingerprint: string;
   output: RunOutput;
   trace: StepTrace[];
   stats: RunStats;

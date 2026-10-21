@@ -9,6 +9,12 @@ import type { Evaluation } from './evaluation';
 import type { EvaluationSummary } from './evaluationSummary';
 
 export interface EvaluationList {
+  /** Votes recorded against the case's current Version B configuration only */
   summary: EvaluationSummary;
+  /** Votes for the current configuration */
   items: Evaluation[];
+  /** Fingerprint of the case's current Version B */
+  currentFingerprint: string;
+  /** Votes recorded against earlier Version B configurations; reported */
+  setAside: number;
 }

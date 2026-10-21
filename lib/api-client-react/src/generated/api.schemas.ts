@@ -903,6 +903,8 @@ export interface Run {
   inputHash: string;
   enabledCapabilityIds: string[];
   configValues: RunConfigValues;
+  /** Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions */
+  configFingerprint: string;
   output: RunOutput;
   trace: StepTrace[];
   stats: RunStats;
@@ -1052,6 +1054,10 @@ export interface Evaluation {
   inputHash: string;
   runAId: string;
   runBId: string;
+  /** Configuration fingerprint of run A when the vote was recorded */
+  fingerprintA: string;
+  /** Configuration fingerprint of run B when the vote was recorded */
+  fingerprintB: string;
   choice: EvaluationChoice;
   /** @nullable */
   reason: string | null;
@@ -1126,8 +1132,14 @@ export interface EvaluationSummary {
 }
 
 export interface EvaluationList {
+  /** Votes recorded against the case's current Version B configuration only */
   summary: EvaluationSummary;
+  /** Votes for the current configuration */
   items: Evaluation[];
+  /** Fingerprint of the case's current Version B */
+  currentFingerprint: string;
+  /** Votes recorded against earlier Version B configurations; reported */
+  setAside: number;
 }
 
 export interface TestSessionInput {
@@ -1142,6 +1154,8 @@ export interface TestPair {
   left: RunOutput;
   right: RunOutput;
   responses: number;
+  /** True when Version B changed after these runs; the pair no longer accepts responses */
+  expired: boolean;
 }
 
 export interface TestSession {
@@ -1151,9 +1165,12 @@ export interface TestSession {
   title: string;
   closed: boolean;
   pairs: TestPair[];
+  /** Responses recorded against the case's current Version B configuration */
   responseCount: number;
-  /** Aggregate preference, revealed only once responses exist */
+  /** Aggregate preference for the current configuration, revealed only once responses exist */
   results: EvaluationSummary | null;
+  /** Responses recorded against earlier configurations; reported */
+  setAside: number;
   createdAt: string;
 }
 
@@ -1210,6 +1227,8 @@ export interface OwnedSolution {
   openTests: number;
   /** Recorded preference votes across proposals */
   evaluations: number;
+  /** Votes recorded against earlier configurations of those proposals */
+  evaluationsSetAside: number;
   /** Runs recorded in the last 30 days */
   recentRuns: number;
 }
@@ -1397,8 +1416,44 @@ export type ChangeReviewAvailableActionsItem = {
   actions: DecisionAction[];
 };
 
+export type EvidenceSummaryLabelled = {
+  inputs: number;
+  recallA: number;
+  recallB: number;
+  precisionA: number;
+  precisionB: number;
+} | null;
+
+/**
+ * Evidence for the case's current Version B configuration, plus what was set aside
+ */
+export interface EvidenceSummary {
+  currentFingerprint: string;
+  /** Distinct inputs on which the current configuration ran against the baseline */
+  inputsTested: number;
+  /** @nullable */
+  runtimeA: number | null;
+  /** @nullable */
+  runtimeB: number | null;
+  labelled: EvidenceSummaryLabelled;
+  votes: EvaluationSummary | null;
+  /** Votes from earlier configurations */
+  setAside: number;
+}
+
+export interface GateItem {
+  key: string;
+  label: string;
+  met: boolean;
+  /** The real value behind the check */
+  value: string;
+}
+
 export interface ChangeReview {
   case: Case;
+  evidence: EvidenceSummary;
+  /** The production-promotion checklist with live values; unmet items are shown, never hidden */
+  promotionGate: GateItem[];
   baseSolution: Solution;
   currentVersion: VersionSnapshot;
   proposedVersion: VersionSnapshot;

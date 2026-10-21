@@ -72,7 +72,12 @@ export function Vote({ cmp, role }: { cmp: ABComparison; role: Role }) {
       <input data-testid="input-vote-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="Optional: one sentence on why"
         className="mt-3 h-11 w-full rounded-xl border border-input bg-card px-3 text-[14.5px] outline-none focus:border-primary" />
       {done && <p className="mt-2 text-[13px] text-muted-foreground" data-testid="text-vote-recorded">You picked {done.choice === "neither" ? "neither" : done.choice}{done.reason ? `: "${done.reason}"` : ""}. Voting again replaces it.</p>}
-      {evals.data && evals.data.summary.tests > 0 && <div className="mt-5 border-t border-border pt-4"><SummaryCounts s={evals.data.summary} /></div>}
+      {evals.data && (evals.data.summary.tests > 0 || evals.data.setAside > 0) && (
+        <div className="mt-5 border-t border-border pt-4">
+          {evals.data.summary.tests > 0 ? <SummaryCounts s={evals.data.summary} /> : <p className="text-[13.5px] text-muted-foreground" data-testid="text-no-current-votes">No votes yet for the current Version B.</p>}
+          {evals.data.setAside > 0 && <p className="mt-2 text-[12.5px] text-muted-foreground" data-testid="text-set-aside">{evals.data.setAside} vote{evals.data.setAside === 1 ? "" : "s"} from earlier configurations (set aside, not counted above).</p>}
+        </div>
+      )}
     </section>
   );
 }

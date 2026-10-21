@@ -15,8 +15,11 @@ export interface TestSession {
   title: string;
   closed: boolean;
   pairs: TestPair[];
+  /** Responses recorded against the case's current Version B configuration */
   responseCount: number;
-  /** Aggregate preference, revealed only once responses exist */
+  /** Aggregate preference for the current configuration, revealed only once responses exist */
   results: EvaluationSummary | null;
+  /** Responses recorded against earlier configurations; reported */
+  setAside: number;
   createdAt: string;
 }

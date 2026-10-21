@@ -15,6 +15,8 @@ export interface OwnedSolution {
   openTests: number;
   /** Recorded preference votes across proposals */
   evaluations: number;
+  /** Votes recorded against earlier configurations of those proposals */
+  evaluationsSetAside: number;
   /** Runs recorded in the last 30 days */
   recentRuns: number;
 }

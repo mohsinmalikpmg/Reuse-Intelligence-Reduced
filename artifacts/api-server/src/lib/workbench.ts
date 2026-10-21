@@ -9,6 +9,7 @@ import { executeWorkflow, executableSteps } from "../engine/run";
 import { isExecutable } from "../engine/steps";
 import { sampleInputById, sampleInputsFor, type SampleInput as SeedInput } from "../engine/workorders";
 import { buildComponents, caseContext, defaultConfigValues, defaultModuleStates, type CaseContext } from "./configuration";
+import { configFingerprint } from "./fingerprint";
 import { hashInput, insertRun, listRunsForCase } from "./workbench-store";
 
 export class WorkbenchError extends Error {
@@ -42,6 +43,16 @@ export function versionBCapabilities(c: Case, ctx: CaseContext): { active: Capab
   const configValues: Record<string, string> = {};
   for (const comp of components) if (comp.value) configValues[comp.capability.id] = comp.value;
   return { active, configValues };
+}
+
+/** Fingerprints of the governed baseline (A) and the case's current proposed configuration (B). */
+export function currentFingerprints(c: Case, ctx: CaseContext = caseContext(c)): { a: string; b: string } {
+  const a = versionACapabilities(ctx);
+  const b = versionBCapabilities(c, ctx);
+  return {
+    a: configFingerprint(executableSteps(a.active).map((cap) => cap.id), a.configValues),
+    b: configFingerprint(executableSteps(b.active).map((cap) => cap.id), b.configValues),
+  };
 }
 
 export function toBlocks(solution: Solution, active: Capability[], configValues: Record<string, string>, origin: (cap: Capability) => "base" | "added" = () => "base"): WorkflowBlock[] {
@@ -85,6 +96,7 @@ interface RunSpec {
 
 function execute(spec: RunSpec): Omit<Run, "id" | "createdAt"> {
   const result = executeWorkflow(spec.active, spec.configValues, spec.text);
+  const enabledCapabilityIds = executableSteps(spec.active).map((cap) => cap.id);
   return {
     caseId: spec.caseId,
     solutionId: spec.solution.id,
@@ -93,8 +105,9 @@ function execute(spec: RunSpec): Omit<Run, "id" | "createdAt"> {
     sampleInputId: spec.sampleInputId,
     inputText: spec.text,
     inputHash: hashInput(spec.text),
-    enabledCapabilityIds: executableSteps(spec.active).map((cap) => cap.id),
+    enabledCapabilityIds,
     configValues: spec.configValues,
+    configFingerprint: configFingerprint(enabledCapabilityIds, spec.configValues),
     output: result.output,
     trace: result.trace,
     stats: result.stats,
@@ -189,11 +202,8 @@ export function buildComparison(c: Case, runA: Run, runB: Run, evaluation: Evalu
   const diff = enrichDiff(diffOutputs(runA.output, runB.output), ctx.base.id);
   const sample = runA.sampleInputId ? sampleInputById.get(runA.sampleInputId) : undefined;
   const expected = sample?.expected ?? null;
-  const current = versionBCapabilities(c, ctx);
-  const currentIds = executableSteps(current.active).map((cap) => cap.id);
-  // jsonb does not preserve key order, so compare sorted entries.
-  const sortedEntries = (o: Record<string, string>) => JSON.stringify(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
-  const staleB = currentIds.join(",") !== runB.enabledCapabilityIds.join(",") || sortedEntries(current.configValues) !== sortedEntries(runB.configValues);
+  // The fingerprint is computed from sorted ids and settings, so jsonb key order cannot make a fresh run look stale.
+  const staleB = runB.configFingerprint !== currentFingerprints(c, ctx).b;
   return {
     caseId: c.id,
     sampleInputId: runA.sampleInputId,
@@ -222,17 +232,32 @@ export async function runComparison(c: Case, sampleInputId: string | undefined, 
   return { runA, runB };
 }
 
-/** Latest A/B pair per input hash for a case, newest first. */
-export async function latestPairs(caseId: string): Promise<{ runA: Run; runB: Run }[]> {
-  const runs = await listRunsForCase(caseId);
+/** Latest A/B pair per input hash for a case, newest first. Pass `fingerprintB` to keep only pairs whose run B matches it. */
+export async function latestPairs(caseId: string, fingerprintB?: string): Promise<{ runA: Run; runB: Run }[]> {
+  return pairRuns(await listRunsForCase(caseId), fingerprintB);
+}
+
+export function pairRuns(runs: Run[], fingerprintB?: string): { runA: Run; runB: Run }[] {
   const byHash = new Map<string, { runA?: Run; runB?: Run }>();
   for (const run of runs) {
+    if (fingerprintB !== undefined && run.version === "B" && run.configFingerprint !== fingerprintB) continue;
     const entry = byHash.get(run.inputHash) ?? {};
     if (run.version === "A" && !entry.runA) entry.runA = run;
     if (run.version === "B" && !entry.runB) entry.runB = run;
     byHash.set(run.inputHash, entry);
   }
   return [...byHash.values()].filter((e): e is { runA: Run; runB: Run } => !!e.runA && !!e.runB);
+}
+
+/** Why a vote on these two runs cannot count as evidence for the case's current Version B; null when it can. */
+export function pairRejection(c: Case, runA: Run, runB: Run): string | null {
+  if (runA.caseId !== c.id || runB.caseId !== c.id) return "Both runs must belong to this case.";
+  if (runA.version !== "A" || runB.version !== "B") return "Pick one Version A run and one Version B run of the same input.";
+  if (runA.inputHash !== runB.inputHash) return "The two runs used different inputs; compare outputs of the same input.";
+  const current = currentFingerprints(c);
+  if (runA.configFingerprint !== current.a) return "Version A in this run is not the current production baseline. Run both again before voting.";
+  if (runB.configFingerprint !== current.b) return "Version B has changed since this run. Run both again before voting.";
+  return null;
 }
 
 export function solutionOr404(id: string): Solution {

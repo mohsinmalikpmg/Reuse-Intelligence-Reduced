@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import type {
   Capability,
   ConsolidationSummary,
+  Evaluation,
   EvidenceEvent,
   OwnedSolution,
   OwnerOverview,
@@ -16,7 +17,13 @@ import { addedExternalModules, caseContext, isUnsupported } from "../lib/configu
 import { matchBrief } from "../lib/matching";
 import { demoState, resetDemo } from "../lib/seed";
 import { getExperiment, listAllDecisions, listBriefs, listCaseRows, listExperiments, summarizeAll } from "../lib/store";
+import { currentFingerprints } from "../lib/workbench";
 import { countSearches, listAllEvaluations, listAllRuns, summarizeEvaluations } from "../lib/workbench-store";
+
+/** True when a vote was cast on the case's current Version B against the governed baseline. */
+function countsForCase(e: Evaluation, cur: { a: string; b: string } | undefined): boolean {
+  return !!cur && e.fingerprintA === cur.a && e.fingerprintB === cur.b;
+}
 
 const router: IRouter = Router();
 
@@ -85,6 +92,8 @@ router.get("/my-solutions", async (_req, res) => {
   const evaluations = await listAllEvaluations();
   const decisions = await listAllDecisions();
   const since = Date.now() - 30 * 24 * 3600 * 1000;
+  const currentByCase = new Map(cases.map((c) => [c.id, currentFingerprints(c)]));
+  const countsForCurrent = (e: Evaluation) => countsForCase(e, currentByCase.get(e.caseId));
   const out: OwnedSolution[] = [];
   for (const solution of mine) {
     const proposals = cases.filter((c) => c.baseSolutionId === solution.id && c.status !== "draft");
@@ -94,7 +103,8 @@ router.get("/my-solutions", async (_req, res) => {
       solution,
       proposals: await summarizeAll(proposals),
       openTests: proposals.filter((c) => runs.some((r) => r.caseId === c.id) && !ownerDecided.has(c.id)).length,
-      evaluations: evaluations.filter((e) => proposalIds.has(e.caseId)).length,
+      evaluations: evaluations.filter((e) => proposalIds.has(e.caseId) && countsForCurrent(e)).length,
+      evaluationsSetAside: evaluations.filter((e) => proposalIds.has(e.caseId) && !countsForCurrent(e)).length,
       recentRuns: runs.filter((r) => r.solutionId === solution.id && new Date(r.createdAt).getTime() >= since).length,
     });
   }
@@ -188,8 +198,12 @@ router.get("/portfolio", async (_req, res) => {
   const reuseCases = [...new Set(cases.map((c) => c.briefId).filter((id): id is string => id !== null))];
   const evaluations = await listAllEvaluations();
   const abCases = cases.filter((c) => c.status !== "draft");
+  // Only votes cast on each case's current Version B (against the governed baseline) count; earlier-configuration votes are set aside.
+  const currentByCase = new Map(cases.map((c) => [c.id, currentFingerprints(c)]));
+  const countsForCurrent = (e: Evaluation) => countsForCase(e, currentByCase.get(e.caseId));
+  const setAsideVotes = evaluations.filter((e) => !countsForCurrent(e)).length;
   const withPreference = abCases.filter((c) => {
-    const summary = summarizeEvaluations(evaluations.filter((e) => e.caseId === c.id));
+    const summary = summarizeEvaluations(evaluations.filter((e) => e.caseId === c.id && countsForCurrent(e)));
     return summary.tests > 0 && summary.aPreferred !== summary.bPreferred;
   });
   const consolidated = cases.filter((c) => decisions.some((d) => d.caseId === c.id && d.action === "approve_consolidation"));
@@ -230,7 +244,7 @@ router.get("/portfolio", async (_req, res) => {
       withPreference.length,
       abCases.length,
       `${withPreference.length} of ${abCases.length}`,
-      `Numerator: tested cases where recorded votes favour one version. Denominator: cases with at least one A/B run. ${demoVotes} vote${demoVotes === 1 ? "" : "s"} are labelled demo.`,
+      `Numerator: tested cases where votes recorded on the current Version B configuration favour one version. Denominator: cases with at least one A/B run. ${setAsideVotes} vote${setAsideVotes === 1 ? "" : "s"} from earlier configurations (set aside). ${demoVotes} vote${demoVotes === 1 ? "" : "s"} are labelled demo.`,
       demoVotes > 0,
     ),
     activeVsRetired: metric(
