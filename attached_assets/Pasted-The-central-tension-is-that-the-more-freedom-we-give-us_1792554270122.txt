@@ -1,0 +1,327 @@
+The central tension is that the more freedom we give users to create and customize solutions, the more likely we are to recreate the very fragmentation we're trying to eliminate.
+
+I think this reveals a missing part of our product design: we need to manage the lifecycle of customization, not just enable customization.
+
+My recommendation is:
+
+> Unlimited experimentation, limited production variation, and one preferred solution for each clearly defined business problem.
+
+That gives users the freedom to create without automatically turning every experiment into another enterprise application.
+
+## 1. The fundamental design decision: what counts as a new solution?
+
+We should distinguish four things that the current design risks treating as equivalent.
+
+| Object              | What it is                                                  | Discoverable in library?   | Governance            |
+| ------------------- | ----------------------------------------------------------- | -------------------------- | --------------------- |
+| Solution            | A certified product addressing a defined business problem   | Yes                        | Business and IT owner |
+| Configuration       | A controlled variation of an existing solution              | Only approved presets      | Solution owner        |
+| Experiment          | A user's temporary modification or A/B test                 | No                         | Sandbox controls      |
+| Reusable capability | A function that can be incorporated into multiple solutions | Yes, for eligible builders | Capability owner      |
+
+For example, Work Order Intelligence remains one solution.
+
+A user might experiment with adding equipment-risk classification. Another might change notification thresholds. A third might add a report-generation step.
+
+Those are not automatically three new solutions.
+
+They are experiments or configurations of the same underlying product.
+
+The platform should store each modification as a change to its parent solution, rather than copying the entire workflow into a new independent application.
+
+## 2. How we prevent sprawl
+
+I would build a largely invisible Configuration Governance Engine.
+
+It performs four functions.
+
+Recognize similar configurations
+
+Detect when different users are creating substantially similar workflows, adding equivalent features, or solving the same underlying problem.
+
+Measure actual usefulness
+
+Track which configurations are tested, reused, adopted, abandoned, and preferred in real A/B evaluations.
+
+Recommend consolidation
+
+When several teams repeatedly create the same modification, recommend incorporating it into the core product or creating one approved configuration.
+
+Control promotion to production
+
+Allow experimentation freely, but require ownership, compatibility testing and appropriate approval before a configuration becomes a supported production offering.
+
+### What happens when users create overlapping changes?
+
+Imagine five teams independently add a safety-risk classification step.
+
+The system recognizes that these steps are functionally similar.
+
+Instead of allowing five permanent production variations, it presents the solution owner with a decision:
+
+Configuration review
+
+Owner decision
+
+Several teams have independently tested a similar improvement.
+
+Safety-risk classification
+
+# 5
+
+Similar drafts
+
+# 3
+
+Teams testing
+
+# 1
+
+Shared feature proposed
+
+Suggested action: create one reusable capability rather than several independent variations.
+
+Explore review design Illustrative interface and counts, not actual Cenovus usage data.
+
+The owner can promote a shared capability, approve a specialized configuration, request more testing, or archive redundant drafts.
+
+Importantly, the platform recommends consolidation; it does not automatically merge or delete user-developed functionality.
+
+## 3. What should a new solution seeker see when variations exist?
+
+I would not show every configuration as a separate library item. That defeats the purpose of consolidation.
+
+The library should operate on a hierarchy:
+
+Business problem → Recommended solution → Approved configurations → Capabilities
+
+For example, someone searches for maintenance issue identification.
+
+The result should look something like this:
+
+## Work Order Intelligence
+
+Identify recurring issues and coordinate maintenance follow-up.
+
+Certified
+
+Recommended configuration
+
+Standard issue analysis with human review.
+
+Try this solution&#x20;
+
+Other approved configurations
+
+Safety-focused review
+
+Variant
+
+Action tracking enabled
+
+Variant
+
+Experimental configurations are hidden from ordinary library results.
+
+The platform should choose the most relevant approved configuration using the user's problem and business context.
+
+If nothing fits, the user can select Customize in Workbench.
+
+### Should we show differences in outputs?
+
+Yes. I think this is one of the most valuable features of the entire platform.
+
+The library shouldn't only tell the user that one variation has a different feature set. It should demonstrate what that means for the task they're trying to accomplish.
+
+For example:
+
+See how the configurations differ
+
+Repeated pump vibration reports
+
+Potential equipment safety concern
+
+Standard
+
+Output example
+
+Pump vibration appears in several maintenance records. Review recommended.
+
+Safety-focused
+
+Output example
+
+Recurring pump vibration grouped for review, with an additional check for possible safety consequences.
+
+Illustrative output examples. Actual product comparisons should run both configurations on the same input, or clearly identify saved examples.
+
+The seeker should be able to click Try with my input, launching the actual A/B workbench.
+
+That creates a direct connection between search, discovery, configuration and testing.
+
+It also means users do not need to understand the underlying workflow architecture to appreciate the difference between configurations.
+
+## 4. How does the IT/business technology owner govern this?
+
+The IT leader should not receive another enormous dashboard.
+
+They need two things:
+
+A simple health view and a prioritized decision queue.
+
+### Portfolio health
+
+The default view should answer three questions.
+
+| Question                                  | Best measures                                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Are employees reusing existing solutions? | Searches leading to trials, trials leading to sustained adoption, new-build requests avoided  |
+| Are we reducing duplication?              | Overlapping production products, approved configuration count, products actually retired      |
+| Are improvements delivering value?        | A/B user preference, benchmark outcomes, adoption after change, failed or rolled-back changes |
+
+Usage statistics absolutely matter, but they need interpretation.
+
+A configuration with 100 executions may be less valuable than one used five times for a critical safety workflow.
+
+Similarly, a rarely used configuration may address a legitimate specialist process rather than represent waste.
+
+Usage is a signal, not a verdict.
+
+### Configuration review queue
+
+Instead of displaying all modifications, surface exceptions requiring a decision.
+
+| Trigger                                                           | Suggested action                        |
+| ----------------------------------------------------------------- | --------------------------------------- |
+| Multiple teams create similar capabilities                        | Consider shared module                  |
+| Several approved variants differ only by minor settings           | Standardize configuration               |
+| A custom feature gains repeated adoption and strong test evidence | Consider promoting into core            |
+| A draft is unused for an extended period                          | Ask owner whether to archive            |
+| A variant consistently underperforms                              | Review or retire                        |
+| A new product duplicates a certified product                      | Require justification                   |
+| Shared capability change affects multiple products                | Trigger compatibility and impact review |
+
+The important feature is automatic identification of decisions requiring human attention, not complex visualization of the entire technology estate.
+
+Ownership should also be clear: business product owners determine whether the functionality is useful; IT or designated platform owners determine whether it meets enterprise standards. Shared capability owners are responsible for maintaining the reusable components.
+
+## 5. Where are we creating too much?
+
+This is where I would simplify the scope considerably.
+
+| Current idea                           | Assessment             | Recommendation                   |
+| -------------------------------------- | ---------------------- | -------------------------------- |
+| Natural-language pain-point intake     | Essential              | Keep, simplify to Today → Better |
+| Searchable solution library            | Essential              | Keep                             |
+| Visual solution tree                   | Useful for exploration | Optional view, not the default   |
+| Unlimited experimental steps           | Differentiating        | Keep inside sandbox              |
+| Arbitrary production workflows         | Creates sprawl         | Remove                           |
+| Feature toggles and configuration      | Essential              | Allow only approved changes      |
+| Interactive A/B execution              | Core differentiator    | Highest priority                 |
+| Actual output comparison               | Core differentiator    | Highest priority                 |
+| Synthetic performance predictions      | Weak evidence          | Remove from core                 |
+| Blind human A/B testing platform       | Valuable later         | Basic voting for MVP             |
+| Multiple published configurations      | Necessary selectively  | Only approved presets            |
+| Automatic similarity detection         | Important              | Lightweight MVP                  |
+| IT configuration review queue          | Important              | Build simple version             |
+| Complex IT portfolio dashboards        | Easy to overbuild      | Reduce to three health measures  |
+| Automatic consolidation and retirement | Too risky              | Human-approved only              |
+| General-purpose AI app builder         | Outside core value     | Do not build                     |
+
+The biggest risk is attempting to create a full Replit, a product marketplace, an experimentation platform, and an enterprise governance suite simultaneously.
+
+You don't need all four as separate products.
+
+You need one coherent product lifecycle.
+
+## 6. The holistic system I would build
+
+Discover
+
+Find the best existing solution.
+
+Experiment
+
+Modify the workflow freely in a sandbox.
+
+Compare
+
+Run A/B tests and inspect actual outputs.
+
+Decide
+
+Promote, merge, retain as an approved variant, or archive.
+
+Learn
+
+Measure adoption and feed proven capabilities back into the library.
+
+The system becomes self-improving without automatically creating permanent complexity.
+
+## 7. The underlying data model matters more than another screen
+
+To make this work, I'd avoid storing every variation as an independent solution.
+
+Instead:
+
+Solution family: Work Order Intelligence
+
+Base version: 2.1
+
+Approved configurations: Standard, Safety-focused, Action tracking
+
+Experimental branches: User-created modifications not yet approved
+
+Capability records: Issue clustering, safety classification, action tracking
+
+Experiment records: Exact input, workflow versions, outputs, evaluations and test conditions
+
+Governance decisions: Approved, rejected, merged, deprecated or retired
+
+That enables the system to understand both functional overlap and operational adoption.
+
+Importantly, a new experiment needs to reference its parent solution and record only the changes introduced. That allows comparison, deduplication and upgrade-impact analysis without duplicating the entire application.
+
+When the base product changes, the platform can identify which configurations are affected and request targeted regression tests.
+
+## 8. What I would actually demonstrate at the hackathon
+
+I would focus on one seamless story:
+
+A business analyst describes an issue and discovers Work Order Intelligence.
+
+They open the solution and add a new safety-classification capability through natural language.
+
+They run the existing workflow and their modified workflow against the same input.
+
+They see two genuinely different outputs and select the better one.
+
+They save their experiment.
+
+The interface then reveals that another team has already tested a similar capability.
+
+Rather than creating another independent product, the system suggests reusing that capability and submitting one shared improvement to the solution owner.
+
+The owner reviews the evidence and proposes its adoption.
+
+Finally, the IT leader sees that a new business requirement has been addressed without introducing another production solution.
+
+That last step is important. It demonstrates not just that the platform can create better functionality, but that its design actively prevents the duplication problem from reappearing.
+
+## The product strategy I'd settle on
+
+Three core experiences:
+
+Find: What already exists, and what does it actually produce?
+
+Experiment: Can I change it and prove that my change improves the output?
+
+Govern: Should that change be reused, promoted, standardized, kept local or retired?
+
+The Library is the shared foundation. The interactive A/B Workbench is the differentiator. Configuration governance is what makes the platform enterprise-relevant.
+
+The single most important principle is:
+
+> Allow unlimited ideas, but require evidence and ownership before creating another permanent product or supported configuration.
+
+If you implement that well, simplicity and enterprise governance reinforce each other rather than compete.
