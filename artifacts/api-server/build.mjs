@@ -3,7 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { rm } from "node:fs/promises";
+import { rm, readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -13,9 +14,14 @@ const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 async function buildAll() {
   const distDir = path.resolve(artifactDir, "dist");
   await rm(distDir, { recursive: true, force: true });
+  const acceptanceEngineFiles = Object.fromEntries(await Promise.all(
+    ["engine/run.ts", "engine/steps.ts", "engine/workorders.ts", "engine/types.ts", "data/catalog.ts", "data/catalog-enterprise.ts"].map(async file =>
+      [file, createHash("sha256").update(await readFile(path.join(artifactDir, "src", file))).digest("hex")]),
+  ));
 
   await esbuild({
     entryPoints: [path.resolve(artifactDir, "src/index.ts")],
+    define: { __ACCEPTANCE_ENGINE_FILES__: JSON.stringify(acceptanceEngineFiles) },
     platform: "node",
     bundle: true,
     format: "esm",

@@ -8,6 +8,180 @@
 import * as zod from 'zod';
 
 
+export const GetAcceptanceChecksParams = zod.object({
+  "briefId": zod.coerce.string()
+})
+
+export const GetAcceptanceChecksResponse = zod.object({
+  "planFingerprint": zod.string(),
+  "baseSolutionId": zod.string().nullable(),
+  "baseCapabilityIds": zod.array(zod.string()),
+  "borrowedOptions": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "capabilityName": zod.string(),
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "evidence": zod.object({
+  "capabilityId": zod.string(),
+  "solutionId": zod.string(),
+  "file": zod.string(),
+  "symbol": zod.string(),
+  "lines": zod.array(zod.number().int()),
+  "limitations": zod.array(zod.string()),
+  "tested": zod.boolean()
+}),
+  "integration": zod.string()
+})),
+  "criteria": zod.array(zod.object({
+  "id": zod.string(),
+  "requirement": zod.string(),
+  "assertion": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "testable": zod.boolean(),
+  "reason": zod.string()
+})),
+  "fixtureText": zod.string(),
+  "runs": zod.array(zod.object({
+  "id": zod.string(),
+  "briefId": zod.string(),
+  "createdAt": zod.string(),
+  "planFingerprint": zod.string(),
+  "packageId": zod.string(),
+  "packageFingerprint": zod.string(),
+  "engineFingerprint": zod.string(),
+  "configurationFingerprint": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "borrowedIds": zod.array(zod.string()),
+  "inputMode": zod.enum(['fixture', 'supplied']),
+  "inputText": zod.string(),
+  "inputFingerprint": zod.string(),
+  "results": zod.array(zod.object({
+  "criterion": zod.object({
+  "id": zod.string(),
+  "requirement": zod.string(),
+  "assertion": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "testable": zod.boolean(),
+  "reason": zod.string()
+}),
+  "status": zod.enum(['passed', 'failed', 'not_testable']),
+  "detail": zod.string()
+})),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "errors": zod.array(zod.string())
+}))
+})
+
+
+export const RunAcceptanceCheckParams = zod.object({
+  "briefId": zod.coerce.string()
+})
+
+export const runAcceptanceCheckBodyBorrowedIdsMax = 30;
+
+export const runAcceptanceCheckBodyReviewedCriterionIdsMax = 100;
+
+export const runAcceptanceCheckBodyInputTextMax = 50000;
+
+
+
+export const RunAcceptanceCheckBody = zod.object({
+  "planFingerprint": zod.string(),
+  "borrowedIds": zod.array(zod.string()).max(runAcceptanceCheckBodyBorrowedIdsMax),
+  "reviewedCriterionIds": zod.array(zod.string()).max(runAcceptanceCheckBodyReviewedCriterionIdsMax),
+  "inputMode": zod.enum(['fixture', 'supplied']),
+  "inputText": zod.string().max(runAcceptanceCheckBodyInputTextMax)
+})
+
+export const RunAcceptanceCheckResponse = zod.object({
+  "id": zod.string(),
+  "briefId": zod.string(),
+  "createdAt": zod.string(),
+  "planFingerprint": zod.string(),
+  "packageId": zod.string(),
+  "packageFingerprint": zod.string(),
+  "engineFingerprint": zod.string(),
+  "configurationFingerprint": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "borrowedIds": zod.array(zod.string()),
+  "inputMode": zod.enum(['fixture', 'supplied']),
+  "inputText": zod.string(),
+  "inputFingerprint": zod.string(),
+  "results": zod.array(zod.object({
+  "criterion": zod.object({
+  "id": zod.string(),
+  "requirement": zod.string(),
+  "assertion": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "testable": zod.boolean(),
+  "reason": zod.string()
+}),
+  "status": zod.enum(['passed', 'failed', 'not_testable']),
+  "detail": zod.string()
+})),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "errors": zod.array(zod.string())
+})
+
+
 export const GetCodeAssessmentParams = zod.object({
   "briefId": zod.coerce.string()
 })

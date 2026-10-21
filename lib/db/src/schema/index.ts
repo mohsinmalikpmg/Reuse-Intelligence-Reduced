@@ -9,3 +9,4 @@ export * from "./governance";
 export * from "./prototypes";
 export * from "./auth";
 export * from "./intake";
+export * from "./acceptance";

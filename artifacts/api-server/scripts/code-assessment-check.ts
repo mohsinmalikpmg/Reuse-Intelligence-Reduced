@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { assessCode } from "../src/lib/code-assessment";
 import manifest from "../src/data/solution-code-manifest.json";
 import type { Brief, LibraryCodePackage } from "@workspace/api-zod";
+import { acceptancePlan, runAcceptance, verifyAcceptanceEngine } from "../src/lib/acceptance-checks";
 
 const { objectPath: _privatePath, ...pkg } = manifest;
 function brief(requirements: string[], context = "Maintenance supervisors reviewing equipment work-order notes"): Brief {
@@ -41,3 +42,52 @@ assert.equal(absent.requirements[0]?.status, "missing");
 const controls = assessCode(brief(["Do not perform automatic updates.", "Support read-only review across two sites."]), pkg as LibraryCodePackage);
 assert.deepEqual(controls.requirements.map(r => r.status), ["constraint", "constraint"]);
 process.stdout.write("Code assessment checks passed: base selection, ordered coverage, two-donor reuse, gaps, partial claims, unrelated-domain rejection, source evidence.\n");
+
+const plan = acceptancePlan(report);
+const engineFingerprint = await verifyAcceptanceEngine(report);
+const request = {
+  planFingerprint: plan.planFingerprint, borrowedIds: ["cap-clustering", "cap-safety-signals"],
+  reviewedCriterionIds: plan.criteria.map(c => c.id), inputMode: "fixture" as const, inputText: "",
+};
+const combined = runAcceptance(report, request, engineFingerprint);
+assert.deepEqual(combined.results.map(r => r.status), ["passed", "passed", "passed", "passed", "passed", "not_testable"]);
+assert(combined.trace.some(t => t.stepId === "cap-clustering" && t.status === "ran"));
+assert(combined.output.sections.some(s => s.items.some(i => i.kind === "safety")));
+assert.equal(combined.packageFingerprint, pkg.sha256);
+assert.equal(combined.configurationFingerprint.length, 64);
+const repeated = runAcceptance(report, request, engineFingerprint);
+assert.equal(combined.configurationFingerprint, repeated.configurationFingerprint);
+assert.equal(combined.inputFingerprint, repeated.inputFingerprint);
+assert.deepEqual(combined.output, repeated.output);
+assert.deepEqual(combined.results, repeated.results);
+const baseOnly = runAcceptance(report, { ...request, borrowedIds: [] }, engineFingerprint);
+assert.equal(baseOnly.results[3]?.status, "failed");
+assert.equal(baseOnly.results[4]?.status, "failed");
+assert.notEqual(baseOnly.configurationFingerprint, combined.configurationFingerprint);
+const supplied = runAcceptance(report, { ...request, inputMode: "supplied", inputText: "WO-1 | 2026-10-01 | Test Site | P-1 (centrifugal pump) | Routine inspection." }, engineFingerprint);
+assert.equal(supplied.inputMode, "supplied");
+assert.equal(supplied.results[1]?.status, "failed");
+assert.equal(supplied.results[3]?.status, "failed");
+assert.equal(supplied.results[4]?.status, "failed");
+assert.notEqual(supplied.inputFingerprint, combined.inputFingerprint);
+const safetyOnly = runAcceptance(report, {
+  ...request, inputMode: "supplied",
+  inputText: "WO-SAFETY | 2026-10-01 | Test Site | P-1 (centrifugal pump) | Gas leak detected.",
+}, engineFingerprint);
+assert.equal(safetyOnly.results[1]?.status, "failed"); // no recurring issue
+assert.equal(safetyOnly.results[2]?.status, "passed"); // safety-only item still enters the queue
+assert.equal(safetyOnly.results[4]?.status, "passed");
+assert(safetyOnly.output.sections.find(s => s.key === "review")?.items.some(item => item.kind === "review" && item.stepId === "cap-safety-signals"));
+assert.throws(() => runAcceptance(report, { ...request, reviewedCriterionIds: [] }, engineFingerprint), /Review every/);
+assert.throws(() => runAcceptance(report, { ...request, planFingerprint: "old" }, engineFingerprint), /Assessment changed/);
+assert.throws(() => runAcceptance(report, { ...request, borrowedIds: ["uploaded-script"] }, engineFingerprint), /Only proposed/);
+assert.throws(() => runAcceptance(report, { ...request, inputMode: "supplied", inputText: "" }, engineFingerprint), /Supply/);
+assert.throws(() => runAcceptance(report, { ...request, inputMode: "supplied", inputText: "line\n".repeat(501) }, engineFingerprint), /Supply/);
+const partialPlan = acceptancePlan(assessCode(brief(["Require human approval", "Do not summarize maintenance notes", "Provide original work-order links", "No automatic updates", "Don't summarize maintenance notes", "No safety alerts"]), pkg as LibraryCodePackage));
+assert(partialPlan.criteria.every(c => !c.testable));
+const rankReport = assessCode(brief(["Summarize maintenance notes", "Provide supervisor review", "Rank issues"]), pkg as LibraryCodePackage);
+const rankPlan = acceptancePlan(rankReport);
+assert(rankPlan.borrowedOptions.some(o => o.capabilityId === "cap-clustering"));
+assert.throws(() => runAcceptance(rankReport, { ...request, planFingerprint: rankPlan.planFingerprint, reviewedCriterionIds: rankPlan.criteria.map(c => c.id), borrowedIds: ["cap-similarity"] }, engineFingerprint), /requires cap-clustering/);
+await assert.rejects(() => verifyAcceptanceEngine({ ...report, package: { ...report.package, files: report.package.files.map(f => f.path === "engine/run.ts" ? { ...f, sha256: "changed" } : f) } }), /engine/);
+process.stdout.write("Acceptance checks passed: actual fixture and supplied outputs, deterministic fingerprints, unselected failures, untestable constraints, dependencies, input bounds, explicit review, stale plans and package drift rejection.\n");

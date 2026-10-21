@@ -5,6 +5,128 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface AcceptanceCriterion {
+  id: string;
+  requirement: string;
+  assertion: string;
+  capabilityIds: string[];
+  testable: boolean;
+  reason: string;
+}
+
+export type AcceptanceInputInputMode = typeof AcceptanceInputInputMode[keyof typeof AcceptanceInputInputMode];
+
+
+export const AcceptanceInputInputMode = {
+  fixture: 'fixture',
+  supplied: 'supplied',
+} as const;
+
+export interface AcceptanceInput {
+  planFingerprint: string;
+  /** @maxItems 30 */
+  borrowedIds: string[];
+  /** @maxItems 100 */
+  reviewedCriterionIds: string[];
+  inputMode: AcceptanceInputInputMode;
+  /** @maxLength 50000 */
+  inputText: string;
+}
+
+export type AcceptanceResultStatus = typeof AcceptanceResultStatus[keyof typeof AcceptanceResultStatus];
+
+
+export const AcceptanceResultStatus = {
+  passed: 'passed',
+  failed: 'failed',
+  not_testable: 'not_testable',
+} as const;
+
+export interface AcceptanceResult {
+  criterion: AcceptanceCriterion;
+  status: AcceptanceResultStatus;
+  detail: string;
+}
+
+export type AcceptanceRunConfigValues = {[key: string]: string};
+
+export type AcceptanceRunInputMode = typeof AcceptanceRunInputMode[keyof typeof AcceptanceRunInputMode];
+
+
+export const AcceptanceRunInputMode = {
+  fixture: 'fixture',
+  supplied: 'supplied',
+} as const;
+
+export interface OutputItem {
+  id: string;
+  /** Stable across runs so A and B lines can be matched */
+  key: string;
+  kind: string;
+  text: string;
+  /** @nullable */
+  detail: string | null;
+  /** Capability id of the step that produced this line */
+  stepId: string;
+  refs: string[];
+}
+
+export interface OutputSection {
+  key: string;
+  title: string;
+  stepId: string;
+  items: OutputItem[];
+}
+
+export interface RunOutput {
+  headline: string;
+  sections: OutputSection[];
+}
+
+export type StepTraceStatus = typeof StepTraceStatus[keyof typeof StepTraceStatus];
+
+
+export const StepTraceStatus = {
+  ran: 'ran',
+  skipped: 'skipped',
+  error: 'error',
+} as const;
+
+export interface StepTrace {
+  stepId: string;
+  name: string;
+  stage: string;
+  status: StepTraceStatus;
+  inputSummary: string;
+  transformation: string;
+  outputSummary: string;
+  itemCount: number;
+  durationMs: number;
+  /** @nullable */
+  error: string | null;
+}
+
+export interface AcceptanceRun {
+  id: string;
+  briefId: string;
+  createdAt: string;
+  planFingerprint: string;
+  packageId: string;
+  packageFingerprint: string;
+  engineFingerprint: string;
+  configurationFingerprint: string;
+  capabilityIds: string[];
+  configValues: AcceptanceRunConfigValues;
+  borrowedIds: string[];
+  inputMode: AcceptanceRunInputMode;
+  inputText: string;
+  inputFingerprint: string;
+  results: AcceptanceResult[];
+  output: RunOutput;
+  trace: StepTrace[];
+  errors: string[];
+}
+
 export interface CodeCapabilityEvidence {
   capabilityId: string;
   solutionId: string;
@@ -13,6 +135,26 @@ export interface CodeCapabilityEvidence {
   lines: number[];
   limitations: string[];
   tested: boolean;
+}
+
+export interface CodeAssessmentMatch {
+  capabilityId: string;
+  capabilityName: string;
+  solutionId: string;
+  solutionName: string;
+  evidence: CodeCapabilityEvidence;
+  integration: string;
+}
+
+export interface AcceptanceChecks {
+  planFingerprint: string;
+  /** @nullable */
+  baseSolutionId: string | null;
+  baseCapabilityIds: string[];
+  borrowedOptions: CodeAssessmentMatch[];
+  criteria: AcceptanceCriterion[];
+  fixtureText: string;
+  runs: AcceptanceRun[];
 }
 
 export type LibraryCodePackageFilesItem = {
@@ -62,15 +204,6 @@ export const CodeRequirementAssessmentStatus = {
   missing: 'missing',
   constraint: 'constraint',
 } as const;
-
-export interface CodeAssessmentMatch {
-  capabilityId: string;
-  capabilityName: string;
-  solutionId: string;
-  solutionName: string;
-  evidence: CodeCapabilityEvidence;
-  integration: string;
-}
 
 export interface CodeRequirementAssessment {
   id: string;
@@ -1675,54 +1808,6 @@ export interface SampleInput {
   /** True when labelled expected findings exist for objective scoring */
   hasExpected: boolean;
   noteCount: number;
-}
-
-export interface OutputItem {
-  id: string;
-  /** Stable across runs so A and B lines can be matched */
-  key: string;
-  kind: string;
-  text: string;
-  /** @nullable */
-  detail: string | null;
-  /** Capability id of the step that produced this line */
-  stepId: string;
-  refs: string[];
-}
-
-export interface OutputSection {
-  key: string;
-  title: string;
-  stepId: string;
-  items: OutputItem[];
-}
-
-export interface RunOutput {
-  headline: string;
-  sections: OutputSection[];
-}
-
-export type StepTraceStatus = typeof StepTraceStatus[keyof typeof StepTraceStatus];
-
-
-export const StepTraceStatus = {
-  ran: 'ran',
-  skipped: 'skipped',
-  error: 'error',
-} as const;
-
-export interface StepTrace {
-  stepId: string;
-  name: string;
-  stage: string;
-  status: StepTraceStatus;
-  inputSummary: string;
-  transformation: string;
-  outputSummary: string;
-  itemCount: number;
-  durationMs: number;
-  /** @nullable */
-  error: string | null;
 }
 
 export interface RunStats {

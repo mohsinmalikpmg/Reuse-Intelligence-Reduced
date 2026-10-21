@@ -20,6 +20,33 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /briefs/{briefId}/acceptance-checks:
+    parameters:
+      - { name: briefId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getAcceptanceChecks
+      responses:
+        "200":
+          description: Reviewable demo criteria and persisted execution history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcceptanceChecks" }
+    post:
+      operationId: runAcceptanceCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AcceptanceInput" }
+      responses:
+        "201":
+          description: Persisted deterministic demo execution
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcceptanceRun" }
+        "400": { description: Invalid selection or input }
+        "404": { description: Brief not found }
+        "409": { description: Assessment or indexed engine changed }
   /briefs/{briefId}/code-assessment:
     get:
       operationId: getCodeAssessment
@@ -1992,6 +2019,67 @@ components:
       schema:
         type: string
   schemas:
+    AcceptanceCriterion:
+      type: object
+      required: [id, requirement, assertion, capabilityIds, testable, reason]
+      properties:
+        id: { type: string }
+        requirement: { type: string }
+        assertion: { type: string }
+        capabilityIds: { type: array, items: { type: string } }
+        testable: { type: boolean }
+        reason: { type: string }
+    AcceptanceInput:
+      type: object
+      required: [planFingerprint, borrowedIds, reviewedCriterionIds, inputMode, inputText]
+      properties:
+        planFingerprint: { type: string }
+        borrowedIds: { type: array, maxItems: 30, uniqueItems: true, items: { type: string } }
+        reviewedCriterionIds: { type: array, maxItems: 100, uniqueItems: true, items: { type: string } }
+        inputMode: { type: string, enum: [fixture, supplied] }
+        inputText: { type: string, maxLength: 50000 }
+    AcceptanceResult:
+      type: object
+      required: [criterion, status, detail]
+      properties:
+        criterion: { $ref: "#/components/schemas/AcceptanceCriterion" }
+        status: { type: string, enum: [passed, failed, not_testable] }
+        detail: { type: string }
+    AcceptanceRun:
+      type: object
+      required: [id, briefId, createdAt, planFingerprint, packageId, packageFingerprint, engineFingerprint, configurationFingerprint, capabilityIds, configValues, borrowedIds, inputMode, inputText, inputFingerprint, results, output, trace, errors]
+      properties:
+        id: { type: string }
+        briefId: { type: string }
+        createdAt: { type: string }
+        planFingerprint: { type: string }
+        packageId: { type: string }
+        packageFingerprint: { type: string }
+        engineFingerprint: { type: string }
+        configurationFingerprint: { type: string }
+        capabilityIds: { type: array, items: { type: string } }
+        configValues: { type: object, additionalProperties: { type: string } }
+        borrowedIds: { type: array, items: { type: string } }
+        inputMode: { type: string, enum: [fixture, supplied] }
+        inputText: { type: string }
+        inputFingerprint: { type: string }
+        results: { type: array, items: { $ref: "#/components/schemas/AcceptanceResult" } }
+        output: { $ref: "#/components/schemas/RunOutput" }
+        trace: { type: array, items: { $ref: "#/components/schemas/StepTrace" } }
+        errors: { type: array, items: { type: string } }
+    AcceptanceChecks:
+      type: object
+      required: [planFingerprint, baseSolutionId, baseCapabilityIds, borrowedOptions, criteria, fixtureText, runs]
+      properties:
+        planFingerprint: { type: string }
+        baseSolutionId: { type: ["string", "null"] }
+        baseCapabilityIds: { type: array, items: { type: string } }
+        borrowedOptions:
+          type: array
+          items: { $ref: "#/components/schemas/CodeAssessmentMatch" }
+        criteria: { type: array, items: { $ref: "#/components/schemas/AcceptanceCriterion" } }
+        fixtureText: { type: string }
+        runs: { type: array, items: { $ref: "#/components/schemas/AcceptanceRun" } }
     CodeAssessment:
       type: object
       required: [briefId, package, bestSolutionId, candidates, requirements, limitations]

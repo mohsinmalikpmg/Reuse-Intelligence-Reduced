@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { db, briefsTable, casesTable, experimentsTable, decisionsTable } from "@workspace/db";
+import { db, briefsTable, casesTable, experimentsTable, decisionsTable, acceptanceRunsTable } from "@workspace/db";
 import type { BriefRow, CaseRow, ExperimentRow, DecisionRow } from "@workspace/db";
 import type { Brief, Case, CaseSummary, Decision, Experiment, Role, Solution, SyntheticPersona, ExperimentMetric, SegmentResult } from "@workspace/api-zod";
 import { businessProblemById, catalogSolutions, getCapability, getSolution, personas, solutions } from "../data/catalog";
@@ -294,6 +294,8 @@ export async function summarizeAll(cases: Case[]): Promise<CaseSummary[]> {
 }
 
 export async function clearAll(): Promise<void> {
+  // Reset removes supplied-input evidence before a seeded brief ID can be reused.
+  await db.delete(acceptanceRunsTable);
   await db.delete(decisionsTable);
   await db.delete(experimentsTable);
   await db.delete(casesTable);

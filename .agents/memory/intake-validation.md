@@ -26,3 +26,9 @@ The user chose the implemented demo solution as the first source-code-backed lib
 **Why:** The user explicitly selected this starting point to keep the work iterative.
 
 **How to apply:** Clearly scope coverage to the indexed local demo engine, not full enterprise integrations. Treat prohibitions such as “no automatic updates” as acceptance constraints to verify, never as missing features to build.
+
+Acceptance runs deliberately verify narrowly stated observable demo outputs, not semantic fulfillment of the original requirement. Unknown behaviors, partial integrations, and prohibitions remain untestable rather than inheriting a green result from nearby output.
+
+**Why:** A synthetic input can exercise a shared-engine element successfully while leaving the seeker's real requirement and production controls unproven. Treating these as equivalent would overstate the evidence.
+
+**How to apply:** Keep the reviewed assertion alongside the original requirement in saved evidence. Changing assertion semantics must change the acceptance-plan version/fingerprint, even if the displayed assertion text stays the same. Never execute indexed or uploaded archive contents as part of this local-engine validation.

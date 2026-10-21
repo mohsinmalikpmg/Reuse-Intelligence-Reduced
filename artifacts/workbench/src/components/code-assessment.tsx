@@ -5,6 +5,7 @@ import {
   type CodeCapabilityEvidence, type CodeRequirementAssessment, type LibraryCodePackage,
 } from "@workspace/api-client-react";
 import { Skel, Tag, btn } from "@/components/bits";
+import { AcceptanceChecks } from "./acceptance-checks";
 
 const labels = { covered: "Covered in demo base", borrow: "Borrow · integration proposed", partial: "Partial · build needed", missing: "Missing · investigate or build", constraint: "Constraint · validate" } as const;
 const scopeNote = "This shared package is a runnable deterministic demo workflow engine and reusable elements, not a set of full independent enterprise applications. Preview-only catalog entries without indexed code remain unverified.";
@@ -123,6 +124,7 @@ export function CodeAssessment({ briefId }: { briefId: string }) {
       </div>
       {report.limitations.length > 0 && <div className="card-soft p-5"><h3 className="font-semibold">Assessment limitations</h3><ul className="mt-2 list-disc pl-5 text-[14px]">{report.limitations.map((text, i) => <li key={i}>{text}</li>)}</ul></div>}
       <PackageMetadata pkg={report.package} />
+      <AcceptanceChecks briefId={briefId} />
     </section>
   );
 }
