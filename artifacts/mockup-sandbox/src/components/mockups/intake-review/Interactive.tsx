@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Reorder, useDragControls, useReducedMotion } from 'framer-motion';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, CheckCheck, ChevronRight, FileText, GitBranch, GripVertical, MessageSquare, Pencil, Plus, RotateCcw, Undo2, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, CheckCheck, ChevronRight, FileText, GitBranch, GripVertical, MessageSquare, Paperclip, Pencil, Plus, RotateCcw, ShieldCheck, Undo2, UploadCloud, X } from 'lucide-react';
 import './Interactive.css';
 
 type SourceId = 'problem' | 'prototype' | 'agent';
@@ -8,7 +8,7 @@ type ProfileKey = 'problem' | 'user' | 'scope' | 'outcome';
 type Field = { value: string; reviewed: boolean; changed: boolean };
 type Requirement = { id: string; text: string; sources: SourceId[]; reviewed: boolean; changed: boolean };
 type Capability = { id: SourceId; title: string; description: string; workflow: string; input: string; output: string; dependency: string; status: 'Described' | 'Inferred' | 'Needs clarification' | 'Confirmed'; changed: boolean; gap: string; carry: boolean };
-type Source = { id: SourceId; name: string; text: string; files: string[]; changed: boolean };
+type Source = { id: SourceId; name: string; text: string; files: string[]; changed: boolean; supplied?: boolean };
 type Model = { profile: Record<ProfileKey, Field>; requirements: Requirement[]; capabilities: Capability[]; sources: Source[]; orderReviewed: boolean; safety: string; agreed: boolean; confirmed: boolean };
 const labels: Record<ProfileKey, string> = { problem: 'Today · the problem', user: 'Who needs this', scope: 'In scope · and out', outcome: 'Better · the outcome' };
 const sourceLabels: Record<SourceId, string> = { problem: 'Business problem', prototype: 'Power Platform prototype', agent: 'Configured agent' };
@@ -89,28 +89,81 @@ function CapabilityCard({ item, onSave, onConfirm, onCarry }: { item: Capability
   </article>;
 }
 
-function SourceCard({ source, onSave }: { source: Source; onSave: (next: Source) => void }) {
+function SourceCard({ source, onSave, onDirty }: { source: Source; onSave: (next: Source) => void; onDirty: (dirty: boolean) => void }) {
   const [draft, setDraft] = useState(source.text);
   const [files, setFiles] = useState(source.files);
-  useEffect(() => { setDraft(source.text); setFiles(source.files); }, [source]);
-  const changed = draft !== source.text || files.join('|') !== source.files.join('|');
-  return <article className="fi-card fi-source"><div className="fi-source-top"><div><h3>{sourceLabels[source.id]}</h3><p className="fi-hint">{source.name}</p></div><span className="fi-label blue">{source.changed ? 'Manual refinement needed' : 'Demo source'}</span></div>
-    <details><summary>Inspect supplied material</summary><pre>{source.text || 'No text supplied.'}</pre></details>
-    <label className="fi-input-label" htmlFor={`source-${source.id}`}>{source.id === 'problem' ? 'Business problem in your own words' : source.id === 'prototype' ? 'Schema, workflow, output and README / code excerpts' : 'System prompt and example input / output'}</label>
-    <textarea id={`source-${source.id}`} className="fi-input" rows={5} value={draft} onChange={e => setDraft(e.target.value)} />
-    {source.id === 'agent' && <p className="fi-hint">Copilot Studio or ChatGPT Work configuration. Include tools, knowledge and dependencies.</p>}
-    <label className="fi-input-label" htmlFor={`files-${source.id}`}>Attach supporting material · local names only</label><input id={`files-${source.id}`} type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.png,.jpg,.jpeg,.zip,.tsx,.js,.py" onChange={e => { setFiles([...files, ...Array.from(e.target.files ?? []).map(f => f.name)]); e.target.value = ''; }} />
-    <p className="fi-hint">Screenshots, schemas and code are not read or uploaded in this prototype. Describe their relevant details above.</p>
-    {files.map((f, i) => <div className="fi-source-mini" key={`${f}-${i}`}><span><FileText />{f}</span><button className="fi-icon" aria-label={`Remove ${f}`} onClick={() => setFiles(files.filter((_, index) => index !== i))}><X /></button></div>)}
-    <div className="fi-actions"><button className="fi-btn" disabled={!changed} onClick={() => onSave({ ...source, text: draft, files, changed: true })}>Save source changes</button></div>
+  const [name, setName] = useState(source.name);
+  const [over, setOver] = useState(false);
+  const [error, setError] = useState('');
+  const [reading, setReading] = useState(false);
+  const [permission, setPermission] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { setDraft(source.text); setFiles(source.files); setName(source.name); setPermission(false); }, [source]);
+  const changed = draft !== source.text || files.join('|') !== source.files.join('|') || name !== source.name;
+  const dirtyCallback = useRef(onDirty);
+  dirtyCallback.current = onDirty;
+  useEffect(() => { dirtyCallback.current(changed); }, [changed]);
+  const accept = async (incoming: File[]) => {
+    setError('');
+    setReading(true);
+    const errors: string[] = [];
+    const entries: string[] = [];
+    const excerpts: string[] = [];
+    for (const file of incoming) {
+      if (file.size > 2 * 1024 * 1024) { errors.push(`${file.name}: larger than the 2 MB local-preview limit.`); continue; }
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+      if (!['txt', 'md', 'csv', 'json', 'pdf', 'png', 'jpg', 'jpeg', 'zip', 'tsx', 'ts', 'js', 'py'].includes(ext)) { errors.push(`${file.name}: unsupported format. Paste the relevant text instead.`); continue; }
+      if (['txt', 'md', 'csv', 'json', 'tsx', 'ts', 'js', 'py'].includes(ext)) {
+        try {
+          const text = await file.text();
+          if (text.includes('\0')) { errors.push(`${file.name}: could not read as plain text.`); continue; }
+          excerpts.push(`\n\n--- Supplied file: ${file.name} ---\n${text}`);
+          entries.push(`${file.name} · text read locally`);
+        } catch { errors.push(`${file.name}: could not read. Please try again or paste its contents.`); }
+      } else entries.push(`${file.name} · reference only; contents not read`);
+    }
+    setDraft(d => d + excerpts.join(''));
+    setFiles(f => [...new Set([...f, ...entries])]);
+    setError(errors.join(' '));
+    setPermission(false);
+    setReading(false);
+  };
+  const isProblem = source.id === 'problem';
+  const guidance = isProblem ? 'Who is affected? What happens today? What would better look like? What must not change?' : source.id === 'prototype' ? 'What does it do, step by step? Include its data schema, a worked example, and anything it depends on.' : 'Paste its instructions, tools and knowledge sources. Include one example of what you asked and what it returned.';
+  return <article className="fi-card fi-source fi-collection-card">
+    <div className="fi-source-top"><div><p className="fi-input-kicker">{isProblem ? '01 / THE NEED' : source.id === 'prototype' ? '02 / THE SOLUTION' : '03 / THE AGENT'}</p><h3>{isProblem ? 'Tell us what needs to change.' : source.id === 'prototype' ? 'Show us what you’ve built.' : 'Bring the instructions behind the agent.'}</h3></div><span className="fi-label blue">{source.changed ? 'Changed source' : source.supplied ? 'Supplied material' : 'Sample material'}</span></div>
+    <p className="fi-input-guidance">{guidance}</p>
+    <label className="fi-input-label" htmlFor={`name-${source.id}`}>Give this input a name</label>
+    <input id={`name-${source.id}`} className="fi-input" value={name} onChange={e => setName(e.target.value)} />
+    <div className="fi-editor-label"><label className="fi-input-label" htmlFor={`source-${source.id}`}>{isProblem ? 'Describe it in your own words' : source.id === 'prototype' ? 'Description, README or schema' : 'Instructions and example input / output'}</label><span>Paste or write</span></div>
+    <textarea id={`source-${source.id}`} className="fi-input fi-source-text" rows={isProblem ? 6 : 8} value={draft} onChange={e => { setDraft(e.target.value); setPermission(false); }} />
+    <div className="fi-source-prompts"><strong>Helpful to include</strong>{(isProblem ? ['People & context', 'Today’s process', 'Desired outcome', 'Constraints'] : source.id === 'prototype' ? ['Workflow', 'Input → output', 'Data model', 'Dependencies'] : ['System prompt', 'Tools & knowledge', 'Example conversation', 'Dependencies']).map(t => <span key={t}>{t}</span>)}</div>
+    <div className={`fi-dropzone ${over ? 'over' : ''}`} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={e => { e.preventDefault(); setOver(false); void accept(Array.from(e.dataTransfer.files)); }}>
+      <UploadCloud /><div><strong>{reading ? 'Reading local text…' : 'Drop supporting files here'}</strong><p>or <button className="fi-link" disabled={reading} onClick={() => fileRef.current?.click()}>choose files</button> · up to 2 MB each</p></div>
+      <input ref={fileRef} className="fi-file-input" id={`files-${source.id}`} aria-label={`Choose files for ${sourceLabels[source.id]}`} type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.png,.jpg,.jpeg,.zip,.tsx,.ts,.js,.py" disabled={reading} onChange={e => { void accept(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
+    </div>
+    <p className="fi-hint">Text and code files are read into the box above, in this browser only. PDFs, images and ZIPs are listed as references only; describe their contents in text. Nothing is uploaded or interpreted.</p>
+    {error && <p className="fi-file-error" role="alert">{error} You can retry using “choose files”.</p>}
+    {files.map((f, i) => <div className="fi-attached" key={`${f}-${i}`}><Paperclip /><span>{f}</span><button className="fi-icon" aria-label={`Remove ${f}`} onClick={() => setFiles(files.filter((_, index) => index !== i))}><X /></button></div>)}
+    {changed && <label className="fi-check fi-permission"><input type="checkbox" checked={permission} onChange={e => setPermission(e.target.checked)} />I have removed credentials, personal information and restricted data from this material.</label>}
+    <div className="fi-source-save"><span>{changed ? 'Unsaved changes · this preview does not extract meaning' : source.supplied ? 'Kept in this session only · not saved after refresh' : 'Illustrative example loaded · replace any text to try it'}</span><button className="fi-btn primary" disabled={!changed || !permission || !draft.trim() || !name.trim() || reading} onClick={() => onSave({ ...source, name: name.trim(), text: draft.trim(), files, changed: true, supplied: true })}><Check />Keep this input</button></div>
   </article>;
 }
 
 export default function Interactive() {
   const [model, setModel] = useState<Model>(makeDemo);
-  const [stage, setStage] = useState<'inputs' | 'review' | 'confirm'>('review');
+  const [stage, setStageState] = useState<'inputs' | 'review' | 'confirm'>('inputs');
+  const dirtyInputs = useRef<Partial<Record<SourceId, boolean>>>({});
+  const setStage = (next: 'inputs' | 'review' | 'confirm') => {
+    if (stage === 'inputs' && next !== 'inputs' && Object.values(dirtyInputs.current).some(Boolean)) {
+      setNotice('Keep your changed inputs before leaving this step. Unsaved drafts are preserved when switching input types.');
+      return;
+    }
+    setStageState(next);
+  };
+  const [inputType, setInputType] = useState<SourceId>('problem');
   const [tab, setTab] = useState<'priorities' | 'profile' | 'capabilities'>('priorities');
-  const [notice, setNotice] = useState('Demo ready. Start by putting the most important need first.');
+  const [notice, setNotice] = useState('Sample intake loaded. Bring any combination of a need, prototype or agent; no files leave this browser.');
   const [extra, setExtra] = useState('');
   const [answer, setAnswer] = useState('');
   const [customAnswer, setCustomAnswer] = useState('');
@@ -167,8 +220,14 @@ export default function Interactive() {
       <nav className="fi-steps" aria-label="Intake stages">{([['inputs', '01', 'Bring your inputs'], ['review', '02', 'Review & refine'], ['confirm', '03', 'Agree on the profile']] as const).map(([key, n, text]) => <button key={key} aria-current={stage === key ? 'step' : undefined} className={stage === key ? 'active' : ''} onClick={() => setStage(key)}><b>{n}</b>{text}{(key === 'inputs' && sourcesReady || key === 'confirm' && model.confirmed) && <Check />}</button>)}</nav>
 
       <div className="fi-layout"><div className="fi-main">
-        {stage === 'inputs' ? <section><div className="fi-section-head"><h2>What we’re working from</h2><span className="fi-label warm">No AI or file extraction</span></div><p className="fi-sub">Demo material below is illustrative. Any new content stays exactly as supplied; refine its interpretation yourself.</p>
-          {model.sources.map(s => <SourceCard key={s.id} source={s} onSave={updateSource} />)}
+        {stage === 'inputs' ? <section>
+          <div className="fi-section-head"><h2>What are you bringing?</h2><span className="fi-label blue">Mix and match</span></div><p className="fi-sub">Start anywhere. You don’t need a prototype, or all the answers, to describe a need.</p>
+          <div className="fi-input-types" role="tablist" aria-label="Input type">
+            {(['problem', 'prototype', 'agent'] as const).map(id => { const Icon = id === 'problem' ? MessageSquare : id === 'prototype' ? FileText : GitBranch; return <button key={id} id={`input-tab-${id}`} role="tab" aria-selected={inputType === id} aria-controls="input-panel" tabIndex={inputType === id ? 0 : -1} className={inputType === id ? 'active' : ''} onClick={() => setInputType(id)} onKeyDown={e => { const types: SourceId[] = ['problem', 'prototype', 'agent']; if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const next = types[(types.indexOf(id) + (e.key === 'ArrowRight' ? 1 : 2)) % 3]; setInputType(next); document.getElementById(`input-tab-${next}`)?.focus(); } }}><Icon /><strong>{id === 'problem' ? 'A business need' : id === 'prototype' ? 'A prototype / solution' : 'A configured agent'}</strong><small>{id === 'problem' ? 'The problem & context' : id === 'prototype' ? 'What you’ve already built' : 'Instructions & examples'}</small></button>; })}
+          </div>
+          <div id="input-panel" role="tabpanel" aria-labelledby={`input-tab-${inputType}`}>
+          {model.sources.map(source => <div key={source.id} hidden={inputType !== source.id}><SourceCard source={source} onSave={updateSource} onDirty={dirty => { dirtyInputs.current[source.id] = dirty; }} /></div>)}
+          </div>
           {!sourcesReady && <div className="fi-warning"><strong>Source changes are waiting for your interpretation.</strong><p>We have kept your previous edits, not replaced them with guesses. Review highlighted needs and descriptions against your supplied text. Confirming the source check below does not approve those interpretations.</p><button className="fi-btn" onClick={() => commit({ ...model, sources: model.sources.map(s => ({ ...s, changed: false })) }, 'Source changes acknowledged. Affected items still need explicit review and confirmation.')}>I understand — I’ll refine the highlighted items</button></div>}
           <div className="fi-actions"><button className="fi-btn primary" onClick={() => { setStage('review'); setTab('profile'); }}>Review the understanding<ArrowRight /></button></div>
         </section> : stage === 'review' ? <>
@@ -199,16 +258,20 @@ export default function Interactive() {
       </div>
 
       <aside className="fi-aside">
-        <section className="fi-question"><p className="fi-aside-title">One thing to clarify</p><h3>What should happen when a safety concern appears?</h3><p>A flag and an instruction are different needs. Let’s make the boundary explicit.</p>
+        {stage === 'inputs' ? <>
+          <section className="fi-input-aside"><p className="fi-aside-title">YOUR INTAKE PACKET</p><h3>A little context goes a long way.</h3><p>You can add to this packet as the conversation develops.</p><ol>{model.sources.map(s => <li key={s.id}><button onClick={() => setInputType(s.id)}><span className="fi-packet-icon">{s.id === 'problem' ? <MessageSquare /> : s.id === 'prototype' ? <FileText /> : <GitBranch />}</span><span><strong>{s.name}</strong><small>{s.changed ? 'Your changes · needs re-review' : 'Illustrative sample'} · {s.files.length} {s.files.length === 1 ? 'file' : 'files'}</small></span><ChevronRight /></button></li>)}</ol></section>
+          <section className="fi-aside-card fi-expectations"><h3>What happens next?</h3><p><b>1</b> Read needs and capabilities separately.</p><p><b>2</b> Bring them into one shared profile.</p><p><b>3</b> Correct the details and rank priorities together.</p><span className="fi-label warm">Demo review · not automatic extraction</span></section>
+          <section className="fi-privacy"><ShieldCheck /><div><h3>Only share what’s safe.</h3><p>Use sanitized examples. Remove secrets, credentials and restricted data. This preview reads text locally; attachments are not uploaded or saved after a refresh.</p></div></section>
+        </> : <section className="fi-question"><p className="fi-aside-title">One thing to clarify</p><h3>What should happen when a safety concern appears?</h3><p>A flag and an instruction are different needs. Let’s make the boundary explicit.</p>
           <label><input type="radio" name="safety" checked={answer === 'flag'} onChange={() => setAnswer('flag')} />Flag it for a supervisor. Don’t issue instructions.</label>
           <label><input type="radio" name="safety" checked={answer === 'exclude'} onChange={() => setAnswer('exclude')} />Keep safety-risk assessment out of scope.</label>
           <label><input type="radio" name="safety" checked={answer === 'other'} onChange={() => setAnswer('other')} />Let me describe the boundary.</label>
           {answer === 'other' && <textarea aria-label="Describe the safety boundary" className="fi-input" style={{ marginTop: 10 }} rows={3} value={customAnswer} onChange={e => setCustomAnswer(e.target.value)} />}
           <button className="fi-btn" disabled={!answer || answer === 'other' && !customAnswer.trim()} onClick={() => { applyAnswer(); setStage('review'); }}>Apply & review changes<ArrowRight /></button>
           {model.safety && <p className="fi-hint" style={{ marginTop: 12 }}>Current answer: {model.safety}</p>}
-        </section>
-        <section className="fi-aside-card"><h3>Three inputs. One understanding.</h3><p>Needs stay separate from implementation choices. Their provenance stays attached.</p>{model.sources.map(s => <div className="fi-source-mini" key={s.id}><span>{s.id === 'problem' ? <MessageSquare /> : s.id === 'prototype' ? <FileText /> : <GitBranch />}{s.id === 'problem' ? 'Problem statement' : s.id === 'prototype' ? 'Power Apps prototype' : 'Copilot Studio agent'}</span>{s.changed ? <span style={{ color: '#a45632' }}>Changed</span> : <Check />}</div>)}<button className="fi-link" onClick={() => setStage('inputs')}>Inspect or change inputs</button><div className="fi-mini-flow"><span>Needs</span><Plus /><span>Capabilities</span><ChevronRight /><span>Profile</span></div></section>
-        <p className="fi-demo">ILLUSTRATIVE DEMO<br />No AI interpretation, upload, persistence or execution. Supplied text is never automatically extracted. Review confirms meaning — not performance.</p>
+        </section>}
+        {stage !== 'inputs' && <section className="fi-aside-card"><h3>Three inputs. One understanding.</h3><p>Needs stay separate from implementation choices. Their provenance stays attached.</p>{model.sources.map(s => <div className="fi-source-mini" key={s.id}><span>{s.id === 'problem' ? <MessageSquare /> : s.id === 'prototype' ? <FileText /> : <GitBranch />}{s.id === 'problem' ? 'Problem statement' : s.id === 'prototype' ? 'Power Apps prototype' : 'Copilot Studio agent'}</span>{s.changed ? <span style={{ color: '#a45632' }}>Changed</span> : <Check />}</div>)}<button className="fi-link" onClick={() => setStage('inputs')}>Inspect or change inputs</button><div className="fi-mini-flow"><span>Needs</span><Plus /><span>Capabilities</span><ChevronRight /><span>Profile</span></div></section>}
+        <p className="fi-demo">ILLUSTRATIVE DEMO<br />No AI interpretation, upload, persistence or execution. Text files can be read locally; their meaning is never automatically extracted. Review confirms meaning — not performance.</p>
       </aside></div>
       <footer className="fi-bottom"><div><strong>{model.confirmed ? 'Shared understanding confirmed' : `${reviewedCount} of ${total} interpretations reviewed`}</strong><small>{model.orderReviewed ? 'Priority order agreed' : 'Priority order needs agreement'} · {gaps.filter(c => c.carry).length} open gaps acknowledged</small></div><div className="fi-bottom-actions">{stage === 'confirm' ? <button className="fi-btn" onClick={() => setStage('review')}><ArrowLeft />Back to review</button> : <><button className="fi-btn" onClick={() => { if (stage === 'inputs') setStage('review'); else { setStage('review'); setTab(tab === 'priorities' ? 'profile' : tab === 'profile' ? 'capabilities' : 'priorities'); } }}>{stage === 'inputs' ? 'Return to review' : tab === 'priorities' ? 'Review the profile' : tab === 'profile' ? 'Review capabilities' : 'Review needs'}<ArrowRight /></button><button className="fi-btn primary" onClick={() => setStage('confirm')}>Review final agreement<ArrowRight /></button></>}</div></footer>
       <div className="fi-feedback" role="status" aria-live="polite"><span>{notice}</span><button className="fi-icon" disabled={!historyCount} onClick={undo} aria-label="Undo last change"><Undo2 /></button><button className="fi-link" onClick={() => { if (window.confirm('Reset all local edits and return to the maintenance demo?')) { history.current.push(structuredClone(model)); setHistoryCount(history.current.length); setModel(makeDemo()); setStage('review'); setTab('priorities'); setAnswer(''); setCustomAnswer(''); setNotice('Maintenance demo reset. Undo can restore your previous profile.'); } }}><RotateCcw style={{ display: 'inline', width: 12, height: 12, marginRight: 4 }} />Reset demo</button></div>
