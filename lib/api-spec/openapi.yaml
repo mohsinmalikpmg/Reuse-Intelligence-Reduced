@@ -1324,21 +1324,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Portfolio"
 
-  /portfolio/decision-queue:
-    get:
-      operationId: getDecisionQueue
-      tags: [portfolio]
-      summary: Cases awaiting an IT decision
-      responses:
-        "200":
-          description: Queue
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/CaseSummary"
-
   /reuse-check:
     post:
       operationId: reuseCheck
@@ -2102,7 +2087,8 @@ components:
 
     ReusePathTaken:
       type: string
-      enum: [use, improve, create, dismissed]
+      enum: [use, improve, create, dismissed, explored]
+      description: use/improve/create = a path actually taken (capability tried or improved, experiment started); explored = the person only opened a page; dismissed = closed without a choice
 
     ReuseOptionKind:
       type: string
@@ -3356,117 +3342,72 @@ components:
 
     PortfolioMetric:
       type: object
-      required: [key, label, value, numerator, denominator, definition, demo]
+      required: [key, question, label, value, numerator, denominator, definition, demo]
       properties:
         key: { type: string }
+        question: { type: string, description: The IT leader's question this metric answers }
         label: { type: string }
-        value: { type: string }
+        value: { type: string, description: Plain reading of the metric, or "No data yet" when nothing has been recorded }
         numerator: { type: ["number", "null"] }
         denominator: { type: ["number", "null"] }
-        definition: { type: string }
-        demo: { type: boolean, description: True when the number comes from seeded demonstration data }
+        definition: { type: string, description: What is counted in the numerator and the denominator }
+        demo: { type: boolean, description: True when the number includes seeded demonstration data }
 
     PortfolioMetrics:
       type: object
-      required: [searchToReuse, duplicateGroups, consolidationsCompleted, abTestsWithPreference, activeVsRetired, needsAttention]
+      required: [reuseBeforeBuild, capabilityAcceptance, improvementsFolded, variantsPerFamily, duplicateAfterBuild, timeToFirstTest]
       properties:
-        searchToReuse: { $ref: "#/components/schemas/PortfolioMetric" }
-        duplicateGroups: { $ref: "#/components/schemas/PortfolioMetric" }
-        consolidationsCompleted: { $ref: "#/components/schemas/PortfolioMetric" }
-        abTestsWithPreference: { $ref: "#/components/schemas/PortfolioMetric" }
-        activeVsRetired: { $ref: "#/components/schemas/PortfolioMetric" }
-        needsAttention: { $ref: "#/components/schemas/PortfolioMetric" }
+        reuseBeforeBuild: { $ref: "#/components/schemas/PortfolioMetric" }
+        capabilityAcceptance: { $ref: "#/components/schemas/PortfolioMetric" }
+        improvementsFolded: { $ref: "#/components/schemas/PortfolioMetric" }
+        variantsPerFamily: { $ref: "#/components/schemas/PortfolioMetric" }
+        duplicateAfterBuild: { $ref: "#/components/schemas/PortfolioMetric" }
+        timeToFirstTest: { $ref: "#/components/schemas/PortfolioMetric" }
 
-    PortfolioRow:
-      type: object
-      required: [businessProblem, solutions, activeSolutions, recommendedAction, status, caseId]
-      properties:
-        businessProblem: { $ref: "#/components/schemas/BusinessProblem" }
-        solutions:
-          type: array
-          items: { $ref: "#/components/schemas/Solution" }
-        activeSolutions: { type: integer }
-        recommendedAction: { type: string }
-        status: { type: string }
-        caseId: { type: ["string", "null"] }
+    QueueItemKind:
+      type: string
+      enum: [consolidation_approval, unowned_product, migration_pending, new_family_request]
 
-    EvidenceEvent:
+    QueueItem:
       type: object
-      required: [at, actor, event]
+      required: [id, kind, title, detail, usage, actionLabel, caseId, solutionId, demo]
       properties:
-        at: { type: string }
+        id: { type: string }
+        kind: { $ref: "#/components/schemas/QueueItemKind" }
+        title: { type: string }
+        detail: { type: string, description: Why IT is needed, in one sentence; includes the requester's reason for a new-family request }
+        usage: { type: ["string", "null"], description: Usage context such as "120 users"; never decides the recommendation }
+        actionLabel: { type: string, description: The one primary action for this row }
+        caseId: { type: ["string", "null"], description: The consolidation case the action opens, if any }
+        solutionId: { type: ["string", "null"] }
+        demo: { type: boolean }
+
+    RedirectEvent:
+      type: object
+      required: [id, actor, need, outcome, at, demo]
+      properties:
+        id: { type: string }
         actor: { type: string }
-        event: { type: string }
-
-    ConsolidationSummary:
-      type: object
-      required:
-        - case
-        - baseSolution
-        - overlappingSolutions
-        - reusableCapabilities
-        - retirementCandidate
-        - ownerName
-        - architectureStatus
-        - controlStatus
-        - duplicationReductionPct
-        - migrationEffort
-        - evidenceTrail
-        - valueStatement
-        - experimentRecommendation
-      properties:
-        case: { $ref: "#/components/schemas/Case" }
-        baseSolution: { $ref: "#/components/schemas/Solution" }
-        overlappingSolutions:
-          type: array
-          items: { $ref: "#/components/schemas/Solution" }
-        reusableCapabilities:
-          type: array
-          items: { $ref: "#/components/schemas/Capability" }
-        retirementCandidate:
-          oneOf:
-            - $ref: "#/components/schemas/Solution"
-            - type: "null"
-        ownerName: { type: string }
-        architectureStatus: { type: string }
-        controlStatus: { type: string }
-        duplicationReductionPct: { type: number }
-        migrationEffort: { type: string }
-        evidenceTrail:
-          type: array
-          items: { $ref: "#/components/schemas/EvidenceEvent" }
-        valueStatement: { type: string }
-        experimentRecommendation:
-          oneOf:
-            - $ref: "#/components/schemas/ExperimentRecommendation"
-            - type: "null"
+        need: { type: string }
+        outcome: { type: string, description: e.g. tried Safety Signals instead of building }
+        at: { type: string }
+        demo: { type: boolean }
 
     Portfolio:
       type: object
-      required: [headline, valueStatement, metrics, rows, consolidationCases, unsupportedSolutions, duplicateCapabilities]
+      required: [headline, valueStatement, metrics, queue, redirects]
       properties:
         headline: { type: string }
         valueStatement: { type: string }
         metrics: { $ref: "#/components/schemas/PortfolioMetrics" }
-        rows:
+        queue:
           type: array
-          items: { $ref: "#/components/schemas/PortfolioRow" }
-        consolidationCases:
+          description: Only items that need IT intervention; routine experiments never appear
+          items: { $ref: "#/components/schemas/QueueItem" }
+        redirects:
           type: array
-          items: { $ref: "#/components/schemas/ConsolidationSummary" }
-        unsupportedSolutions:
-          type: array
-          items: { $ref: "#/components/schemas/Solution" }
-        duplicateCapabilities:
-          type: array
-          items:
-            type: object
-            required: [category, capabilities]
-            properties:
-              category: { type: string }
-              capabilities:
-                type: array
-                items: { $ref: "#/components/schemas/Capability" }
+          description: Recent reuse checks where a person used or improved an existing capability instead of building
+          items: { $ref: "#/components/schemas/RedirectEvent" }
 
     SeekerOverview:
       type: object

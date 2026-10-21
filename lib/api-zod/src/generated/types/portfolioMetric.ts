@@ -8,13 +8,17 @@
 
 export interface PortfolioMetric {
   key: string;
+  /** The IT leader's question this metric answers */
+  question: string;
   label: string;
+  /** Plain reading of the metric */
   value: string;
   /** @nullable */
   numerator: number | null;
   /** @nullable */
   denominator: number | null;
+  /** What is counted in the numerator and the denominator */
   definition: string;
-  /** True when the number comes from seeded demonstration data */
+  /** True when the number includes seeded demonstration data */
   demo: boolean;
 }

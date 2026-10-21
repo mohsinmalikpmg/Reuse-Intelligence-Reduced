@@ -8,6 +8,8 @@ import { matchBrief } from "./matching";
 import { nextStatus } from "./analysis";
 import { logger } from "./logger";
 import { clearGovernance } from "./governance";
+import { eq } from "drizzle-orm";
+import { casesTable, decisionsTable, evaluationsTable, runsTable } from "@workspace/db";
 import { briefsTable, clearAll, createCase, db, getCase, insertDecision, newId, toBrief, updateCaseRow } from "./store";
 import { runComparison } from "./workbench";
 import { clearWorkbench, insertEvaluation } from "./workbench-store";
@@ -93,8 +95,25 @@ export async function resetDemo(): Promise<DemoState> {
   await insertDecision({ id: newId("dec"), caseId: tested.id, role: "seeker", actor: "Alex Romero", action: "propose_pilot", reason: null });
   await updateCaseRow(tested.id, { status: nextStatus(tested, "propose_pilot") });
 
+  // The seeded experiments happened over the past weeks, not at the instant of the reset, so durations such as
+  // "time to first useful test" read from the same timeline as the seeded reuse checks.
+  await backdate(DEMO_CASE_ID, 21, null);
+  await backdate(PROCEDURE_CASE_ID, 12, 11);
+  await backdate(DEMO_EXPERIMENT_IDS.marcus, 9, 8);
+  await backdate(DEMO_EXPERIMENT_IDS.lena, 6, 5.9);
+
   logger.info("Demo scenario reset");
   return demoState();
+}
+
+/** Move a seeded case into the past: opened `openedDaysAgo` days ago; its runs, votes and decisions `testedDaysAgo` days ago. */
+async function backdate(caseId: string, openedDaysAgo: number, testedDaysAgo: number | null): Promise<void> {
+  const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
+  await db.update(casesTable).set({ createdAt: daysAgo(openedDaysAgo) }).where(eq(casesTable.id, caseId));
+  if (testedDaysAgo === null) return;
+  await db.update(runsTable).set({ createdAt: daysAgo(testedDaysAgo) }).where(eq(runsTable.caseId, caseId));
+  await db.update(evaluationsTable).set({ createdAt: daysAgo(testedDaysAgo) }).where(eq(evaluationsTable.caseId, caseId));
+  await db.update(decisionsTable).set({ createdAt: daysAgo(testedDaysAgo - 0.1) }).where(eq(decisionsTable.caseId, caseId));
 }
 
 export const DEMO_EXPERIMENT_IDS = { marcus: "case_demo_safety_marcus", lena: "case_demo_safety_lena" } as const;

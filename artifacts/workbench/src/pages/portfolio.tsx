@@ -1,190 +1,137 @@
 import { useState } from "react";
-import { Link } from "wouter";
-import { ArrowRight, Check, ChevronDown, Info, Undo2 } from "lucide-react";
-import {
-  getGetCaseConsolidationQueryKey, useGetCaseConsolidation, useGetPortfolio, useRecordCaseDecision, useRecordMigrationNote, useSetCaseDispositions,
-  type ConsolidationSolution, type ConsolidationSolutionFate, type DispositionKind, type PortfolioMetric, type PortfolioMetrics,
-} from "@workspace/api-client-react";
-import { DSection, DispositionBadge, Drawer, ErrorView, Headline, LoadingView, Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
-import { errMsg, useInvalidateCase } from "@/lib/case";
-import { useRole } from "@/lib/persona";
+import { Link, useSearch } from "wouter";
+import { ArrowRight, ChevronDown, X } from "lucide-react";
+import { useGetPortfolio, type PortfolioMetric, type PortfolioMetrics, type QueueItem, type RedirectEvent } from "@workspace/api-client-react";
+import { ErrorView, Headline, LoadingView, Page, Tag, btn } from "@/components/bits";
+import { Consolidation } from "@/components/consolidation";
 import { cn } from "@/lib/utils";
 
-const ORDER: (keyof PortfolioMetrics)[] = ["searchToReuse", "duplicateGroups", "consolidationsCompleted", "abTestsWithPreference", "activeVsRetired", "needsAttention"];
-/** IT's disposition controls, in the order shown; each persists to the case record. */
-const DISPOSITIONS: { kind: DispositionKind; label: string }[] = [
-  { kind: "retain", label: "Retain" }, { kind: "fold_into", label: "Reuse capability" }, { kind: "configure", label: "Configure" }, { kind: "rebuild", label: "Rebuild" }, { kind: "retire", label: "Retire" },
-];
-const DEFAULT: Record<ConsolidationSolutionFate, DispositionKind> = { base: "retain", folded: "fold_into", retired: "retire" };
-const kindLabel = (k: DispositionKind) => DISPOSITIONS.find((d) => d.kind === k)?.label ?? k;
-/** The control to show for a product: its recorded disposition, else the computed default. */
-const kindOf = (c: ConsolidationSolution): DispositionKind => c.disposition?.kind ?? DEFAULT[c.fate];
+/** The four questions, in the order the IT leader asks them, then the two failure measures. */
+const QUESTIONS: (keyof PortfolioMetrics)[] = ["reuseBeforeBuild", "capabilityAcceptance", "improvementsFolded", "variantsPerFamily"];
+const FAILURES: (keyof PortfolioMetrics)[] = ["duplicateAfterBuild", "timeToFirstTest"];
 
 export default function Portfolio() {
   const q = useGetPortfolio();
+  // A consolidation record opened from a product's version history; it is not a queue item, so it is shown on request only.
+  const requested = new URLSearchParams(useSearch()).get("case");
+  const [touched, setTouched] = useState<string | null | undefined>(undefined);
+  // The row the person is working in stays on the page after their decision resolves it, until they close it.
+  const [pinned, setPinned] = useState<QueueItem | null>(null);
   if (q.isLoading) return <LoadingView />;
   if (q.isError || !q.data) return <ErrorView onRetry={() => q.refetch()} message="The portfolio could not load." />;
   const p = q.data;
+  const record: QueueItem | null = requested && !p.queue.some((i) => i.caseId === requested)
+    ? { id: `record-${requested}`, kind: "consolidation_approval", title: "Consolidation record", detail: "Opened from the product's version history. Published decisions can be withdrawn here.", usage: null, actionLabel: "Open record", caseId: requested, solutionId: null, demo: false }
+    : null;
+  const live = record ? [record, ...p.queue] : p.queue;
+  const queue = pinned && !live.some((i) => i.id === pinned.id) ? [pinned, ...live] : live;
+  // Until the person opens or closes a row, the requested case's row (if any) is the open one.
+  const open = touched === undefined ? (queue.find((i) => i.caseId === requested)?.id ?? null) : touched;
+  const setOpen = (id: string | null) => { setTouched(id); setPinned(id ? (queue.find((i) => i.id === id) ?? null) : null); };
   return (
     <Page>
       <Headline eyebrow="IT portfolio" title={p.headline} sub={p.valueStatement} />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{ORDER.map((k) => <Metric key={k} m={p.metrics[k]} />)}</div>
-      <h2 className="mb-3 mt-12 text-[22px] font-semibold">Consolidation</h2>
-      {p.consolidationCases.length === 0 ? <p className="text-muted-foreground">No consolidation cases are open.</p> :
-        <div className="space-y-6">{p.consolidationCases.map((c) => <Consolidation key={c.case.id} caseId={c.case.id} />)}</div>}
+      <div className="grid gap-3 sm:grid-cols-2" data-testid="section-questions">{QUESTIONS.map((k) => <Metric key={k} m={p.metrics[k]} question />)}</div>
+
+      <h2 className="mb-1 mt-10 text-[22px] font-semibold">Where it still fails</h2>
+      <p className="mb-3 text-[14px] text-muted-foreground">Two measures of effort that reuse did not prevent.</p>
+      <div className="grid gap-3 sm:grid-cols-2" data-testid="section-failures">{FAILURES.map((k) => <Metric key={k} m={p.metrics[k]} />)}</div>
+
+      <h2 className="mb-1 mt-10 text-[22px] font-semibold">Needs your decision</h2>
+      <p className="mb-3 text-[14px] text-muted-foreground">Only what IT has to act on. Experiments and seeker activity stay with their owners.</p>
+      {queue.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-input px-5 py-6 text-[14.5px] text-muted-foreground" data-testid="queue-empty">Nothing needs an IT decision right now.</p>
+      ) : (
+        <ol className="space-y-2" data-testid="queue">
+          {queue.map((item) => <QueueRow key={item.id} item={item} open={open === item.id} settled={!live.some((i) => i.id === item.id)} onToggle={() => setOpen(open === item.id ? null : item.id)} />)}
+        </ol>
+      )}
+
+      <h2 className="mb-1 mt-10 text-[22px] font-semibold">Redirected before build</h2>
+      <p className="mb-3 text-[14px] text-muted-foreground">Reuse checks where a person used or improved existing work instead of starting a build.</p>
+      {p.redirects.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-input px-5 py-6 text-[14.5px] text-muted-foreground" data-testid="redirects-empty">No reuse checks have been recorded yet.</p>
+      ) : (
+        <ul className="divide-y divide-border rounded-xl border border-border bg-card" data-testid="redirects">{p.redirects.map((r) => <Redirect key={r.id} r={r} />)}</ul>
+      )}
     </Page>
   );
 }
 
-function Metric({ m }: { m: PortfolioMetric }) {
+function Metric({ m, question = false }: { m: PortfolioMetric; question?: boolean }) {
   const [open, setOpen] = useState(false);
+  const noData = m.numerator === null && m.denominator === null;
+  const ratio = m.numerator !== null && m.denominator !== null && m.denominator > 0 ? `${Math.round((m.numerator / m.denominator) * 100)}%` : null;
   return (
     <div className="card-soft p-5" data-testid={`metric-${m.key}`}>
-      <div className="flex items-start gap-2"><span className="flex-1 text-[14px] text-muted-foreground">{m.label}</span>{m.demo && <Tag tone="sienna" testid={`tag-demo-${m.key}`}>demo data</Tag>}</div>
-      <div className="mt-1 text-[30px] font-bold text-primary" data-testid={`value-${m.key}`}>{m.value}</div>
-      {m.numerator !== null && m.denominator !== null && m.denominator > 0 && <div className="text-[13px] text-muted-foreground">{Math.round((m.numerator / m.denominator) * 100)}% ({m.numerator}/{m.denominator})</div>}
+      <div className="flex items-start gap-2">
+        <span className={cn("flex-1", question ? "text-[16px] font-semibold text-primary" : "text-[14px] text-muted-foreground")}>{question ? m.question : m.label}</span>
+        {m.demo && !noData && <Tag tone="sienna" testid={`tag-demo-${m.key}`}>demo data</Tag>}
+      </div>
+      {question && <div className="mt-0.5 text-[13px] text-muted-foreground">{m.label}</div>}
+      <div className={cn("mt-1 text-[30px] font-bold", noData ? "text-muted-foreground" : "text-primary")} data-testid={`value-${m.key}`}>{m.value}</div>
+      {ratio && <div className="text-[13px] text-muted-foreground">{ratio} ({m.numerator}/{m.denominator})</div>}
       <button data-testid={`button-metric-details-${m.key}`} onClick={() => setOpen((v) => !v)} className={cn(btn.quiet, "-ml-3 mt-1")}><ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} /> How it is measured</button>
-      {open && <p className="reveal text-[13.5px] leading-relaxed">{m.definition}</p>}
+      {open && <p className="reveal text-[13.5px] leading-relaxed" data-testid={`definition-${m.key}`}>{m.definition}</p>}
     </div>
   );
 }
 
-function Consolidation({ caseId }: { caseId: string }) {
-  const role = useRole();
-  const q = useGetCaseConsolidation(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseConsolidationQueryKey(caseId) } });
-  const dec = useRecordCaseDecision();
-  const setDisp = useSetCaseDispositions();
-  const migrate = useRecordMigrationNote();
-  const invalidate = useInvalidateCase();
-  const say = useUndoToast();
-  const [sel, setSel] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
-  const [note, setNote] = useState("");
-  const [drawer, setDrawer] = useState(false);
-  if (q.isLoading) return <Skel className="h-72" />;
-  if (!q.data) return <p className="text-bad">This consolidation case could not load.</p>;
-  const v = q.data;
-  const itActions = v.availableActions.find((a) => a.role === "it")?.actions ?? [];
-  const canApprove = role === "it" && itActions.includes("approve_consolidation");
-  const canWithdraw = role === "it" && itActions.includes("withdraw_consolidation");
-  const locked = !!v.decided;
-  const chosen = v.current.find((c) => c.solution.id === sel);
-  const capCount = new Map<string, number>();
-  v.current.forEach((c) => c.solution.capabilityIds.forEach((id) => capCount.set(id, (capCount.get(id) ?? 0) + 1)));
-  const done = (msg: string) => { invalidate(caseId); q.refetch(); say(msg); };
-  const decide = (action: "approve_consolidation" | "withdraw_consolidation", msg: string) =>
-    dec.mutate({ caseId, data: { role: "it", action, reason: v.current.map((c) => `${c.solution.name}: ${kindLabel(kindOf(c))}`).join("; ") } }, { onSuccess: () => done(msg), onError: (e) => say(errMsg(e)) });
-  const choose = (solutionId: string, kind: DispositionKind, why?: string) => {
-    const before = v.current.find((c) => c.solution.id === solutionId);
-    setDisp.mutate({ caseId, data: { choices: [{ solutionId, kind, ...(why?.trim() ? { reason: why.trim() } : {}) }] } }, {
-      onSuccess: () => { invalidate(caseId); q.refetch(); say(`${before?.solution.name}: ${kindLabel(kind)}.`, before ? () => choose(solutionId, kindOf(before), before.disposition?.reason ?? undefined) : undefined); },
-      onError: (e) => say(errMsg(e)),
-    });
-  };
-  const recordMigration = (solutionId: string) =>
-    migrate.mutate({ caseId, data: { solutionId, note: note.trim() } }, { onSuccess: () => { setNote(""); done("Migration recorded."); }, onError: (e) => say(errMsg(e)) });
-  const stateLine = v.successor
-    ? v.successor.state === "current" ? `Published as ${v.future.name}` : `Draft successor ${v.future.name}, awaiting IT`
-    : "Waiting for the owner to approve the pilot; the successor version is drafted then.";
+const KIND_LABEL: Record<QueueItem["kind"], string> = {
+  consolidation_approval: "Awaiting IT approval",
+  unowned_product: "No owner or support",
+  migration_pending: "Migration not recorded",
+  new_family_request: "New solution family requested",
+};
 
+function QueueRow({ item, open, settled, onToggle }: { item: QueueItem; open: boolean; settled: boolean; onToggle: () => void }) {
+  const inline = !!item.caseId && item.kind !== "new_family_request";
+  const href = item.kind === "new_family_request" && item.caseId ? `/workbench/${item.caseId}?mode=compare` : item.solutionId ? `/solutions/${item.solutionId}` : "/library";
   return (
-    <section className="card-soft p-6" data-testid={`consolidation-${caseId}`}>
-      <div className="flex flex-wrap items-start gap-3">
-        <h3 className="flex-1 text-[19px] font-semibold">{v.headline}</h3>
-        <button data-testid="button-consolidation-details" onClick={() => setDrawer(true)} className={btn.quiet}><Info className="h-4 w-4" /> Details</button>
-      </div>
-      <div className="mt-5 grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr]" onDoubleClick={() => setDrawer(true)}>
-        <div>
-          <div className="eyebrow mb-2">Current</div>
-          <div className="space-y-2">
-            {v.current.map((c) => {
-              const k = kindOf(c);
-              return (
-                <button key={c.solution.id} data-testid={`source-${c.solution.id}`} onClick={() => { setSel(sel === c.solution.id ? null : c.solution.id); setReason(c.disposition?.reason ?? ""); }}
-                  className={cn("flex w-full items-center gap-3 rounded-xl border bg-card p-3 text-left transition-[border-color,box-shadow]", sel === c.solution.id ? "border-primary shadow-[0_0_0_2px_hsl(var(--primary)/.2)]" : "border-border hover:border-primary/40")}>
-                  <div className="min-w-0 flex-1"><div className="font-semibold">{c.solution.name}</div><div className="text-[12.5px] text-muted-foreground">{c.solution.ownerName}</div></div>
-                  <StatusPill status={c.solution.status} />
-                  {c.disposition ? <DispositionBadge disposition={c.disposition} solutionId={c.solution.id} /> : <Tag tone={k === "retire" ? "muted" : k === "retain" ? "green" : "sky"} testid={`disposition-${c.solution.id}`}>{kindLabel(k)}</Tag>}
-                </button>
-              );
-            })}
+    <li className={cn("rounded-xl border bg-card transition-[border-color]", open ? "border-primary" : "border-border")} data-testid={`queue-${item.id}`}>
+      <div className="flex flex-wrap items-center gap-3 p-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-primary">{item.title}</span>
+            <Tag tone={item.kind === "consolidation_approval" && !item.id.startsWith("record-") && !settled ? "sienna" : "muted"}>{item.id.startsWith("record-") ? "Record" : settled ? "Decided" : KIND_LABEL[item.kind]}</Tag>
+            {item.demo && <Tag tone="sienna">demo data</Tag>}
           </div>
+          <p className="mt-0.5 text-[13.5px]">{item.detail}</p>
+          {item.usage && <p className="text-[12.5px] text-muted-foreground">{item.usage}</p>}
         </div>
-        <ArrowRight className="mx-auto h-6 w-6 rotate-90 text-sienna lg:rotate-0" />
-        <div className={cn("rounded-xl border-2 p-4", v.successor?.state === "current" ? "border-ok bg-okbg/60" : "border-ok/50 bg-okbg/40")} data-testid="future-product">
-          <div className="eyebrow mb-1">{v.successor ? (v.successor.state === "current" ? "Governed version" : "Draft successor") : "Proposed"}</div>
-          <div className="text-[18px] font-semibold text-primary">{v.future.name}</div>
-          <p className="text-[13.5px]">{v.future.core}</p>
-          <ul className="mt-2 space-y-1 text-[13.5px]">{v.future.modules.map((m) => <li key={m.name} className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok" />{m.name} <span className="text-muted-foreground">from {m.sourceSolutionName}</span></li>)}</ul>
-          {v.future.controls.length > 0 && <p className="mt-2 text-[12.5px] text-muted-foreground">Controls kept: {v.future.controls.join(", ")}</p>}
-          <p className="mt-2 text-[12.5px] text-muted-foreground" data-testid="text-successor-state">{stateLine}</p>
-        </div>
+        {inline ? (
+          <button data-testid={`button-queue-action-${item.id}`} onClick={onToggle} className={open ? btn.secondary : btn.primary} aria-expanded={open}>
+            {open ? <><X className="h-4 w-4" /> Close</> : item.actionLabel}
+          </button>
+        ) : (
+          <Link href={href} data-testid={`button-queue-action-${item.id}`} className={btn.primary}>{item.actionLabel} <ArrowRight className="h-4 w-4" /></Link>
+        )}
       </div>
-
-      {chosen && (
-        <div className="reveal mt-4 rounded-xl bg-secondary/60 p-4" data-testid="panel-source">
-          <div className="font-semibold text-primary">{chosen.solution.name}</div>
-          <p className="text-[14px]">{chosen.note}</p>
-          <div className="mt-2 grid gap-2 text-[13.5px] sm:grid-cols-2">
-            <div><span className="text-muted-foreground">Owner: </span>{chosen.solution.ownerName}</div>
-            <div><span className="text-muted-foreground">Retirement: </span>{chosen.solution.retirementCandidate ? "Candidate for retirement" : "Not a retirement candidate"}</div>
-            <div><span className="text-muted-foreground">Unique capabilities: </span>{chosen.solution.capabilityIds.filter((id) => capCount.get(id) === 1).length}</div>
-            <div><span className="text-muted-foreground">Shared capabilities: </span>{chosen.solution.capabilityIds.filter((id) => (capCount.get(id) ?? 0) > 1).length}</div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Disposition">
-            {DISPOSITIONS.map((d) => {
-              const on = kindOf(chosen) === d.kind;
-              return <button key={d.kind} role="radio" aria-checked={on} disabled={role !== "it" || locked || setDisp.isPending} data-testid={`set-disposition-${d.kind.replace(/_/g, "-")}`} onClick={() => { if (!on) choose(chosen.solution.id, d.kind, reason); }}
-                className={cn("min-h-9 rounded-lg border px-3 text-[13.5px] font-medium disabled:opacity-60", on ? "border-primary bg-primary text-white" : "border-input bg-card")}>{d.label}{d.kind === DEFAULT[chosen.fate] && " (recommended)"}</button>;
-            })}
-          </div>
-          {role === "it" && !locked && kindOf(chosen) === "retain" && chosen.fate !== "base" && (
-            <div className="reveal mt-2 flex gap-2">
-              <input data-testid="input-disposition-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why keep it separate? (recorded with the disposition)" className="h-10 flex-1 rounded-lg border border-input bg-card px-3 text-[14px] outline-none focus:border-primary" />
-              <button data-testid="button-save-reason" disabled={!reason.trim() || setDisp.isPending} onClick={() => choose(chosen.solution.id, "retain", reason)} className={btn.secondary}>Record reason</button>
-            </div>
-          )}
-          {chosen.disposition?.state === "confirmed" && chosen.disposition.kind === "retire" && (
-            chosen.disposition.migrationNote
-              ? <p className="mt-2 text-[13.5px]" data-testid="text-migration-note"><span className="text-muted-foreground">Migration recorded: </span>{chosen.disposition.migrationNote}</p>
-              : role === "it" && (
-                <div className="reveal mt-2 flex gap-2">
-                  <input data-testid="input-migration-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Where did its users go? Retirement stays scheduled until this is recorded." className="h-10 flex-1 rounded-lg border border-input bg-card px-3 text-[14px] outline-none focus:border-primary" />
-                  <button data-testid="button-record-migration" disabled={!note.trim() || migrate.isPending} onClick={() => recordMigration(chosen.solution.id)} className={btn.secondary}>Record migration</button>
-                </div>
-              )
-          )}
+      {open && item.caseId && (
+        <div className="reveal border-t border-border p-4" data-testid={`queue-detail-${item.id}`}>
+          <Consolidation caseId={item.caseId} initialSelection={item.kind === "migration_pending" ? item.solutionId : null} />
         </div>
       )}
-
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        {v.decided ? (
-          <>
-            <p data-testid="text-decided" className="inline-flex items-center gap-2 rounded-lg bg-okbg px-3 py-2 text-[14px] font-medium text-ok"><Check className="h-4 w-4" />{v.decided}</p>
-            {canWithdraw && <button data-testid="button-withdraw-direction" disabled={dec.isPending} onClick={() => decide("withdraw_consolidation", "Approval withdrawn. The successor is a draft again and every disposition a proposal.")} className={btn.quiet}><Undo2 className="h-4 w-4" /> Withdraw approval</button>}
-          </>
-        ) : canApprove ? <button data-testid="button-approve-direction" onClick={() => decide("approve_consolidation", `Consolidation direction approved. ${v.future.name} is the governed version.`)} disabled={dec.isPending} className={btn.primary}>Approve direction</button>
-          : <p className="text-[13.5px] text-muted-foreground" data-testid="text-not-ready">{role === "it" ? (v.successor ? "Not ready for an IT decision yet." : "Waiting for the owner to approve the pilot.") : "Switch to Govern to approve the direction."}</p>}
-        <span className="text-[13px] text-muted-foreground">Main risk: {v.risk}</span>
-      </div>
-
-      <Drawer open={drawer} onClose={() => setDrawer(false)} title={v.future.name} sub={v.headline} testid="drawer-consolidation">
-        <DSection label="Outcomes"><ul className="list-disc pl-5">{v.outcomes.map((o) => <li key={o}>{o}</li>)}</ul></DSection>
-        <DSection label="Evidence"><ul className="list-disc space-y-1 pl-5">{v.evidence.map((e) => <li key={e}>{e}</li>)}</ul></DSection>
-        <DSection label="Capability provenance">
-          {v.successor ? (
-            <ul className="space-y-1">{v.successor.foldedCapabilities.map((m) => <li key={m.capabilityId} data-testid={`provenance-${m.capabilityId}`}><span className="font-medium">{m.name}</span> — {m.provenance}</li>)}</ul>
-          ) : <ul className="space-y-1">{v.future.modules.map((m) => <li key={m.name}>{m.name}, from {m.sourceSolutionName}</li>)}</ul>}
-          {v.successor && <Link href={`/workbench/${v.caseId}?mode=compare`} className="mt-2 inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 hover:underline">See the evidence <ArrowRight className="h-3.5 w-3.5" /></Link>}
-        </DSection>
-        <DSection label="Successor version">{v.successor ? `v${v.successor.version} · ${v.successor.state === "current" ? "current governed version" : "draft, awaiting IT"} · ${v.successor.summary}` : "Not drafted yet; the owner's approval drafts it."}</DSection>
-        <DSection label="Dispositions"><ul className="space-y-1">{v.current.map((c) => <li key={c.solution.id}>{c.solution.name}: {c.disposition ? c.disposition.label : `${kindLabel(kindOf(c))} (not recorded yet)`}{c.disposition?.reason ? ` — ${c.disposition.reason}` : ""}{c.disposition?.migrationNote ? ` · migration: ${c.disposition.migrationNote}` : ""}</li>)}</ul></DSection>
-        <DSection label="Ownership">{v.current.map((c) => `${c.solution.name}: ${c.solution.ownerName} (${c.solution.ownerTeam})`).join(" · ")}</DSection>
-        <DSection label="Dependencies">{[...new Set(v.current.flatMap((c) => c.solution.dependencies))].join(", ") || "None recorded"}</DSection>
-        <DSection label="Risk">{v.risk}</DSection>
-        <DSection label="Approval">{v.decided ?? "No IT decision recorded yet."}</DSection>
-        <DSection label="Costs">Not recorded for this case.</DSection>
-      </Drawer>
-    </section>
+    </li>
   );
+}
+
+function Redirect({ r }: { r: RedirectEvent }) {
+  return (
+    <li className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-4 py-3 text-[14px]" data-testid={`redirect-${r.id}`}>
+      <span className="font-medium text-primary">{r.actor}</span>
+      <span>asked for “{r.need}”</span>
+      <ArrowRight className="h-3.5 w-3.5 self-center text-sienna" />
+      <span>{r.outcome}</span>
+      <span className="ml-auto text-[12.5px] text-muted-foreground">{ago(r.at)}</span>
+      {r.demo && <Tag tone="sienna">demo</Tag>}
+    </li>
+  );
+}
+
+function ago(iso: string): string {
+  const days = Math.round((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
 }

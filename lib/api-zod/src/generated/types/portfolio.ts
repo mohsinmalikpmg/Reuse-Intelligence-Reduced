@@ -5,18 +5,16 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
-import type { ConsolidationSummary } from './consolidationSummary';
-import type { PortfolioDuplicateCapabilitiesItem } from './portfolioDuplicateCapabilitiesItem';
 import type { PortfolioMetrics } from './portfolioMetrics';
-import type { PortfolioRow } from './portfolioRow';
-import type { Solution } from './solution';
+import type { QueueItem } from './queueItem';
+import type { RedirectEvent } from './redirectEvent';
 
 export interface Portfolio {
   headline: string;
   valueStatement: string;
   metrics: PortfolioMetrics;
-  rows: PortfolioRow[];
-  consolidationCases: ConsolidationSummary[];
-  unsupportedSolutions: Solution[];
-  duplicateCapabilities: PortfolioDuplicateCapabilitiesItem[];
+  /** Only items that need IT intervention; routine experiments never appear */
+  queue: QueueItem[];
+  /** Recent reuse checks where a person used or improved an existing capability instead of building */
+  redirects: RedirectEvent[];
 }

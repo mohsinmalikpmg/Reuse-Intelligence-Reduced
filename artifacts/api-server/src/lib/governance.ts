@@ -135,10 +135,16 @@ export function rankBucket(s: Solution): number {
 
 // ---------- Resolver ----------
 
+/** A version row that was published at some point; it stays a historical snapshot even if the publication is reversed. */
+const everPublished = (v: SolutionVersionRow) => v.state === "current" || v.publishedAt !== null;
+
 function resolve(base: Solution, asOf?: string): Solution {
-  const rows = overlay.versions.filter((v) => v.solutionId === base.id && v.state !== "withdrawn" && (asOf === undefined || (v.state === "current" && compareVersions(v.version, asOf) <= 0)));
+  // Live view: every non-withdrawn row (drafts appear in the history; only current ones change the product).
+  // Historical view ("as of" the version an experiment branched from): every version that was published by then,
+  // whatever happened to it since, so the branch baseline never moves.
+  const rows = overlay.versions.filter((v) => v.solutionId === base.id && (asOf === undefined ? v.state !== "withdrawn" : everPublished(v) && compareVersions(v.version, asOf) <= 0));
   if (rows.length === 0 && asOf !== undefined) return { ...base, disposition: dispositionForSolution(base.id) };
-  const published = rows.filter((v) => v.state === "current");
+  const published = rows.filter((v) => (asOf === undefined ? v.state === "current" : everPublished(v)));
   const capabilityIds = [...base.capabilityIds];
   // Each published version applies on top of the previous one: new capabilities join the product and the approved
   // production configuration (which optional modules are on, which option each setting uses) becomes the default.
@@ -186,7 +192,8 @@ export async function ensureDraftVersion(
   const parent = getSolution(c.baseSolutionId);
   if (!parent) throw new Error(`Unknown solution ${c.baseSolutionId}`);
   // Next number after the highest version on the product, including other drafts, so two approvals never collide.
-  const taken = [parent.currentVersion, ...overlay.versions.filter((v) => v.solutionId === parent.id && v.state !== "withdrawn").map((v) => v.version)];
+  // A number that was ever published stays taken, even after withdrawal, because experiments may have branched from it.
+  const taken = [parent.currentVersion, ...overlay.versions.filter((v) => v.solutionId === parent.id && (v.state !== "withdrawn" || everPublished(v))).map((v) => v.version)];
   const top = taken.sort(compareVersions)[taken.length - 1]!;
   const [row] = await db
     .insert(solutionVersionsTable)
@@ -217,9 +224,10 @@ function bump(v: string): string {
 export async function setVersionState(caseId: string, state: "draft" | "current" | "withdrawn", publishedBy?: string): Promise<void> {
   const row = overlay.versions.find((v) => v.caseId === caseId && v.state !== "withdrawn");
   if (!row) return;
+  // publishedAt is kept on withdrawal: it records that the version was once published and experiments may have branched from it.
   await db
     .update(solutionVersionsTable)
-    .set(state === "current" ? { state, publishedAt: new Date(), publishedBy: publishedBy ?? null } : { state, publishedAt: null, publishedBy: null })
+    .set(state === "current" ? { state, publishedAt: row.publishedAt ?? new Date(), publishedBy: publishedBy ?? row.publishedBy ?? null } : { state })
     .where(eq(solutionVersionsTable.id, row.id));
   await loadGovernance();
 }
@@ -275,6 +283,12 @@ export async function recordMigrationNote(caseId: string, solutionId: string, no
   if (row.kind !== "retire") throw new GovernanceError("A migration note applies only to a product scheduled for retirement.");
   if (row.state !== "confirmed") throw new GovernanceError("Confirm the consolidation direction before recording a migration.");
   await db.update(dispositionsTable).set({ migrationNote: note.trim() }).where(eq(dispositionsTable.id, row.id));
+  await loadGovernance();
+}
+
+/** A rejected consolidation leaves no proposals behind: its dispositions go, its version is only withdrawn. */
+export async function removeCaseDispositions(caseId: string): Promise<void> {
+  await db.delete(dispositionsTable).where(eq(dispositionsTable.caseId, caseId));
   await loadGovernance();
 }
 

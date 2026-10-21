@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * use/improve/create = a path actually taken (capability tried or improved, experiment started); explored = the person only opened a page; dismissed = closed without a choice
+ */
 export type ReusePathTaken = typeof ReusePathTaken[keyof typeof ReusePathTaken];
 
 
@@ -14,4 +17,5 @@ export const ReusePathTaken = {
   improve: 'improve',
   create: 'create',
   dismissed: 'dismissed',
+  explored: 'explored',
 } as const;

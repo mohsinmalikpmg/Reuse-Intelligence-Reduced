@@ -790,6 +790,9 @@ export const ReusePath = {
   hard_exclusion: 'hard_exclusion',
 } as const;
 
+/**
+ * use/improve/create = a path actually taken (capability tried or improved, experiment started); explored = the person only opened a page; dismissed = closed without a choice
+ */
 export type ReusePathTaken = typeof ReusePathTaken[keyof typeof ReusePathTaken];
 
 
@@ -798,6 +801,7 @@ export const ReusePathTaken = {
   improve: 'improve',
   create: 'create',
   dismissed: 'dismissed',
+  explored: 'explored',
 } as const;
 
 export type ReuseOptionKind = typeof ReuseOptionKind[keyof typeof ReuseOptionKind];
@@ -1730,71 +1734,81 @@ export interface ChangeReview {
 
 export interface PortfolioMetric {
   key: string;
+  /** The IT leader's question this metric answers */
+  question: string;
   label: string;
+  /** Plain reading of the metric */
   value: string;
   /** @nullable */
   numerator: number | null;
   /** @nullable */
   denominator: number | null;
+  /** What is counted in the numerator and the denominator */
   definition: string;
-  /** True when the number comes from seeded demonstration data */
+  /** True when the number includes seeded demonstration data */
   demo: boolean;
 }
 
 export interface PortfolioMetrics {
-  searchToReuse: PortfolioMetric;
-  duplicateGroups: PortfolioMetric;
-  consolidationsCompleted: PortfolioMetric;
-  abTestsWithPreference: PortfolioMetric;
-  activeVsRetired: PortfolioMetric;
-  needsAttention: PortfolioMetric;
+  reuseBeforeBuild: PortfolioMetric;
+  capabilityAcceptance: PortfolioMetric;
+  improvementsFolded: PortfolioMetric;
+  variantsPerFamily: PortfolioMetric;
+  duplicateAfterBuild: PortfolioMetric;
+  timeToFirstTest: PortfolioMetric;
 }
 
-export interface PortfolioRow {
-  businessProblem: BusinessProblem;
-  solutions: Solution[];
-  activeSolutions: number;
-  recommendedAction: string;
-  status: string;
-  /** @nullable */
+export type QueueItemKind = typeof QueueItemKind[keyof typeof QueueItemKind];
+
+
+export const QueueItemKind = {
+  consolidation_approval: 'consolidation_approval',
+  unowned_product: 'unowned_product',
+  migration_pending: 'migration_pending',
+  new_family_request: 'new_family_request',
+} as const;
+
+export interface QueueItem {
+  id: string;
+  kind: QueueItemKind;
+  title: string;
+  /** Why IT is needed */
+  detail: string;
+  /**
+     * Usage context such as "120 users"; never decides the recommendation
+     * @nullable
+     */
+  usage: string | null;
+  /** The one primary action for this row */
+  actionLabel: string;
+  /**
+     * The consolidation case the action opens
+     * @nullable
+     */
   caseId: string | null;
+  /** @nullable */
+  solutionId: string | null;
+  demo: boolean;
 }
 
-export interface EvidenceEvent {
-  at: string;
+export interface RedirectEvent {
+  id: string;
   actor: string;
-  event: string;
+  need: string;
+  /** e.g. tried Safety Signals instead of building */
+  outcome: string;
+  at: string;
+  demo: boolean;
 }
-
-export interface ConsolidationSummary {
-  case: Case;
-  baseSolution: Solution;
-  overlappingSolutions: Solution[];
-  reusableCapabilities: Capability[];
-  retirementCandidate: Solution | null;
-  ownerName: string;
-  architectureStatus: string;
-  controlStatus: string;
-  duplicationReductionPct: number;
-  migrationEffort: string;
-  evidenceTrail: EvidenceEvent[];
-  valueStatement: string;
-  experimentRecommendation: ExperimentRecommendation | null;
-}
-
-export type PortfolioDuplicateCapabilitiesItem = {
-  category: string;
-  capabilities: Capability[];
-};
 
 export interface Portfolio {
   headline: string;
   valueStatement: string;
   metrics: PortfolioMetrics;
-  rows: PortfolioRow[];
-  consolidationCases: ConsolidationSummary[];
-  unsupportedSolutions: Solution[];
-  duplicateCapabilities: PortfolioDuplicateCapabilitiesItem[];
+  /** Only items that need IT intervention; routine experiments never appear */
+  queue: QueueItem[];
+  /** Recent reuse checks where a person used or improved an existing capability instead of building */
+  redirects: RedirectEvent[];
 }
 
 export interface SeekerOverview {

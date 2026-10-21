@@ -191,7 +191,12 @@ export default function SolutionPage() {
                   {v.foldedCapabilities.map((f) => <li key={f.capabilityId} data-testid={`provenance-${f.capabilityId}`}><span className="font-medium">{f.name}</span> — {f.provenance}</li>)}
                 </ul>
               )}
-              {v.caseId && <Link href={`/workbench/${v.caseId}?mode=compare`} data-testid={`link-evidence-${v.version}`} className="mt-2 inline-flex items-center gap-1 text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">See the evidence <ArrowRight className="h-3.5 w-3.5" /></Link>}
+              {v.caseId && (
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <Link href={`/workbench/${v.caseId}?mode=compare`} data-testid={`link-evidence-${v.version}`} className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">See the evidence <ArrowRight className="h-3.5 w-3.5" /></Link>
+                  {v.state !== "released" && <Link href={`/portfolio?case=${v.caseId}`} data-testid={`link-record-${v.version}`} className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">Consolidation record <ArrowRight className="h-3.5 w-3.5" /></Link>}
+                </div>
+              )}
             </div>
           </DSection>
         ))}

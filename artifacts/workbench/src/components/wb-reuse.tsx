@@ -14,7 +14,7 @@ import { Tag, btn, useUndoToast } from "@/components/bits";
 import { errMsg } from "@/lib/case";
 import { cn } from "@/lib/utils";
 
-export type PathTaken = "use" | "improve" | "create" | "dismissed";
+export type PathTaken = "use" | "improve" | "create" | "dismissed" | "explored";
 
 /** What the workbench can do with a reuse option. The parent owns configuration changes so every one is undoable. */
 export type ReuseActions = {
@@ -89,7 +89,7 @@ function CapabilityCard({ o, primary, actions, afterStepId, onTaken }: { o: Reus
             Try {cap.name} <ArrowRight className="h-4 w-4" />
           </button>
         ) : o.solutionId ? (
-          <Link href={`/solutions/${o.solutionId}`} data-testid="button-open-solution" className={btn.secondary} onClick={() => onTaken("use")}>See it in {cap.sourceSolutionName} <ArrowRight className="h-4 w-4" /></Link>
+          <Link href={`/solutions/${o.solutionId}`} data-testid="button-open-solution" className={btn.secondary} onClick={() => onTaken("explored")}>See it in {cap.sourceSolutionName} <ArrowRight className="h-4 w-4" /></Link>
         ) : null}
         <button data-testid="button-output-example" aria-expanded={example} onClick={() => setExample((v) => !v)} className="text-[13.5px] font-semibold text-primary hover:underline">{example ? "Hide output example" : "See output example"}</button>
         {canAdd && <button data-testid="button-improve-capability" disabled={actions.busy} onClick={() => { onTaken("improve"); actions.onAdd(comp!, "improve"); }} className="text-[13.5px] font-semibold text-primary hover:underline">Improve this capability</button>}
@@ -114,9 +114,9 @@ function ClosestCard({ o, onTaken }: { o: ReuseOption; onTaken: (p: PathTaken) =
       <p className="mt-1 text-[13.5px] text-muted-foreground">{o.subtitle}</p>
       <div className="mt-3">
         {isExp && o.caseId ? (
-          <Link href={`/workbench/${o.caseId}`} data-testid="button-open-experiment" className={btn.secondary} onClick={() => onTaken("improve")}>Open the experiment <ArrowRight className="h-4 w-4" /></Link>
+          <Link href={`/workbench/${o.caseId}`} data-testid="button-open-experiment" className={btn.secondary} onClick={() => onTaken("explored")}>Open the experiment <ArrowRight className="h-4 w-4" /></Link>
         ) : o.solutionId ? (
-          <Link href={`/solutions/${o.solutionId}`} data-testid="button-open-solution" className={btn.secondary} onClick={() => onTaken(o.path === "improve_existing" ? "improve" : "use")}>Explore it <ArrowRight className="h-4 w-4" /></Link>
+          <Link href={`/solutions/${o.solutionId}`} data-testid="button-open-solution" className={btn.secondary} onClick={() => onTaken("explored")}>Explore it <ArrowRight className="h-4 w-4" /></Link>
         ) : null}
       </div>
     </article>

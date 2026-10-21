@@ -8,10 +8,10 @@
 import type { PortfolioMetric } from './portfolioMetric';
 
 export interface PortfolioMetrics {
-  searchToReuse: PortfolioMetric;
-  duplicateGroups: PortfolioMetric;
-  consolidationsCompleted: PortfolioMetric;
-  abTestsWithPreference: PortfolioMetric;
-  activeVsRetired: PortfolioMetric;
-  needsAttention: PortfolioMetric;
+  reuseBeforeBuild: PortfolioMetric;
+  capabilityAcceptance: PortfolioMetric;
+  improvementsFolded: PortfolioMetric;
+  variantsPerFamily: PortfolioMetric;
+  duplicateAfterBuild: PortfolioMetric;
+  timeToFirstTest: PortfolioMetric;
 }

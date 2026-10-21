@@ -6,8 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface EvidenceEvent {
-  at: string;
+export interface RedirectEvent {
+  id: string;
   actor: string;
-  event: string;
+  need: string;
+  /** e.g. tried Safety Signals instead of building */
+  outcome: string;
+  at: string;
+  demo: boolean;
 }

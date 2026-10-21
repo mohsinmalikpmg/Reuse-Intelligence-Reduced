@@ -6735,724 +6735,87 @@ export const GetPortfolioResponse = zod.object({
   "headline": zod.string(),
   "valueStatement": zod.string(),
   "metrics": zod.object({
-  "searchToReuse": zod.object({
+  "reuseBeforeBuild": zod.object({
   "key": zod.string(),
+  "question": zod.string().describe('The IT leader\'s question this metric answers'),
   "label": zod.string(),
-  "value": zod.string(),
+  "value": zod.string().describe('Plain reading of the metric'),
   "numerator": zod.number().nullable(),
   "denominator": zod.number().nullable(),
-  "definition": zod.string(),
-  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+  "definition": zod.string().describe('What is counted in the numerator and the denominator'),
+  "demo": zod.boolean().describe('True when the number includes seeded demonstration data')
 }),
-  "duplicateGroups": zod.object({
+  "capabilityAcceptance": zod.object({
   "key": zod.string(),
+  "question": zod.string().describe('The IT leader\'s question this metric answers'),
   "label": zod.string(),
-  "value": zod.string(),
+  "value": zod.string().describe('Plain reading of the metric'),
   "numerator": zod.number().nullable(),
   "denominator": zod.number().nullable(),
-  "definition": zod.string(),
-  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+  "definition": zod.string().describe('What is counted in the numerator and the denominator'),
+  "demo": zod.boolean().describe('True when the number includes seeded demonstration data')
 }),
-  "consolidationsCompleted": zod.object({
+  "improvementsFolded": zod.object({
   "key": zod.string(),
+  "question": zod.string().describe('The IT leader\'s question this metric answers'),
   "label": zod.string(),
-  "value": zod.string(),
+  "value": zod.string().describe('Plain reading of the metric'),
   "numerator": zod.number().nullable(),
   "denominator": zod.number().nullable(),
-  "definition": zod.string(),
-  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+  "definition": zod.string().describe('What is counted in the numerator and the denominator'),
+  "demo": zod.boolean().describe('True when the number includes seeded demonstration data')
 }),
-  "abTestsWithPreference": zod.object({
+  "variantsPerFamily": zod.object({
   "key": zod.string(),
+  "question": zod.string().describe('The IT leader\'s question this metric answers'),
   "label": zod.string(),
-  "value": zod.string(),
+  "value": zod.string().describe('Plain reading of the metric'),
   "numerator": zod.number().nullable(),
   "denominator": zod.number().nullable(),
-  "definition": zod.string(),
-  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+  "definition": zod.string().describe('What is counted in the numerator and the denominator'),
+  "demo": zod.boolean().describe('True when the number includes seeded demonstration data')
 }),
-  "activeVsRetired": zod.object({
+  "duplicateAfterBuild": zod.object({
   "key": zod.string(),
+  "question": zod.string().describe('The IT leader\'s question this metric answers'),
   "label": zod.string(),
-  "value": zod.string(),
+  "value": zod.string().describe('Plain reading of the metric'),
   "numerator": zod.number().nullable(),
   "denominator": zod.number().nullable(),
-  "definition": zod.string(),
-  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+  "definition": zod.string().describe('What is counted in the numerator and the denominator'),
+  "demo": zod.boolean().describe('True when the number includes seeded demonstration data')
 }),
-  "needsAttention": zod.object({
+  "timeToFirstTest": zod.object({
   "key": zod.string(),
+  "question": zod.string().describe('The IT leader\'s question this metric answers'),
   "label": zod.string(),
-  "value": zod.string(),
+  "value": zod.string().describe('Plain reading of the metric'),
   "numerator": zod.number().nullable(),
   "denominator": zod.number().nullable(),
-  "definition": zod.string(),
-  "demo": zod.boolean().describe('True when the number comes from seeded demonstration data')
+  "definition": zod.string().describe('What is counted in the numerator and the denominator'),
+  "demo": zod.boolean().describe('True when the number includes seeded demonstration data')
 })
 }),
-  "rows": zod.array(zod.object({
-  "businessProblem": zod.object({
+  "queue": zod.array(zod.object({
   "id": zod.string(),
+  "kind": zod.enum(['consolidation_approval', 'unowned_product', 'migration_pending', 'new_family_request']),
   "title": zod.string(),
-  "description": zod.string(),
-  "activeSolutionIds": zod.array(zod.string()),
-  "recommendedAction": zod.enum(['consolidate', 'standardize', 'retain', 'retire']),
-  "status": zod.string()
-}),
-  "solutions": zod.array(zod.object({
+  "detail": zod.string().describe('Why IT is needed'),
+  "usage": zod.string().nullable().describe('Usage context such as "120 users"; never decides the recommendation'),
+  "actionLabel": zod.string().describe('The one primary action for this row'),
+  "caseId": zod.string().nullable().describe('The consolidation case the action opens'),
+  "solutionId": zod.string().nullable(),
+  "demo": zod.boolean()
+})).describe('Only items that need IT intervention; routine experiments never appear'),
+  "redirects": zod.array(zod.object({
   "id": zod.string(),
-  "name": zod.string(),
-  "disposition": zod.union([zod.object({
-  "id": zod.string(),
-  "caseId": zod.string(),
-  "solutionId": zod.string(),
-  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
-  "state": zod.enum(['proposed', 'confirmed']),
-  "targetSolutionId": zod.string().nullable(),
-  "targetSolutionName": zod.string().nullable(),
-  "targetVersion": zod.string().nullable(),
-  "reason": zod.string().nullable(),
-  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
-  "preferred": zod.boolean().describe('The product preferred for this business problem'),
-  "label": zod.string().describe('Plain-language badge')
-}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
-  "outcome": zod.string().describe('One-sentence outcome'),
-  "description": zod.string(),
-  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
-  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
-  "ownerName": zod.string(),
-  "ownerTeam": zod.string(),
-  "businessUnits": zod.array(zod.string()),
-  "activeUsers": zod.number().int(),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "timeToAdopt": zod.string(),
-  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
-  "workflowSteps": zod.array(zod.string()),
-  "currentVersion": zod.string(),
-  "versions": zod.array(zod.object({
-  "version": zod.string(),
-  "releasedAt": zod.string(),
-  "summary": zod.string(),
-  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
-  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
-  "foldedCapabilities": zod.array(zod.object({
-  "capabilityId": zod.string(),
-  "name": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "experimentOwner": zod.string(),
-  "tests": zod.number().int(),
-  "preferredPercent": zod.number().int().nullable(),
-  "provenance": zod.string().describe('e.g. from Pattern Finder')
-})),
-  "changedSettings": zod.array(zod.string()),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
-})),
-  "knownGaps": zod.array(zod.string()),
-  "dependencies": zod.array(zod.string()),
-  "capabilityIds": zod.array(zod.string()),
-  "businessProblemIds": zod.array(zod.string()),
-  "baselineMetrics": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version'),
-  "retirementCandidate": zod.boolean(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "supportModel": zod.string(),
-  "lastReviewedAt": zod.string()
-})),
-  "activeSolutions": zod.number().int(),
-  "recommendedAction": zod.string(),
-  "status": zod.string(),
-  "caseId": zod.string().nullable()
-})),
-  "consolidationCases": zod.array(zod.object({
-  "case": zod.object({
-  "id": zod.string(),
-  "briefId": zod.string().nullable(),
-  "title": zod.string(),
-  "foldedInto": zod.string().nullable().describe('e.g. Work Order Triage v3.3'),
-  "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
-  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
-  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
-  "ownerName": zod.string().describe('Person who owns this experiment'),
-  "ownerTeam": zod.string(),
-  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
-  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
-  "lineage": zod.object({
-  "parentSolutionId": zod.string(),
-  "parentSolutionName": zod.string(),
-  "parentVersion": zod.string(),
-  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
-  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
-  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
-  "changedSettings": zod.array(zod.object({
-  "capabilityName": zod.string(),
-  "from": zod.string(),
-  "to": zod.string()
-})),
-  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
-  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
-  "summary": zod.string().describe('One line')
-}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
-  "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected', 'folded']).describe('folded = the approved change was published as a successor version of the parent product'),
-  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
-  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
-  "experimentId": zod.string().nullable(),
-  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
-  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
-  "saved": zod.boolean(),
-  "requirements": zod.array(zod.object({
-  "id": zod.string(),
-  "text": zod.string(),
-  "createdAt": zod.string()
-})).describe('Requirements added while testing, on top of the brief\'s list'),
-  "capabilityRequests": zod.array(zod.object({
-  "id": zod.string(),
-  "need": zod.string().describe('What should happen'),
-  "missing": zod.string().describe('What the existing approach does not do'),
-  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
-  "reuseEventId": zod.string().nullable(),
-  "createdAt": zod.string()
-})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-}),
-  "baseSolution": zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "disposition": zod.union([zod.object({
-  "id": zod.string(),
-  "caseId": zod.string(),
-  "solutionId": zod.string(),
-  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
-  "state": zod.enum(['proposed', 'confirmed']),
-  "targetSolutionId": zod.string().nullable(),
-  "targetSolutionName": zod.string().nullable(),
-  "targetVersion": zod.string().nullable(),
-  "reason": zod.string().nullable(),
-  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
-  "preferred": zod.boolean().describe('The product preferred for this business problem'),
-  "label": zod.string().describe('Plain-language badge')
-}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
-  "outcome": zod.string().describe('One-sentence outcome'),
-  "description": zod.string(),
-  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
-  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
-  "ownerName": zod.string(),
-  "ownerTeam": zod.string(),
-  "businessUnits": zod.array(zod.string()),
-  "activeUsers": zod.number().int(),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "timeToAdopt": zod.string(),
-  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
-  "workflowSteps": zod.array(zod.string()),
-  "currentVersion": zod.string(),
-  "versions": zod.array(zod.object({
-  "version": zod.string(),
-  "releasedAt": zod.string(),
-  "summary": zod.string(),
-  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
-  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
-  "foldedCapabilities": zod.array(zod.object({
-  "capabilityId": zod.string(),
-  "name": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "experimentOwner": zod.string(),
-  "tests": zod.number().int(),
-  "preferredPercent": zod.number().int().nullable(),
-  "provenance": zod.string().describe('e.g. from Pattern Finder')
-})),
-  "changedSettings": zod.array(zod.string()),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
-})),
-  "knownGaps": zod.array(zod.string()),
-  "dependencies": zod.array(zod.string()),
-  "capabilityIds": zod.array(zod.string()),
-  "businessProblemIds": zod.array(zod.string()),
-  "baselineMetrics": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version'),
-  "retirementCandidate": zod.boolean(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "supportModel": zod.string(),
-  "lastReviewedAt": zod.string()
-}),
-  "overlappingSolutions": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "disposition": zod.union([zod.object({
-  "id": zod.string(),
-  "caseId": zod.string(),
-  "solutionId": zod.string(),
-  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
-  "state": zod.enum(['proposed', 'confirmed']),
-  "targetSolutionId": zod.string().nullable(),
-  "targetSolutionName": zod.string().nullable(),
-  "targetVersion": zod.string().nullable(),
-  "reason": zod.string().nullable(),
-  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
-  "preferred": zod.boolean().describe('The product preferred for this business problem'),
-  "label": zod.string().describe('Plain-language badge')
-}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
-  "outcome": zod.string().describe('One-sentence outcome'),
-  "description": zod.string(),
-  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
-  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
-  "ownerName": zod.string(),
-  "ownerTeam": zod.string(),
-  "businessUnits": zod.array(zod.string()),
-  "activeUsers": zod.number().int(),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "timeToAdopt": zod.string(),
-  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
-  "workflowSteps": zod.array(zod.string()),
-  "currentVersion": zod.string(),
-  "versions": zod.array(zod.object({
-  "version": zod.string(),
-  "releasedAt": zod.string(),
-  "summary": zod.string(),
-  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
-  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
-  "foldedCapabilities": zod.array(zod.object({
-  "capabilityId": zod.string(),
-  "name": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "experimentOwner": zod.string(),
-  "tests": zod.number().int(),
-  "preferredPercent": zod.number().int().nullable(),
-  "provenance": zod.string().describe('e.g. from Pattern Finder')
-})),
-  "changedSettings": zod.array(zod.string()),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
-})),
-  "knownGaps": zod.array(zod.string()),
-  "dependencies": zod.array(zod.string()),
-  "capabilityIds": zod.array(zod.string()),
-  "businessProblemIds": zod.array(zod.string()),
-  "baselineMetrics": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version'),
-  "retirementCandidate": zod.boolean(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "supportModel": zod.string(),
-  "lastReviewedAt": zod.string()
-})),
-  "reusableCapabilities": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "description": zod.string(),
-  "category": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "ownerName": zod.string(),
-  "controlType": zod.enum(['locked', 'configurable', 'optional']),
-  "workflowStep": zod.string(),
-  "riskClass": zod.enum(['low', 'medium', 'high']),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "lockedReason": zod.string().nullable(),
-  "options": zod.array(zod.string()).nullable(),
-  "defaultOption": zod.string().nullable(),
-  "effects": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Expected deltas applied when the capability is active'),
-  "incompatibleWith": zod.array(zod.string()),
-  "dependsOn": zod.array(zod.string()),
-  "testCoverage": zod.string(),
-  "supportStatus": zod.string(),
-  "version": zod.string(),
-  "evidence": zod.string()
-})),
-  "retirementCandidate": zod.union([zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "disposition": zod.union([zod.object({
-  "id": zod.string(),
-  "caseId": zod.string(),
-  "solutionId": zod.string(),
-  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
-  "state": zod.enum(['proposed', 'confirmed']),
-  "targetSolutionId": zod.string().nullable(),
-  "targetSolutionName": zod.string().nullable(),
-  "targetVersion": zod.string().nullable(),
-  "reason": zod.string().nullable(),
-  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
-  "preferred": zod.boolean().describe('The product preferred for this business problem'),
-  "label": zod.string().describe('Plain-language badge')
-}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
-  "outcome": zod.string().describe('One-sentence outcome'),
-  "description": zod.string(),
-  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
-  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
-  "ownerName": zod.string(),
-  "ownerTeam": zod.string(),
-  "businessUnits": zod.array(zod.string()),
-  "activeUsers": zod.number().int(),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "timeToAdopt": zod.string(),
-  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
-  "workflowSteps": zod.array(zod.string()),
-  "currentVersion": zod.string(),
-  "versions": zod.array(zod.object({
-  "version": zod.string(),
-  "releasedAt": zod.string(),
-  "summary": zod.string(),
-  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
-  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
-  "foldedCapabilities": zod.array(zod.object({
-  "capabilityId": zod.string(),
-  "name": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "experimentOwner": zod.string(),
-  "tests": zod.number().int(),
-  "preferredPercent": zod.number().int().nullable(),
-  "provenance": zod.string().describe('e.g. from Pattern Finder')
-})),
-  "changedSettings": zod.array(zod.string()),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
-})),
-  "knownGaps": zod.array(zod.string()),
-  "dependencies": zod.array(zod.string()),
-  "capabilityIds": zod.array(zod.string()),
-  "businessProblemIds": zod.array(zod.string()),
-  "baselineMetrics": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version'),
-  "retirementCandidate": zod.boolean(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "supportModel": zod.string(),
-  "lastReviewedAt": zod.string()
-}),zod.null()]),
-  "ownerName": zod.string(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "duplicationReductionPct": zod.number(),
-  "migrationEffort": zod.string(),
-  "evidenceTrail": zod.array(zod.object({
+  "actor": zod.string(),
+  "need": zod.string(),
+  "outcome": zod.string().describe('e.g. tried Safety Signals instead of building'),
   "at": zod.string(),
-  "actor": zod.string(),
-  "event": zod.string()
-})),
-  "valueStatement": zod.string(),
-  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()])
-})),
-  "unsupportedSolutions": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "disposition": zod.union([zod.object({
-  "id": zod.string(),
-  "caseId": zod.string(),
-  "solutionId": zod.string(),
-  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
-  "state": zod.enum(['proposed', 'confirmed']),
-  "targetSolutionId": zod.string().nullable(),
-  "targetSolutionName": zod.string().nullable(),
-  "targetVersion": zod.string().nullable(),
-  "reason": zod.string().nullable(),
-  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
-  "preferred": zod.boolean().describe('The product preferred for this business problem'),
-  "label": zod.string().describe('Plain-language badge')
-}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
-  "outcome": zod.string().describe('One-sentence outcome'),
-  "description": zod.string(),
-  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
-  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
-  "ownerName": zod.string(),
-  "ownerTeam": zod.string(),
-  "businessUnits": zod.array(zod.string()),
-  "activeUsers": zod.number().int(),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "timeToAdopt": zod.string(),
-  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
-  "workflowSteps": zod.array(zod.string()),
-  "currentVersion": zod.string(),
-  "versions": zod.array(zod.object({
-  "version": zod.string(),
-  "releasedAt": zod.string(),
-  "summary": zod.string(),
-  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
-  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
-  "foldedCapabilities": zod.array(zod.object({
-  "capabilityId": zod.string(),
-  "name": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "experimentOwner": zod.string(),
-  "tests": zod.number().int(),
-  "preferredPercent": zod.number().int().nullable(),
-  "provenance": zod.string().describe('e.g. from Pattern Finder')
-})),
-  "changedSettings": zod.array(zod.string()),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
-})),
-  "knownGaps": zod.array(zod.string()),
-  "dependencies": zod.array(zod.string()),
-  "capabilityIds": zod.array(zod.string()),
-  "businessProblemIds": zod.array(zod.string()),
-  "baselineMetrics": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version'),
-  "retirementCandidate": zod.boolean(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "supportModel": zod.string(),
-  "lastReviewedAt": zod.string()
-})),
-  "duplicateCapabilities": zod.array(zod.object({
-  "category": zod.string(),
-  "capabilities": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "description": zod.string(),
-  "category": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "ownerName": zod.string(),
-  "controlType": zod.enum(['locked', 'configurable', 'optional']),
-  "workflowStep": zod.string(),
-  "riskClass": zod.enum(['low', 'medium', 'high']),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "lockedReason": zod.string().nullable(),
-  "options": zod.array(zod.string()).nullable(),
-  "defaultOption": zod.string().nullable(),
-  "effects": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Expected deltas applied when the capability is active'),
-  "incompatibleWith": zod.array(zod.string()),
-  "dependsOn": zod.array(zod.string()),
-  "testCoverage": zod.string(),
-  "supportStatus": zod.string(),
-  "version": zod.string(),
-  "evidence": zod.string()
-}))
-}))
+  "demo": zod.boolean()
+})).describe('Recent reuse checks where a person used or improved an existing capability instead of building')
 })
-
-
-/**
- * @summary Cases awaiting an IT decision
- */
-export const GetDecisionQueueResponseItem = zod.object({
-  "case": zod.object({
-  "id": zod.string(),
-  "briefId": zod.string().nullable(),
-  "title": zod.string(),
-  "foldedInto": zod.string().nullable().describe('e.g. Work Order Triage v3.3'),
-  "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
-  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
-  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
-  "ownerName": zod.string().describe('Person who owns this experiment'),
-  "ownerTeam": zod.string(),
-  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
-  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
-  "lineage": zod.object({
-  "parentSolutionId": zod.string(),
-  "parentSolutionName": zod.string(),
-  "parentVersion": zod.string(),
-  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
-  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
-  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
-  "changedSettings": zod.array(zod.object({
-  "capabilityName": zod.string(),
-  "from": zod.string(),
-  "to": zod.string()
-})),
-  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
-  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
-  "summary": zod.string().describe('One line')
-}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
-  "candidateSolutionIds": zod.array(zod.string()),
-  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected', 'folded']).describe('folded = the approved change was published as a successor version of the parent product'),
-  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
-  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
-  "experimentId": zod.string().nullable(),
-  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
-  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
-  "saved": zod.boolean(),
-  "requirements": zod.array(zod.object({
-  "id": zod.string(),
-  "text": zod.string(),
-  "createdAt": zod.string()
-})).describe('Requirements added while testing, on top of the brief\'s list'),
-  "capabilityRequests": zod.array(zod.object({
-  "id": zod.string(),
-  "need": zod.string().describe('What should happen'),
-  "missing": zod.string().describe('What the existing approach does not do'),
-  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
-  "reuseEventId": zod.string().nullable(),
-  "createdAt": zod.string()
-})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-}),
-  "baseSolution": zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "disposition": zod.union([zod.object({
-  "id": zod.string(),
-  "caseId": zod.string(),
-  "solutionId": zod.string(),
-  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
-  "state": zod.enum(['proposed', 'confirmed']),
-  "targetSolutionId": zod.string().nullable(),
-  "targetSolutionName": zod.string().nullable(),
-  "targetVersion": zod.string().nullable(),
-  "reason": zod.string().nullable(),
-  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
-  "preferred": zod.boolean().describe('The product preferred for this business problem'),
-  "label": zod.string().describe('Plain-language badge')
-}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
-  "outcome": zod.string().describe('One-sentence outcome'),
-  "description": zod.string(),
-  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
-  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
-  "ownerName": zod.string(),
-  "ownerTeam": zod.string(),
-  "businessUnits": zod.array(zod.string()),
-  "activeUsers": zod.number().int(),
-  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
-  "timeToAdopt": zod.string(),
-  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
-  "workflowSteps": zod.array(zod.string()),
-  "currentVersion": zod.string(),
-  "versions": zod.array(zod.object({
-  "version": zod.string(),
-  "releasedAt": zod.string(),
-  "summary": zod.string(),
-  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
-  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
-  "foldedCapabilities": zod.array(zod.object({
-  "capabilityId": zod.string(),
-  "name": zod.string(),
-  "sourceSolutionId": zod.string(),
-  "sourceSolutionName": zod.string(),
-  "experimentOwner": zod.string(),
-  "tests": zod.number().int(),
-  "preferredPercent": zod.number().int().nullable(),
-  "provenance": zod.string().describe('e.g. from Pattern Finder')
-})),
-  "changedSettings": zod.array(zod.string()),
-  "production": zod.union([zod.object({
-  "moduleStates": zod.record(zod.string(), zod.boolean()),
-  "configValues": zod.record(zod.string(), zod.string())
-}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
-})),
-  "knownGaps": zod.array(zod.string()),
-  "dependencies": zod.array(zod.string()),
-  "capabilityIds": zod.array(zod.string()),
-  "businessProblemIds": zod.array(zod.string()),
-  "baselineMetrics": zod.object({
-  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
-  "successRate": zod.number().describe('0-100 percent'),
-  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
-  "errorRate": zod.number().describe('0-100 percent exceptions'),
-  "adoption": zod.number().describe('0-100 percent expected adoption'),
-  "costPerTask": zod.number().describe('Currency per task')
-}).describe('Operating metrics for one task on one solution version'),
-  "retirementCandidate": zod.boolean(),
-  "architectureStatus": zod.string(),
-  "controlStatus": zod.string(),
-  "supportModel": zod.string(),
-  "lastReviewedAt": zod.string()
-}),
-  "businessProblemTitle": zod.string(),
-  "addedCapabilities": zod.array(zod.string()),
-  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
-  "latestDecision": zod.union([zod.object({
-  "id": zod.string(),
-  "caseId": zod.string(),
-  "role": zod.enum(['seeker', 'owner', 'it']),
-  "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'withdraw_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
-  "reason": zod.string().nullable(),
-  "createdAt": zod.string()
-}),zod.null()]),
-  "nextStep": zod.string().describe('Plain-language next action for the current state')
-})
-export const GetDecisionQueueResponse = zod.array(GetDecisionQueueResponseItem)
 
 
 /**
@@ -7602,7 +6965,7 @@ export const ListReuseEventsResponseItem = zod.object({
   "bestSolutionId": zod.string().nullable(),
   "bestCapabilityId": zod.string().nullable(),
   "pathRecommended": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
-  "pathTaken": zod.union([zod.enum(['use', 'improve', 'create', 'dismissed']),zod.null()]),
+  "pathTaken": zod.union([zod.enum(['use', 'improve', 'create', 'dismissed', 'explored']).describe('use/improve/create = a path actually taken (capability tried or improved, experiment started); explored = the person only opened a page; dismissed = closed without a choice'),zod.null()]),
   "actor": zod.string(),
   "demo": zod.boolean().describe('Seeded demonstration data'),
   "createdAt": zod.string()
@@ -7618,7 +6981,7 @@ export const UpdateReuseEventParams = zod.object({
 })
 
 export const UpdateReuseEventBody = zod.object({
-  "pathTaken": zod.enum(['use', 'improve', 'create', 'dismissed'])
+  "pathTaken": zod.enum(['use', 'improve', 'create', 'dismissed', 'explored']).describe('use/improve/create = a path actually taken (capability tried or improved, experiment started); explored = the person only opened a page; dismissed = closed without a choice')
 })
 
 export const UpdateReuseEventResponse = zod.object({
@@ -7633,7 +6996,7 @@ export const UpdateReuseEventResponse = zod.object({
   "bestSolutionId": zod.string().nullable(),
   "bestCapabilityId": zod.string().nullable(),
   "pathRecommended": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
-  "pathTaken": zod.union([zod.enum(['use', 'improve', 'create', 'dismissed']),zod.null()]),
+  "pathTaken": zod.union([zod.enum(['use', 'improve', 'create', 'dismissed', 'explored']).describe('use/improve/create = a path actually taken (capability tried or improved, experiment started); explored = the person only opened a page; dismissed = closed without a choice'),zod.null()]),
   "actor": zod.string(),
   "demo": zod.boolean().describe('Seeded demonstration data'),
   "createdAt": zod.string()

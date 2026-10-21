@@ -161,7 +161,7 @@ export function ReuseCheckPanel({ need, requirementId, briefId, baseSolutionId, 
   const shown = result.options.filter((o) => o.kind !== "create" && o.score !== null && o.score >= 60);
   const excludedOnly = shown.length > 0 && shown.every((o) => o.path === "hard_exclusion");
   const createOpt = result.options.find((o) => o.kind === "create");
-  const markTaken = (pathTaken: "use" | "improve" | "create" | "dismissed") => update.mutate({ eventId: result.eventId, data: { pathTaken } });
+  const markTaken = (pathTaken: "use" | "improve" | "create" | "dismissed" | "explored") => update.mutate({ eventId: result.eventId, data: { pathTaken } });
   return (
     <div className="pt-2" data-testid="panel-reuse-check">
       {dismissed ? (
@@ -196,7 +196,7 @@ export function ReuseCheckPanel({ need, requirementId, briefId, baseSolutionId, 
   );
 }
 
-function OptionCard({ o, primary, briefId, baseSolutionName, eventId, onTaken }: { o: ReuseOption; primary: boolean; briefId?: string; baseSolutionName: string; eventId: string; onTaken: (p: "use" | "improve" | "create" | "dismissed") => void }) {
+function OptionCard({ o, primary, briefId, baseSolutionName, eventId, onTaken }: { o: ReuseOption; primary: boolean; briefId?: string; baseSolutionName: string; eventId: string; onTaken: (p: "use" | "improve" | "create" | "dismissed" | "explored") => void }) {
   const [why, setWhy] = useState(false);
   const excluded = o.path === "hard_exclusion";
   return (
@@ -231,7 +231,7 @@ function OptionCard({ o, primary, briefId, baseSolutionName, eventId, onTaken }:
   );
 }
 
-function OptionAction({ o, primary, briefId, baseSolutionName, eventId, onTaken }: { o: ReuseOption; primary: boolean; briefId?: string; baseSolutionName: string; eventId: string; onTaken: (p: "use" | "improve" | "create" | "dismissed") => void }) {
+function OptionAction({ o, primary, briefId, baseSolutionName, eventId, onTaken }: { o: ReuseOption; primary: boolean; briefId?: string; baseSolutionName: string; eventId: string; onTaken: (p: "use" | "improve" | "create" | "dismissed" | "explored") => void }) {
   const [, setLocation] = useLocation();
   const create = useCreateCase();
   const invalidate = useInvalidateAll();
@@ -255,11 +255,12 @@ function OptionAction({ o, primary, briefId, baseSolutionName, eventId, onTaken 
     );
   }
   if (o.kind === "experiment" && o.caseId) {
-    return <Link href={`/workbench/${o.caseId}`} data-testid="button-open-experiment" className={cls} onClick={() => onTaken("improve")}>Open the experiment <ArrowRight className="h-4 w-4" /></Link>;
+    // Opening a page is exploration, not a path taken; "use" is recorded by the server only when a case is actually created from the check.
+    return <Link href={`/workbench/${o.caseId}`} data-testid="button-open-experiment" className={cls} onClick={() => onTaken("explored")}>Open the experiment <ArrowRight className="h-4 w-4" /></Link>;
   }
   if (o.solutionId) {
     const label = o.path === "hard_exclusion" ? "See why" : o.path === "improve_existing" ? "Start from it" : "Explore it";
-    return <Link href={`/solutions/${o.solutionId}`} data-testid="button-open-solution" className={o.path === "hard_exclusion" ? btn.quiet : cls} onClick={() => onTaken(o.path === "improve_existing" ? "improve" : "use")}>{label} <ArrowRight className="h-4 w-4" /></Link>;
+    return <Link href={`/solutions/${o.solutionId}`} data-testid="button-open-solution" className={o.path === "hard_exclusion" ? btn.quiet : cls} onClick={() => onTaken("explored")}>{label} <ArrowRight className="h-4 w-4" /></Link>;
   }
   return null;
 }

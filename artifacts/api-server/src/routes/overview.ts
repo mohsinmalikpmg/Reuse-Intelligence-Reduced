@@ -1,28 +1,30 @@
 import { Router, type IRouter } from "express";
 import type {
-  Capability,
   Case,
-  ConsolidationSummary,
+  Decision,
   Evaluation,
-  EvidenceEvent,
   OwnedSolution,
   OwnerOverview,
   OwnerSolution,
   Portfolio,
   PortfolioMetric,
-  PortfolioRow,
+  PortfolioMetrics,
+  QueueItem,
+  RedirectEvent,
   SeekerOverview,
+  Solution,
 } from "@workspace/api-zod";
-import { DEMO_PROMPT, OWNER_PERSONA_NAME, businessProblems, capabilities, personas, solutions, sortByMaturity } from "../data/catalog";
-import { addedExternalModules, caseContext, isUnsupported } from "../lib/configuration";
+import { DEMO_PROMPT, OWNER_PERSONA_NAME, businessProblems, getSolution, personas, solutions, sortByMaturity } from "../data/catalog";
 import { consolidationApproved } from "../lib/analysis";
+import { versionForCase } from "../lib/governance";
+import { listReuseEvents } from "../lib/reuse-store";
 import { matchBrief } from "../lib/matching";
 import { demoState, resetDemo } from "../lib/seed";
 import { getExperiment, listAllDecisions, listBriefs, listCaseRows, listExperiments, summarizeAll } from "../lib/store";
 import { currentFingerprints } from "../lib/workbench";
 import { GroupDecisionError, experimentsInProgress, improvementGroupDetail, improvementGroups, recordGroupDecision } from "../lib/experiments";
 import { RecordGroupDecisionBody } from "@workspace/api-zod";
-import { countSearches, listAllEvaluations, listAllRuns, summarizeEvaluations } from "../lib/workbench-store";
+import { listAllEvaluations, listAllRuns } from "../lib/workbench-store";
 
 /** True when a vote was cast on the case's current Version B against the governed baseline. */
 function countsForCase(e: Evaluation, cur: { a: string; b: string } | undefined): boolean {
@@ -148,180 +150,240 @@ router.post("/my-solutions/:solutionId/groups/:groupKey/decisions", async (req, 
   }
 });
 
-async function consolidationSummaries(): Promise<ConsolidationSummary[]> {
-  const cases = (await listCaseRows()).filter((c) => c.status !== "rejected");
-  const decisions = await listAllDecisions();
-  const briefs = await listBriefs();
-  const out: ConsolidationSummary[] = [];
-  for (const c of cases) {
-    const ctx = caseContext(c);
-    if (ctx.candidates.length === 0 && c.status === "draft") continue;
-    const experiment = c.experimentId ? await getExperiment(c.experimentId) : null;
-    const reusable = addedExternalModules(c, ctx);
-    const retirement = ctx.candidates.find((s) => s.retirementCandidate) ?? null;
-    const brief = c.briefId ? briefs.find((b) => b.id === c.briefId) : undefined;
-    const trail: EvidenceEvent[] = [
-      { at: c.createdAt, actor: c.createdByRole === "seeker" ? "Alex Romero" : c.createdByRole === "owner" ? OWNER_PERSONA_NAME : "Jordan Okafor", event: brief ? "Pain point interpreted and matched to existing solutions" : "Consolidation case opened from the library" },
-      ...(experiment ? [{ at: experiment.createdAt, actor: "Simulation engine", event: `Simulated test run (seed ${experiment.seed}): ${experiment.recommendation.replace(/_/g, " ")}` }] : []),
-      ...decisions
-        .filter((d) => d.caseId === c.id)
-        .reverse()
-        .map((d) => ({ at: d.createdAt, actor: d.actor, event: `${d.action.replace(/_/g, " ")}${d.reason ? `: ${d.reason}` : ""}` })),
-    ];
-    out.push({
-      case: c,
-      baseSolution: ctx.base,
-      overlappingSolutions: ctx.candidates,
-      reusableCapabilities: reusable,
-      retirementCandidate: retirement,
-      ownerName: ctx.base.ownerName,
-      architectureStatus: ctx.base.architectureStatus,
-      controlStatus: ctx.base.controlStatus,
-      // Share of overlapping products that stop being maintained separately once folded into the base.
-      duplicationReductionPct: Math.round((ctx.candidates.length / (ctx.candidates.length + 1)) * 100),
-      migrationEffort: reusable.some((cap) => isUnsupported(cap)) ? "Medium: ownership transfer plus integration" : reusable.length > 0 ? "Low to medium: module integration only" : "Low: configuration only",
-      evidenceTrail: trail,
-      valueStatement: `${ctx.candidates.length + 1} overlapping products become one ${ctx.base.status} base; ${reusable.length} capabilit${reusable.length === 1 ? "y" : "ies"} reused, ${retirement ? "1 product retired" : "no retirements"}.`,
-      experimentRecommendation: experiment?.recommendation ?? null,
-    });
-  }
-  return out;
+/** Median of a list of numbers; null when empty. */
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
+
+function humanDuration(ms: number): string {
+  const minutes = ms / 60_000;
+  if (minutes < 1) return "under a minute";
+  if (minutes < 90) return `${Math.round(minutes)} min`;
+  const hours = minutes / 60;
+  if (hours < 24) return `${Math.round(hours)} h`;
+  const days = Math.round((hours / 24) * 10) / 10;
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** Decisions that put an improvement in front of its parent product's owner. */
+const PROPOSAL_ACTIONS: Decision["action"][] = ["propose_pilot", "propose_capability", "adopt_approach", "merge_approaches"];
 
 router.get("/portfolio", async (_req, res) => {
   const cases = await listCaseRows();
   const decisions = await listAllDecisions();
-  const summaries = await consolidationSummaries();
-
-  const rows: PortfolioRow[] = businessProblems.map((bp) => {
-    const sols = sortByMaturity(solutions.filter((s) => bp.activeSolutionIds.includes(s.id)));
-    const theCase = cases.find((c) => c.businessProblemId === bp.id && c.status !== "rejected") ?? null;
-    return {
-      businessProblem: bp,
-      solutions: sols,
-      activeSolutions: sols.length,
-      recommendedAction: bp.recommendedAction.charAt(0).toUpperCase() + bp.recommendedAction.slice(1),
-      status: theCase ? (theCase.status === "folded" && theCase.foldedInto ? `Consolidated into ${theCase.foldedInto}` : caseStatusLabel(theCase.status)) : bp.status,
-      caseId: theCase?.id ?? null,
-    };
-  });
-
-  const unsupported = solutions.filter((s) => s.ownerName === "Unassigned" || /none/i.test(s.supportModel));
-  const approvedByIt = (c: Case) => consolidationApproved(decisions.filter((d) => d.caseId === c.id));
-  const pendingReviews = cases.filter((c) => (c.status === "pilot_proposed" || c.status === "approved") && !approvedByIt(c)).length;
-
-  const byCategory = new Map<string, Capability[]>();
-  for (const cap of capabilities) {
-    const list = byCategory.get(cap.category) ?? [];
-    list.push(cap);
-    byCategory.set(cap.category, list);
-  }
-  const duplicateCapabilities = [...byCategory.entries()]
-    .filter(([, caps]) => new Set(caps.map((c) => c.sourceSolutionId)).size > 1)
-    .map(([category, caps]) => ({
-      category,
-      // One entry per product that built this category of capability.
-      capabilities: caps.filter((cap, index) => caps.findIndex((o) => o.sourceSolutionId === cap.sourceSolutionId) === index),
-    }));
-
-  const overlapping = businessProblems.filter((bp) => bp.activeSolutionIds.length > 1).length;
-
-  // Every number below is computed from persisted or catalog data and carries its own definition.
-  const searches = await countSearches();
-  const briefs = await listBriefs();
-  const searchEvents = searches + briefs.length;
-  // Distinct briefs that led to a case: can never exceed the number of briefs, so the ratio stays honest.
-  const reuseCases = [...new Set(cases.map((c) => c.briefId).filter((id): id is string => id !== null))];
+  const reuseEvents = await listReuseEvents();
+  const runs = await listAllRuns();
   const evaluations = await listAllEvaluations();
-  const abCases = cases.filter((c) => c.status !== "draft");
-  // Only votes cast on each case's current Version B (against the governed baseline) count; earlier-configuration votes are set aside.
-  const currentByCase = new Map(cases.map((c) => [c.id, currentFingerprints(c)]));
-  const countsForCurrent = (e: Evaluation) => countsForCase(e, currentByCase.get(e.caseId));
-  const setAsideVotes = evaluations.filter((e) => !countsForCurrent(e)).length;
-  const withPreference = abCases.filter((c) => {
-    const summary = summarizeEvaluations(evaluations.filter((e) => e.caseId === c.id && countsForCurrent(e)));
-    return summary.tests > 0 && summary.aPreferred !== summary.bPreferred;
+  const approvedByIt = (c: Case) => consolidationApproved(decisions.filter((d) => d.caseId === c.id));
+
+  // Every number is computed from persisted or catalog data and carries its definition. A metric with nothing to
+  // count says so; it is never shown as 0%.
+  const metric = (key: keyof PortfolioMetrics, question: string, label: string, numerator: number | null, denominator: number | null, value: string | null, definition: string, demo: boolean): PortfolioMetric => ({
+    key,
+    question,
+    label,
+    value: value ?? "No data yet",
+    numerator,
+    denominator,
+    definition,
+    demo,
   });
-  const consolidated = cases.filter((c) => c.status === "folded" && approvedByIt(c));
-  const retired = solutions.filter((s) => s.status === "deprecated").length;
-  const demoVotes = evaluations.filter((e) => e.demo).length;
-  const metric = (key: string, label: string, numerator: number | null, denominator: number | null, value: string, definition: string, demo: boolean): PortfolioMetric => ({ key, label, value, numerator, denominator, definition, demo });
-  const metrics = {
-    searchToReuse: metric(
-      "searchToReuse",
-      "Search to reuse",
-      reuseCases.length,
-      searchEvents,
-      searchEvents ? `${reuseCases.length} of ${searchEvents}` : "No searches yet",
-      "Numerator: interpreted briefs that led to at least one case being opened. Denominator: global searches plus interpreted briefs recorded in this workspace.",
-      briefs.length > 0 && cases.some((c) => c.id.startsWith("case_demo")),
-    ),
-    duplicateGroups: metric(
-      "duplicateGroups",
-      "Duplicate groups",
-      overlapping,
-      businessProblems.length,
-      `${overlapping} of ${businessProblems.length}`,
-      "Numerator: business problems with more than one active solution. Denominator: business problems in the catalog. Catalog is seeded demonstration data.",
-      true,
-    ),
-    consolidationsCompleted: metric(
-      "consolidationsCompleted",
-      "Consolidations approved",
-      consolidated.length,
-      summaries.length,
-      `${consolidated.length} of ${summaries.length}`,
-      "Numerator: cases where IT recorded an approve-consolidation decision. Denominator: open consolidation cases.",
-      consolidated.some((c) => c.id.startsWith("case_demo")),
-    ),
-    abTestsWithPreference: metric(
-      "abTestsWithPreference",
-      "A/B tests with a recorded preference",
-      withPreference.length,
-      abCases.length,
-      `${withPreference.length} of ${abCases.length}`,
-      `Numerator: tested cases where votes recorded on the current Version B configuration favour one version. Denominator: cases with at least one A/B run. ${setAsideVotes} vote${setAsideVotes === 1 ? "" : "s"} from earlier configurations (set aside). ${demoVotes} vote${demoVotes === 1 ? "" : "s"} are labelled demo.`,
-      demoVotes > 0,
-    ),
-    activeVsRetired: metric(
-      "activeVsRetired",
-      "Active vs retired",
-      solutions.length - retired,
-      solutions.length,
-      `${solutions.length - retired} active, ${retired} retired`,
-      "Numerator: solutions not deprecated. Denominator: all solutions in the catalog. Catalog is seeded demonstration data.",
-      true,
-    ),
-    needsAttention: metric(
-      "needsAttention",
-      "Needs attention",
-      unsupported.length + pendingReviews,
-      null,
-      `${unsupported.length} unowned, ${pendingReviews} awaiting IT`,
-      "Solutions with no owner or support model plus cases waiting for an IT consolidation decision.",
-      unsupported.length > 0,
-    ),
-  };
+
+  // 1. Reuse before build: creation attempts (a step, a requirement, a search, a brief) that ended in an existing
+  //    solution or capability. Only recorded choices count: "use"/"improve" are written when a capability is actually
+  //    tried or improved in a workbench (or a case is created from the check), "create" when a new approach or
+  //    capability request is recorded, "dismissed" when the check is closed. Opening a page ("explored") and
+  //    hard-excluded options are never reuse.
+  const decided = reuseEvents.filter((e) => e.pathTaken !== null && e.pathTaken !== "explored");
+  const redirected = decided.filter((e) => (e.pathTaken === "use" || e.pathTaken === "improve") && e.pathRecommended !== "hard_exclusion");
+  const reuseBeforeBuild = metric(
+    "reuseBeforeBuild",
+    "Are people finding existing solutions before building?",
+    "Reuse before build",
+    decided.length ? redirected.length : null,
+    decided.length ? decided.length : null,
+    decided.length ? `${redirected.length} of ${decided.length} attempts` : null,
+    "Numerator: reuse checks (a step, a requirement, a search or a brief) where the person actually tried or improved an existing solution or capability in a workbench. Denominator: reuse checks that ended in a recorded choice (tried, improved, created a new approach, or dismissed). Checks still open, or where a page was only opened, are not counted; excluded options never count as reuse.",
+    decided.some((e) => e.demo),
+  );
+
+  // 2. Existing capability acceptance: when the check surfaced a credible capability (score >= 60), was it tried?
+  const suggested = decided.filter((e) => e.bestCapabilityId !== null && (e.bestScore ?? 0) >= 60 && e.pathRecommended !== "hard_exclusion");
+  const tried = suggested.filter((e) => e.pathTaken === "use");
+  const capabilityAcceptance = metric(
+    "capabilityAcceptance",
+    "Are repeated needs becoming shared capabilities?",
+    "Existing capability acceptance",
+    suggested.length ? tried.length : null,
+    suggested.length ? suggested.length : null,
+    suggested.length ? `${tried.length} of ${suggested.length} suggestions tried` : null,
+    "Numerator: suggested capabilities (reuse-fit score 60 or more, not excluded by a rule) the person actually tried in a workbench. Denominator: reuse checks that suggested such a capability and ended in a recorded choice; opening a page is not a choice.",
+    suggested.some((e) => e.demo),
+  );
+
+  // 3. Improvements folded into parent products: proposals that became a published successor version. A proposal is
+  //    a recorded decision, not a status: the seeker proposed it to the parent, or the owner adopted it from a grouped
+  //    review. A case rejected or kept local without ever being proposed is not a proposal.
+  const proposed = cases.filter((c) => decisions.some((d) => d.caseId === c.id && PROPOSAL_ACTIONS.includes(d.action)));
+  const folded = proposed.filter((c) => c.status === "folded" && approvedByIt(c));
+  const improvementsFolded = metric(
+    "improvementsFolded",
+    "Are experiments being folded into their parent products?",
+    "Improvements folded into parent products",
+    proposed.length ? folded.length : null,
+    proposed.length ? proposed.length : null,
+    proposed.length ? `${folded.length} of ${proposed.length} proposals` : null,
+    "Numerator: proposed improvements IT published as a successor version of the parent product. Denominator: experiments with a recorded proposal to the parent (proposed by the seeker, or adopted by the owner from a grouped review), whatever happened next. Experiments never proposed are not counted, even if rejected.",
+    proposed.some((c) => c.demo) || folded.some((c) => c.id.startsWith("case_demo")),
+  );
+
+  // 4. Production variants per solution family: products still in production for each business problem.
+  //    A product leaves production only when its retirement is confirmed and its users' migration is recorded.
+  const inProduction = (s: Solution) => s.status !== "deprecated" && !(s.disposition?.state === "confirmed" && s.disposition.kind === "retire" && s.disposition.migrationNote);
+  const families = businessProblems.map((bp) => ({ bp, variants: solutions.filter((s) => bp.activeSolutionIds.includes(s.id) && inProduction(s)) }));
+  const variantCount = families.reduce((n, f) => n + f.variants.length, 0);
+  const baselineCount = businessProblems.reduce((n, bp) => n + bp.activeSolutionIds.filter((id) => solutions.find((s) => s.id === id)?.status !== "deprecated").length, 0);
+  const scheduled = solutions.filter((s) => s.disposition?.state === "confirmed" && s.disposition.kind === "retire" && !s.disposition.migrationNote).length;
+  const perFamily = families.length ? Math.round((variantCount / families.length) * 10) / 10 : null;
+  const variantsPerFamily = metric(
+    "variantsPerFamily",
+    "Are supported variants rising or falling?",
+    "Production variants per solution family",
+    families.length ? variantCount : null,
+    families.length ? families.length : null,
+    perFamily === null ? null : `${perFamily} per family${variantCount < baselineCount ? ` (down from ${Math.round((baselineCount / families.length) * 10) / 10})` : scheduled ? ` · ${plural(scheduled, "retirement")} scheduled` : ""}`,
+    `Numerator: products in production across all business problems (not deprecated; a confirmed retirement counts until its migration is recorded). Denominator: business problems in the catalog. Catalog baseline: ${baselineCount} products. ${scheduled ? `${plural(scheduled, "retirement")} scheduled, migration not yet recorded.` : "No retirements scheduled."}`,
+    true,
+  );
+
+  // Failure measure 1: duplicate effort found after development — products built for a problem that already had one.
+  const duplicates = families.reduce((n, f) => n + Math.max(0, f.variants.length - 1), 0);
+  const duplicateAfterBuild = metric(
+    "duplicateAfterBuild",
+    "Duplicate effort found after development",
+    "Duplicate effort found after development",
+    variantCount ? duplicates : null,
+    variantCount ? variantCount : null,
+    variantCount ? `${duplicates} of ${variantCount} products` : null,
+    "Numerator: products in production that address a business problem another product already addressed (each family counts all but one of its products). Denominator: products in production. Catalog is seeded demonstration data.",
+    true,
+  );
+
+  // Failure measure 2: time from opening an experiment to its first recorded human comparison.
+  const firstVoteByCase = new Map<string, number>();
+  for (const e of evaluations) {
+    const t = new Date(e.createdAt).getTime();
+    const prev = firstVoteByCase.get(e.caseId);
+    if (prev === undefined || t < prev) firstVoteByCase.set(e.caseId, t);
+  }
+  const durations = cases
+    .filter((c) => firstVoteByCase.has(c.id))
+    .map((c) => Math.max(0, firstVoteByCase.get(c.id)! - new Date(c.createdAt).getTime()));
+  const med = median(durations);
+  const timeToFirstTest = metric(
+    "timeToFirstTest",
+    "Time to first useful test",
+    "Time to first useful test",
+    med === null ? null : durations.length,
+    null,
+    med === null ? null : `${humanDuration(med)} (median)`,
+    `Median time from opening an experiment to the first recorded comparison of its two outputs by a person, over ${plural(durations.length, "experiment")} with a recorded vote. ${runs.length ? `${plural(runs.length, "run")} recorded in total.` : "No runs recorded yet."}`,
+    evaluations.some((e) => e.demo && firstVoteByCase.get(e.caseId) === new Date(e.createdAt).getTime()),
+  );
+
+  const metrics: PortfolioMetrics = { reuseBeforeBuild, capabilityAcceptance, improvementsFolded, variantsPerFamily, duplicateAfterBuild, timeToFirstTest };
+
+  // Exception queue: only what needs IT. Routine experiments and seeker activity never appear.
+  const queue: QueueItem[] = [];
+  const isDemo = (c: Case) => c.demo || c.id.startsWith("case_demo") || c.id === "case_procedure_search";
+  for (const c of cases.filter((x) => x.status === "approved" && !approvedByIt(x))) {
+    const base = getSolution(c.baseSolutionId);
+    const draft = versionForCase(c.id);
+    queue.push({
+      id: `approval-${c.id}`,
+      kind: "consolidation_approval",
+      title: `${base?.name ?? c.baseSolutionId}: ${draft ? `publish v${draft.version}` : "consolidation direction"}`,
+      detail: `${c.ownerName} proposed "${c.title}"; the owner approved it. ${draft ? `Draft v${draft.version} is recorded${draft.foldedCapabilities.length ? ` with ${draft.foldedCapabilities.map((cap) => cap.name).join(" and ")} folded in` : ""}.` : ""}`.trim(),
+      usage: base ? `${plural(base.activeUsers, "user")} on v${base.currentVersion}` : null,
+      actionLabel: "Approve direction",
+      caseId: c.id,
+      solutionId: c.baseSolutionId,
+      demo: isDemo(c),
+    });
+  }
+  for (const s of solutions.filter((x) => x.status !== "deprecated" && (x.ownerName === "Unassigned" || /none/i.test(x.supportModel)))) {
+    // The case that decides its fate: the one holding its disposition, else the furthest-along case that overlaps it.
+    const covering =
+      (s.disposition ? cases.find((c) => c.id === s.disposition?.caseId) : undefined) ??
+      cases.find((c) => c.status !== "rejected" && c.status !== "draft" && c.candidateSolutionIds.includes(s.id)) ??
+      cases.find((c) => c.status !== "rejected" && c.candidateSolutionIds.includes(s.id)) ??
+      null;
+    queue.push({
+      id: `unowned-${s.id}`,
+      kind: "unowned_product",
+      title: `${s.name}: no ${s.ownerName === "Unassigned" ? "owner" : "support"}`,
+      detail: `${s.ownerName === "Unassigned" ? "No named owner" : "No support model"}; ${s.supportModel.toLowerCase()}. ${s.disposition ? s.disposition.label + "." : covering ? `Its fate is decided under "${covering.title}".` : "Nobody has proposed what happens to it."}`,
+      usage: `${plural(s.activeUsers, "user")} · ${s.status}`,
+      actionLabel: covering ? "Decide its fate" : "Open product",
+      caseId: covering?.id ?? null,
+      solutionId: s.id,
+      demo: true,
+    });
+  }
+  for (const s of solutions) {
+    const d = s.disposition;
+    if (!d || d.state !== "confirmed" || d.kind !== "retire" || d.migrationNote) continue;
+    const c = cases.find((x) => x.id === d.caseId);
+    queue.push({
+      id: `migration-${s.id}`,
+      kind: "migration_pending",
+      title: `${s.name}: retirement scheduled, migration not recorded`,
+      detail: `Confirmed under "${c?.title ?? d.caseId}". Its ${plural(s.activeUsers, "user")} still need a recorded destination before standalone use ends.`,
+      usage: `${plural(s.activeUsers, "user")} · ${s.businessUnits.join(", ")}`,
+      actionLabel: "Record migration",
+      caseId: d.caseId,
+      solutionId: s.id,
+      demo: c ? isDemo(c) : false,
+    });
+  }
+  for (const c of cases.filter((x) => x.promotionState === "new_family_requested" && x.status === "pilot_proposed")) {
+    const request = decisions.find((d) => d.caseId === c.id && d.action === "request_new_family");
+    queue.push({
+      id: `family-${c.id}`,
+      kind: "new_family_request",
+      title: `New solution family requested: ${c.title}`,
+      detail: `${request?.actor ?? c.ownerName} says ${c.lineage.parentSolutionName} cannot absorb it${request?.reason ? `: "${request.reason}"` : "."}`,
+      usage: null,
+      actionLabel: "Review the request",
+      caseId: c.id,
+      solutionId: c.baseSolutionId,
+      demo: isDemo(c),
+    });
+  }
+
+  // Redirected before build: prevention, in plain language, newest first.
+  const redirects: RedirectEvent[] = redirected.slice(0, 8).map((e) => ({
+    id: e.id,
+    actor: e.actor,
+    need: e.need,
+    outcome: e.pathTaken === "use" ? `tried ${e.bestTitle ?? "an existing capability"} instead of building` : `started from ${e.bestTitle ?? "an existing solution"} and improved it`,
+    at: e.createdAt,
+    demo: e.demo,
+  }));
 
   const portfolio: Portfolio = {
     headline: personas.find((p) => p.role === "it")?.headline ?? "",
-    valueStatement: `${solutions.length} active solutions across ${businessProblems.length} business problems. ${overlapping} problems have overlapping solutions; ${summaries.filter((s) => s.case.status !== "rejected").length} consolidation case${summaries.length === 1 ? "" : "s"} in progress.`,
+    valueStatement: `${plural(queue.length, "item")} need${queue.length === 1 ? "s" : ""} an IT decision. ${plural(redirected.length, "build")} redirected to existing work so far; ${plural(folded.length, "improvement")} published into ${folded.length === 1 ? "its" : "their"} parent product.`,
     metrics,
-    rows,
-    consolidationCases: summaries,
-    unsupportedSolutions: unsupported,
-    duplicateCapabilities,
+    queue,
+    redirects,
   };
   res.json(portfolio);
-});
-
-router.get("/portfolio/decision-queue", async (_req, res) => {
-  const cases = await listCaseRows();
-  const decisions = await listAllDecisions();
-  const queue = cases.filter(
-    (c) => (c.status === "pilot_proposed" || c.status === "approved" || c.status === "deferred") && !consolidationApproved(decisions.filter((d) => d.caseId === c.id)),
-  );
-  res.json(await summarizeAll(queue));
 });
 
 router.get("/experiments", async (_req, res) => {
@@ -344,26 +406,5 @@ router.post("/demo/reset", async (_req, res) => {
 router.get("/demo/state", (_req, res) => {
   res.json(demoState());
 });
-
-function caseStatusLabel(status: string): string {
-  switch (status) {
-    case "draft":
-      return "Case open";
-    case "tested":
-      return "Tested";
-    case "pilot_proposed":
-      return "Decision pending";
-    case "approved":
-      return "Pilot approved";
-    case "changes_requested":
-      return "Changes requested";
-    case "deferred":
-      return "Deferred";
-    case "folded":
-      return "Consolidated";
-    default:
-      return status;
-  }
-}
 
 export default router;

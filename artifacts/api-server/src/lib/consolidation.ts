@@ -13,6 +13,7 @@ import {
   type DispositionChoice,
   type FoldedCapabilityInput,
   ensureDraftVersion,
+  removeCaseDispositions,
   seedDispositions,
   setDispositionsState,
   setVersionState,
@@ -105,8 +106,9 @@ export async function applyGovernanceEffects(c: Case, action: DecisionAction, ac
       return;
     case "reject":
     case "decline":
-      // An approved-then-rejected change leaves no draft behind.
+      // A rejected change leaves no draft and no proposed dispositions behind; a once-published version stays as history.
       if (versionForCase(c.id)) await setVersionState(c.id, "withdrawn");
+      await removeCaseDispositions(c.id);
       return;
     default:
       return;
