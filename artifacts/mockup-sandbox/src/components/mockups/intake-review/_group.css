@@ -1,0 +1,371 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+
+
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: var(--app-font-sans);
+  --font-display: var(--app-font-display);
+  --color-ok: hsl(var(--ok));
+  --color-warn: hsl(var(--warn));
+  --color-bad: hsl(var(--bad));
+  --color-ink: hsl(var(--ink));
+  --color-okbg: hsl(var(--okbg));
+  --color-navy: hsl(var(--navy));
+  --color-navy2: hsl(var(--navy2));
+  --color-cyan: hsl(var(--cyan));
+  --color-orange: hsl(var(--orange));
+  --color-sienna: hsl(var(--sienna));
+  --color-siennaink: hsl(var(--siennaink));
+  --color-sky: hsl(var(--sky));
+  --color-skyink: hsl(var(--skyink));
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* LIGHT MODE */
+
+:root {
+  --button-outline: rgba(38, 55, 59, 0.12);
+  --badge-outline: rgba(38, 55, 59, 0.06);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(38, 55, 59, 0.03);
+  --elevate-2: rgba(38, 55, 59, 0.07);
+  --background: 90 11% 97%;
+  --foreground: 191 22% 19%;
+  --border: 168 11% 90%;
+  --card: 0 0% 100%;
+  --card-foreground: 191 22% 19%;
+  --card-border: 168 11% 90%;
+  /* Electric Ink chrome (Power Cube kit): navy shell, raised navy panels, cyan ring */
+  --sidebar: 199 70% 9%;
+  --sidebar-foreground: 90 11% 97%;
+  --sidebar-border: 197 40% 18%;
+  --sidebar-primary: 20 54% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 197 52% 15%;
+  --sidebar-accent-foreground: 90 11% 97%;
+  --sidebar-ring: 187 70% 65%;
+  /* Shell geometry: the top bar height drives every sticky offset in the pages */
+  --shell-top: 56px;
+  --shell-side: 224px;
+  --shell-rail: 72px;
+  --popover: 0 0% 100%;
+  --popover-foreground: 191 22% 19%;
+  --popover-border: 168 11% 88%;
+  --primary: 191 28% 29%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 190 18% 94%;
+  --secondary-foreground: 191 28% 25%;
+  --muted: 150 9% 94%;
+  --muted-foreground: 191 7% 42%;
+  --accent: 20 60% 95%;
+  --accent-foreground: 20 56% 36%;
+  --destructive: 2 62% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 168 9% 84%;
+  --ring: 196 29% 50%;
+  --chart-1: 191 28% 29%;
+  --chart-2: 20 54% 50%;
+  --chart-3: 70 48% 41%;
+  --chart-4: 196 29% 56%;
+  --chart-5: 191 7% 60%;
+  --app-font-sans: 'Inter', system-ui, sans-serif;
+  --app-font-display: 'Sora', 'Inter', system-ui, sans-serif;
+  --app-font-serif: 'Inter', system-ui, sans-serif;
+  --app-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --ok: 70 50% 30%;
+  --okbg: 70 40% 93%;
+  /* FUSEBOX circuit accents (app UI only; not part of the Cenovus brand palette) */
+  --navy: 199 70% 9%;      /* #071D27 electric ink */
+  --navy2: 197 52% 15%;    /* raised navy panel */
+  --cyan: 187 70% 65%;     /* #64D8E8 conductive */
+  --orange: 29 100% 62%;   /* #FF963D energized */
+  --sienna: 20 54% 50%;
+  --siennaink: 20 56% 38%;
+  --sky: 196 29% 56%;
+  --skyink: 196 32% 34%;
+  --warn: 20 56% 38%;
+  --bad: 2 62% 45%;
+  --ink: 191 22% 19%;
+  --radius: 0.75rem; /* 12px block corners; panels use 20px (.card-soft) */
+  --primary-border: hsl(191 28% 24%);
+  --secondary-border: hsl(190 18% 88%);
+  --muted-border: hsl(150 9% 88%);
+  --accent-border: hsl(20 50% 88%);
+  --destructive-border: hsl(2 62% 40%);
+  --sidebar-primary-border: hsl(20 54% 44%);
+  --sidebar-accent-border: hsl(191 30% 18%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
+ */
+@layer utilities {
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type='search']::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
+  .no-default-hover-elevate {
+  }
+
+  .no-default-active-elevate {
+  }
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
+
+@layer base {
+  /* Sora is the editorial display face (page headlines only); every other heading and all UI text stays Inter. */
+  h1, .font-display { font-family: var(--app-font-display); font-weight: 700; letter-spacing: -0.03em; line-height: 1.06; color: hsl(var(--primary)); }
+  h2, h3 { font-family: var(--app-font-sans); letter-spacing: -0.02em; color: hsl(var(--primary)); }
+  body { font-feature-settings: "cv11", "tnum"; }
+  #root { position: relative; z-index: 1; }
+  :focus-visible { outline: 2px solid hsl(var(--orange)); outline-offset: 2px; }
+}
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+/* Kit stage eyebrow: sienna hairline + mono label ("01 / TRACE") */
+.stage-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--app-font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: hsl(var(--siennaink)); }
+.stage-eyebrow::before { content: ""; width: 28px; height: 2px; border-radius: 2px; background: hsl(var(--sienna)); }
+.display-accent { color: hsl(var(--siennaink)); }
+.card-soft { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 20px; box-shadow: 0 1px 2px hsl(191 22% 19% / .04), 0 8px 24px -20px hsl(191 22% 19% / .25); }
+.card-block { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; }
+.lift { box-shadow: 0 2px 4px hsl(191 22% 19% / .08), 0 14px 28px -12px hsl(191 22% 19% / .28); }
+@keyframes drop-pop { 0% { transform: scale(.96); opacity: .5 } 100% { transform: scale(1); opacity: 1 } }
+.drop-pop { animation: drop-pop .28s ease-out both; }
+@keyframes reveal { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+.reveal { animation: reveal .25s ease-out both; }
+
+/* ---------- Circuit motion: every effect confirms a real state change; reduced motion keeps the information ---------- */
+.circuit-grid { background-color: hsl(var(--navy)); background-image: linear-gradient(hsl(187 70% 65% / .06) 1px, transparent 1px), linear-gradient(90deg, hsl(187 70% 65% / .06) 1px, transparent 1px); background-size: 24px 24px; }
+@keyframes seat { 0% { transform: translateY(-6px) scale(.97); } 60% { transform: translateY(1px) scale(1.012); } 100% { transform: none; } }
+.seat { animation: seat .32s cubic-bezier(.18,1.35,.42,1) both; }
+@keyframes weld-arc { 0% { opacity: 0; transform: scale(.4); } 18% { opacity: 1; transform: scale(1.05); } 55% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.25); } }
+.weld { position: absolute; width: 22px; height: 22px; border-radius: 9999px; pointer-events: none; z-index: 5;
+  background: radial-gradient(circle, #FFF4D6 0%, #FF963D 38%, hsl(29 100% 62% / 0) 72%); animation: weld-arc .55s ease-out both; }
+.weld::before, .weld::after { content: ""; position: absolute; inset: 50% auto auto 50%; width: 34px; height: 2px; margin: -1px 0 0 -17px; background: linear-gradient(90deg, transparent, #FFE0A0, transparent); transform: rotate(28deg); }
+.weld::after { transform: rotate(-52deg); }
+@keyframes magnet { from { transform: translateX(0); } to { transform: translateX(2px); } }
+.socket-ready { box-shadow: 0 0 0 2px hsl(var(--cyan)), 0 0 14px hsl(187 70% 65% / .35); transition: box-shadow .12s ease-out; }
+.socket-over { box-shadow: 0 0 0 2px hsl(var(--orange)), 0 0 16px hsl(29 100% 62% / .45); animation: magnet .14s cubic-bezier(.18,1,.32,1) both; }
+.socket-blocked { box-shadow: 0 0 0 2px hsl(var(--bad) / .6); }
+/* Live workflow schematic (Connect + Energize): dark viewport, block chains, wires, sockets */
+.schem { background-color: #081F29; color: #E8F7F8; border: 1px solid #173D4A; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 36px -12px rgba(7,29,39,.35); }
+.schem::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(110,158,175,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(110,158,175,.055) 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; }
+.schem::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 72% 70%, rgba(255,127,54,.07), transparent 38%); }
+.schem-row { border: 1px solid #2A4E59; border-radius: 16px; background: rgba(15,48,60,.55); }
+.schem-row.editable { border-color: #754D35; background: rgba(81,53,30,.14); }
+.blk { position: relative; border: 1px solid #426879; background: #123745; border-radius: 12px; color: #D9EFF2; transition: border-color .18s, box-shadow .2s, transform .18s; }
+.blk:hover { border-color: #6FA3B2; }
+.blk.inserted { border-color: #CE7642; background: #3B2B26; box-shadow: 0 0 0 1px rgba(255,155,67,.1); }
+.blk.off { opacity: .5; filter: grayscale(.8); }
+.blk.open { border-color: #FFD09F; box-shadow: 0 0 0 1px rgba(255,208,159,.45); }
+.blk.lit { border-color: #96E2EB; box-shadow: 0 0 0 1px #6ECEDA, 0 0 20px rgba(101,225,235,.28); }
+@keyframes charged { 0% { box-shadow: 0 0 0 0 rgba(255,150,61,.65), 0 0 35px rgba(255,150,61,.9); } 100% { box-shadow: 0 0 0 1px rgba(255,155,67,.1); } }
+.blk.charged { animation: seat .32s cubic-bezier(.18,1.35,.42,1) both, charged .9s ease-out both; }
+.port { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 9999px; background: #0D3441; border: 2px solid #75D1E1; z-index: 1; }
+.port.l { left: -5px; } .port.r { right: -5px; }
+.blk.off .port { border-color: #2A4E59; background: #0B2531; }
+.blk.inserted .port { border-color: #FF9B4C; }
+.wire { display: block; height: 2px; width: 26px; flex: 0 0 26px; border-radius: 9px; background: #2C7182; align-self: center; }
+.wire.hot { background: #CE7642; box-shadow: 0 0 8px rgba(255,140,58,.32); }
+@keyframes wireflow { to { background-position: -200% 0; } }
+.wire.flow { background: linear-gradient(90deg, #245C6E, #72DCE9, #245C6E); background-size: 200% 100%; animation: wireflow .7s linear infinite; box-shadow: 0 0 8px rgba(107,221,232,.3); }
+.wire.flow.hot { background: linear-gradient(90deg, #704329, #FF9B4C, #704329); background-size: 200% 100%; box-shadow: 0 0 10px rgba(255,140,58,.32); }
+.socket { border: 1.5px dashed rgba(117,209,225,.6); border-radius: 12px; color: #9ED9E3; background: rgba(13,52,65,.5); transition: border-color .15s, box-shadow .15s, color .15s; }
+.socket:hover, .socket:focus-visible { border-color: #FF9B4C; color: #FFD09F; }
+@keyframes running-bar { from { transform: translateX(-20%); } to { transform: translateX(260%); } }
+@keyframes current { from { stroke-dashoffset: 48; } to { stroke-dashoffset: 0; } }
+.current-on { stroke-dasharray: 10 38; animation: current .9s linear infinite; }
+@keyframes trace-in { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.trace-in { stroke-dasharray: 1; stroke-dashoffset: 1; animation: trace-in .36s ease-out both; }
+@keyframes converge-in { from { stroke-dashoffset: 1; opacity: .3; } to { stroke-dashoffset: 0; opacity: 1; } }
+.converge-in { stroke-dasharray: 1; animation: converge-in .8s ease-out both; }
+.converge-out { stroke-dasharray: 1; animation: converge-in .6s ease-out .7s both; }
+@keyframes cube-spark { 0% { opacity: 0; transform: scale(.6); } 40% { opacity: 1; transform: scale(1.08); } 100% { opacity: .85; transform: scale(1); } }
+.cube-spark { animation: cube-spark .6s ease-out .55s both; }
+.press:active { transform: scale(.985); }
+/* Tactile motion off: the persisted preference (defaults to the OS reduced-motion setting) sets data-motion on <html>.
+   Every effect is removed; the state it confirmed stays visible. */
+:root[data-motion="off"] .seat, :root[data-motion="off"] .weld, :root[data-motion="off"] .socket-over, :root[data-motion="off"] .current-on,
+:root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out, :root[data-motion="off"] .cube-spark,
+:root[data-motion="off"] .drop-pop, :root[data-motion="off"] .reveal, :root[data-motion="off"] [style*="running-bar"],
+:root[data-motion="off"] .blk.charged, :root[data-motion="off"] .wire.flow { animation: none !important; }
+:root[data-motion="off"] .blk.charged { box-shadow: 0 0 0 2px hsl(var(--orange)); }
+:root[data-motion="off"] .wire.flow { background: #72DCE9; } :root[data-motion="off"] .wire.flow.hot { background: #FF9B4C; }
+:root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
+:root[data-motion="off"] .current-on { stroke-dasharray: none; }
+:root[data-motion="off"] .weld { display: none; }
+:root[data-motion="off"] .cube-spark { opacity: .85; }
+:root[data-motion="off"] .press:active { transform: none; }
+/* OS reduced-motion applies unless the person explicitly turned tactile motion on. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="on"]) :is(.seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, .drop-pop, .reveal, .blk.charged, .wire.flow, [style*="running-bar"]) { animation: none !important; }
+  :root:not([data-motion="on"]) :is(.trace-in, .converge-in, .converge-out) { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
+  :root:not([data-motion="on"]) .current-on { stroke-dasharray: none; }
+  :root:not([data-motion="on"]) .weld { display: none; }
+  :root:not([data-motion="on"]) .cube-spark { opacity: .85; }
+}
