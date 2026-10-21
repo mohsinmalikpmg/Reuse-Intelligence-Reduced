@@ -16,7 +16,7 @@ export const STATUS_LABEL: Record<CaseStatus, { l: string; tone: "muted" | "sien
   approved: { l: "Pilot approved", tone: "green" }, changes_requested: { l: "Changes requested", tone: "sienna" }, deferred: { l: "Deferred", tone: "muted" }, rejected: { l: "Rejected", tone: "muted" },
 };
 
-export function PilotButton({ caseId, status, pilotPercent }: { caseId: string; status: CaseStatus; pilotPercent: number }) {
+export function PilotButton({ caseId, status, pilotPercent, quiet }: { caseId: string; status: CaseStatus; pilotPercent: number; quiet?: boolean }) {
   const [open, setOpen] = useState(false);
   const review = useGetCaseReview(caseId, { query: { enabled: open, queryKey: getGetCaseReviewQueryKey(caseId) } });
   const upd = useUpdateCase();
@@ -36,7 +36,7 @@ export function PilotButton({ caseId, status, pilotPercent }: { caseId: string; 
   };
   return (
     <>
-      <button data-testid="button-propose-pilot" onClick={() => setOpen(true)} className={btn.accent}><Rocket className="h-4 w-4" /> Propose limited pilot</button>
+      <button data-testid="button-propose-pilot" onClick={() => setOpen(true)} className={quiet ? btn.secondary : btn.accent}><Rocket className="h-4 w-4" /> Propose limited pilot</button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle className="text-primary">Propose a limited pilot</DialogTitle><DialogDescription>The owner approves before anyone else sees Version B.</DialogDescription></DialogHeader>

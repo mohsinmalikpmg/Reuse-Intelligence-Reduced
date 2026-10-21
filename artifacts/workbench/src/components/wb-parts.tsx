@@ -28,11 +28,11 @@ export function InputPanel({ samples, sampleId, text, edited, onPick, onText, co
   );
 }
 
-export function Tray({ recs, more, busy, enabled, onAdd }: { recs: ComponentConfig[]; more: ComponentConfig[]; busy: boolean; enabled: boolean; onAdd: (c: ComponentConfig) => void }) {
+export function Tray({ recs, more, busy, enabled, onAdd, hideTitle }: { recs: ComponentConfig[]; more: ComponentConfig[]; busy: boolean; enabled: boolean; onAdd: (c: ComponentConfig) => void; hideTitle?: boolean }) {
   const [showMore, setShowMore] = useState(false);
   return (
     <div data-testid="panel-tray">
-      <div className="mb-2 text-[14px] font-semibold text-primary">Capabilities</div>
+      {!hideTitle && <div className="mb-2 text-[14px] font-semibold text-primary">Add to Version B</div>}
       {!enabled && <p className="mb-2 text-[12.5px] text-muted-foreground">Create a B version to add these.</p>}
       {recs.length === 0 && more.length === 0 && <p className="text-[13px] text-muted-foreground">Every compatible capability is already in Version B.</p>}
       <div className="space-y-2">{recs.map((c) => <TrayItem key={c.capability.id} c={c} rec busy={busy} enabled={enabled} onAdd={onAdd} />)}</div>

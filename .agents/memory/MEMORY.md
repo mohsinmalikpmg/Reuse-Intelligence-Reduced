@@ -2,3 +2,4 @@
 - [Demo determinism rules](demo-determinism.md) — simulation seeds must stay 31-bit for Postgres integer; LLM only interprets briefs, never produces numbers.
 - [Simplicity UX mandate](simplicity-ux-rules.md) — (now six destinations per Cenovus spec) info limits, undo everywhere; dnd-kit needs pointerWithin; verify tester "failures" with a scripted browser first.
 - [A/B evidence rules](ab-evidence-rules.md) — real execution only, no projected metrics; Orval path+query param name collision; jsonb key order; clamp durations ≥1 ms.
+- [Workbench mapped-lanes layout](workbench-lanes-layout.md) — sticky offsets start at the 101px two-band header; base steps missing from Version A are "off", not "B-only"; drag checks need an in-viewport slot.
