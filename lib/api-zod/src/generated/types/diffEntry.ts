@@ -14,6 +14,10 @@ export interface DiffEntry {
   stepId: string;
   stepName: string;
   sourceSolutionName: string;
+  /** Workflow stage the responsible step belongs to */
+  workflowStep: string;
+  /** True when the responsible step was added to Version B from another product */
+  addedModule: boolean;
   /** @nullable */
   before: string | null;
   /** @nullable */

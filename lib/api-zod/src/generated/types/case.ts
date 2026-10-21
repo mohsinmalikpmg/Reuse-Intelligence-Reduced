@@ -5,8 +5,10 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { CapabilityRequest } from './capabilityRequest';
 import type { CaseConfigValues } from './caseConfigValues';
 import type { CaseModuleStates } from './caseModuleStates';
+import type { CaseRequirement } from './caseRequirement';
 import type { CaseStatus } from './caseStatus';
 import type { Role } from './role';
 
@@ -29,6 +31,10 @@ export interface Case {
   pilotPercent: number;
   createdByRole: Role;
   saved: boolean;
+  /** Requirements added while testing, on top of the brief's list */
+  requirements: CaseRequirement[];
+  /** Capabilities the person asked for that do not exist yet; recorded, never run */
+  capabilityRequests: CapabilityRequest[];
   createdAt: string;
   updatedAt: string;
 }

@@ -1,11 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { ArrowRight, Check, ChevronDown, ChevronRight, CornerDownRight, Lock, Minus, Plus, RefreshCw, SlidersHorizontal, ToggleRight, X } from "lucide-react";
-import type { ABComparison, ComponentConfig, DiffEntry, Run, StepTrace } from "@workspace/api-client-react";
+import { ArrowRight, Check, ChevronDown, ChevronRight, CornerDownRight, HelpCircle, Lock, Minus, Plus, RefreshCw, SlidersHorizontal, ToggleRight, X } from "lucide-react";
+import type { ABComparison, CapabilityRequest, DiffEntry, Run, StepTrace } from "@workspace/api-client-react";
 import { Switch } from "@/components/ui/switch";
 import { Tag } from "@/components/bits";
 import type { FlowBlock } from "@/components/flow";
-import { Tray } from "@/components/wb-parts";
 import { cn } from "@/lib/utils";
 
 /* ---------- Row model ---------- */
@@ -55,7 +54,7 @@ export function deviationLabel(r: LaneRow): string | null {
 
 /* ---------- Workflow map ---------- */
 
-export type MapEntry = { id: string; label: string; row?: LaneRow; votes?: number };
+export type MapEntry = { id: string; label: string; row?: LaneRow; votes?: number; request?: CapabilityRequest };
 
 export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCollapseAll, horizontal, children }: {
   entries: MapEntry[]; current: string | null; open: Set<string>; onJump: (id: string) => void; onExpandAll: () => void; onCollapseAll: () => void; horizontal?: boolean; children?: ReactNode;
@@ -79,6 +78,20 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
           const dev = r ? deviationLabel(r) : null;
           const off = r?.deviation === "off";
           const muted = r && !r.b.active && !off;
+          if (e.request) {
+            return (
+              <li key={e.id} className={horizontal ? "shrink-0" : ""}>
+                <button data-testid={`map-${e.id}`} aria-current={isCurrent ? "location" : undefined} onClick={() => onJump(e.id)}
+                  className={cn("relative flex w-full items-center gap-2.5 rounded-lg text-left transition-colors", horizontal ? "min-h-9 px-2.5 py-1" : "min-h-9 px-2 py-1", isCurrent ? "bg-primary text-white" : "text-primary hover:bg-secondary")}>
+                  <span className={cn("relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-dashed text-[11px] font-semibold", isCurrent ? "border-white/60 bg-primary text-white" : "border-sienna/60 bg-card text-siennaink")}>?</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-medium italic leading-tight">Requested: {e.request.need}</span>
+                    <span className={cn("block text-[11px] leading-tight", isCurrent ? "text-white/80" : "text-siennaink")}>Not built yet</span>
+                  </span>
+                </button>
+              </li>
+            );
+          }
           return (
             <li key={e.id} className={horizontal ? "shrink-0" : ""}>
               <button
@@ -130,6 +143,12 @@ function TraceBody({ t, label }: { t: StepTrace | null; label: string }) {
   );
 }
 
+/** Who made a changed line: the step, and the product it came from when it was added to Version B. */
+export function provenance(e: Pick<DiffEntry, "change" | "stepName" | "sourceSolutionName" | "addedModule">): string {
+  const verb = e.change === "added" ? "Added" : e.change === "removed" ? "Removed" : "Changed";
+  return `${verb} by ${e.stepName}${e.addedModule ? ` · from ${e.sourceSolutionName}` : ""}`;
+}
+
 const CHANGE = { added: { icon: Plus, cls: "bg-okbg/70 text-foreground", mark: "text-ok" }, removed: { icon: Minus, cls: "bg-muted/70 text-muted-foreground line-through", mark: "text-muted-foreground" }, changed: { icon: RefreshCw, cls: "bg-accent/70 text-foreground", mark: "text-siennaink" } };
 
 function DiffLines({ entries, picked, onPick, title }: { entries: DiffEntry[]; picked: DiffEntry | null; onPick: (e: DiffEntry) => void; title: string }) {
@@ -145,7 +164,7 @@ function DiffLines({ entries, picked, onPick, title }: { entries: DiffEntry[]; p
             <li key={i}>
               <button data-testid="row-diff-line" onClick={() => onPick(e)} className={cn("flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-[13px] leading-snug hover:shadow-[inset_0_0_0_1px_hsl(var(--primary)/.35)]", c.cls, picked === e && "shadow-[inset_0_0_0_2px_hsl(var(--primary))]")}>
                 <I className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", c.mark)} />
-                <span className="min-w-0 flex-1">{e.after ?? e.before}<span className="block text-[11.5px] text-muted-foreground no-underline">{e.sectionTitle}</span></span>
+                <span className="min-w-0 flex-1">{e.after ?? e.before}<span className="block text-[11.5px] text-muted-foreground no-underline">{e.sectionTitle} · {provenance(e)}</span></span>
               </button>
             </li>
           );
@@ -275,15 +294,16 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
 
 /* ---------- Add-a-step slot ---------- */
 
-export function AddSlot({ id, afterName, dragging, enabled, recs, more, busy, onAdd, openId, setOpenId, visible }: {
-  id: string; afterName: string | null; dragging: boolean; enabled: boolean; recs: ComponentConfig[]; more: ComponentConfig[]; busy: boolean; onAdd: (c: ComponentConfig) => void;
+export function AddSlot({ id, afterName, dragging, enabled, openId, setOpenId, visible, picker }: {
+  id: string; afterName: string | null; dragging: boolean; enabled: boolean;
   openId: string | null; setOpenId: (id: string | null) => void;
   /** Keep the "+ Add a step" button visible without hover (touch screens, last row). */
   visible?: boolean;
+  /** The reuse-first picker shown when this slot is open */
+  picker: ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `slot:${id}`, disabled: !enabled });
   const open = openId === id;
-  const nothing = recs.length === 0 && more.length === 0;
   if (!enabled) return <div className="h-3" />;
   return (
     <div ref={setNodeRef} className={cn("group/slot", !dragging && !open && (visible ? "h-8" : "h-4"), open && "pb-2")}>
@@ -303,17 +323,48 @@ export function AddSlot({ id, afterName, dragging, enabled, recs, more, busy, on
           </button>
         </div>
       )}
-      {open && !dragging && (
-        <div className="reveal mt-1 rounded-xl border border-sienna/50 bg-card p-3 shadow-sm" data-testid={`picker-${id}`}>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[13.5px] font-semibold text-siennaink">Add to Version B{afterName ? ` after ${afterName}` : ""}</span>
-            <button aria-label="Close" onClick={() => setOpenId(null)} className="rounded-md p-1 text-muted-foreground hover:bg-muted"><X className="h-4 w-4" /></button>
+      {open && !dragging && picker}
+    </div>
+  );
+}
+
+/* ---------- Requested capability: recorded, shown in place, never run ---------- */
+
+export function RequestRow({ req, narrow, showA, editable, busy, onRemove }: { req: CapabilityRequest; narrow: boolean; showA: boolean; editable: boolean; busy: boolean; onRemove: () => void }) {
+  const id = `req:${req.id}`;
+  const bCell = (
+    <div data-testid={`block-${id}`} className="flex min-h-[52px] flex-col rounded-[14px] border border-dashed border-sienna/60 bg-accent/20 px-3.5 py-2.5">
+      <div className="flex items-start gap-2">
+        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-siennaink" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="text-[14.5px] font-semibold italic leading-tight text-siennaink">Requested: {req.need}</span>
+            <Tag tone="sienna" testid={`tag-not-built-${req.id}`}>Not built yet</Tag>
           </div>
-          {nothing ? <p className="text-[13px] text-muted-foreground">Every compatible capability is already in Version B.</p>
-            : <Tray recs={recs} more={more} busy={busy} enabled hideTitle onAdd={(c) => { onAdd(c); setOpenId(null); }} />}
-          <p className="mt-2 text-[12px] text-muted-foreground">Steps run in the order the solution defines, so where you add one does not change the result.</p>
+          <div className="mt-0.5 text-[12.5px] text-muted-foreground">Missing today: {req.missing}. Does not run and is never counted in the output.</div>
         </div>
-      )}
+        {editable && <button data-testid={`button-remove-${id}`} disabled={busy} onClick={onRemove} className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-md px-1.5 text-[12.5px] font-medium text-accent-foreground hover:bg-accent"><X className="h-3.5 w-3.5" /> Remove</button>}
+      </div>
+    </div>
+  );
+  const aCell = <div data-testid={`block-a-${id}`} className="grid min-h-[52px] place-items-center rounded-[14px] border border-dashed border-input px-3 text-center text-[12.5px] text-muted-foreground">Not in the current product</div>;
+  if (narrow) {
+    return (
+      <div id={`row-${id}`} data-testid={`row-${id}`} className="scroll-mt-[11.5rem]">
+        {showA && <div className="mb-1"><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">A</div>{aCell}</div>}
+        <div><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-siennaink">B · requested</div>{bCell}</div>
+        <div className="h-3" />
+      </div>
+    );
+  }
+  return (
+    <div id={`row-${id}`} data-testid={`row-${id}`} className="scroll-mt-[11.5rem]">
+      <div className={laneGrid}>
+        {aCell}
+        <div className="relative flex justify-center"><span aria-hidden className="absolute inset-y-0 w-px bg-border" /><span className="relative z-10 mt-[15px] grid h-6 w-6 place-items-center rounded-full border border-dashed border-sienna/60 bg-card text-[11px] font-semibold text-siennaink">?</span></div>
+        {bCell}
+      </div>
+      <div className={laneGrid}><div /><div className="relative flex h-3 justify-center"><span aria-hidden className="absolute inset-y-0 w-px bg-border" /></div><div /></div>
     </div>
   );
 }

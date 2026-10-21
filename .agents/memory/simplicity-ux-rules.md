@@ -12,3 +12,8 @@ The user's standing rule: "above all simplicity and tactile interaction, that's 
 Verification lessons:
 - dnd-kit default `rectIntersection` picks the wrong step when the drag source is wide; use `pointerWithin` (with rect fallback).
 - The testing subagent reported a false Undo failure and "clipped" drawers — both were stale/mid-animation screenshots. A scripted playwright-core run (chromium at /repl/tools/bin/chromium, `npm i playwright-core` in /tmp) is a cheap way to confirm before changing code.
+
+## Reuse prompts never fire per keystroke
+Any input whose purpose is a reuse check ("What should happen here?", "It must also...") submits explicitly (Enter/button). A covered requirement shows a one-line note, not options.
+**Why:** every check is a logged reuse event feeding the IT metrics; per-keystroke checks would flood them, and offering options for something Version A already does is noise.
+**How to apply:** new reuse-check entry points in any surface follow the same submit-then-options shape; keep scores behind "Why?".

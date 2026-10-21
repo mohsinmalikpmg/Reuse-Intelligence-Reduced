@@ -1,5 +1,6 @@
 import { Clock, Layers, ListChecks, AlertTriangle, Repeat, Wrench } from "lucide-react";
 import type { DiffEntry, Run, RunOutput } from "@workspace/api-client-react";
+import { provenance } from "@/components/wb-lanes";
 import { cn } from "@/lib/utils";
 
 const MARK = {
@@ -37,6 +38,7 @@ export function OutputView({ output, marks, selectedKey, onPick, testid, dim }: 
                       <span className="min-w-0 flex-1">
                         {it.text}
                         {it.detail && <span className="block text-[12.5px] text-muted-foreground no-underline">{it.detail}</span>}
+                        {m && <span className="block text-[12px] font-medium text-siennaink no-underline" data-testid="text-line-provenance">{provenance(m)}</span>}
                       </span>
                       {tone && <span className={cn("mt-0.5 shrink-0 rounded px-1.5 text-[11px] font-semibold no-underline", tone.tag)}>{tone.label}</span>}
                     </Comp>

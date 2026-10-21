@@ -1,13 +1,11 @@
 import { Router, type IRouter } from "express";
-import { ReuseCheckBody, UpdateReuseEventBody, type ReuseCheckResult } from "@workspace/api-zod";
-import { getSolution, personas } from "../data/catalog";
-import { getBrief, getCase, listCaseRows } from "../lib/store";
-import { reuseCheck } from "../lib/reuse-check";
-import { insertReuseEvent, listReuseEvents, setReusePathTaken } from "../lib/reuse-store";
+import { ReuseCheckBody, UpdateReuseEventBody } from "@workspace/api-zod";
+import { getSolution } from "../data/catalog";
+import { getBrief, getCase } from "../lib/store";
+import { performReuseCheck } from "../lib/reuse-service";
+import { listReuseEvents, setReusePathTaken } from "../lib/reuse-store";
 
 const router: IRouter = Router();
-
-const ACTIVE_CASE_STATUSES = new Set(["draft", "tested", "pilot_proposed", "approved", "changes_requested"]);
 
 /** Score existing capabilities, configurations and open experiments against a plain-language need. Records an event. */
 router.post("/reuse-check", async (req, res) => {
@@ -32,32 +30,7 @@ router.post("/reuse-check", async (req, res) => {
     res.status(400).json({ error: "Unknown brief" });
     return;
   }
-  const experiments = (await listCaseRows()).filter((x) => ACTIVE_CASE_STATUSES.has(x.status) && x.id !== caseId);
-  const outcome = reuseCheck(need.trim(), { base: base ?? null, experiments, workflowStep: workflowStep ?? null });
-  const event = await insertReuseEvent({
-    trigger,
-    need: need.trim(),
-    baseSolutionId: base?.id ?? null,
-    caseId: c?.id ?? null,
-    briefId: briefId ?? null,
-    bestScore: outcome.best?.score ?? null,
-    bestTitle: outcome.best?.title ?? null,
-    bestSolutionId: outcome.best?.solutionId ?? null,
-    bestCapabilityId: outcome.best?.capability?.id ?? null,
-    pathRecommended: outcome.recommendedPath,
-    pathTaken: null,
-    actor: personas.find((p) => p.role === "seeker")?.name ?? "seeker",
-    demo: false,
-  });
-  const result: ReuseCheckResult = {
-    eventId: event.id,
-    need: need.trim(),
-    options: outcome.options,
-    best: outcome.best,
-    recommendedPath: outcome.recommendedPath,
-    surfaced: outcome.surfaced,
-  };
-  res.json(result);
+  res.json(await performReuseCheck({ need, trigger, base: base ?? null, caseId: c?.id ?? null, briefId: briefId ?? null, workflowStep: workflowStep ?? null }));
 });
 
 router.get("/reuse-events", async (_req, res) => {

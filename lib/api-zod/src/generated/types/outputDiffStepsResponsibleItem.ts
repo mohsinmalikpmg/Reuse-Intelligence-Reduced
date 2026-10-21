@@ -10,5 +10,7 @@ export type OutputDiffStepsResponsibleItem = {
   stepId: string;
   name: string;
   sourceSolutionName: string;
+  workflowStep: string;
+  addedModule: boolean;
   changes: number;
 };

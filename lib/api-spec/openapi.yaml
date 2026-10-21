@@ -524,6 +524,136 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /cases/{caseId}/requirements:
+    post:
+      operationId: addCaseRequirement
+      tags: [cases]
+      summary: Add a requirement to a case; reports whether Version A covers it and what existing step fits
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaseRequirementInput"
+      responses:
+        "201":
+          description: Updated case with the coverage verdict and the reuse check for the new requirement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseRequirementResult"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /cases/{caseId}/requirements/{requirementId}:
+    delete:
+      operationId: removeCaseRequirement
+      tags: [cases]
+      summary: Remove a requirement from a case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: requirementId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /cases/{caseId}/capability-requests:
+    post:
+      operationId: addCapabilityRequest
+      tags: [cases]
+      summary: Record a request for a capability that does not exist yet (shown as a non-executing row, never run)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CapabilityRequestInput"
+      responses:
+        "201":
+          description: Updated case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /cases/{caseId}/capability-requests/{requestId}:
+    delete:
+      operationId: removeCapabilityRequest
+      tags: [cases]
+      summary: Remove a capability request from a case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /cases/{caseId}/recommendation:
     get:
       operationId: getCaseRecommendation
@@ -1743,6 +1873,8 @@ components:
         - pilotPercent
         - createdByRole
         - saved
+        - requirements
+        - capabilityRequests
         - createdAt
         - updatedAt
       properties:
@@ -1767,8 +1899,71 @@ components:
         pilotPercent: { type: integer, description: Pilot exposure chosen for this case (5, 10 or 20) }
         createdByRole: { $ref: "#/components/schemas/Role" }
         saved: { type: boolean }
+        requirements:
+          type: array
+          description: Requirements added while testing, on top of the brief's list
+          items: { $ref: "#/components/schemas/CaseRequirement" }
+        capabilityRequests:
+          type: array
+          description: Capabilities the person asked for that do not exist yet; recorded, never run
+          items: { $ref: "#/components/schemas/CapabilityRequest" }
         createdAt: { type: string }
         updatedAt: { type: string }
+
+    CaseRequirement:
+      type: object
+      required: [id, text, createdAt]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        createdAt: { type: string }
+
+    CaseRequirementInput:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, minLength: 3 }
+
+    CaseRequirementCoverage:
+      type: object
+      description: Whether Version A (the current product) already does what the requirement asks
+      required: [covered, capabilityId, capabilityName, score]
+      properties:
+        covered: { type: boolean }
+        capabilityId: { type: ["string", "null"] }
+        capabilityName: { type: ["string", "null"] }
+        score: { type: ["number", "null"] }
+
+    CaseRequirementResult:
+      type: object
+      required: [case, requirement, coverage, check]
+      properties:
+        case: { $ref: "#/components/schemas/Case" }
+        requirement: { $ref: "#/components/schemas/CaseRequirement" }
+        coverage: { $ref: "#/components/schemas/CaseRequirementCoverage" }
+        check: { $ref: "#/components/schemas/ReuseCheckResult" }
+
+    CapabilityRequest:
+      type: object
+      required: [id, need, missing, afterStepId, reuseEventId, createdAt]
+      properties:
+        id: { type: string }
+        need: { type: string, description: What should happen, in the person's words }
+        missing: { type: string, description: What the existing approach does not do }
+        afterStepId:
+          type: ["string", "null"]
+          description: Capability id of the step the request was placed after; null for the end of the workflow
+        reuseEventId: { type: ["string", "null"] }
+        createdAt: { type: string }
+
+    CapabilityRequestInput:
+      type: object
+      required: [need, missing]
+      properties:
+        need: { type: string, minLength: 3 }
+        missing: { type: string, minLength: 3 }
+        afterStepId: { type: string }
+        reuseEventId: { type: string }
 
     CaseInput:
       type: object
@@ -2138,7 +2333,7 @@ components:
 
     DiffEntry:
       type: object
-      required: [change, sectionKey, sectionTitle, stepId, stepName, sourceSolutionName, before, after, itemKey, kind]
+      required: [change, sectionKey, sectionTitle, stepId, stepName, sourceSolutionName, workflowStep, addedModule, before, after, itemKey, kind]
       properties:
         change:
           type: string
@@ -2148,6 +2343,8 @@ components:
         stepId: { type: string }
         stepName: { type: string }
         sourceSolutionName: { type: string }
+        workflowStep: { type: string, description: Workflow stage the responsible step belongs to }
+        addedModule: { type: boolean, description: True when the responsible step was added to Version B from another product }
         before: { type: ["string", "null"] }
         after: { type: ["string", "null"] }
         itemKey: { type: string }
@@ -2168,11 +2365,13 @@ components:
           type: array
           items:
             type: object
-            required: [stepId, name, sourceSolutionName, changes]
+            required: [stepId, name, sourceSolutionName, workflowStep, addedModule, changes]
             properties:
               stepId: { type: string }
               name: { type: string }
               sourceSolutionName: { type: string }
+              workflowStep: { type: string }
+              addedModule: { type: boolean }
               changes: { type: integer }
 
     ObjectiveScore:

@@ -26,8 +26,11 @@ import type {
   BriefUpdate,
   BusinessProblem,
   Capability,
+  CapabilityRequestInput,
   Case,
   CaseInput,
+  CaseRequirementInput,
+  CaseRequirementResult,
   CaseSummary,
   CaseUpdate,
   ChangeReview,
@@ -1951,6 +1954,336 @@ export const useUpdateCase = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getUpdateCaseMutationOptions(options));
+    }
+
+export const getAddCaseRequirementUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/requirements`
+}
+
+/**
+ * @summary Add a requirement to a case; reports whether Version A covers it and what existing step fits
+ */
+export const addCaseRequirement = async (caseId: string,
+    caseRequirementInput: CaseRequirementInput, options?: Parameters<typeof customFetch>[1]): Promise<CaseRequirementResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CaseRequirementResult>(getAddCaseRequirementUrl(caseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(caseRequirementInput)
+  }
+);}
+
+
+
+
+
+export const getAddCaseRequirementMutationKey = () => ['addCaseRequirement'] as const;
+
+export const getAddCaseRequirementMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCaseRequirement>>, TError,AddCaseRequirementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addCaseRequirement>>, TError,AddCaseRequirementMutationVariables, TContext> => {
+
+const mutationKey = getAddCaseRequirementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCaseRequirement>>, AddCaseRequirementMutationVariables> = (props) => {
+          const {caseId,data} = props ?? {};
+
+          return  addCaseRequirement(caseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCaseRequirementMutationResult = NonNullable<Awaited<ReturnType<typeof addCaseRequirement>>>
+    export type AddCaseRequirementMutationBody = BodyType<CaseRequirementInput>
+    export type AddCaseRequirementMutationError = ErrorType<ErrorResponse>
+    export type AddCaseRequirementMutationVariables = {caseId: string;data: BodyType<CaseRequirementInput>}
+
+    /**
+ * @summary Add a requirement to a case; reports whether Version A covers it and what existing step fits
+ */
+export const useAddCaseRequirement = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCaseRequirement>>, TError,AddCaseRequirementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addCaseRequirement>>,
+        TError,
+        AddCaseRequirementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddCaseRequirementMutationOptions(options));
+    }
+
+export const getRemoveCaseRequirementUrl = (caseId: string,
+    requirementId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/requirements/${requirementId}`
+}
+
+/**
+ * @summary Remove a requirement from a case
+ */
+export const removeCaseRequirement = async (caseId: string,
+    requirementId: string, options?: Parameters<typeof customFetch>[1]): Promise<Case> => {
+
+  return customFetch<Case>(getRemoveCaseRequirementUrl(caseId,requirementId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveCaseRequirementMutationKey = () => ['removeCaseRequirement'] as const;
+
+export const getRemoveCaseRequirementMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCaseRequirement>>, TError,RemoveCaseRequirementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeCaseRequirement>>, TError,RemoveCaseRequirementMutationVariables, TContext> => {
+
+const mutationKey = getRemoveCaseRequirementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeCaseRequirement>>, RemoveCaseRequirementMutationVariables> = (props) => {
+          const {caseId,requirementId} = props ?? {};
+
+          return  removeCaseRequirement(caseId,requirementId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveCaseRequirementMutationResult = NonNullable<Awaited<ReturnType<typeof removeCaseRequirement>>>
+
+    export type RemoveCaseRequirementMutationError = ErrorType<ErrorResponse>
+    export type RemoveCaseRequirementMutationVariables = {caseId: string;requirementId: string}
+
+    /**
+ * @summary Remove a requirement from a case
+ */
+export const useRemoveCaseRequirement = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCaseRequirement>>, TError,RemoveCaseRequirementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeCaseRequirement>>,
+        TError,
+        RemoveCaseRequirementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveCaseRequirementMutationOptions(options));
+    }
+
+export const getAddCapabilityRequestUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/capability-requests`
+}
+
+/**
+ * @summary Record a request for a capability that does not exist yet (shown as a non-executing row, never run)
+ */
+export const addCapabilityRequest = async (caseId: string,
+    capabilityRequestInput: CapabilityRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<Case> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Case>(getAddCapabilityRequestUrl(caseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(capabilityRequestInput)
+  }
+);}
+
+
+
+
+
+export const getAddCapabilityRequestMutationKey = () => ['addCapabilityRequest'] as const;
+
+export const getAddCapabilityRequestMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCapabilityRequest>>, TError,AddCapabilityRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addCapabilityRequest>>, TError,AddCapabilityRequestMutationVariables, TContext> => {
+
+const mutationKey = getAddCapabilityRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCapabilityRequest>>, AddCapabilityRequestMutationVariables> = (props) => {
+          const {caseId,data} = props ?? {};
+
+          return  addCapabilityRequest(caseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCapabilityRequestMutationResult = NonNullable<Awaited<ReturnType<typeof addCapabilityRequest>>>
+    export type AddCapabilityRequestMutationBody = BodyType<CapabilityRequestInput>
+    export type AddCapabilityRequestMutationError = ErrorType<ErrorResponse>
+    export type AddCapabilityRequestMutationVariables = {caseId: string;data: BodyType<CapabilityRequestInput>}
+
+    /**
+ * @summary Record a request for a capability that does not exist yet (shown as a non-executing row, never run)
+ */
+export const useAddCapabilityRequest = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCapabilityRequest>>, TError,AddCapabilityRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addCapabilityRequest>>,
+        TError,
+        AddCapabilityRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddCapabilityRequestMutationOptions(options));
+    }
+
+export const getRemoveCapabilityRequestUrl = (caseId: string,
+    requestId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/capability-requests/${requestId}`
+}
+
+/**
+ * @summary Remove a capability request from a case
+ */
+export const removeCapabilityRequest = async (caseId: string,
+    requestId: string, options?: Parameters<typeof customFetch>[1]): Promise<Case> => {
+
+  return customFetch<Case>(getRemoveCapabilityRequestUrl(caseId,requestId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveCapabilityRequestMutationKey = () => ['removeCapabilityRequest'] as const;
+
+export const getRemoveCapabilityRequestMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCapabilityRequest>>, TError,RemoveCapabilityRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeCapabilityRequest>>, TError,RemoveCapabilityRequestMutationVariables, TContext> => {
+
+const mutationKey = getRemoveCapabilityRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeCapabilityRequest>>, RemoveCapabilityRequestMutationVariables> = (props) => {
+          const {caseId,requestId} = props ?? {};
+
+          return  removeCapabilityRequest(caseId,requestId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveCapabilityRequestMutationResult = NonNullable<Awaited<ReturnType<typeof removeCapabilityRequest>>>
+
+    export type RemoveCapabilityRequestMutationError = ErrorType<ErrorResponse>
+    export type RemoveCapabilityRequestMutationVariables = {caseId: string;requestId: string}
+
+    /**
+ * @summary Remove a capability request from a case
+ */
+export const useRemoveCapabilityRequest = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCapabilityRequest>>, TError,RemoveCapabilityRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeCapabilityRequest>>,
+        TError,
+        RemoveCapabilityRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveCapabilityRequestMutationOptions(options));
     }
 
 export const getGetCaseRecommendationUrl = (caseId: string,) => {

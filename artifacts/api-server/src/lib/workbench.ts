@@ -141,26 +141,29 @@ export async function runCaseVersion(c: Case, version: "A" | "B", sampleInputId:
   return insertRun(execute({ caseId: c.id, solution: ctx.base, version, versionLabel: version === "A" ? labels.a : labels.b, active: caps.active, configValues: caps.configValues, sampleInputId: input.sampleInputId, text: input.text }));
 }
 
-function stepName(id: string): { name: string; source: string } {
+/** Provenance of a step: who made the line, which product it came from, which stage it runs in. */
+function stepName(id: string, baseId: string): { name: string; source: string; workflowStep: string; addedModule: boolean } {
   const cap = getCapability(id);
-  return cap ? { name: cap.name, source: cap.sourceSolutionName } : { name: id === "input" ? "Read input" : id, source: "" };
+  return cap
+    ? { name: cap.name, source: cap.sourceSolutionName, workflowStep: cap.workflowStep, addedModule: cap.sourceSolutionId !== baseId }
+    : { name: id === "input" ? "Read input" : id, source: "", workflowStep: "", addedModule: false };
 }
 
-function enrichDiff(diff: ReturnType<typeof diffOutputs>): OutputDiff {
+function enrichDiff(diff: ReturnType<typeof diffOutputs>, baseId: string): OutputDiff {
   const counts = new Map<string, number>();
   for (const e of diff.entries) counts.set(e.stepId, (counts.get(e.stepId) ?? 0) + 1);
   return {
     entries: diff.entries.map((e) => {
-      const s = stepName(e.stepId);
-      return { ...e, stepName: s.name, sourceSolutionName: s.source };
+      const s = stepName(e.stepId, baseId);
+      return { ...e, stepName: s.name, sourceSolutionName: s.source, workflowStep: s.workflowStep, addedModule: s.addedModule };
     }),
     added: diff.added,
     removed: diff.removed,
     changed: diff.changed,
     unchanged: diff.unchanged,
     stepsResponsible: diff.stepsResponsible.map((id) => {
-      const s = stepName(id);
-      return { stepId: id, name: s.name, sourceSolutionName: s.source, changes: counts.get(id) ?? 0 };
+      const s = stepName(id, baseId);
+      return { stepId: id, name: s.name, sourceSolutionName: s.source, workflowStep: s.workflowStep, addedModule: s.addedModule, changes: counts.get(id) ?? 0 };
     }),
   };
 }
@@ -183,7 +186,7 @@ function explain(runA: Run, runB: Run, diff: OutputDiff): string[] {
 
 export function buildComparison(c: Case, runA: Run, runB: Run, evaluation: Evaluation | null): ABComparison {
   const ctx = caseContext(c);
-  const diff = enrichDiff(diffOutputs(runA.output, runB.output));
+  const diff = enrichDiff(diffOutputs(runA.output, runB.output), ctx.base.id);
   const sample = runA.sampleInputId ? sampleInputById.get(runA.sampleInputId) : undefined;
   const expected = sample?.expected ?? null;
   const current = versionBCapabilities(c, ctx);

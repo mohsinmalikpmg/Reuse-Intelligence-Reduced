@@ -1,13 +1,17 @@
 import { Router, type IRouter } from "express";
 import {
+  AddCapabilityRequestBody,
+  AddCaseRequirementBody,
   CreateCaseBody,
   ListCasesQueryParams,
   RecordCaseDecisionBody,
   UpdateCaseBody,
   UpdateCaseConfigurationBody,
   type Case,
+  type CaseRequirementResult,
 } from "@workspace/api-zod";
-import { getSolution, personas } from "../data/catalog";
+import { getCapability, getSolution, personas } from "../data/catalog";
+import { coveredByVersionA, performReuseCheck } from "../lib/reuse-service";
 import { ConfigurationError, applyConfigurationUpdate, buildConfiguration, caseContext } from "../lib/configuration";
 import { allowedActions, buildConsolidation, buildRecommendation, buildReview, nextStatus } from "../lib/analysis";
 import { buildExperimentPlan, runSimulation } from "../lib/simulation";
@@ -144,6 +148,67 @@ router.put("/cases/:caseId/configuration", async (req, res) => {
     }
     throw err;
   }
+});
+
+// ---------- Requirements added while testing ----------
+
+router.post("/cases/:caseId/requirements", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const parsed = AddCaseRequirementBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Describe the requirement in a few words." });
+    return;
+  }
+  const text = parsed.data.text.trim();
+  const requirement = { id: newId("creq"), text, createdAt: new Date().toISOString() };
+  const updated = await updateCaseRow(c.id, { requirements: [...c.requirements, requirement] });
+  // The same reuse check as everywhere else, so the event history shows what the person was offered here.
+  const check = await performReuseCheck({ need: text, trigger: "add_requirement", base: getSolution(c.baseSolutionId) ?? null, caseId: c.id, briefId: c.briefId });
+  const result: CaseRequirementResult = { case: updated, requirement, coverage: coveredByVersionA(text, c), check };
+  res.status(201).json(result);
+});
+
+router.delete("/cases/:caseId/requirements/:requirementId", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const id = String(req.params["requirementId"]);
+  if (!c.requirements.some((r) => r.id === id)) {
+    res.status(404).json({ error: "Requirement not found" });
+    return;
+  }
+  res.json(await updateCaseRow(c.id, { requirements: c.requirements.filter((r) => r.id !== id) }));
+});
+
+// ---------- Capability requests: recorded, shown as a non-executing row, never run ----------
+
+router.post("/cases/:caseId/capability-requests", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const parsed = AddCapabilityRequestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Say what should happen and what is missing from the existing approach." });
+    return;
+  }
+  const { need, missing, afterStepId, reuseEventId } = parsed.data;
+  if (afterStepId && !getCapability(afterStepId)) {
+    res.status(400).json({ error: "Unknown step" });
+    return;
+  }
+  const request = { id: newId("capreq"), need: need.trim(), missing: missing.trim(), afterStepId: afterStepId ?? null, reuseEventId: reuseEventId ?? null, createdAt: new Date().toISOString() };
+  if (reuseEventId) await setReusePathTaken(reuseEventId, "create");
+  res.status(201).json(await updateCaseRow(c.id, { capabilityRequests: [...c.capabilityRequests, request] }));
+});
+
+router.delete("/cases/:caseId/capability-requests/:requestId", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const id = String(req.params["requestId"]);
+  if (!c.capabilityRequests.some((r) => r.id === id)) {
+    res.status(404).json({ error: "Request not found" });
+    return;
+  }
+  res.json(await updateCaseRow(c.id, { capabilityRequests: c.capabilityRequests.filter((r) => r.id !== id) }));
 });
 
 router.get("/cases/:caseId/experiment-plan", async (req, res) => {

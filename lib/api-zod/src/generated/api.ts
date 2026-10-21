@@ -144,6 +144,19 @@ export const GetSeekerOverviewResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -270,6 +283,19 @@ export const GetOwnerOverviewResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -393,6 +419,19 @@ export const GetOwnerOverviewResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -1009,6 +1048,19 @@ export const GetMySolutionsResponseItem = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -1172,6 +1224,19 @@ export const GetSolutionResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -1700,6 +1765,19 @@ export const ListCasesResponseItem = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -1785,6 +1863,19 @@ export const CreateCaseResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1811,6 +1902,19 @@ export const GetCaseResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1846,6 +1950,323 @@ export const UpdateCaseResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Add a requirement to a case; reports whether Version A covers it and what existing step fits
+ */
+export const AddCaseRequirementParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const addCaseRequirementBodyTextMin = 3;
+
+
+
+export const AddCaseRequirementBody = zod.object({
+  "text": zod.string().min(addCaseRequirementBodyTextMin)
+})
+
+export const addCaseRequirementResponseCheckOptionsMax = 3;
+
+
+
+export const AddCaseRequirementResponse = zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string(),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "requirement": zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+}),
+  "coverage": zod.object({
+  "covered": zod.boolean(),
+  "capabilityId": zod.string().nullable(),
+  "capabilityName": zod.string().nullable(),
+  "score": zod.number().nullable()
+}).describe('Whether Version A (the current product) already does what the requirement asks'),
+  "check": zod.object({
+  "eventId": zod.string(),
+  "need": zod.string(),
+  "options": zod.array(zod.object({
+  "kind": zod.enum(['capability', 'configuration', 'experiment', 'create']),
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "score": zod.number().nullable().describe('0-100 reuse-fit score; null for the create option'),
+  "path": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "reasons": zod.array(zod.string()),
+  "exclusions": zod.array(zod.string()).describe('Hard-exclusion rules that fired, in plain language'),
+  "dimensions": zod.union([zod.object({
+  "problemFit": zod.number(),
+  "inputOutput": zod.number(),
+  "workflowPosition": zod.number(),
+  "userContext": zod.number(),
+  "dataControl": zod.number(),
+  "maturityEvidence": zod.number()
+}).describe('Each dimension is 0-100; the weights are problem fit 30, input/output 20, workflow position 15, user context 10, data/control 15, maturity/evidence 10'),zod.null()]),
+  "capability": zod.union([zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}),zod.null()]),
+  "solutionId": zod.string().nullable(),
+  "solutionName": zod.string().nullable(),
+  "caseId": zod.string().nullable().describe('Set when the option is an active experiment'),
+  "addableTo": zod.string().nullable().describe('Base solution id the capability can be added to in the workbench, when the context allows it')
+})).max(addCaseRequirementResponseCheckOptionsMax),
+  "best": zod.union([zod.object({
+  "kind": zod.enum(['capability', 'configuration', 'experiment', 'create']),
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "score": zod.number().nullable().describe('0-100 reuse-fit score; null for the create option'),
+  "path": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "reasons": zod.array(zod.string()),
+  "exclusions": zod.array(zod.string()).describe('Hard-exclusion rules that fired, in plain language'),
+  "dimensions": zod.union([zod.object({
+  "problemFit": zod.number(),
+  "inputOutput": zod.number(),
+  "workflowPosition": zod.number(),
+  "userContext": zod.number(),
+  "dataControl": zod.number(),
+  "maturityEvidence": zod.number()
+}).describe('Each dimension is 0-100; the weights are problem fit 30, input/output 20, workflow position 15, user context 10, data/control 15, maturity/evidence 10'),zod.null()]),
+  "capability": zod.union([zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}),zod.null()]),
+  "solutionId": zod.string().nullable(),
+  "solutionName": zod.string().nullable(),
+  "caseId": zod.string().nullable().describe('Set when the option is an active experiment'),
+  "addableTo": zod.string().nullable().describe('Base solution id the capability can be added to in the workbench, when the context allows it')
+}),zod.null()]),
+  "recommendedPath": zod.enum(['try_existing', 'improve_existing', 'new_experiment', 'hard_exclusion']).describe('try_existing >= 80, improve_existing 60-79, new_experiment < 60, hard_exclusion when a rule disqualifies the option'),
+  "surfaced": zod.boolean().describe('True when a credible existing option (score >= 60) exists and should be shown')
+})
+})
+
+
+/**
+ * @summary Remove a requirement from a case
+ */
+export const RemoveCaseRequirementParams = zod.object({
+  "caseId": zod.coerce.string(),
+  "requirementId": zod.coerce.string()
+})
+
+export const RemoveCaseRequirementResponse = zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string(),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Record a request for a capability that does not exist yet (shown as a non-executing row, never run)
+ */
+export const AddCapabilityRequestParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const addCapabilityRequestBodyNeedMin = 3;
+
+export const addCapabilityRequestBodyMissingMin = 3;
+
+
+
+export const AddCapabilityRequestBody = zod.object({
+  "need": zod.string().min(addCapabilityRequestBodyNeedMin),
+  "missing": zod.string().min(addCapabilityRequestBodyMissingMin),
+  "afterStepId": zod.string().optional(),
+  "reuseEventId": zod.string().optional()
+})
+
+export const AddCapabilityRequestResponse = zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string(),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Remove a capability request from a case
+ */
+export const RemoveCapabilityRequestParams = zod.object({
+  "caseId": zod.coerce.string(),
+  "requestId": zod.coerce.string()
+})
+
+export const RemoveCapabilityRequestResponse = zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string(),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -2261,6 +2682,8 @@ export const GetCaseComparisonResponseItem = zod.object({
   "stepId": zod.string(),
   "stepName": zod.string(),
   "sourceSolutionName": zod.string(),
+  "workflowStep": zod.string().describe('Workflow stage the responsible step belongs to'),
+  "addedModule": zod.boolean().describe('True when the responsible step was added to Version B from another product'),
   "before": zod.string().nullable(),
   "after": zod.string().nullable(),
   "itemKey": zod.string(),
@@ -2274,6 +2697,8 @@ export const GetCaseComparisonResponseItem = zod.object({
   "stepId": zod.string(),
   "name": zod.string(),
   "sourceSolutionName": zod.string(),
+  "workflowStep": zod.string(),
+  "addedModule": zod.boolean(),
   "changes": zod.number().int()
 }))
 }),
@@ -2453,6 +2878,8 @@ export const RunCaseComparisonResponse = zod.object({
   "stepId": zod.string(),
   "stepName": zod.string(),
   "sourceSolutionName": zod.string(),
+  "workflowStep": zod.string().describe('Workflow stage the responsible step belongs to'),
+  "addedModule": zod.boolean().describe('True when the responsible step was added to Version B from another product'),
   "before": zod.string().nullable(),
   "after": zod.string().nullable(),
   "itemKey": zod.string(),
@@ -2466,6 +2893,8 @@ export const RunCaseComparisonResponse = zod.object({
   "stepId": zod.string(),
   "name": zod.string(),
   "sourceSolutionName": zod.string(),
+  "workflowStep": zod.string(),
+  "addedModule": zod.boolean(),
   "changes": zod.number().int()
 }))
 }),
@@ -3208,6 +3637,19 @@ export const GetCaseReviewResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -3545,6 +3987,19 @@ export const RecordCaseDecisionResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -3799,6 +4254,19 @@ export const GetPortfolioResponse = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),
@@ -4055,6 +4523,19 @@ export const GetDecisionQueueResponseItem = zod.object({
   "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']),
   "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }),

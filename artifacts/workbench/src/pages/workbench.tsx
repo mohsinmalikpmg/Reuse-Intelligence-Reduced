@@ -2,18 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, useParams, useSearch } from "wouter";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, rectIntersection, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Equal, FileText, Info, Lock, Play, RotateCcw, Save, Undo2 } from "lucide-react";
+import { Check, ChevronDown, Equal, FileText, Info, ListPlus, Lock, Play, RotateCcw, Save, Undo2 } from "lucide-react";
 import {
-  getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetSolutionWorkbenchQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
-  useGetCase, useGetCaseComparison, useGetCaseConfiguration, useGetSolutionWorkbench, useListCaseEvaluations, useListSampleInputs, useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
-  type ABComparison, type ComponentConfig, type Configuration, type ConfigurationUpdate, type DiffEntry, type Run, type SampleInput,
+  getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetSolutionWorkbenchQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
+  useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseConfiguration, useGetSolutionWorkbench, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
+  useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
+  type ABComparison, type CapabilityRequest, type Case, type CaseRequirementResult, type ComponentConfig, type Configuration, type ConfigurationUpdate, type DiffEntry, type Run, type SampleInput,
 } from "@workspace/api-client-react";
 import { ErrorView, LoadingView, Skel, Tag, btn, useUndoToast } from "@/components/bits";
 import { blocksFromConfig, blocksFromWorkbench, controlsFromConfig } from "@/components/flow";
 import { OutputView, RunMeta } from "@/components/output-view";
 import { InputPanel, SummaryCounts, Tray } from "@/components/wb-parts";
 import { Measures, StaleHint, Vote } from "@/components/wb-compare";
-import { AddSlot, BandRow, LaneHeaders, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type MapEntry } from "@/components/wb-lanes";
+import { AddSlot, BandRow, LaneHeaders, RequestRow, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type LaneRow, type MapEntry } from "@/components/wb-lanes";
+import { RequirementAdder, StepPicker, type ReuseActions } from "@/components/wb-reuse";
 import { InviteTesters, OwnerDecision, PilotButton, STATUS_LABEL } from "@/components/wb-pilot";
 import { errMsg, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
@@ -60,6 +62,10 @@ export default function Workbench() {
   const runOne = useRunWorkflow();
   const runBoth = useRunCaseComparison();
   const updCase = useUpdateCase();
+  const addRequest = useAddCapabilityRequest();
+  const removeRequest = useRemoveCapabilityRequest();
+  const removeRequirement = useRemoveCaseRequirement();
+  const briefQ = useGetBrief(caseQ.data?.briefId ?? "", { query: { enabled: !!caseQ.data?.briefId, queryKey: getGetBriefQueryKey(caseQ.data?.briefId ?? "") } });
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor));
 
   const [sampleId, setSampleId] = useState("");
@@ -74,6 +80,7 @@ export default function Workbench() {
   const [current, setCurrent] = useState<string | null>(null);
   const [slotOpen, setSlotOpen] = useState<string | null>(null);
   const [showA, setShowA] = useState(false);
+  const [reqOpen, setReqOpen] = useState(false);
   const jumpedRef = useRef(false);
 
   const samples = samplesQ.data ?? wbQ.data?.sampleInputs ?? [];
@@ -102,8 +109,24 @@ export default function Workbench() {
     return bBlocks.filter((b) => { const x = a.get(b.id); return x ? x.active !== b.active || x.value !== b.value : b.active; }).map((b) => b.id);
   }, [aBlocks, bBlocks]);
   const rows = useMemo(() => buildRows(aBlocks, bBlocks, cmp, cmp?.runA ?? wbQ.data?.exampleRun, cmp?.runB ?? run ?? undefined), [aBlocks, bBlocks, cmp, wbQ.data, run]);
+  const requests = caseQ.data?.capabilityRequests ?? [];
+  // Requested capabilities sit where they were asked for, as non-executing rows; they never enter a run.
+  const lane = useMemo<({ kind: "step"; row: LaneRow } | { kind: "request"; req: CapabilityRequest })[]>(() => {
+    const out: ({ kind: "step"; row: LaneRow } | { kind: "request"; req: CapabilityRequest })[] = [];
+    const ids = new Set(rows.map((r) => r.id));
+    for (const r of rows) {
+      out.push({ kind: "step", row: r });
+      for (const req of requests) if (req.afterStepId === r.id) out.push({ kind: "request", req });
+    }
+    for (const req of requests) if (!req.afterStepId || !ids.has(req.afterStepId)) out.push({ kind: "request", req });
+    return out;
+  }, [rows, requests]);
   const votes = evalsQ.data?.summary.tests ?? 0;
-  const entries = useMemo<MapEntry[]>(() => [{ id: "input", label: "Input" }, ...rows.map((r) => ({ id: r.id, label: r.name, row: r })), { id: "output", label: "Output" }, { id: "verdict", label: "Verdict", votes }], [rows, votes]);
+  const entries = useMemo<MapEntry[]>(() => [
+    { id: "input", label: "Input" },
+    ...lane.map((x) => (x.kind === "step" ? { id: x.row.id, label: x.row.name, row: x.row } : { id: `req:${x.req.id}`, label: `Requested: ${x.req.need}`, request: x.req })),
+    { id: "output", label: "Output" }, { id: "verdict", label: "Verdict", votes },
+  ], [lane, votes]);
 
   const apply = (data: ConfigurationUpdate, label: string, record = true) => {
     if (!cfg) return;
@@ -143,6 +166,31 @@ export default function Workbench() {
     if (c) add(c);
   };
 
+  const setCase = (c: Case) => { qc.setQueryData(getGetCaseQueryKey(caseId), c); qc.invalidateQueries({ queryKey: getGetCaseQueryKey(caseId) }); };
+  const recordRequest = (input: { need: string; missing: string; afterStepId: string | null; reuseEventId?: string }, undoable = true) =>
+    new Promise<void>((resolve) => {
+      addRequest.mutate({ caseId, data: { need: input.need, missing: input.missing, afterStepId: input.afterStepId ?? undefined, reuseEventId: input.reuseEventId } }, {
+        onSuccess: (c) => {
+          setCase(c);
+          const created = c.capabilityRequests[c.capabilityRequests.length - 1];
+          if (undoable && created) say("Request recorded. It shows as a row but does not run.", () => dropRequest(created, false)); else say("Request restored");
+          if (created) window.setTimeout(() => scrollToRow(`req:${created.id}`), 50);
+          resolve();
+        },
+        onError: (e) => { say(errMsg(e)); resolve(); },
+      });
+    });
+  const dropRequest = (req: CapabilityRequest, undoable = true) =>
+    removeRequest.mutate({ caseId, requestId: req.id }, {
+      onSuccess: (c) => { setCase(c); if (undoable) say("Request removed", () => void recordRequest({ need: req.need, missing: req.missing, afterStepId: req.afterStepId }, false)); else say("Undone"); },
+      onError: (e) => say(errMsg(e)),
+    });
+  const dropRequirement = (id: string, text: string) =>
+    removeRequirement.mutate({ caseId, requirementId: id }, { onSuccess: (c) => { setCase(c); say(`Removed "${text}"`); }, onError: (e) => say(errMsg(e)) });
+  const onRequirementAdded = (r: CaseRequirementResult) => {
+    setCase(r.case);
+    say(`Added "${r.requirement.text}"`, () => dropRequirement(r.requirement.id, r.requirement.text));
+  };
   const afterBoth = (r: ABComparison, msg?: string) => {
     qc.setQueryData<ABComparison[]>(getGetCaseComparisonQueryKey(caseId), (old) => [r, ...(old ?? [])]);
     setPicked(null); invalidateCase(caseId);
@@ -197,6 +245,12 @@ export default function Workbench() {
   if (caseQ.isLoading || cfgQ.isLoading) return <LoadingView />;
   if (caseQ.isError || cfgQ.isError || !caseQ.data || !cfg) return <ErrorView onRetry={() => { caseQ.refetch(); cfgQ.refetch(); }} message="This workbench could not load." />;
   const theCase = caseQ.data;
+  const reuseActions: ReuseActions = {
+    caseId, baseName: wbQ.data?.solution.name ?? "this product", cfg, busy: put.isPending,
+    onAdd: (c) => { add(c); setSlotOpen(null); window.setTimeout(() => scrollToRow(c.capability.id), 80); },
+    onOpenStep: (id) => { setSlotOpen(null); jump(id); },
+    onRequest: (input) => recordRequest(input),
+  };
   const dragC = [...recs, ...more].find((c) => `add:${c.capability.id}` === dragging);
   const status = STATUS_LABEL[theCase.status];
   const sample = samples.find((s) => s.id === sampleId);
@@ -221,8 +275,10 @@ export default function Workbench() {
   );
   const labelA = cmp ? "A · comparison run" : "A · saved example";
   const labelB = cmp ? "B · comparison run" : "B · your run";
+  const browse = <Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={(c) => { add(c); setSlotOpen(null); }} />;
   const slotFor = (afterId: string | null, afterName: string | null, visible: boolean) => (
-    <AddSlot id={afterId ?? "end"} afterName={afterName} dragging={!!dragging} enabled={editable} recs={recs} more={more} busy={put.isPending} onAdd={add} openId={slotOpen} setOpenId={setSlotOpen} visible={visible} />
+    <AddSlot id={afterId ?? "end"} afterName={afterName} dragging={!!dragging} enabled={editable} openId={slotOpen} setOpenId={setSlotOpen} visible={visible}
+      picker={<StepPicker afterId={afterId} afterName={afterName} actions={reuseActions} browse={browse} onClose={() => setSlotOpen(null)} />} />
   );
   const outputCard = (v: "A" | "B", r: Run, marks?: Map<string, DiffEntry>) => (
     <div className={cn("card-soft p-4", v === "B" && "border-t-4 border-t-sienna")} data-testid={`panel-version-${v.toLowerCase()}`}>
@@ -264,7 +320,8 @@ export default function Workbench() {
               <div className="flex items-center gap-2 text-[14px] font-semibold text-primary" data-testid="text-input-name">{edited ? "Edited text" : sample?.name ?? "Input"}{edited && <Tag tone="sienna">Edited</Tag>}</div>
               <div className="text-[12px] text-muted-foreground">{sample && !edited ? `${sample.noteCount} note${sample.noteCount === 1 ? "" : "s"}${sample.hasExpected ? " · labelled findings" : ""} · ` : ""}shared by A and B</div>
             </div>
-            <button data-testid="button-change-input" aria-expanded={inputOpen} onClick={() => setInputOpen((v) => !v)} className={cn(btn.quiet, "px-2")}><ChevronDown className={cn("h-4 w-4 transition-transform", inputOpen && "rotate-180")} /> {inputOpen ? "Hide input" : "Change input"}</button>
+            <button data-testid="button-change-input" aria-expanded={inputOpen} onClick={() => { setInputOpen((v) => !v); setReqOpen(false); }} className={cn(btn.quiet, "px-2")}><ChevronDown className={cn("h-4 w-4 transition-transform", inputOpen && "rotate-180")} /> {inputOpen ? "Hide input" : "Change input"}</button>
+            {editable && <button data-testid="button-add-requirement" aria-expanded={reqOpen} onClick={() => { setReqOpen((v) => !v); setInputOpen(false); }} className={cn(btn.quiet, "px-2", reqOpen && "bg-muted text-foreground")}><ListPlus className="h-4 w-4" /> Add a requirement</button>}
             <div className="ml-auto flex items-center gap-3">
               <span className="hidden text-[12.5px] text-muted-foreground md:block" data-testid="text-compared-input">{stateText}</span>
               {primary}
@@ -275,6 +332,9 @@ export default function Workbench() {
           <section className="card-soft reveal mt-1 p-4">
             {samplesQ.isLoading ? <Skel className="h-24" /> : <InputPanel compact samples={samples} sampleId={sampleId} text={text} edited={edited} onPick={pickSample} onText={(t) => { setText(t); setEdited(true); }} />}
           </section>
+        )}
+        {reqOpen && editable && (
+          <RequirementAdder actions={reuseActions} briefRequirements={briefQ.data?.requirements.map((r) => r.text) ?? []} caseRequirements={theCase.requirements} onAdded={onRequirementAdded} onRemove={dropRequirement} onRunBoth={doBoth} runBothBusy={runBoth.isPending} needsBoth={needsBoth} />
         )}
         {cmp?.staleB && <div className="mt-3"><StaleHint onRun={doBoth} busy={runBoth.isPending} /></div>}
 
@@ -290,12 +350,17 @@ export default function Workbench() {
           <div className="min-w-0">
             <LaneHeaders editTools={editTools} narrow={narrow} showA={showA} setShowA={setShowA} controls={controls.map((c) => c.name)} />
             <LanesDrop enabled={editable} dragging={!!dragging}>
-              {wbQ.isLoading || rows.length === 0 ? <div className={narrow ? "space-y-2" : laneGrid}><Skel className="h-14" /><div /><Skel className="h-14" /></div> : rows.map((r, i) => (
-                <StepRow key={r.id} r={r} no={i + 1} open={open.has(r.id)} onToggle={() => toggleRow(r.id)} editable={editable} busy={put.isPending}
-                  onSetOption={(v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(on) => toggle(r.id, r.name, on)} onRemove={() => toggle(r.id, r.name, false)}
-                  picked={picked} onPick={onPick} explanation={(cmp?.explanation ?? []).filter((x) => x.startsWith(r.name))} labelA={labelA} labelB={labelB}
-                  narrow={narrow} showA={showA} dragging={!!dragging} slot={slotFor(r.id, r.name, narrow || coarsePointer || i === rows.length - 1)} />
-              ))}
+              {wbQ.isLoading || rows.length === 0 ? <div className={narrow ? "space-y-2" : laneGrid}><Skel className="h-14" /><div /><Skel className="h-14" /></div> : lane.map((x) => {
+                if (x.kind === "request") return <RequestRow key={x.req.id} req={x.req} narrow={narrow} showA={showA} editable={editable} busy={removeRequest.isPending} onRemove={() => dropRequest(x.req)} />;
+                const r = x.row;
+                const i = rows.indexOf(r);
+                return (
+                  <StepRow key={r.id} r={r} no={i + 1} open={open.has(r.id)} onToggle={() => toggleRow(r.id)} editable={editable} busy={put.isPending}
+                    onSetOption={(v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(on) => toggle(r.id, r.name, on)} onRemove={() => toggle(r.id, r.name, false)}
+                    picked={picked} onPick={onPick} explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} labelA={labelA} labelB={labelB}
+                    narrow={narrow} showA={showA} dragging={!!dragging} slot={slotFor(r.id, r.name, narrow || coarsePointer || i === rows.length - 1)} />
+                );
+              })}
             </LanesDrop>
 
             {/* Output */}
@@ -321,7 +386,13 @@ export default function Workbench() {
                     {stepsResponsible.length > 0 && (
                       <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[13px]">
                         <span className="text-muted-foreground">Steps responsible:</span>
-                        {stepsResponsible.map((s) => <button key={s.stepId} data-testid={`button-responsible-${s.stepId}`} onClick={() => jump(s.stepId)} className="inline-flex min-h-8 items-center gap-1 rounded-md border border-input bg-card px-2 font-medium text-primary hover:border-primary/50">{s.name} <span className="rounded bg-accent px-1 text-[11.5px] font-semibold text-siennaink">{s.changes}</span></button>)}
+                        {stepsResponsible.map((s) => (
+                          <button key={s.stepId} data-testid={`button-responsible-${s.stepId}`} onClick={() => jump(s.stepId)} title={`${s.name} · ${s.workflowStep}${s.addedModule ? ` · from ${s.sourceSolutionName}` : ""}`} className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-input bg-card px-2 font-medium text-primary hover:border-primary/50">
+                            {s.name}
+                            <span className="text-[12px] font-normal text-muted-foreground">{s.addedModule ? `from ${s.sourceSolutionName} · ` : ""}{s.workflowStep}</span>
+                            <span className="rounded bg-accent px-1 text-[11.5px] font-semibold text-siennaink">{s.changes}</span>
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>

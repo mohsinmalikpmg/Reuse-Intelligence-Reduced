@@ -2,6 +2,9 @@ import { pgTable, text, boolean, integer, jsonb, timestamp } from "drizzle-orm/p
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
+export type CaseRequirementRow = { id: string; text: string; createdAt: string };
+export type CapabilityRequestRow = { id: string; need: string; missing: string; afterStepId: string | null; reuseEventId: string | null; createdAt: string };
+
 export const casesTable = pgTable("cases", {
   id: text("id").primaryKey(),
   briefId: text("brief_id"),
@@ -16,6 +19,8 @@ export const casesTable = pgTable("cases", {
   pilotPercent: integer("pilot_percent").notNull().default(10),
   createdByRole: text("created_by_role").notNull().default("seeker"),
   saved: boolean("saved").notNull().default(false),
+  requirements: jsonb("requirements").$type<CaseRequirementRow[]>().notNull().default([]),
+  capabilityRequests: jsonb("capability_requests").$type<CapabilityRequestRow[]>().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

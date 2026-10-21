@@ -227,6 +227,28 @@ export interface BusinessProblem {
   status: string;
 }
 
+export interface CaseRequirement {
+  id: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface CapabilityRequest {
+  id: string;
+  /** What should happen */
+  need: string;
+  /** What the existing approach does not do */
+  missing: string;
+  /**
+     * Capability id of the step the request was placed after; null for the end of the workflow
+     * @nullable
+     */
+  afterStepId: string | null;
+  /** @nullable */
+  reuseEventId: string | null;
+  createdAt: string;
+}
+
 /**
  * Optional module id -> active
  */
@@ -256,6 +278,10 @@ export interface Case {
   pilotPercent: number;
   createdByRole: Role;
   saved: boolean;
+  /** Requirements added while testing, on top of the brief's list */
+  requirements: CaseRequirement[];
+  /** Capabilities the person asked for that do not exist yet; recorded, never run */
+  capabilityRequests: CapabilityRequest[];
   createdAt: string;
   updatedAt: string;
 }
@@ -628,6 +654,40 @@ export interface ReuseEventUpdate {
   pathTaken: ReusePathTaken;
 }
 
+export interface CaseRequirementInput {
+  /** @minLength 3 */
+  text: string;
+}
+
+/**
+ * Whether Version A (the current product) already does what the requirement asks
+ */
+export interface CaseRequirementCoverage {
+  covered: boolean;
+  /** @nullable */
+  capabilityId: string | null;
+  /** @nullable */
+  capabilityName: string | null;
+  /** @nullable */
+  score: number | null;
+}
+
+export interface CaseRequirementResult {
+  case: Case;
+  requirement: CaseRequirement;
+  coverage: CaseRequirementCoverage;
+  check: ReuseCheckResult;
+}
+
+export interface CapabilityRequestInput {
+  /** @minLength 3 */
+  need: string;
+  /** @minLength 3 */
+  missing: string;
+  afterStepId?: string;
+  reuseEventId?: string;
+}
+
 export interface CaseInput {
   baseSolutionId: string;
   briefId?: string;
@@ -929,6 +989,10 @@ export interface DiffEntry {
   stepId: string;
   stepName: string;
   sourceSolutionName: string;
+  /** Workflow stage the responsible step belongs to */
+  workflowStep: string;
+  /** True when the responsible step was added to Version B from another product */
+  addedModule: boolean;
   /** @nullable */
   before: string | null;
   /** @nullable */
@@ -941,6 +1005,8 @@ export type OutputDiffStepsResponsibleItem = {
   stepId: string;
   name: string;
   sourceSolutionName: string;
+  workflowStep: string;
+  addedModule: boolean;
   changes: number;
 };
 

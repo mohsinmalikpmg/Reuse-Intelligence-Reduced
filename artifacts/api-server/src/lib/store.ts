@@ -45,6 +45,8 @@ export function toCase(row: CaseRow): Case {
     pilotPercent: row.pilotPercent,
     createdByRole: row.createdByRole as Role,
     saved: row.saved,
+    requirements: row.requirements ?? [],
+    capabilityRequests: row.capabilityRequests ?? [],
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
