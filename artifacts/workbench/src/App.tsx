@@ -16,6 +16,7 @@ import Library from '@/pages/library';
 import SolutionPage from '@/pages/solution';
 import SearchPage from '@/pages/search';
 import Workbench from '@/pages/workbench';
+import FinanceWiringPage from '@/pages/finance-wiring';
 import TestSessionPage from '@/pages/test-session';
 import MySolutions from '@/pages/my-solutions';
 import ImprovementPage from '@/pages/improvement';
@@ -41,6 +42,7 @@ function Router() {
           <Route path="/library" component={Library} />
           <Route path="/solutions/:id" component={SolutionPage} />
           <Route path="/search" component={SearchPage} />
+          <Route path="/workbench/wiring" component={FinanceWiringPage} />
           <Route path="/workbench/:caseId" component={Workbench} />
           <Route path="/cases/:caseId/decision" component={DecisionPage} />
           <Route path="/test/:sessionId" component={TestSessionPage} />

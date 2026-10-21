@@ -26,6 +26,7 @@ import { useRole } from "@/lib/persona";
 import { ProposalMap, proposalNodes } from "@/components/wb-proposal";
 import { cn } from "@/lib/utils";
 import { CaseExports } from "@/components/solution-exports";
+import { WiringEntry } from "@/components/wiring-entry";
 
 type Snap = { moduleStates: Record<string, boolean>; configValues: Record<string, string> };
 /** Remembered per browser: the schematic viewport is the default from 1024px up; "Prefer rows?" restores the list layout. */
@@ -446,7 +447,7 @@ export default function Workbench() {
     <DndContext sensors={sensors} collisionDetection={dropUnderPointer} onDragStart={(e) => setDragging(String(e.active.id))} onDragCancel={() => setDragging(null)} onDragEnd={onDragEnd}>
       <div className="mx-auto max-w-[1400px] px-4 pb-24 pt-5 md:px-6">
         {/* Title: an experimental branch of the parent product, never a product of its own */}
-        <StageEyebrow stage="connect" note="Make the connection. Feel the change." className="mb-2" />
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><StageEyebrow stage="connect" note="Make the connection. Feel the change." /><WiringEntry testid="link-workbench-wiring" /></div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">

@@ -5,6 +5,227 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export type FinanceWiringConfigSchemaVersion = typeof FinanceWiringConfigSchemaVersion[keyof typeof FinanceWiringConfigSchemaVersion];
+
+
+export const FinanceWiringConfigSchemaVersion = {
+  NUMBER_1: 1,
+} as const;
+
+export type FinanceWiringConfigMethod = typeof FinanceWiringConfigMethod[keyof typeof FinanceWiringConfigMethod];
+
+
+export const FinanceWiringConfigMethod = {
+  forecast: 'forecast',
+  ytd: 'ytd',
+  last3: 'last3',
+} as const;
+
+export type FinanceWiringConfigAccount = typeof FinanceWiringConfigAccount[keyof typeof FinanceWiringConfigAccount];
+
+
+export const FinanceWiringConfigAccount = {
+  Contractors: 'Contractors',
+  'Software_&_Licences': 'Software & Licences',
+  Professional_Fees: 'Professional Fees',
+} as const;
+
+export type FinanceWiringConfigCentresItem = typeof FinanceWiringConfigCentresItem[keyof typeof FinanceWiringConfigCentresItem];
+
+
+export const FinanceWiringConfigCentresItem = {
+  Service_Delivery: 'Service Delivery',
+  Supply_Chain: 'Supply Chain',
+} as const;
+
+export type FinanceWiringConfigPeriod = typeof FinanceWiringConfigPeriod[keyof typeof FinanceWiringConfigPeriod];
+
+
+export const FinanceWiringConfigPeriod = {
+  q4: 'q4',
+  october: 'october',
+  november: 'november',
+  december: 'december',
+} as const;
+
+export type FinanceWiringConfigAccountMappingRevenue = typeof FinanceWiringConfigAccountMappingRevenue[keyof typeof FinanceWiringConfigAccountMappingRevenue];
+
+
+export const FinanceWiringConfigAccountMappingRevenue = {
+  NUMBER_0: 0,
+} as const;
+
+export type FinanceWiringConfigAccountMappingCOGS = typeof FinanceWiringConfigAccountMappingCOGS[keyof typeof FinanceWiringConfigAccountMappingCOGS];
+
+
+export const FinanceWiringConfigAccountMappingCOGS = {
+  NUMBER_1: 1,
+} as const;
+
+export type FinanceWiringConfigAccountMapping = {
+  Revenue: FinanceWiringConfigAccountMappingRevenue;
+  COGS: FinanceWiringConfigAccountMappingCOGS;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  'Salaries & Benefits': number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Contractors: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Travel: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  'Software & Licences': number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Facilities: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Marketing: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  'Professional Fees': number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Depreciation: number;
+};
+
+export interface FinanceWiringConfig {
+  schemaVersion: FinanceWiringConfigSchemaVersion;
+  method: FinanceWiringConfigMethod;
+  account: FinanceWiringConfigAccount;
+  /**
+     * @minimum -600
+     * @maximum 6000
+     */
+  adjustment: number;
+  /**
+     * @minItems 1
+     * @maxItems 2
+     */
+  centres: FinanceWiringConfigCentresItem[];
+  period: FinanceWiringConfigPeriod;
+  accountMapping: FinanceWiringConfigAccountMapping;
+}
+
+export interface FinanceWiringInput {
+  config: FinanceWiringConfig;
+}
+
+export interface FinanceWiringSnapshotInput {
+  config: FinanceWiringConfig;
+  /** @minimum 0 */
+  expectedRevision: number;
+}
+
+export interface FinanceWiringActivationInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  versionId: string;
+  /** @minimum 0 */
+  expectedRevision: number;
+}
+
+export interface FinanceWiringValidation {
+  valid: boolean;
+  errors: string[];
+  config?: FinanceWiringConfig;
+  fingerprint?: string;
+}
+
+export interface FinanceWiringLine {
+  id: string;
+  name: string;
+  baseline: string;
+  current: string;
+  difference: string;
+}
+
+export interface FinanceWiringMonth {
+  period: string;
+  lines: FinanceWiringLine[];
+}
+
+export interface FinanceWiringSource {
+  path: string;
+  sha256: string;
+}
+
+export interface FinanceWiringResult {
+  adjustment: number;
+  currency: string;
+  period: string;
+  lines: FinanceWiringLine[];
+  months: FinanceWiringMonth[];
+  note: string;
+  sourceHashes: FinanceWiringSource[];
+  config: FinanceWiringConfig;
+  fingerprint: string;
+}
+
+export interface FinanceWiringAccount {
+  id: number;
+  name: string;
+}
+
+export interface FinanceWiringChoice {
+  id: string;
+  label: string;
+}
+
+export interface FinanceWiringConnection {
+  from: string;
+  to: string;
+  contract: string;
+}
+
+export interface FinanceWiringCatalog {
+  defaultConfig: FinanceWiringConfig;
+  accounts: FinanceWiringAccount[];
+  centres: FinanceWiringAccount[];
+  methods: FinanceWiringChoice[];
+  periods: FinanceWiringChoice[];
+  sources: FinanceWiringSource[];
+  connections: FinanceWiringConnection[];
+  limitations: string[];
+}
+
+export interface FinanceWiringVersion {
+  id: string;
+  number: number;
+  createdAt: string;
+  config: FinanceWiringConfig;
+  fingerprint: string;
+  result: FinanceWiringResult;
+}
+
+export interface FinanceWiringState {
+  /** @minimum 0 */
+  revision: number;
+  /** @nullable */
+  activeVersionId: string | null;
+  versions: FinanceWiringVersion[];
+}
+
 export interface SolutionExportInput {
   /** @minLength 1 */
   caseId: string;

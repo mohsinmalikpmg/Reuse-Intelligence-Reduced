@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Saved finance wiring</title>
+<style>body{font:16px system-ui;color:#173b40;background:#f6f7f4;max-width:1040px;margin:40px auto;padding:20px}button{background:#176b71;color:white;padding:12px 20px;border:0;border-radius:6px;cursor:pointer}button:disabled{opacity:.5}table{width:100%;border-collapse:collapse;background:white;margin:20px 0}td,th{padding:10px;text-align:right;border-bottom:1px solid #ddd}td:first-child,th:first-child{text-align:left}pre{white-space:pre-wrap;overflow-wrap:anywhere}#status{padding:14px 0}details{padding:16px;background:white;margin:20px 0}</style></head>
+<body><p>FUSEBOX · Runnable wiring snapshot</p><h1>Forecast to Report</h1>
+<p>Synthetic data. The saved Workbench configuration drives the original Python forecasting and reporting components.</p>
+<button id="run">Run saved wiring</button><div id="status" role="status"></div>
+<section id="result"></section><details><summary>Saved configuration and version</summary><pre id="config"></pre></details>
+<details><summary>Execution receipt and source hashes</summary><pre id="receipt"></pre></details>
+<p>To modify connections, return to the Workbench Wiring view and save a new version. This snapshot does not publish or import itself.</p>
+<script>
+const button=document.getElementById('run'), status=document.getElementById('status');
+fetch('api/config').then(r=>{if(!r.ok)throw Error('Configuration unavailable');return r.json()}).then(c=>document.getElementById('config').textContent=JSON.stringify(c,null,2)).catch(e=>status.textContent=e.message);
+button.onclick=async()=>{
+ button.disabled=true;status.textContent='Executing saved wiring…';
+ try{
+  const r=await fetch('api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  const data=await r.json();if(!r.ok)throw Error(data.error);
+  const section=document.getElementById('result');section.replaceChildren();
+  const title=document.createElement('h2');title.textContent=data.period+' · '+data.currency;section.append(title);
+  const table=document.createElement('table');const header=table.insertRow();
+  for(const text of ['Report line','Baseline','Current','Difference']){const th=document.createElement('th');th.textContent=text;header.append(th)}
+  for(const line of data.lines){const row=table.insertRow();for(const text of [line.name,line.baseline,line.current,line.difference])row.insertCell().textContent=text}
+  section.append(table);document.getElementById('receipt').textContent=JSON.stringify(data,null,2);status.textContent='Completed using saved wiring · '+data.fingerprint;
+ }catch(e){status.textContent='Could not run: '+e.message+' Previous results, if shown, are unchanged.'}
+ finally{button.disabled=false}
+};
+</script></body></html>

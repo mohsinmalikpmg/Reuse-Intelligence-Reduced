@@ -20,6 +20,101 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /finance-wiring/catalog:
+    get:
+      operationId: getFinanceWiringCatalog
+      responses:
+        "200":
+          description: Reviewed synthetic finance wiring catalog
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceWiringCatalog" }
+  /finance-wiring/validate:
+    post:
+      operationId: validateFinanceWiring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceWiringInput" }
+      responses:
+        "200":
+          description: Configuration validation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceWiringValidation" }
+  /finance-wiring/run:
+    post:
+      operationId: runFinanceWiring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceWiringInput" }
+      responses:
+        "200":
+          description: Server-executed synthetic finance result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceWiringResult" }
+  /finance-wiring/versions:
+    get:
+      operationId: getFinanceWiringVersions
+      responses:
+        "200":
+          description: Signed-in user's immutable saved versions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceWiringState" }
+        "401": { description: Sign in required }
+    post:
+      operationId: saveFinanceWiringVersion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceWiringSnapshotInput" }
+      responses:
+        "201":
+          description: Saved server-executed result and activated immutable version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceWiringState" }
+        "401": { description: Sign in required }
+        "409": { description: Revision conflict; reload state }
+  /finance-wiring/restore:
+    post:
+      operationId: restoreFinanceWiringVersion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceWiringActivationInput" }
+      responses:
+        "200":
+          description: Activated an owned immutable saved version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceWiringState" }
+        "401": { description: Sign in required }
+        "404": { description: Version not found }
+        "409": { description: Revision conflict; reload state }
+  /finance-wiring/versions/{id}/export:
+    get:
+      operationId: exportFinanceWiringVersion
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Runnable ZIP of this user's immutable saved configuration
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        "401": { description: Sign in required }
+        "404": { description: Version not found }
   /solution-exports:
     get:
       operationId: listSolutionExports
@@ -2181,6 +2276,173 @@ components:
       schema:
         type: string
   schemas:
+    FinanceWiringConfig:
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, method, account, adjustment, centres, period, accountMapping]
+      properties:
+        schemaVersion: { type: integer, enum: [1] }
+        method: { type: string, enum: [forecast, ytd, last3] }
+        account: { type: string, enum: [Contractors, "Software & Licences", Professional Fees] }
+        adjustment: { type: integer, minimum: -600, maximum: 6000, multipleOf: 6 }
+        centres:
+          type: array
+          minItems: 1
+          maxItems: 2
+          uniqueItems: true
+          items: { type: string, enum: [Service Delivery, Supply Chain] }
+        period: { type: string, enum: [q4, october, november, december] }
+        accountMapping:
+          type: object
+          additionalProperties: false
+          required: [Revenue, COGS, "Salaries & Benefits", Contractors, Travel, "Software & Licences", Facilities, Marketing, Professional Fees, Depreciation]
+          properties:
+            Revenue: { type: integer, enum: [0] }
+            COGS: { type: integer, enum: [1] }
+            Salaries & Benefits: { type: integer, minimum: 2, maximum: 9 }
+            Contractors: { type: integer, minimum: 2, maximum: 9 }
+            Travel: { type: integer, minimum: 2, maximum: 9 }
+            Software & Licences: { type: integer, minimum: 2, maximum: 9 }
+            Facilities: { type: integer, minimum: 2, maximum: 9 }
+            Marketing: { type: integer, minimum: 2, maximum: 9 }
+            Professional Fees: { type: integer, minimum: 2, maximum: 9 }
+            Depreciation: { type: integer, minimum: 2, maximum: 9 }
+    FinanceWiringInput:
+      type: object
+      additionalProperties: false
+      required: [config]
+      properties:
+        config: { $ref: "#/components/schemas/FinanceWiringConfig" }
+    FinanceWiringSnapshotInput:
+      type: object
+      additionalProperties: false
+      required: [config, expectedRevision]
+      properties:
+        config: { $ref: "#/components/schemas/FinanceWiringConfig" }
+        expectedRevision: { type: integer, minimum: 0 }
+    FinanceWiringActivationInput:
+      type: object
+      additionalProperties: false
+      required: [versionId, expectedRevision]
+      properties:
+        versionId: { type: string, minLength: 1, maxLength: 100 }
+        expectedRevision: { type: integer, minimum: 0 }
+    FinanceWiringValidation:
+      type: object
+      required: [valid, errors]
+      properties:
+        valid: { type: boolean }
+        errors:
+          type: array
+          items: { type: string }
+        config: { $ref: "#/components/schemas/FinanceWiringConfig" }
+        fingerprint: { type: string }
+    FinanceWiringLine:
+      type: object
+      required: [id, name, baseline, current, difference]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        baseline: { type: string }
+        current: { type: string }
+        difference: { type: string }
+    FinanceWiringMonth:
+      type: object
+      required: [period, lines]
+      properties:
+        period: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringLine" }
+    FinanceWiringSource:
+      type: object
+      required: [path, sha256]
+      properties:
+        path: { type: string }
+        sha256: { type: string }
+    FinanceWiringResult:
+      type: object
+      required: [adjustment, currency, period, lines, months, note, sourceHashes, config, fingerprint]
+      properties:
+        adjustment: { type: number }
+        currency: { type: string }
+        period: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringLine" }
+        months:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringMonth" }
+        note: { type: string }
+        sourceHashes:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringSource" }
+        config: { $ref: "#/components/schemas/FinanceWiringConfig" }
+        fingerprint: { type: string }
+    FinanceWiringAccount:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+    FinanceWiringChoice:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+    FinanceWiringConnection:
+      type: object
+      required: [from, to, contract]
+      properties:
+        from: { type: string }
+        to: { type: string }
+        contract: { type: string }
+    FinanceWiringCatalog:
+      type: object
+      required: [defaultConfig, accounts, centres, methods, periods, sources, connections, limitations]
+      properties:
+        defaultConfig: { $ref: "#/components/schemas/FinanceWiringConfig" }
+        accounts:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringAccount" }
+        centres:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringAccount" }
+        methods:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringChoice" }
+        periods:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringChoice" }
+        sources:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringSource" }
+        connections:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringConnection" }
+        limitations:
+          type: array
+          items: { type: string }
+    FinanceWiringVersion:
+      type: object
+      required: [id, number, createdAt, config, fingerprint, result]
+      properties:
+        id: { type: string }
+        number: { type: integer }
+        createdAt: { type: string, format: date-time }
+        config: { $ref: "#/components/schemas/FinanceWiringConfig" }
+        fingerprint: { type: string }
+        result: { $ref: "#/components/schemas/FinanceWiringResult" }
+    FinanceWiringState:
+      type: object
+      required: [revision, activeVersionId, versions]
+      properties:
+        revision: { type: integer, minimum: 0 }
+        activeVersionId: { type: ["string", "null"] }
+        versions:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceWiringVersion" }
     SolutionExportInput:
       type: object
       required: [caseId, expectedUpdatedAt]
