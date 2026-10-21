@@ -64,6 +64,10 @@
   --color-bad: hsl(var(--bad));
   --color-ink: hsl(var(--ink));
   --color-okbg: hsl(var(--okbg));
+  --color-navy: hsl(var(--navy));
+  --color-navy2: hsl(var(--navy2));
+  --color-cyan: hsl(var(--cyan));
+  --color-orange: hsl(var(--orange));
   --color-sienna: hsl(var(--sienna));
   --color-siennaink: hsl(var(--siennaink));
   --color-sky: hsl(var(--sky));
@@ -125,6 +129,11 @@
   --app-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --ok: 70 50% 30%;
   --okbg: 70 40% 93%;
+  /* FUSEBOX circuit accents (app UI only; not part of the Cenovus brand palette) */
+  --navy: 199 70% 9%;      /* #071D27 electric ink */
+  --navy2: 197 52% 15%;    /* raised navy panel */
+  --cyan: 187 70% 65%;     /* #64D8E8 conductive */
+  --orange: 29 100% 62%;   /* #FF963D energized */
   --sienna: 20 54% 50%;
   --siennaink: 20 56% 38%;
   --sky: 196 29% 56%;
@@ -277,3 +286,35 @@
 @keyframes reveal { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
 .reveal { animation: reveal .25s ease-out both; }
 @media (prefers-reduced-motion: reduce) { .drop-pop, .reveal { animation: none } }
+
+/* ---------- Circuit motion: every effect confirms a real state change; reduced motion keeps the information ---------- */
+.circuit-grid { background-color: hsl(var(--navy)); background-image: linear-gradient(hsl(187 70% 65% / .06) 1px, transparent 1px), linear-gradient(90deg, hsl(187 70% 65% / .06) 1px, transparent 1px); background-size: 24px 24px; }
+@keyframes seat { 0% { transform: translateY(-6px) scale(.97); } 60% { transform: translateY(1px) scale(1.012); } 100% { transform: none; } }
+.seat { animation: seat .32s cubic-bezier(.18,1.35,.42,1) both; }
+@keyframes weld-arc { 0% { opacity: 0; transform: scale(.4); } 18% { opacity: 1; transform: scale(1.05); } 55% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.25); } }
+.weld { position: absolute; width: 22px; height: 22px; border-radius: 9999px; pointer-events: none; z-index: 5;
+  background: radial-gradient(circle, #FFF4D6 0%, #FF963D 38%, hsl(29 100% 62% / 0) 72%); animation: weld-arc .55s ease-out both; }
+.weld::before, .weld::after { content: ""; position: absolute; inset: 50% auto auto 50%; width: 34px; height: 2px; margin: -1px 0 0 -17px; background: linear-gradient(90deg, transparent, #FFE0A0, transparent); transform: rotate(28deg); }
+.weld::after { transform: rotate(-52deg); }
+@keyframes magnet { from { transform: translateX(0); } to { transform: translateX(2px); } }
+.socket-ready { box-shadow: 0 0 0 2px hsl(var(--cyan)), 0 0 14px hsl(187 70% 65% / .35); transition: box-shadow .12s ease-out; }
+.socket-over { box-shadow: 0 0 0 2px hsl(var(--orange)), 0 0 16px hsl(29 100% 62% / .45); animation: magnet .14s cubic-bezier(.18,1,.32,1) both; }
+.socket-blocked { box-shadow: 0 0 0 2px hsl(var(--bad) / .6); }
+@keyframes running-bar { from { transform: translateX(-20%); } to { transform: translateX(260%); } }
+@keyframes current { from { stroke-dashoffset: 48; } to { stroke-dashoffset: 0; } }
+.current-on { stroke-dasharray: 10 38; animation: current .9s linear infinite; }
+@keyframes trace-in { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.trace-in { stroke-dasharray: 1; stroke-dashoffset: 1; animation: trace-in .36s ease-out both; }
+@keyframes converge-in { from { stroke-dashoffset: 1; opacity: .3; } to { stroke-dashoffset: 0; opacity: 1; } }
+.converge-in { stroke-dasharray: 1; animation: converge-in .8s ease-out both; }
+.converge-out { stroke-dasharray: 1; animation: converge-in .6s ease-out .7s both; }
+@keyframes cube-spark { 0% { opacity: 0; transform: scale(.6); } 40% { opacity: 1; transform: scale(1.08); } 100% { opacity: .85; transform: scale(1); } }
+.cube-spark { animation: cube-spark .6s ease-out .55s both; }
+.press:active { transform: scale(.985); }
+@media (prefers-reduced-motion: reduce) {
+  .seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, [style*="running-bar"] { animation: none !important; }
+  .trace-in, .converge-in, .converge-out { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
+  .current-on { stroke-dasharray: none; }
+  .weld { display: none; }
+  .cube-spark { opacity: .85; }
+}

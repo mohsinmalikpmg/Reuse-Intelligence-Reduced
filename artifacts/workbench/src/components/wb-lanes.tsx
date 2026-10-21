@@ -56,8 +56,10 @@ export function deviationLabel(r: LaneRow): string | null {
 
 export type MapEntry = { id: string; label: string; row?: LaneRow; votes?: number; request?: CapabilityRequest };
 
-export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCollapseAll, horizontal, children }: {
+export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCollapseAll, horizontal, children, lit }: {
   entries: MapEntry[]; current: string | null; open: Set<string>; onJump: (id: string) => void; onExpandAll: () => void; onCollapseAll: () => void; horizontal?: boolean; children?: ReactNode;
+  /** Steps a just-finished real run holds responsible for changed lines; lit briefly. */
+  lit?: Set<string>;
 }) {
   const stepRows = entries.filter((e) => e.row);
   const allOpen = stepRows.length > 0 && stepRows.every((e) => open.has(e.id));
@@ -104,9 +106,10 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
                   isCurrent ? "bg-primary text-white" : "text-primary hover:bg-secondary",
                 )}
               >
-                <span className={cn(
-                  "relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[11px] font-semibold",
+                <span data-lit={lit?.has(e.id) ? "true" : undefined} className={cn(
+                  "relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[11px] font-semibold transition-shadow",
                   isCurrent ? "border-white/40 bg-primary text-white" : r?.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : "border-border bg-card text-muted-foreground",
+                  lit?.has(e.id) && "ring-2 ring-cyan shadow-[0_0_10px_hsl(187_70%_65%/.7)]",
                 )}>
                   {e.id === "input" ? <ChevronDown className="h-3.5 w-3.5" /> : e.id === "output" ? "=" : e.id === "verdict" ? <Check className="h-3.5 w-3.5" /> : r?.deviation === "added" ? "+" : stepNo ?? i}
                 </span>
@@ -174,11 +177,15 @@ function DiffLines({ entries, picked, onPick, title }: { entries: DiffEntry[]; p
   );
 }
 
-export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, onSwitch, onRemove, picked, onPick, explanation, labelA, labelB, narrow, showA, dragging, slot }: {
+export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, onSwitch, onRemove, picked, onPick, explanation, labelA, labelB, narrow, showA, dragging, slot, welded, energized }: {
   r: LaneRow; no: number; open: boolean; onToggle: () => void; editable: boolean; busy: boolean;
   onSetOption: (v: string) => void; onSwitch: (on: boolean) => void; onRemove: () => void;
   picked: DiffEntry | null; onPick: (e: DiffEntry) => void; explanation: string[]; labelA: string; labelB: string;
   narrow: boolean; showA: boolean; dragging: boolean; slot: ReactNode;
+  /** True for a moment right after the server confirmed this step joined Version B: seat + one localized weld. */
+  welded?: boolean;
+  /** True for a moment after a real run finished and this step produced changed lines: the trace lights up. */
+  energized?: boolean;
 }) {
   const K = KIND[r.kind];
   const offB = !r.b.active;
@@ -201,7 +208,11 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
     <div data-testid={`block-a-${r.id}`} className="grid min-h-[52px] place-items-center rounded-[14px] border border-dashed border-input px-3 text-center text-[12.5px] text-muted-foreground">Not in the current product</div>
   );
   const bCell = (
-    <div data-testid={`block-${r.id}`} className={cn("card-soft flex flex-col transition-[border-color,box-shadow]", r.deviation ? "border-sienna/50" : "", open ? "rounded-b-none border-b-0" : "hover:border-primary/40", open && (r.deviation ? "border-sienna" : "border-primary/40"), offB && "bg-muted/40", r.deviation === "added" && "drop-pop")}>
+    <div data-testid={`block-${r.id}`} data-welded={welded ? "true" : undefined} data-energized={energized ? "true" : undefined}
+      className={cn("card-soft relative flex flex-col transition-[border-color,box-shadow]", r.deviation ? "border-sienna/50" : "", open ? "rounded-b-none border-b-0" : "hover:border-primary/40", open && (r.deviation ? "border-sienna" : "border-primary/40"), offB && "bg-muted/40",
+        welded && "seat shadow-[0_0_0_2px_hsl(var(--orange)),0_0_18px_hsl(29_100%_62%/.35)]",
+        energized && "shadow-[0_0_0_2px_hsl(var(--cyan)),0_0_16px_hsl(187_70%_65%/.35)]")}>
+      {welded && <span aria-hidden className="weld" style={{ left: -11, top: 15 }} data-testid={`weld-${r.id}`} />}
       <div className="flex items-center gap-1 pr-2">
         <button aria-expanded={open} onClick={onToggle} className={cn(headerCls, "min-w-0 flex-1 pr-0")}>
           <span className="min-w-0 flex-1">
@@ -308,7 +319,9 @@ export function AddSlot({ id, afterName, dragging, enabled, openId, setOpenId, v
   return (
     <div ref={setNodeRef} className={cn("group/slot", !dragging && !open && (visible ? "h-8" : "h-4"), open && "pb-2")}>
       {dragging ? (
-        <div data-testid={`drop-${id}`} className={cn("grid min-h-10 place-items-center rounded-xl border-2 border-dashed text-[13px] font-semibold transition-colors", isOver ? "border-sienna bg-accent text-siennaink" : "border-sienna/40 bg-accent/30 text-siennaink/70")}>Drop to add here</div>
+        <div data-testid={`drop-${id}`} data-over={isOver ? "true" : "false"} className={cn("grid min-h-11 place-items-center rounded-xl border-2 border-dashed bg-card text-[13px] font-semibold transition-colors", isOver ? "socket-over border-orange text-siennaink" : "socket-ready border-cyan/70 text-skyink")}>
+          <span className="inline-flex items-center gap-1.5"><span className={cn("inline-block h-2 w-2 rounded-full", isOver ? "bg-orange" : "bg-cyan")} />{isOver ? "Release to connect here" : "Socket · drop to connect"}</span>
+        </div>
       ) : (
         <div className={cn("relative flex items-center", visible ? "h-8" : "h-4")}>
           <span aria-hidden className={cn("absolute inset-x-0 top-1/2 h-px transition-colors", open ? "bg-sienna" : visible ? "bg-sienna/30" : "bg-transparent group-hover/slot:bg-sienna/40 group-focus-within/slot:bg-sienna/40")} />
@@ -371,7 +384,7 @@ export function RequestRow({ req, narrow, showA, editable, busy, onRemove }: { r
 
 /* ---------- Lane headers ---------- */
 
-export function LaneHeaders({ editTools, narrow, showA, setShowA, controls }: { editTools: ReactNode; narrow: boolean; showA: boolean; setShowA: (v: boolean) => void; controls: string[] }) {
+export function LaneHeaders({ editTools, narrow, showA, setShowA, controls, aLabel = "Current product" }: { editTools: ReactNode; narrow: boolean; showA: boolean; setShowA: (v: boolean) => void; controls: string[]; aLabel?: string }) {
   const controlsLine = controls.length > 0 && <span className="text-[12px] text-muted-foreground" data-testid="list-controls">Controls in place: {controls.join(", ")}</span>;
   if (narrow) {
     return (
@@ -389,7 +402,7 @@ export function LaneHeaders({ editTools, narrow, showA, setShowA, controls }: { 
       <div className={laneGrid}>
         <div data-testid="workflow-a" className="flex min-h-10 flex-wrap items-center gap-2 px-1">
           <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[13px] font-bold text-white">A</span>
-          <span className="font-semibold">Current product</span>
+          <span className="font-semibold" data-testid="text-lane-a-label">{aLabel}</span>
           <span className="inline-flex items-center gap-1 text-[12.5px] text-muted-foreground"><Lock className="h-3.5 w-3.5" /> Locked baseline</span>
         </div>
         <div />

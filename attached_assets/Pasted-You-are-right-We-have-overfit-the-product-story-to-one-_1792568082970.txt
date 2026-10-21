@@ -1,0 +1,395 @@
+You are right. We have **overfit the product story to one seeded maintenance scenario**.
+
+That was useful for making the A/B workbench concrete and deterministic, but it created an unintended implication:
+
+> Fusebox looks like an operational-maintenance application rather than an enterprise platform for discovering, testing and consolidating solutions across Cenovus.
+
+Nothing in the original problem statement limits the challenge to field operations or manufacturing workflows. The problem is enterprise-wide: AI-enabled teams can independently build overlapping solutions to the same business problem in **any function**.
+
+## Why the operational bias appeared
+
+Four design choices created it:
+
+1. **Maintenance work orders were selected as the hero scenario.** They provide clear inputs, workflow steps, recurring patterns and measurable outputs.
+
+2. **The current execution engine is built around work-order data.** This made operations the easiest place to demonstrate genuine A/B functionality.
+
+3. **The Fusebox electrical identity was combined with refinery imagery.** That visually reinforced “industrial operations tool,” even though electrical convergence is intended as a metaphor for enterprise solution consolidation.
+
+4. **We defined personas by platform role but demonstrated them through one operational context.** `Find`, `Own` and `Govern` are valid platform roles, but the content beneath them was almost entirely maintenance-oriented.
+
+That narrowness was a demo implementation decision, not the right long-term product definition.
+
+# The correct product position
+
+Fusebox should be framed as:
+
+> **Cenovus’s enterprise solution discovery, experimentation and consolidation platform.**
+
+It should support:
+
+- Operational workflows
+- Finance and management reporting
+- Investor relations and corporate reporting
+- ESG and regulatory reporting
+- Supply chain
+- Planning and scheduling
+- Commercial analysis
+- Resource management
+- Procurement
+- Legal and contract review
+- HR and workforce processes
+- Executive decision support
+
+The common problem is not the function. The common problem is:
+
+> Multiple teams create overlapping approaches, and Cenovus needs to find, compare, improve and consolidate them.
+
+# A broader solution landscape
+
+The Library should demonstrate several solution families, even though only one or two need to be fully executable for the hackathon.
+
+| Business function | Example problem | Example Fusebox solution family | Typical output |
+|---|---|---|---|
+| Finance | Management reporting takes too long and commentary is inconsistent | **Management Performance Pack** | Reconciled results, variance commentary and exception summary |
+| Investor relations | Drafting and proofing outlook materials requires repeated manual review | **Disclosure Draft & Proof** | Source-linked first draft, consistency findings and review flags |
+| ESG / Regulatory | Evidence is fragmented across systems and disclosure owners | **ESG Evidence Hub** | Disclosure coverage, supporting evidence and unresolved gaps |
+| Planning | Plans are built in separate tools with conflicting assumptions | **Integrated Planning Assistant** | Feasible schedule, constraint analysis and scenario comparison |
+| Supply chain | Inventory, purchasing and operational demand are not consistently aligned | **Supply Chain Optimizer** | Recommended order plan, shortages, excess and supplier risks |
+| Resource management | Energy, water or emissions usage is difficult to monitor and explain | **Resource Intelligence** | Anomalies, forecasts and intervention recommendations |
+| Commercial / Strategy | Analysts repeatedly construct similar scenarios and decision packs | **Scenario Decision Studio** | Assumptions, sensitivities, alternatives and recommendation |
+| Procurement / Legal | Contracts require repetitive extraction and risk review | **Contract Review Workbench** | Clause summary, deviations, risks and approval routing |
+| Executive reporting | Leaders receive large volumes of inconsistent information | **Executive Briefing Builder** | Concise sourced briefing, key decisions and emerging risks |
+| Operations | Work-order information is reviewed manually and inconsistently | **Work Order Intelligence** | Recurring issues, safety signals and recommended actions |
+
+This would make it clear that maintenance is **one circuit within Fusebox**, not Fusebox itself.
+
+# How the platform remains coherent across functions
+
+The product should not contain a different architecture for every department. It should have a common set of reusable capability types:
+
+1. **Ingest** — retrieve documents, records, reports or transactions.
+2. **Extract** — identify entities, values, clauses, issues or events.
+3. **Validate** — reconcile numbers, verify completeness and detect contradictions.
+4. **Analyze** — classify, cluster, forecast, optimize or compare.
+5. **Draft** — produce summaries, reports, disclosures or recommendations.
+6. **Review** — expose sources, exceptions, changes and confidence.
+7. **Approve** — route decisions through accountable owners.
+8. **Monitor** — track adoption, outcomes, controls and performance.
+
+The same capability may support several business functions.
+
+For example:
+
+- A **source-grounded summarizer** can support work orders, investor materials and executive briefings.
+- An **evidence validator** can support ESG disclosures, financial reporting and regulatory submissions.
+- A **constraint analyzer** can support maintenance scheduling, supply planning and workforce allocation.
+- An **approval workflow** can support contract review, management reports and operational changes.
+
+That reuse across functions is exactly the organizational value Fusebox should make visible.
+
+# The schematic Library should reflect the enterprise
+
+The electrical schematic metaphor becomes more useful when it is not tied only to operations.
+
+A strong schematic hierarchy would be:
+
+**Enterprise function → Business problem → Solution family → Workflow → Reusable capability → Output**
+
+Visually:
+
+- **Busbars** represent Finance, Operations, ESG, Supply Chain, Commercial and Corporate.
+- **Circuit branches** represent business problems.
+- **Fuse panels** represent governed solution families.
+- **Components** represent reusable capabilities.
+- **Output terminals** represent reports, recommendations, schedules, alerts or decisions.
+- **Illuminated shared circuits** reveal that one capability is reused across several functions.
+
+A user could click `Evidence Validator` and see it illuminate connections to:
+
+- ESG Evidence Hub
+- Management Performance Pack
+- Disclosure Draft & Proof
+- Contract Review Workbench
+
+That communicates enterprise reuse more powerfully than a list of component names.
+
+# The output comparison must adapt to the type of work
+
+The A/B workbench should not assume every output is a block of maintenance text.
+
+It needs several output modes.
+
+## Document and disclosure comparison
+
+For investor, regulatory or ESG reporting:
+
+- Side-by-side drafts
+- Changed claims
+- Source coverage
+- Contradictions
+- Missing evidence
+- Unsupported statements
+- Reviewer comments
+
+The key question becomes:
+
+> Which version is more complete, accurate, supportable and review-ready?
+
+## Financial and management reporting comparison
+
+For performance packs:
+
+- Reconciled versus unreconciled values
+- Variance explanations
+- Missing commentary
+- Exceptions
+- Source traceability
+- Time required to complete the pack
+
+The key question becomes:
+
+> Which workflow produces a more accurate and decision-useful report with fewer manual interventions?
+
+## Planning and scheduling comparison
+
+For planning workflows:
+
+- Schedule feasibility
+- Constraint violations
+- Resource utilization
+- Service level
+- Cost
+- Delays
+- Scenario sensitivity
+
+The key question becomes:
+
+> Which plan better balances operational, resource and financial constraints?
+
+## Monitoring comparison
+
+For resource usage or supply-chain monitoring:
+
+- Alerts identified
+- False positives
+- Missed anomalies
+- Time to detection
+- Recommended response
+- Expected operational effect
+
+## Decision-support comparison
+
+For an executive briefing or scenario analysis:
+
+- Decision completeness
+- Assumptions
+- Evidence
+- Alternatives considered
+- Risks
+- Recommendation clarity
+
+This broadens the secret sauce from “compare two generated texts” to:
+
+> **Compare how different solution configurations affect the actual business output.**
+
+# Financial, investor and regulatory use cases require stronger controls
+
+These are valuable Fusebox use cases, but they need different governance from a maintenance prototype.
+
+For investor reports, financial reporting and regulatory disclosures, Fusebox should support:
+
+- Source-linked claims
+- Data lineage
+- Version control
+- Segregation of duties
+- Reviewer and approver roles
+- Immutable evidence records
+- Change tracking
+- Clear distinction between draft and approved output
+- No autonomous external publication
+
+The platform can draft, reconcile, flag and proof. It should not independently authorize public financial or regulatory disclosure.
+
+This actually strengthens the business case: Fusebox is not just combining features; it is preserving the correct controls for each type of solution.
+
+# Persona model: use two dimensions
+
+The earlier persona model only described how people interact with the Fusebox lifecycle:
+
+- Find
+- Own
+- Govern
+
+That remains useful. But we also need business personas.
+
+## Platform role
+
+- **Solution seeker:** finds and tries what exists.
+- **Solution owner:** manages and improves a governed solution.
+- **Technology owner:** governs architecture, support and consolidation.
+
+## Business role
+
+- **Analyst or knowledge worker:** prepares analysis, reports or recommendations.
+- **Manager or process owner:** reviews outputs and controls the workflow.
+- **Executive or decision-maker:** consumes trusted decision outputs.
+- **Specialist or operator:** performs domain-specific work.
+
+This avoids creating a separate application for Finance, ESG and Operations.
+
+A financial analyst and maintenance analyst may both use `Find`, but they search different business problems and receive different output formats.
+
+# What an executive experience should be
+
+Executives generally should not enter the workflow builder.
+
+They need a concise **Decision View** generated from the same evidence:
+
+- Business problem
+- Existing overlapping solutions
+- Recommended base product
+- Proposed improvement
+- A/B evidence
+- Risks and controls
+- Expected value
+- Owner recommendation
+- Decision required
+
+For a portfolio-level executive view, show:
+
+- Business problems with multiple active solutions
+- Reuse before build
+- Improvements folded into existing products
+- Products awaiting retirement
+- Investment or cost exposure
+- High-risk unowned solutions
+- Decisions requiring executive sponsorship
+
+This should be a read-oriented view, not another configuration dashboard.
+
+# Visual identity also needs broadening
+
+The Power Cube and electrical schematic remain appropriate. The heavy refinery imagery should become a contextual accent rather than the defining visual.
+
+Recommended change:
+
+- Make the **Power Cube and enterprise circuitry** the main product imagery.
+- Use refinery, office, planning, finance and field imagery selectively by use case.
+- Avoid making every hero view look like a control room.
+- Show multiple enterprise circuits flowing into the Power Cube.
+- Use output-specific icons: report, chart, calendar, contract, disclosure, alert, decision and work order.
+
+The product should feel born from an energy company, but not limited to physical energy operations.
+
+# What should change in the Replit app
+
+## Required before the demo
+
+### 1. Broaden the seeded Library
+
+Add representative solution families across at least:
+
+- Finance
+- ESG / Regulatory
+- Supply Chain / Planning
+- Corporate / Executive Reporting
+- Operations
+
+These do not all need working execution engines. They need credible metadata, workflows, capabilities, ownership and output previews.
+
+### 2. Add business-function and output-type metadata
+
+Each Library record should include:
+
+- Business function
+- Business problem
+- Primary user
+- Workflow type
+- Output type
+- Risk tier
+- Data involved
+- Controls
+- Owner
+- Maturity
+
+### 3. Reframe the hero scenario
+
+Keep Work Order Intelligence as the deeply functioning example, but explicitly introduce it as:
+
+> One example of Fusebox’s enterprise consolidation model.
+
+The opening Library or schematic should show several business functions before entering the maintenance demonstration.
+
+### 4. Add one credible back-office preview
+
+The lowest-effort, highest-value second example would likely be:
+
+**Management Performance Pack**
+
+Input:
+
+- Monthly financial data
+- Operational KPIs
+- Prior-period commentary
+
+Output:
+
+- Variance summary
+- Draft management commentary
+- Exceptions requiring review
+- Source references
+
+It can initially be a deterministic preview rather than a fully developed engine.
+
+### 5. Add an executive Decision View
+
+After the A/B test, provide a compact decision summary that could apply to either an operational or back-office solution.
+
+# What not to do before Thursday
+
+Do not try to implement ten fully working domain workflows.
+
+The right hackathon balance is:
+
+> **One deeply functional use case, one credible secondary use case, and a Library architecture that visibly supports the rest of the enterprise.**
+
+That demonstrates both depth and scalability.
+
+Eight shallow demos would be less convincing than:
+
+- One real same-input A/B workflow
+- One back-office output preview
+- One enterprise-wide solution schematic
+- One executive consolidation view
+
+# How this changes the judging framework
+
+The rubric should add explicit enterprise applicability.
+
+Under **Problem Fidelity and Business Value**, judges should assess whether the solution:
+
+- Works beyond one operational use case
+- Uses a domain-neutral solution and capability model
+- Demonstrates reuse across functions
+- Supports different output types
+- Applies controls appropriate to higher-risk business processes
+
+Under **Governance and Scalability**, judges should assess whether:
+
+- The same platform model can support operations, finance, ESG and planning
+- Capabilities can be reused across domains
+- Business-specific configurations remain under one governed solution family
+- Executive decisions remain traceable to actual evidence
+
+## Revised strategic statement
+
+The platform should no longer be described as:
+
+> A way to combine maintenance or operational solutions.
+
+It should be described as:
+
+> **An enterprise platform that helps Cenovus find overlapping solutions, reuse common capabilities, prove improvements against real business outputs, and converge on one governed product—across operations, corporate functions and executive decision-making.**
+
+The operations workflow remains an effective demonstration. It should not define the boundary of the product.

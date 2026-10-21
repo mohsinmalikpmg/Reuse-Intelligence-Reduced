@@ -4,8 +4,8 @@ import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, 
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Equal, FileText, GitBranch, Info, ListPlus, Lock, Pencil, Play, RotateCcw, Save, Undo2 } from "lucide-react";
 import {
-  getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetSolutionWorkbenchQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
-  getSimilarExperiments, useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseConfiguration, useGetSolutionWorkbench, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
+  getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetCaseBaselineQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
+  getSimilarExperiments, useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseBaseline, useGetCaseConfiguration, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
   useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
   type ABComparison, type CapabilityRequest, type Case, type CaseRequirementResult, type ComponentConfig, type Configuration, type ConfigurationUpdate, type DiffEntry, type Run, type SampleInput, type SimilarExperiments,
 } from "@workspace/api-client-react";
@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { SimilarPrompt } from "@/components/wb-similar";
 import { ErrorView, LoadingView, Skel, Tag, btn, useUndoToast } from "@/components/bits";
 import { blocksFromConfig, blocksFromWorkbench, controlsFromConfig } from "@/components/flow";
-import { OutputView, RunMeta } from "@/components/output-view";
+import { OutputView, RunMeta, diffKey, marksFrom } from "@/components/output-view";
 import { InputPanel, SummaryCounts, Tray } from "@/components/wb-parts";
 import { Measures, StaleHint, Vote } from "@/components/wb-compare";
 import { AddSlot, BandRow, LaneHeaders, RequestRow, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type LaneRow, type MapEntry } from "@/components/wb-lanes";
@@ -37,7 +37,7 @@ function snapshot(cfg: Configuration): Snap {
 
 function LanesDrop({ enabled, dragging, children }: { enabled: boolean; dragging: boolean; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: "workflow-b", disabled: !enabled });
-  return <div ref={setNodeRef} data-testid="workflow-b" className={cn("rounded-2xl transition-[background-color,box-shadow]", dragging && "bg-accent/30 shadow-[inset_0_0_0_2px_hsl(var(--sienna)/.4)]", dragging && isOver && "bg-accent/50")}>{children}</div>;
+  return <div ref={setNodeRef} data-testid="workflow-b" className={cn("rounded-2xl transition-[background-color,box-shadow]", dragging && "bg-[hsl(187_70%_65%/.08)] shadow-[inset_0_0_0_2px_hsl(var(--cyan)/.5)]", dragging && isOver && "bg-[hsl(187_70%_65%/.14)]")}>{children}</div>;
 }
 
 function scrollToRow(id: string) {
@@ -56,7 +56,8 @@ export default function Workbench() {
   const caseQ = useGetCase(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseQueryKey(caseId) } });
   const baseId = caseQ.data?.baseSolutionId ?? "";
   const cfgQ = useGetCaseConfiguration(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseConfigurationQueryKey(caseId) } });
-  const wbQ = useGetSolutionWorkbench(baseId, { query: { enabled: !!baseId, queryKey: getGetSolutionWorkbenchQueryKey(baseId) } });
+  // Version A is the parent as of the branch point, not the live product; the server resolves that per case.
+  const wbQ = useGetCaseBaseline(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseBaselineQueryKey(caseId) } });
   const samplesQ = useListSampleInputs({ solutionId: baseId }, { query: { enabled: !!baseId, queryKey: getListSampleInputsQueryKey({ solutionId: baseId }) } });
   const cmpQ = useGetCaseComparison(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseComparisonQueryKey(caseId) } });
   const evalsQ = useListCaseEvaluations(caseId, { query: { enabled: !!caseId, queryKey: getListCaseEvaluationsQueryKey(caseId) } });
@@ -73,7 +74,8 @@ export default function Workbench() {
   const [sampleId, setSampleId] = useState("");
   const [text, setText] = useState("");
   const [edited, setEdited] = useState(false);
-  const [inputOpen, setInputOpen] = useState(false);
+  // "Try with my input" from the library lands with the input panel already open.
+  const [inputOpen, setInputOpen] = useState(initialMode === "input");
   const [run, setRun] = useState<Run | null>(null);
   const [undo, setUndo] = useState<Snap[]>([]);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -81,6 +83,9 @@ export default function Workbench() {
   const [open, setOpen] = useState<Set<string>>(() => new Set());
   const [current, setCurrent] = useState<string | null>(null);
   const [slotOpen, setSlotOpen] = useState<string | null>(null);
+  // Set only from a confirmed server response; cleared after the short seat/weld (or run-illumination) moment.
+  const [welded, setWelded] = useState<string | null>(null);
+  const [energized, setEnergized] = useState<Set<string>>(() => new Set());
   const [showA, setShowA] = useState(false);
   const [reqOpen, setReqOpen] = useState(false);
   const [similar, setSimilar] = useState<SimilarExperiments | null>(null);
@@ -133,12 +138,14 @@ export default function Workbench() {
     { id: "output", label: "Output" }, { id: "verdict", label: "Verdict", votes },
   ], [lane, votes]);
 
-  const apply = (data: ConfigurationUpdate, label: string, record = true) => {
+  const apply = (data: ConfigurationUpdate, label: string, record = true, weldId?: string) => {
     if (!cfg) return;
     const before = snapshot(cfg);
     put.mutate({ caseId, data }, {
       onSuccess: (next) => {
         qc.setQueryData(getGetCaseConfigurationQueryKey(caseId), next);
+        // The weld is the server's confirmation made visible: only when the step is really active in the saved configuration.
+        if (weldId && next.steps.some((st) => st.components.some((c) => c.capability.id === weldId && c.active))) setWelded(weldId);
         qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).includes(`/cases/${caseId}`) && String(q.queryKey[0]) !== getGetCaseConfigurationQueryKey(caseId)[0] });
         if (record) { setUndo((u) => [...u, before]); say(label, () => restore(before)); } else say(label);
       },
@@ -146,7 +153,9 @@ export default function Workbench() {
     });
   };
   const restore = (s: Snap) => { setUndo((u) => u.slice(0, -1)); apply(s, "Undone", false); };
-  const toggle = (id: string, name: string, on: boolean) => apply({ moduleStates: { [id]: on } }, on ? `${name} added to Version B` : `${name} switched off`);
+  const toggle = (id: string, name: string, on: boolean) => apply({ moduleStates: { [id]: on } }, on ? `${name} connected to Version B` : `${name} switched off`, true, on ? id : undefined);
+  useEffect(() => { if (!welded) return; const t = window.setTimeout(() => setWelded(null), 900); return () => window.clearTimeout(t); }, [welded]);
+  useEffect(() => { if (energized.size === 0) return; const t = window.setTimeout(() => setEnergized(new Set()), 2400); return () => window.clearTimeout(t); }, [energized]);
   const add = (c: ComponentConfig) => {
     if (c.blockedReason) { say(c.blockedReason); return; }
     toggle(c.capability.id, c.capability.name, true);
@@ -218,6 +227,8 @@ export default function Workbench() {
   const afterBoth = (r: ABComparison, msg?: string) => {
     qc.setQueryData<ABComparison[]>(getGetCaseComparisonQueryKey(caseId), (old) => [r, ...(old ?? [])]);
     setPicked(null); invalidateCase(caseId);
+    // Illuminate exactly the steps the real diff holds responsible; nothing lights up when nothing changed.
+    setEnergized(new Set(r.diff.stepsResponsible.map((s) => s.stepId)));
     if (msg) say(msg);
     window.setTimeout(() => scrollToRow("output"), 50);
   };
@@ -269,6 +280,7 @@ export default function Workbench() {
   if (caseQ.isLoading || cfgQ.isLoading) return <LoadingView />;
   if (caseQ.isError || cfgQ.isError || !caseQ.data || !cfg) return <ErrorView onRetry={() => { caseQ.refetch(); cfgQ.refetch(); }} message="This workbench could not load." />;
   const theCase = caseQ.data;
+  const standardA = !!wbQ.data && wbQ.data.liveVersion !== wbQ.data.solution.currentVersion;
   const reuseActions: ReuseActions = {
     caseId, baseName: wbQ.data?.solution.name ?? "this product", cfg, busy: put.isPending,
     onAdd: (c) => { add(c); setSlotOpen(null); window.setTimeout(() => scrollToRow(c.capability.id), 80); },
@@ -308,10 +320,10 @@ export default function Workbench() {
     <div className={cn("card-soft p-4", v === "B" && "border-t-4 border-t-sienna")} data-testid={`panel-version-${v.toLowerCase()}`}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className={cn("grid h-7 w-7 place-items-center rounded-md text-[13px] font-bold text-white", v === "A" ? "bg-primary" : "bg-siennaink")}>{v}</span>
-        <span className="text-[14px] font-semibold">{v === "A" ? "Current product" : "Proposed version"}</span>
+        <span className="text-[14px] font-semibold">{v === "A" ? (standardA ? `Standard product · v${theCase.parentVersion}` : "Current product") : "Proposed version"}</span>
         <span className="ml-auto"><RunMeta run={r} testid={`run-meta-${v}`} /></span>
       </div>
-      <OutputView output={r.output} marks={marks} selectedKey={picked?.itemKey} onPick={marks ? onPick : undefined} testid={`output-${v.toLowerCase()}`} dim={v === "B" && !!cmp?.staleB} />
+      <OutputView output={r.output} marks={marks} selectedKey={picked ? diffKey(picked) : null} onPick={marks ? onPick : undefined} testid={`output-${v.toLowerCase()}`} dim={v === "B" && !!cmp?.staleB} />
     </div>
   );
 
@@ -391,14 +403,14 @@ export default function Workbench() {
         {/* Map + lanes */}
         <div className={cn("mt-5", narrow ? "space-y-4" : "grid grid-cols-[224px_minmax(0,1fr)] items-start gap-6")}>
           <div className={narrow ? "" : "sticky top-[12rem] max-h-[calc(100dvh-13rem)] overflow-y-auto pr-1"}>
-            <WorkflowMap entries={entries} current={current} open={open} onJump={jump} horizontal={narrow}
+            <WorkflowMap entries={entries} current={current} open={open} onJump={jump} horizontal={narrow} lit={energized}
               onExpandAll={() => setOpen(new Set(rows.map((r) => r.id)))} onCollapseAll={() => setOpen(new Set())}>
               {!narrow && editable && <div className="mt-4 border-t border-border px-2 pt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled={editable} onAdd={add} /></div>}
             </WorkflowMap>
           </div>
 
           <div className="min-w-0">
-            <LaneHeaders editTools={editTools} narrow={narrow} showA={showA} setShowA={setShowA} controls={controls.map((c) => c.name)} />
+            <LaneHeaders editTools={editTools} narrow={narrow} showA={showA} setShowA={setShowA} controls={controls.map((c) => c.name)} aLabel={standardA ? `Standard product · v${theCase.parentVersion}` : "Current product"} />
             <LanesDrop enabled={editable} dragging={!!dragging}>
               {wbQ.isLoading || rows.length === 0 ? <div className={narrow ? "space-y-2" : laneGrid}><Skel className="h-14" /><div /><Skel className="h-14" /></div> : lane.map((x) => {
                 if (x.kind === "request") return <RequestRow key={x.req.id} req={x.req} narrow={narrow} showA={showA} editable={editable} busy={removeRequest.isPending} onRemove={() => dropRequest(x.req)} />;
@@ -408,7 +420,8 @@ export default function Workbench() {
                   <StepRow key={r.id} r={r} no={i + 1} open={open.has(r.id)} onToggle={() => toggleRow(r.id)} editable={editable} busy={put.isPending}
                     onSetOption={(v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(on) => toggle(r.id, r.name, on)} onRemove={() => toggle(r.id, r.name, false)}
                     picked={picked} onPick={onPick} explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} labelA={labelA} labelB={labelB}
-                    narrow={narrow} showA={showA} dragging={!!dragging} slot={slotFor(r.id, r.name, narrow || coarsePointer || i === rows.length - 1)} />
+                    narrow={narrow} showA={showA} dragging={!!dragging} slot={slotFor(r.id, r.name, narrow || coarsePointer || i === rows.length - 1)}
+                    welded={welded === r.id} energized={energized.has(r.id)} />
                 );
               })}
             </LanesDrop>
@@ -416,13 +429,22 @@ export default function Workbench() {
             {/* Output */}
             <BandRow id="output" label="Output" icon={<Equal className="h-3.5 w-3.5" />} narrow={narrow}>
               {runBoth.isPending || runOne.isPending ? (
-                <div className={narrow ? "space-y-3" : laneGrid}><Skel className="h-56" /><div /><Skel className="h-56" /></div>
+                <div className="circuit-grid rounded-2xl border border-navy2 p-5 text-white" role="status" aria-live="polite" data-testid="state-running">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="relative grid h-9 w-9 place-items-center rounded-full border border-cyan/60"><Play className="h-4 w-4 text-cyan" /><span className="absolute inset-0 animate-ping rounded-full border border-cyan/40 motion-reduce:hidden" /></span>
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-semibold">{runBoth.isPending ? "Running A and B on the same input" : "Running Version B"}</div>
+                      <div className="text-[12.5px] text-white/65">{edited ? "Edited text" : sample?.name ?? "Input"} · real execution, output appears when both finish</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full w-1/3 rounded-full bg-cyan motion-reduce:w-full" style={{ animation: "running-bar 1.1s ease-in-out infinite alternate" }} /></div>
+                </div>
               ) : cmp ? (
                 <>
                   <div className={narrow ? "space-y-3" : laneGrid}>
-                    {outputCard("A", cmp.runA, new Map(cmp.diff.entries.map((e) => [e.itemKey, e])))}
+                    {outputCard("A", cmp.runA, marksFrom(cmp.diff.entries))}
                     {!narrow && <div />}
-                    {outputCard("B", cmp.runB, new Map(cmp.diff.entries.map((e) => [e.itemKey, e])))}
+                    {outputCard("B", cmp.runB, marksFrom(cmp.diff.entries))}
                   </div>
                   <div className="card-soft mt-3 p-4" data-testid="panel-diff">
                     <div className="flex flex-wrap items-center gap-2">
@@ -472,6 +494,7 @@ export default function Workbench() {
                     <section className="card-soft p-6" data-testid="panel-vote-readonly">
                       <h3 className="text-[20px] font-semibold">Recorded preferences</h3>
                       {evalsQ.data && evalsQ.data.summary.tests > 0 ? <div className="mt-4"><SummaryCounts s={evalsQ.data.summary} /></div> : <p className="mt-2 text-[14px] text-muted-foreground">No votes recorded yet for this case.</p>}
+                      <Link href={`/cases/${caseId}/decision`} className={cn(btn.secondary, "mt-4")} data-testid="link-decision-view"><FileText className="h-4 w-4" /> Decision view</Link>
                     </section>
                   ) : <>
                     <Vote cmp={cmp} role={role} />
@@ -479,6 +502,7 @@ export default function Workbench() {
                       <button data-testid="button-try-another" onClick={tryAnother} disabled={runBoth.isPending || samples.length < 2} className={btn.quiet}><RotateCcw className="h-4 w-4" /> Try another input</button>
                       <InviteTesters caseId={caseId} />
                       <span className="flex-1" />
+                      <Link href={`/cases/${caseId}/decision`} className={btn.quiet} data-testid="link-decision-view"><FileText className="h-4 w-4" /> Decision view</Link>
                       <button data-testid="button-continue-testing" onClick={() => { setInputOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); }} className={btn.quiet}>Continue testing</button>
                       <ProposeActions theCase={theCase} quiet={!cmp.evaluation} />
                     </div>
@@ -502,7 +526,7 @@ export default function Workbench() {
         </div>
       </div>
 
-      <DragOverlay dropAnimation={null}>{dragC && <div className="lift w-[220px] rotate-[-2deg] rounded-xl border-2 border-sienna bg-card p-3 text-[14px] font-semibold text-primary">{dragC.capability.name}</div>}</DragOverlay>
+      <DragOverlay dropAnimation={null}>{dragC && <div className="lift w-[220px] rotate-[-2deg] rounded-xl border-2 border-orange bg-card p-3 text-[14px] font-semibold text-primary"><span className="mb-0.5 block font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">From {dragC.sourceSolutionName}</span>{dragC.capability.name}</div>}</DragOverlay>
     </DndContext>
   );
 }

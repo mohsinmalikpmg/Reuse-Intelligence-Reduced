@@ -1,14 +1,52 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ArrowRight, Check, Info, Undo2 } from "lucide-react";
+import { ArrowRight, Check, FileText, Info, Undo2 } from "lucide-react";
 import {
   getGetCaseConsolidationQueryKey, useGetCaseConsolidation, useRecordCaseDecision, useRecordMigrationNote, useSetCaseDispositions,
-  type ConsolidationSolution, type ConsolidationSolutionFate, type DispositionKind,
+  type ConsolidationSolution, type ConsolidationSolutionFate, type DispositionKind, type SolutionVersion,
 } from "@workspace/api-client-react";
 import { DSection, DispositionBadge, Drawer, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
 import { errMsg, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
 import { cn } from "@/lib/utils";
+
+/**
+ * Convergence circuit between the current products and the successor. Three truthful states:
+ * preview (nothing approved: dim, labelled illustrative), draft (owner approved, IT pending: traces live, cube unlit)
+ * and converged (IT approval persisted and the successor version is current: traces draw in, the cube energizes once).
+ */
+function ConvergeCircuit({ sources, successor }: { sources: { id: string; kind: DispositionKind }[]; successor: SolutionVersion | null }) {
+  const state: "preview" | "draft" | "converged" = !successor ? "preview" : successor.state === "current" ? "converged" : "draft";
+  const n = Math.max(1, sources.length);
+  const pitch = 70, W = 184, H = Math.max(150, n * pitch);
+  const cx = 78, cy = H / 2;
+  const cube = `${import.meta.env.BASE_URL}brand/power-cube-compact.svg`;
+  // Retired products feed the successor faintly; retained ones stay their own colour; folded or configured ones carry the current.
+  const tone = (k: DispositionKind) => (k === "retire" ? "#9AAFB5" : k === "retain" ? "#6E9EAF" : "#64D8E8");
+  const label = state === "preview" ? "Illustrative preview" : state === "draft" ? "Awaiting IT approval" : `Converged · v${successor!.version}`;
+  const live = state !== "preview";
+  const path = (i: number) => {
+    const y = (i + 0.5) * (H / n);
+    const dy = cy - y, r = Math.min(10, Math.abs(dy) / 2 || 0);
+    if (Math.abs(dy) < 1) return `M0,${y} L${cx - 22},${cy}`;
+    const sgn = dy > 0 ? 1 : -1;
+    return `M0,${y} L${cx - 46 - r},${y} Q${cx - 46},${y} ${cx - 46},${y + sgn * r} L${cx - 46},${cy - sgn * r} Q${cx - 46},${cy} ${cx - 46 + r},${cy} L${cx - 22},${cy}`;
+  };
+  return (
+    <figure className="mx-auto hidden lg:block" data-testid="converge-circuit" data-state={state} aria-label={`Convergence: ${label}`}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block" aria-hidden="true">
+        {sources.map((s, i) => (
+          <path key={s.id} d={path(i)} fill="none" stroke={live ? tone(s.kind) : "#9AAFB5"} strokeWidth={live ? 2.5 : 1.5} strokeDasharray={live ? undefined : "5 5"} strokeLinecap="round"
+            pathLength={1} className={state === "converged" ? "converge-in" : undefined} opacity={s.kind === "retire" && live ? 0.6 : 1} />
+        ))}
+        <path d={`M${cx + 22},${cy} L${W},${cy}`} fill="none" stroke={state === "converged" ? "#FF963D" : live ? "#6E9EAF" : "#9AAFB5"} strokeWidth={state === "converged" ? 3 : live ? 2 : 1.5} strokeDasharray={live ? undefined : "5 5"} strokeLinecap="round" pathLength={1} className={state === "converged" ? "converge-out" : undefined} />
+        {state === "converged" && <circle cx={cx} cy={cy} r={30} fill="#FF963D" opacity={0.28} className="cube-spark" />}
+        <image href={cube} x={cx - 22} y={cy - 22} width={44} height={44} style={{ filter: live ? "none" : "grayscale(1)", opacity: live ? 1 : 0.5 }} />
+      </svg>
+      <figcaption className={cn("mt-1 text-center font-mono text-[10.5px] uppercase tracking-[0.12em]", state === "converged" ? "text-siennaink" : "text-muted-foreground")} data-testid="text-converge-state">{label}</figcaption>
+    </figure>
+  );
+}
 
 /** IT's disposition controls, in the order shown; each persists to the case record. */
 const DISPOSITIONS: { kind: DispositionKind; label: string }[] = [
@@ -65,6 +103,7 @@ export function Consolidation({ caseId, initialSelection = null }: { caseId: str
     <section className="card-soft p-6" data-testid={`consolidation-${caseId}`}>
       <div className="flex flex-wrap items-start gap-3">
         <h3 className="flex-1 text-[19px] font-semibold">{v.headline}</h3>
+        <Link href={`/cases/${caseId}/decision`} data-testid="link-decision-view" className={btn.quiet}><FileText className="h-4 w-4" /> Decision view</Link>
         <button data-testid="button-consolidation-details" onClick={() => setDrawer(true)} className={btn.quiet}><Info className="h-4 w-4" /> Details</button>
       </div>
       <div className="mt-5 grid items-center gap-4 lg:grid-cols-[1fr_auto_1fr]" onDoubleClick={() => setDrawer(true)}>
@@ -84,7 +123,8 @@ export function Consolidation({ caseId, initialSelection = null }: { caseId: str
             })}
           </div>
         </div>
-        <ArrowRight className="mx-auto h-6 w-6 rotate-90 text-sienna lg:rotate-0" />
+        <ArrowRight className="mx-auto h-6 w-6 rotate-90 text-sienna lg:hidden" />
+        <ConvergeCircuit key={v.successor ? `${v.successor.state}-${v.successor.version}` : "preview"} sources={v.current.map((c) => ({ id: c.solution.id, kind: kindOf(c) }))} successor={v.successor} />
         <div className={cn("rounded-xl border-2 p-4", v.successor?.state === "current" ? "border-ok bg-okbg/60" : "border-ok/50 bg-okbg/40")} data-testid="future-product">
           <div className="eyebrow mb-1">{v.successor ? (v.successor.state === "current" ? "Governed version" : "Draft successor") : "Proposed"}</div>
           <div className="text-[18px] font-semibold text-primary">{v.future.name}</div>
@@ -150,6 +190,7 @@ export function Consolidation({ caseId, initialSelection = null }: { caseId: str
             <ul className="space-y-1">{v.successor.foldedCapabilities.map((m) => <li key={m.capabilityId} data-testid={`provenance-${m.capabilityId}`}><span className="font-medium">{m.name}</span> — {m.provenance}</li>)}</ul>
           ) : <ul className="space-y-1">{v.future.modules.map((m) => <li key={m.name}>{m.name}, from {m.sourceSolutionName}</li>)}</ul>}
           {v.successor && <Link href={`/workbench/${v.caseId}?mode=compare`} className="mt-2 inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 hover:underline">See the evidence <ArrowRight className="h-3.5 w-3.5" /></Link>}
+          <Link href={`/cases/${v.caseId}/decision`} data-testid="link-consolidation-decision-view" className="ml-4 mt-2 inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 hover:underline">Decision view <ArrowRight className="h-3.5 w-3.5" /></Link>
         </DSection>
         <DSection label="Successor version">{v.successor ? `v${v.successor.version} · ${v.successor.state === "current" ? "current governed version" : "draft, awaiting IT"} · ${v.successor.summary}` : "Not drafted yet; the owner's approval drafts it."}</DSection>
         <DSection label="Dispositions"><ul className="space-y-1">{v.current.map((c) => <li key={c.solution.id}>{c.solution.name}: {c.disposition ? c.disposition.label : `${kindLabel(kindOf(c))} (not recorded yet)`}{c.disposition?.reason ? ` — ${c.disposition.reason}` : ""}{c.disposition?.migrationNote ? ` · migration: ${c.disposition.migrationNote}` : ""}</li>)}</ul></DSection>

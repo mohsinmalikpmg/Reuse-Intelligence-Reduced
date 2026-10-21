@@ -272,6 +272,51 @@ export interface SimilarExperiments {
   experiments: SimilarExperiment[];
 }
 
+/**
+ * Enterprise function (the busbar a problem hangs from in the schematic)
+ */
+export type BusinessFunction = typeof BusinessFunction[keyof typeof BusinessFunction];
+
+
+export const BusinessFunction = {
+  Operations: 'Operations',
+  Finance: 'Finance',
+  Investor_relations: 'Investor relations',
+  'ESG_&_Regulatory': 'ESG & Regulatory',
+  'Supply_chain_&_Planning': 'Supply chain & Planning',
+  'Commercial_&_Legal': 'Commercial & Legal',
+  'Corporate_&_Executive': 'Corporate & Executive',
+} as const;
+
+/**
+ * live = FUSEBOX runs this product's workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet
+ */
+export type SolutionExecution = typeof SolutionExecution[keyof typeof SolutionExecution];
+
+
+export const SolutionExecution = {
+  live: 'live',
+  preview: 'preview',
+} as const;
+
+export type OutputPreviewSectionsItem = {
+  heading: string;
+  lines: string[];
+};
+
+/**
+ * A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.
+ */
+export interface OutputPreview {
+  /** e.g. September 2026 management pack (sample) */
+  title: string;
+  /** The sample inputs the preview was built from */
+  inputs: string[];
+  sections: OutputPreviewSectionsItem[];
+  /** Why this is a preview and what it would take to run it for real */
+  note: string;
+}
+
 export type DispositionKind = typeof DispositionKind[keyof typeof DispositionKind];
 
 
@@ -391,6 +436,22 @@ export interface Metrics {
 export interface Solution {
   id: string;
   name: string;
+  businessFunction: BusinessFunction;
+  /** Business roles that use the product day to day */
+  primaryUsers: string[];
+  /** e.g. Review and approve */
+  workflowType: string;
+  /** What the product produces */
+  outputType: string;
+  /** Business risk of the output; high for financial */
+  riskTier: EffortLevel;
+  dataInvolved: string[];
+  /** Controls the product applies (source linking, segregation of duties, no external publication, ...) */
+  controls: string[];
+  /** live = FUSEBOX runs this product's workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet */
+  execution: SolutionExecution;
+  /** Deterministic output preview on fixed sample data for products without an execution engine; never evidence */
+  outputPreview: OutputPreview | null;
   /** Governance disposition recorded for this product, if any */
   disposition: Disposition | null;
   /** Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply */
@@ -551,6 +612,9 @@ export const BusinessProblemRecommendedAction = {
 export interface BusinessProblem {
   id: string;
   title: string;
+  businessFunction: BusinessFunction;
+  /** The business role that owns this problem day to day */
+  primaryUser: string;
   description: string;
   activeSolutionIds: string[];
   recommendedAction: BusinessProblemRecommendedAction;
@@ -953,6 +1017,8 @@ export interface CaseInput {
   moduleIds?: string[];
   /** Reuse-check event this case acts on; recorded as the path taken */
   reuseEventId?: string;
+  /** Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of */
+  approvedVersion?: string;
 }
 
 export type CaseUpdatePilotPercent = typeof CaseUpdatePilotPercent[keyof typeof CaseUpdatePilotPercent];
@@ -1019,6 +1085,156 @@ export interface FutureProduct {
   modules: FutureProductModulesItem[];
   /** Locked controls that stay in place */
   controls: string[];
+}
+
+export type DecisionViewBusinessProblem = {
+  id: string;
+  title: string;
+  businessFunction: BusinessFunction;
+  primaryUser: string;
+  description: string;
+};
+
+export type DecisionViewOverlappingSolutionsItemRole = typeof DecisionViewOverlappingSolutionsItemRole[keyof typeof DecisionViewOverlappingSolutionsItemRole];
+
+
+export const DecisionViewOverlappingSolutionsItemRole = {
+  base: 'base',
+  candidate: 'candidate',
+  other: 'other',
+} as const;
+
+export type DecisionViewOverlappingSolutionsItem = {
+  id: string;
+  name: string;
+  status: SolutionStatus;
+  ownerName: string;
+  ownerTeam: string;
+  activeUsers: number;
+  role: DecisionViewOverlappingSolutionsItemRole;
+  /**
+     * Recorded disposition label
+     * @nullable
+     */
+  disposition: string | null;
+};
+
+export type DecisionViewRecommendedBase = {
+  id: string;
+  name: string;
+  status: SolutionStatus;
+  version: string;
+  outputType: string;
+  why: string;
+};
+
+export type DecisionViewProposedImprovementAddedItem = {
+  name: string;
+  sourceSolutionName: string;
+  workflowStep: string;
+};
+
+export type DecisionViewProposedImprovement = {
+  summary: string;
+  added: DecisionViewProposedImprovementAddedItem[];
+  removed: string[];
+  changedSettings: ConfigChange[];
+};
+
+/**
+ * Counts from the newest A/B comparison of the current configuration, if any
+ */
+export type DecisionViewEvidenceLatestComparison = {
+  inputName: string;
+  ranAt: string;
+  added: number;
+  removed: number;
+  changed: number;
+  unchanged: number;
+  stepsResponsible: string[];
+} | null;
+
+export type EvidenceSummaryLabelled = {
+  inputs: number;
+  recallA: number;
+  recallB: number;
+  precisionA: number;
+  precisionB: number;
+} | null;
+
+/**
+ * Evidence for the case's current Version B configuration, plus what was set aside
+ */
+export interface EvidenceSummary {
+  currentFingerprint: string;
+  /** Distinct inputs on which the current configuration ran against the baseline */
+  inputsTested: number;
+  /** @nullable */
+  runtimeA: number | null;
+  /** @nullable */
+  runtimeB: number | null;
+  labelled: EvidenceSummaryLabelled;
+  votes: EvaluationSummary | null;
+  /** Votes from earlier configurations */
+  setAside: number;
+}
+
+export type DecisionViewEvidence = {
+  summary: EvidenceSummary;
+  description: string;
+  /** Counts from the newest A/B comparison of the current configuration, if any */
+  latestComparison: DecisionViewEvidenceLatestComparison;
+};
+
+export type DecisionViewRisksAndControls = {
+  riskTier: EffortLevel;
+  controls: string[];
+  newDependencies: string[];
+  knownGaps: string[];
+  mainRisk: string;
+};
+
+/**
+ * Only what has been measured. When nothing has, it says so.
+ */
+export type DecisionViewMeasuredValue = {
+  lines: string[];
+  note: string;
+};
+
+export type DecisionViewOwnerRecommendation = {
+  recommendation: ExperimentRecommendation | null;
+  narrative: string;
+  /** @nullable */
+  confidence: number | null;
+};
+
+export type DecisionViewDecisionRequired = {
+  role: Role | null;
+  label: string;
+  detail: string;
+};
+
+/**
+ * One page for a decision-maker. Every field is derived from persisted records; nothing is projected.
+ */
+export interface DecisionView {
+  caseId: string;
+  title: string;
+  status: CaseStatus;
+  businessProblem: DecisionViewBusinessProblem;
+  /** Every live product addressing the problem, the base first */
+  overlappingSolutions: DecisionViewOverlappingSolutionsItem[];
+  recommendedBase: DecisionViewRecommendedBase;
+  proposedImprovement: DecisionViewProposedImprovement;
+  evidence: DecisionViewEvidence;
+  risksAndControls: DecisionViewRisksAndControls;
+  /** Only what has been measured. When nothing has, it says so. */
+  measuredValue: DecisionViewMeasuredValue;
+  ownerRecommendation: DecisionViewOwnerRecommendation;
+  decisionRequired: DecisionViewDecisionRequired;
+  decisions: Decision[];
+  generatedAt: string;
 }
 
 export type ConsolidationDecisionViewAvailableActionsItem = {
@@ -1244,6 +1460,8 @@ export interface WorkflowBlock {
 
 export interface SolutionWorkbench {
   solution: Solution;
+  /** The product's current governed version; differs from solution.currentVersion when this workbench shows an earlier (standard) version */
+  liveVersion: string;
   /** Executable steps in execution order */
   blocks: WorkflowBlock[];
   /** Locked controls preserved around the workflow */
@@ -1461,9 +1679,24 @@ export interface TestResponseInput {
   demo?: boolean;
 }
 
+/**
+ * preferred = the product to use for its business problem; alternative = another live product without a disposition; consolidating = a product IT has given a disposition
+ */
+export type FamilyRole = typeof FamilyRole[keyof typeof FamilyRole];
+
+
+export const FamilyRole = {
+  preferred: 'preferred',
+  alternative: 'alternative',
+  consolidating: 'consolidating',
+} as const;
+
 export interface SearchResult {
   solution: Solution;
   score: number;
+  familyRole: FamilyRole;
+  /** The business problem this product belongs to */
+  familyTitle: string;
   reasons: string[];
   matchedCapabilities: Capability[];
 }
@@ -1476,12 +1709,97 @@ export const SearchResultsSource = {
   hybrid: 'hybrid',
 } as const;
 
+export type FamilyCapabilityUsedInItem = {
+  solutionId: string;
+  solutionName: string;
+  version: string;
+};
+
+/**
+ * The preferred product a new case would add this capability to (Version B); null when nothing can take it
+ */
+export type FamilyCapabilityTryIn = {
+  solutionId: string;
+  solutionName: string;
+} | null;
+
+/**
+ * A capability that can be reused across products, with where it comes from and where it is already used
+ */
+export interface FamilyCapability {
+  capability: Capability;
+  /** Business problem of the capability's source product */
+  familyId: string;
+  familyTitle: string;
+  sourceSolutionId: string;
+  sourceSolutionName: string;
+  /** Products whose current configuration includes this capability */
+  usedIn: FamilyCapabilityUsedInItem[];
+  /** Already part of the preferred product of the family card it is shown on */
+  includedInPreferred: boolean;
+  /** The preferred product a new case would add this capability to (Version B); null when nothing can take it */
+  tryIn: FamilyCapabilityTryIn;
+}
+
 export interface SearchResults {
   query: string;
   results: SearchResult[];
-  /** Reusable capabilities matching the query on their own */
-  capabilities: Capability[];
+  /** Reusable capabilities matching the query on their own, each with its source family */
+  capabilities: FamilyCapability[];
   source: SearchResultsSource;
+}
+
+/**
+ * A published configuration of the preferred product - what IT approved on top of the standard setup
+ */
+export interface ApprovedConfiguration {
+  solutionId: string;
+  version: string;
+  /** The standard configuration this one is compared against */
+  baseVersion: string;
+  /** Short name made from what changed */
+  title: string;
+  changes: string[];
+  summary: string;
+  releasedAt: string;
+  /** @nullable */
+  caseId: string | null;
+}
+
+export type SolutionFamilyCoversItem = {
+  capabilityId: string;
+  name: string;
+  workflowStep: string;
+};
+
+export interface SolutionFamily {
+  businessProblem: BusinessProblem;
+  preferred: Solution;
+  /** Plain-language support status of the preferred product */
+  support: string;
+  /** What the preferred product's production configuration does, one entry per active capability */
+  covers: SolutionFamilyCoversItem[];
+  approvedConfigurations: ApprovedConfiguration[];
+  reusableCapabilities: FamilyCapability[];
+  /** Other live products for the problem without a disposition */
+  alternatives: Solution[];
+  /** Products IT has given a disposition; shown as being consolidated, never as alternatives */
+  consolidating: Solution[];
+}
+
+/**
+ * Two real engine runs of the same sample input - standard configuration and the approved one - with the lines that differ
+ */
+export interface ConfigurationPreview {
+  solutionId: string;
+  version: string;
+  baseVersion: string;
+  sampleInput: SampleInput;
+  standard: Run;
+  variant: Run;
+  diff: OutputDiff;
+  explanation: string[];
+  catalogVersion: string;
 }
 
 export interface OwnedSolution {
@@ -1676,31 +1994,6 @@ export type ChangeReviewAvailableActionsItem = {
   role: Role;
   actions: DecisionAction[];
 };
-
-export type EvidenceSummaryLabelled = {
-  inputs: number;
-  recallA: number;
-  recallB: number;
-  precisionA: number;
-  precisionB: number;
-} | null;
-
-/**
- * Evidence for the case's current Version B configuration, plus what was set aside
- */
-export interface EvidenceSummary {
-  currentFingerprint: string;
-  /** Distinct inputs on which the current configuration ran against the baseline */
-  inputsTested: number;
-  /** @nullable */
-  runtimeA: number | null;
-  /** @nullable */
-  runtimeB: number | null;
-  labelled: EvidenceSummaryLabelled;
-  votes: EvaluationSummary | null;
-  /** Votes from earlier configurations */
-  setAside: number;
-}
 
 export interface GateItem {
   key: string;

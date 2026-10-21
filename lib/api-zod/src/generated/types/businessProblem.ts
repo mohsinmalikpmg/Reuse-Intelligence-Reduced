@@ -5,11 +5,15 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessFunction } from './businessFunction';
 import type { BusinessProblemRecommendedAction } from './businessProblemRecommendedAction';
 
 export interface BusinessProblem {
   id: string;
   title: string;
+  businessFunction: BusinessFunction;
+  /** The business role that owns this problem day to day */
+  primaryUser: string;
   description: string;
   activeSolutionIds: string[];
   recommendedAction: BusinessProblemRecommendedAction;

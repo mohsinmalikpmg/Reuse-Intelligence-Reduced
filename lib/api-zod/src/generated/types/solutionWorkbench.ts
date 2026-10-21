@@ -13,6 +13,8 @@ import type { WorkflowBlock } from './workflowBlock';
 
 export interface SolutionWorkbench {
   solution: Solution;
+  /** The product's current governed version; differs from solution.currentVersion when this workbench shows an earlier (standard) version */
+  liveVersion: string;
   /** Executable steps in execution order */
   blocks: WorkflowBlock[];
   /** Locked controls preserved around the workflow */

@@ -477,7 +477,8 @@ function capabilityOption(c: ScoredCapability, ctx: CaseContext | null): ReuseOp
     solutionId: c.capability.sourceSolutionId,
     solutionName: c.source?.name ?? c.capability.sourceSolutionName,
     caseId: null,
-    addableTo: c.addable && ctx ? ctx.base.id : null,
+    // A base without an execution engine cannot show the difference, so nothing is offered for addition to it.
+    addableTo: c.addable && ctx && ctx.base.execution === "live" ? ctx.base.id : null,
   };
 }
 

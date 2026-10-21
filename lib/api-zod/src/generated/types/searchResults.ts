@@ -5,14 +5,14 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
-import type { Capability } from './capability';
+import type { FamilyCapability } from './familyCapability';
 import type { SearchResult } from './searchResult';
 import type { SearchResultsSource } from './searchResultsSource';
 
 export interface SearchResults {
   query: string;
   results: SearchResult[];
-  /** Reusable capabilities matching the query on their own */
-  capabilities: Capability[];
+  /** Reusable capabilities matching the query on their own, each with its source family */
+  capabilities: FamilyCapability[];
   source: SearchResultsSource;
 }

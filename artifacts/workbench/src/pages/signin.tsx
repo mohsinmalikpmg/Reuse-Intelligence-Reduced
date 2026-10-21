@@ -4,7 +4,7 @@ import { ArrowRight, Compass, ShieldCheck, Wrench } from "lucide-react";
 import { useListPersonas, type Role } from "@workspace/api-client-react";
 import { usePersona } from "@/lib/persona";
 import { landingFor } from "@/lib/case";
-import { Logo, ROLE_TABS } from "@/components/frame";
+import { CenovusEndorsement, Logo, ROLE_TABS } from "@/components/frame";
 import { Skel } from "@/components/bits";
 
 const LINE: Record<Role, { text: string; icon: typeof Compass }> = {
@@ -31,7 +31,7 @@ export default function SignIn() {
   return (
     <div className="min-h-[100dvh]">
       <div className="bg-sidebar">
-        <header className="mx-auto flex h-16 max-w-[1100px] items-center px-5 md:px-8"><Logo light /></header>
+        <header className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-5 md:px-8"><Logo light /><CenovusEndorsement /></header>
       </div>
       <div className="mx-auto max-w-[1100px] px-5 pb-16 pt-14 md:px-8 md:pt-20">
         <div className="eyebrow">Internal tool</div>

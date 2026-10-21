@@ -9,6 +9,11 @@ const MARK = {
   changed: { label: "Changed", cls: "border-l-sienna bg-accent/70", tag: "bg-accent text-accent-foreground" },
 };
 
+/** Lines are addressed by section + item key: item keys such as "none" repeat across sections. */
+export const lineKey = (sectionKey: string, itemKey: string) => `${sectionKey}:${itemKey}`;
+export const diffKey = (e: Pick<DiffEntry, "sectionKey" | "itemKey">) => lineKey(e.sectionKey, e.itemKey);
+export const marksFrom = (entries: DiffEntry[]) => new Map<string, DiffEntry>(entries.map((e) => [diffKey(e), e]));
+
 export function OutputView({ output, marks, selectedKey, onPick, testid, dim }: {
   output: RunOutput; marks?: Map<string, DiffEntry>; selectedKey?: string | null; onPick?: (e: DiffEntry) => void; testid?: string; dim?: boolean;
 }) {
@@ -21,7 +26,7 @@ export function OutputView({ output, marks, selectedKey, onPick, testid, dim }: 
           {s.items.length === 0 ? <p className="text-[13.5px] text-muted-foreground">Nothing produced.</p> : (
             <ul className="space-y-1">
               {s.items.map((it) => {
-                const m = marks?.get(it.key);
+                const m = marks?.get(lineKey(s.key, it.key));
                 const tone = m ? MARK[m.change] : null;
                 const Comp = m && onPick ? "button" : "div";
                 return (
@@ -32,7 +37,7 @@ export function OutputView({ output, marks, selectedKey, onPick, testid, dim }: 
                         "flex w-full items-start gap-2 rounded-md border-l-[3px] border-l-transparent px-2.5 py-1.5 text-left text-[14px] leading-snug",
                         tone?.cls,
                         m && onPick && "cursor-pointer transition-shadow hover:shadow-[inset_0_0_0_1px_hsl(var(--primary)/.35)]",
-                        selectedKey && selectedKey === it.key && "shadow-[inset_0_0_0_2px_hsl(var(--primary))]",
+                        selectedKey && selectedKey === lineKey(s.key, it.key) && "shadow-[inset_0_0_0_2px_hsl(var(--primary))]",
                       )}
                     >
                       <span className="min-w-0 flex-1">

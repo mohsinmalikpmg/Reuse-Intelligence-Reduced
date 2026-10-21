@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { ChevronDown, FileText, GripVertical, Plus } from "lucide-react";
+import { ChevronDown, FileText, GripVertical, Lock, Plus } from "lucide-react";
 import type { ComponentConfig, EvaluationSummary, SampleInput } from "@workspace/api-client-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Tag, btn } from "@/components/bits";
@@ -48,12 +48,14 @@ function TrayItem({ c, rec, busy, enabled, onAdd }: { c: ComponentConfig; rec?: 
   const blocked = c.state === "incompatible" || !!c.blockedReason;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `add:${c.capability.id}`, disabled: !enabled || busy || blocked });
   return (
-    <div ref={setNodeRef} data-testid={`tray-${c.capability.id}`} className={cn("flex items-start gap-1.5 rounded-lg border bg-card p-2", rec ? "border-sienna/50" : "border-border", isDragging && "opacity-30", blocked && "opacity-60")}>
+    <div ref={setNodeRef} data-testid={`tray-${c.capability.id}`} data-blocked={blocked ? "true" : "false"} className={cn("flex items-start gap-1.5 rounded-lg border p-2", blocked ? "border-dashed border-input bg-muted/50" : rec ? "border-sienna/50 bg-card" : "border-border bg-card", isDragging && "opacity-30")}>
       {enabled && !blocked && <button {...listeners} {...attributes} aria-label={`Drag ${c.capability.name} into Version B`} data-testid={`handle-${c.capability.id}`} className="cursor-grab touch-none self-stretch rounded px-0.5 text-muted-foreground hover:bg-muted active:cursor-grabbing"><GripVertical className="h-4 w-4" /></button>}
+      {blocked && <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5"><span className="text-[13.5px] font-semibold leading-tight">{c.capability.name}</span></div>
-        {rec && <span className="text-[11px] font-semibold uppercase tracking-wide text-siennaink">Recommended</span>}
-        <div className="text-[12px] text-muted-foreground">{blocked ? c.blockedReason ?? "Not compatible with this workflow" : `From ${c.sourceSolutionName}`}</div>
+        <div className="flex items-center gap-1.5"><span className={cn("text-[13.5px] font-semibold leading-tight", blocked && "text-muted-foreground")}>{c.capability.name}</span></div>
+        {rec && !blocked && <span className="text-[11px] font-semibold uppercase tracking-wide text-siennaink">Recommended</span>}
+        {blocked && <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Cannot connect</span>}
+        <div className={cn("text-[12px]", blocked ? "text-foreground" : "text-muted-foreground")} data-testid={blocked ? `text-blocked-${c.capability.id}` : undefined}>{blocked ? c.blockedReason ?? "Not compatible with this workflow" : `From ${c.sourceSolutionName}`}</div>
       </div>
       <button data-testid={`button-add-${c.capability.id}`} disabled={!enabled || busy || blocked} onClick={() => onAdd(c)} className="inline-flex min-h-8 items-center gap-1 rounded-md bg-primary px-2 text-[12.5px] font-semibold text-white hover:bg-[hsl(191_30%_23%)] disabled:opacity-40"><Plus className="h-3.5 w-3.5" />Add</button>
     </div>

@@ -120,6 +120,14 @@ function execute(spec: RunSpec): Omit<Run, "id" | "createdAt"> {
   };
 }
 
+/** Run a solution's production workflow on a given sample (not persisted) — used for library output previews. */
+export function previewRun(solution: Solution, sampleInputId: string, id: string, versionLabel: string): Run {
+  const input = resolveInput(sampleInputId, undefined, solution.id);
+  const { active, configValues } = productionCapabilities(solution);
+  const run = execute({ caseId: null, solution, version: "A", versionLabel, active, configValues, sampleInputId: input.sampleInputId, text: input.text });
+  return { id, createdAt: new Date(0).toISOString(), ...run };
+}
+
 /** Run a solution's production workflow (not persisted) — used for the saved example output. */
 export function exampleRun(solution: Solution): Run {
   const { active, configValues } = productionCapabilities(solution);
@@ -133,6 +141,7 @@ export function buildSolutionWorkbench(solution: Solution): SolutionWorkbench {
   const controls = solutionCapabilities(solution).filter((cap) => !isExecutable(cap.id) && cap.controlType === "locked");
   return {
     solution,
+    liveVersion: getSolution(solution.id)?.currentVersion ?? solution.currentVersion,
     blocks: toBlocks(solution, active, configValues),
     controls,
     sampleInputs: sampleInputsFor(solution.id).map(toSampleInput),
@@ -140,18 +149,27 @@ export function buildSolutionWorkbench(solution: Solution): SolutionWorkbench {
   };
 }
 
+/** Products without an execution engine never run: a run with no executors would report "same output" and that is not evidence. */
+export function requireExecutable(solution: Solution): void {
+  if (solution.execution !== "live") throw new WorkbenchError(`FUSEBOX does not run ${solution.name} on real input yet; only its output preview exists, so no A/B evidence can be produced.`, 409);
+}
+
 export async function runSolution(solution: Solution, sampleInputId: string | undefined, inputText: string | undefined): Promise<Run> {
+  requireExecutable(solution);
   const { active, configValues } = productionCapabilities(solution);
   const input = resolveInput(sampleInputId, inputText, solution.id);
   return insertRun(execute({ caseId: null, solution, version: "A", versionLabel: `${solution.name} v${solution.currentVersion}`, active, configValues, sampleInputId: input.sampleInputId, text: input.text }));
 }
 
 export function versionLabels(c: Case, ctx: CaseContext): { a: string; b: string } {
-  return { a: `${ctx.base.name} v${ctx.base.currentVersion} (current)`, b: `${c.title} (proposed)` };
+  // A case opened from the standard configuration compares against a version that is no longer the live one.
+  const live = getSolution(ctx.base.id)?.currentVersion === ctx.base.currentVersion;
+  return { a: `${ctx.base.name} v${ctx.base.currentVersion} (${live ? "current" : "standard"})`, b: `${c.title} (proposed)` };
 }
 
 export async function runCaseVersion(c: Case, version: "A" | "B", sampleInputId: string | undefined, inputText: string | undefined): Promise<Run> {
   const ctx = caseContext(c);
+  requireExecutable(ctx.base);
   const labels = versionLabels(c, ctx);
   const input = resolveInput(sampleInputId, inputText, ctx.base.id);
   const caps = version === "A" ? versionACapabilities(ctx) : versionBCapabilities(c, ctx);
@@ -166,7 +184,7 @@ function stepName(id: string, baseId: string): { name: string; source: string; w
     : { name: id === "input" ? "Read input" : id, source: "", workflowStep: "", addedModule: false };
 }
 
-function enrichDiff(diff: ReturnType<typeof diffOutputs>, baseId: string): OutputDiff {
+export function enrichDiff(diff: ReturnType<typeof diffOutputs>, baseId: string): OutputDiff {
   const counts = new Map<string, number>();
   for (const e of diff.entries) counts.set(e.stepId, (counts.get(e.stepId) ?? 0) + 1);
   return {
@@ -185,7 +203,7 @@ function enrichDiff(diff: ReturnType<typeof diffOutputs>, baseId: string): Outpu
   };
 }
 
-function explain(runA: Run, runB: Run, diff: OutputDiff): string[] {
+export function explain(runA: Run, runB: Run, diff: OutputDiff, names: { a: string; b: string } = { a: "Version A", b: "Version B" }): string[] {
   if (diff.entries.length === 0) return ["Both versions produced the same output for this input. The change made no difference here."];
   const lines: string[] = [];
   const onlyB = runB.enabledCapabilityIds.filter((id) => !runA.enabledCapabilityIds.includes(id));
@@ -195,7 +213,15 @@ function explain(runA: Run, runB: Run, diff: OutputDiff): string[] {
     const removed = diff.entries.filter((e) => e.stepId === step.stepId && e.change === "removed").length;
     const changed = diff.entries.filter((e) => e.stepId === step.stepId && e.change === "changed").length;
     const parts = [added ? `added ${added} line${added === 1 ? "" : "s"}` : "", removed ? `removed ${removed}` : "", changed ? `changed ${changed}` : ""].filter(Boolean).join(", ");
-    const why = onlyB.includes(step.stepId) ? " because it only runs in Version B" : onlyA.includes(step.stepId) ? " because it only runs in Version A" : " because its input changed upstream";
+    const settingA = runA.configValues[step.stepId];
+    const settingB = runB.configValues[step.stepId];
+    const why = onlyB.includes(step.stepId)
+      ? ` because it only runs in ${names.b}`
+      : onlyA.includes(step.stepId)
+        ? ` because it only runs in ${names.a}`
+        : settingA !== undefined && settingB !== undefined && settingA !== settingB
+          ? ` because its setting changed (${settingA} → ${settingB})`
+          : " because its input changed upstream";
     lines.push(`${step.name}${step.sourceSolutionName ? ` (from ${step.sourceSolutionName})` : ""} ${parts}${why}.`);
   }
   return lines;
@@ -227,6 +253,7 @@ export function buildComparison(c: Case, runA: Run, runB: Run, evaluation: Evalu
 /** Run both versions on exactly the same input and persist both runs. */
 export async function runComparison(c: Case, sampleInputId: string | undefined, inputText: string | undefined): Promise<{ runA: Run; runB: Run }> {
   const ctx = caseContext(c);
+  requireExecutable(ctx.base);
   const input = resolveInput(sampleInputId, inputText, ctx.base.id);
   const labels = versionLabels(c, ctx);
   const a = versionACapabilities(ctx);

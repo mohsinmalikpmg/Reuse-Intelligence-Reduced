@@ -17,4 +17,6 @@ export interface CaseInput {
   moduleIds?: string[];
   /** Reuse-check event this case acts on; recorded as the path taken */
   reuseEventId?: string;
+  /** Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of */
+  approvedVersion?: string;
 }

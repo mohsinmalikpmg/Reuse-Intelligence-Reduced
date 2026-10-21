@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 558.1 128" role="img" aria-label="Fusebox product logo with Power Cube symbol">
+ <g>
+<defs>
+ <linearGradient id="left" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#63D8E5"/><stop offset=".42" stop-color="#176D85"/><stop offset="1" stop-color="#092831"/></linearGradient>
+ <linearGradient id="right" x1=".05" y1="0" x2=".92" y2="1"><stop stop-color="#EA7E36"/><stop offset=".40" stop-color="#8D4119"/><stop offset=".78" stop-color="#365860"/><stop offset="1" stop-color="#8A9A36"/></linearGradient>
+ <linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#D0F3F6"/><stop offset=".36" stop-color="#6E9EAF"/><stop offset=".58" stop-color="#0F4150"/><stop offset=".82" stop-color="#FFB463"/><stop offset="1" stop-color="#C5683B"/></linearGradient>
+ <linearGradient id="bolt" x1=".35" y1="0" x2=".65" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".50" stop-color="#FFE0A0"/><stop offset="1" stop-color="#FF842B"/></linearGradient>
+ <filter id="softEnergy" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.6"/></filter>
+</defs>
+<path d="M64 8 L113 35 L113 93 L64 120 L15 93 L15 35 Z" fill="#071F27" stroke="#81CBD6" stroke-width="1.4" stroke-linejoin="round"/>
+<!-- Three restrained material faces: capability streams converge at a powered center -->
+<path d="M64 8 L113 35 L64 61 L15 35 Z" fill="url(#top)"/>
+<path d="M15 35 L64 61 L64 120 L15 93 Z" fill="url(#left)"/>
+<path d="M113 35 L64 61 L64 120 L113 93 Z" fill="url(#right)"/>
+<!-- Bevel seams and crisp signal edges, also legible without glow -->
+<path d="M15 35 L64 61 L113 35 M64 61 V120" fill="none" stroke="#D2F8FB" stroke-opacity=".66" stroke-width="1.5"/>
+<path d="M15 35 L64 8 L113 35 L113 93 L64 120 L15 93 Z" fill="none" stroke="#D2F8FB" stroke-width="2" stroke-linejoin="round"/>
+<path d="M19 41 V90 L61 114" fill="none" stroke="#75DBE9" stroke-opacity=".6" stroke-width="2"/>
+<path d="M108 41 V90 L68 114" fill="none" stroke="#FFAA5A" stroke-opacity=".8" stroke-width="2"/>
+<!-- Central controlled spark; glow is presentation-only, never required to perceive the mark -->
+<path d="M77 24 L45 70 L62 70 L56 105 L87 55 L70 55 Z" fill="#FF842B" opacity=".62" filter="url(#softEnergy)"/>
+<path d="M77 24 L45 70 L62 70 L56 105 L87 55 L70 55 Z" fill="url(#bolt)" stroke="#FFF4D6" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M74 33 L53 65 L68 65 L62 93" fill="none" stroke="#FFFFFF" stroke-opacity=".74" stroke-width="2" stroke-linecap="round"/>
+</g>
+ <g transform="translate(158 13) scale(0.88)"><path d="M80 0H496V536H1159V874H496V1138H1199V1490H80Z" transform="translate(2.000 97.000) scale(0.045898 -0.045898)" fill="#F6FAF9"/><path d="M722 -24C1111 -24 1364 194 1364 530V1490H960V564C960 425 862 326 722 326C584 326 484 426 484 564V1490H80V530C80 193 332 -24 722 -24Z" transform="translate(56.268 97.000) scale(0.045898 -0.045898)" fill="#F6FAF9"/><path d="M704 -24C1108 -24 1339 154 1339 466C1339 704 1194 836 852 899L732 921C577 949 510 987 510 1058C510 1133 592 1186 709 1186C833 1186 916 1122 926 1018H1308C1298 1330 1073 1514 701 1514C339 1514 92 1321 92 1038C92 817 248 664 536 609L684 581C852 549 928 507 928 435C928 357 840 304 709 304C558 304 463 375 457 496H64C64 161 291 -24 704 -24Z" transform="translate(119.946 97.000) scale(0.045898 -0.045898)" fill="#F6FAF9"/><path d="M80 0H1234V352H496V574H1177V914H496V1138H1234V1490H80Z" transform="translate(181.741 97.000) scale(0.045898 -0.045898)" fill="#F6FAF9"/><path d="M80 0H782C1105 0 1296 178 1296 422C1296 632 1150 776 958 783V785C1131 818 1246 945 1246 1118C1246 1335 1066 1490 726 1490H80ZM484 312V606H704C805 606 870 548 870 459C870 370 805 312 704 312ZM484 900V1178H679C771 1178 830 1123 830 1039C830 955 771 900 679 900Z" transform="translate(238.534 97.000) scale(0.045898 -0.045898)" fill="#F6FAF9"/><path d="M764 -24C1169 -24 1488 247 1488 744C1488 1242 1169 1514 764 1514C357 1514 40 1242 40 744C40 250 357 -24 764 -24ZM764 336C569 336 460 487 460 744C460 1002 569 1154 764 1154C960 1154 1068 1002 1068 744C1068 487 960 336 764 336Z" transform="translate(297.024 97.000) scale(0.045898 -0.045898)" fill="#FF842B"/><path d="M0 0H470L641 256C682 317 720 378 758 439C796 378 834 317 873 256L1035 0H1518L992 773L1460 1490H1003L882 1296C841 1231 802 1165 764 1100C726 1165 688 1231 648 1296L529 1490H60L537 762Z" transform="translate(364.557 97.000) scale(0.045898 -0.045898)" fill="#F6FAF9"/><path d="M 93.3 35 l 7 -14 -2 13 h 8 l -15 18 4 -17 Z" fill="#FF842B"/></g>
+ </svg>

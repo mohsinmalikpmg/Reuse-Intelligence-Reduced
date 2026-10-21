@@ -20,10 +20,13 @@ import { similarExperiments } from "../lib/experiments";
 import { buildExperimentPlan, runSimulation } from "../lib/simulation";
 import { matchBrief } from "../lib/matching";
 import { caseEvidence } from "../lib/evidence";
+import { buildDecisionView } from "../lib/decision-view";
 import { setReusePathTaken } from "../lib/reuse-store";
+import { buildSolutionWorkbench } from "../lib/workbench";
 import { applyGovernanceEffects } from "../lib/consolidation";
 import { GovernanceError, consolidationLocked, recordMigrationNote, upsertDispositions, versionForCase } from "../lib/governance";
 import {
+  CaseInputError,
   createCase,
   getBrief,
   getCase,
@@ -71,14 +74,29 @@ router.post("/cases", async (req, res) => {
     res.status(400).json({ error: "Unknown brief" });
     return;
   }
-  const created = await createCase({
-    baseSolutionId: base.id,
-    briefId: parsed.data.briefId ?? null,
-    title: parsed.data.title,
-    intent: parsed.data.intent,
-    createdByRole: parsed.data.createdByRole,
-    moduleIds: parsed.data.moduleIds,
-  });
+  // Experiments compare real runs. A product that only has an output preview cannot produce any, so no case opens on it.
+  if (base.execution !== "live") {
+    res.status(409).json({ error: `${base.name} is catalogued with a sample-data output preview and does not run on real input yet, so no experiment can be opened on it.` });
+    return;
+  }
+  let created;
+  try {
+    created = await createCase({
+      baseSolutionId: base.id,
+      briefId: parsed.data.briefId ?? null,
+      title: parsed.data.title,
+      intent: parsed.data.intent,
+      createdByRole: parsed.data.createdByRole,
+      moduleIds: parsed.data.moduleIds,
+      approvedVersion: parsed.data.approvedVersion,
+    });
+  } catch (err) {
+    if (err instanceof CaseInputError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    throw err;
+  }
   if (parsed.data.reuseEventId) await setReusePathTaken(parsed.data.reuseEventId, "use");
   res.status(201).json(created);
 });
@@ -102,6 +120,13 @@ router.patch("/cases/:caseId", async (req, res) => {
   if (parsed.data.saved !== undefined) patch.saved = parsed.data.saved;
   if (parsed.data.pilotPercent !== undefined) patch.pilotPercent = parsed.data.pilotPercent;
   res.json(await updateCaseRow(c.id, patch));
+});
+
+router.get("/cases/:caseId/baseline", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  // Version A is the parent as of the branch point, so a case opened from the standard configuration shows v3.2 even once v3.3 is live.
+  res.json(buildSolutionWorkbench(caseContext(c).base));
 });
 
 router.get("/cases/:caseId/recommendation", async (req, res) => {
@@ -251,6 +276,14 @@ router.get("/cases/:caseId/review", async (req, res) => {
   const experiment = c.experimentId ? await getExperiment(c.experimentId) : null;
   const decisions = await listDecisions(c.id);
   res.json(buildReview(c, ctx, experiment, decisions, await caseEvidence(c)));
+});
+
+router.get("/cases/:caseId/decision-view", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  const experiment = c.experimentId ? await getExperiment(c.experimentId) : null;
+  const decisions = await listDecisions(c.id);
+  res.json(await buildDecisionView(c, decisions, experiment, await caseEvidence(c)));
 });
 
 router.get("/cases/:caseId/consolidation", async (req, res) => {

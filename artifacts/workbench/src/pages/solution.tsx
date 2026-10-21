@@ -10,6 +10,7 @@ import { caseStatusLabel } from "@/components/wb-pilot";
 import { OutputView, RunMeta } from "@/components/output-view";
 import { blocksFromWorkbench, type FlowBlock } from "@/components/flow";
 import { errMsg, useCurrentCase } from "@/lib/case";
+import { MetaGrid, MetaTags, OutputPreviewPanel, isLive } from "@/components/enterprise";
 import { cn } from "@/lib/utils";
 
 export default function SolutionPage() {
@@ -18,7 +19,9 @@ export default function SolutionPage() {
   const { setCaseId } = useCurrentCase();
   const say = useUndoToast();
   const d = useGetSolution(id, { query: { enabled: !!id, queryKey: getGetSolutionQueryKey(id) } });
-  const wb = useGetSolutionWorkbench(id, { query: { enabled: !!id, queryKey: getGetSolutionWorkbenchQueryKey(id), retry: false } });
+  // Products without an execution engine have no runs to show; their workbench endpoint would only report that.
+  const live = d.data ? isLive(d.data.solution) : false;
+  const wb = useGetSolutionWorkbench(id, { query: { enabled: !!id && live, queryKey: getGetSolutionWorkbenchQueryKey(id), retry: false } });
   const all = useListSolutions();
   const create = useCreateCase();
   const [step, setStep] = useState<FlowBlock | null>(null);
@@ -55,6 +58,7 @@ export default function SolutionPage() {
           </div>
           <h1 data-testid="text-headline" className="mt-2 text-[32px] font-bold leading-tight md:text-[40px]">{s.name}</h1>
           <p data-testid="text-outcome" className="mt-2 text-[17px] leading-relaxed">{s.outcome}</p>
+          <div className="mt-3"><MetaTags s={s} testid="meta-tags" /></div>
           {draft && (
             <p data-testid="text-draft-successor" className="mt-2 text-[14px] text-muted-foreground">
               Draft successor v{draft.version} approved by the owner, awaiting IT: {draft.foldedCapabilities.map((c) => c.name).join(", ") || draft.changedSettings.join(", ") || "configuration change"}.
@@ -67,12 +71,17 @@ export default function SolutionPage() {
           )}
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
-          <button data-testid="button-try" onClick={() => start()} disabled={create.isPending} className={btn.primary}>Try this solution <ArrowRight className="h-5 w-5" /></button>
+          {live ? (
+            <button data-testid="button-try" onClick={() => start()} disabled={create.isPending} className={btn.primary}>Try this solution <ArrowRight className="h-5 w-5" /></button>
+          ) : (
+            <a href="#output-preview" data-testid="button-see-preview" className={btn.primary}><Eye className="h-5 w-5" /> See output preview</a>
+          )}
           <div className="flex flex-wrap gap-1">
-            <button data-testid="button-starting-point" onClick={() => start("edit")} disabled={create.isPending} className={btn.quiet}><PencilRuler className="h-4 w-4" /> Use as starting point</button>
-            <button data-testid="button-compare" onClick={() => start("compare")} disabled={create.isPending} className={btn.quiet}><GitCompare className="h-4 w-4" /> Compare</button>
+            {live && <button data-testid="button-starting-point" onClick={() => start("edit")} disabled={create.isPending} className={btn.quiet}><PencilRuler className="h-4 w-4" /> Use as starting point</button>}
+            {live && <button data-testid="button-compare" onClick={() => start("compare")} disabled={create.isPending} className={btn.quiet}><GitCompare className="h-4 w-4" /> Compare</button>}
             <button data-testid="button-view-details" onClick={() => setDrawer("details")} className={btn.quiet}><Info className="h-4 w-4" /> View details</button>
           </div>
+          {!live && <span className="max-w-[260px] text-right text-[12.5px] text-muted-foreground" data-testid="text-preview-only">Catalogued with a sample-data preview. Not yet wired to run on your input, so no experiment can be opened on it.</span>}
         </div>
       </div>
 
@@ -81,7 +90,20 @@ export default function SolutionPage() {
           <h2 className="text-[18px] font-semibold">How it works</h2>
           <span className="text-[13.5px] text-muted-foreground">Click a step to preview it. Double-click, or Details, for the technical view.</span>
         </div>
-        {wb.isLoading ? <Skel className="h-28" /> : blocks.length ? (
+        {!live ? (
+          <ol className="card-soft flex flex-wrap items-stretch gap-y-3 p-4" data-testid="workflow-strip">
+            {capabilities.map((c, i) => (
+              <li key={c.id} className="flex items-stretch">
+                <button data-testid={`step-${c.id}`} onClick={() => setCap(c)} className="w-[180px] rounded-xl border border-border bg-card px-3.5 py-3 text-left transition-[border-color,box-shadow] hover:border-primary/50">
+                  <span className="font-mono text-[11.5px] text-muted-foreground">{i + 1} · {c.workflowStep}</span>
+                  <span className="mt-0.5 block text-[15px] font-semibold leading-tight text-primary">{c.name}</span>
+                  <span className="mt-1 block text-[12px] capitalize text-muted-foreground">{c.controlType}</span>
+                </button>
+                {i < capabilities.length - 1 && <ChevronRight className="mx-1 h-4 w-4 self-center text-muted-foreground/60" />}
+              </li>
+            ))}
+          </ol>
+        ) : wb.isLoading ? <Skel className="h-28" /> : blocks.length ? (
           <ol className="card-soft flex flex-wrap items-stretch gap-y-3 p-4" data-testid="workflow-strip">
             {blocks.map((b, i) => (
               <li key={b.id} className="flex items-stretch">
@@ -108,21 +130,28 @@ export default function SolutionPage() {
             <button data-testid="button-step-details" onClick={() => setStepDrawer(true)} className={btn.secondary}>Details</button>
           </div>
         )}
-        {wb.data?.controls.length ? <p className="mt-3 flex items-center gap-1.5 text-[13.5px] text-muted-foreground"><ShieldCheck className="h-4 w-4 text-ok" /> Controls in place: {wb.data.controls.map((c) => c.name).join(", ")}</p> : null}
+        <p className="mt-3 flex items-center gap-1.5 text-[13.5px] text-muted-foreground"><ShieldCheck className="h-4 w-4 text-ok" /> Controls in place: {s.controls.join(", ")}</p>
+      </section>
+
+      <section className="mt-8" data-testid="panel-record">
+        <h2 className="mb-3 text-[18px] font-semibold">The record</h2>
+        <div className="card-soft p-5"><MetaGrid s={s} /></div>
       </section>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div>
+        <div id="output-preview">
           <div className="flex items-center gap-3">
-            <button data-testid="button-sample-output" disabled={!wb.data} onClick={() => setSample((v) => !v)} className={btn.secondary}>{sample ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} {sample ? "Hide sample output" : "Show sample output"}</button>
+            {live && <button data-testid="button-sample-output" disabled={!wb.data} onClick={() => setSample((v) => !v)} className={btn.secondary}>{sample ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} {sample ? "Hide sample output" : "Show sample output"}</button>}
             <button data-testid="button-versions" onClick={() => setDrawer("versions")} className={btn.quiet}><History className="h-4 w-4" /> Version history</button>
           </div>
-          {sample && wb.data && (
+          {live && sample && wb.data && (
             <div className="card-soft reveal mt-3 p-5" data-testid="panel-sample-output">
               <div className="mb-3 flex flex-wrap items-center gap-2"><span className="eyebrow">Saved example run</span><RunMeta run={wb.data.exampleRun} /></div>
               <OutputView output={wb.data.exampleRun.output} testid="output-sample" />
             </div>
           )}
+          {!live && s.outputPreview && <div className="mt-3"><OutputPreviewPanel preview={s.outputPreview} s={s} /></div>}
+          {!live && !s.outputPreview && <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-no-preview">No output preview has been recorded for this product yet.</p>}
         </div>
         <div>
           <h2 className="mb-2 text-[16px] font-semibold">Reusable capabilities</h2>

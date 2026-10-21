@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Fusebox Power Cube compact mark">
+<path d="M64 8 L113 35 L113 93 L64 120 L15 93 L15 35 Z" fill="#092831" stroke="#6E9EAF" stroke-width="2" stroke-linejoin="round"/>
+<path d="M64 8 L113 35 L64 61 L15 35 Z" fill="#365860"/>
+<path d="M15 35 L64 61 L64 120 L15 93 Z" fill="#167A90"/>
+<path d="M113 35 L64 61 L64 120 L113 93 Z" fill="#8A5A29"/>
+<path d="M15 35 L64 61 L113 35 M64 61 V120" fill="none" stroke="#91D6E0" stroke-width="2"/>
+<path d="M77 24 L45 70 L62 70 L56 105 L87 55 L70 55 Z" fill="#FF963D" stroke="#FFF6D8" stroke-width="1" stroke-linejoin="round"/>
+</svg>

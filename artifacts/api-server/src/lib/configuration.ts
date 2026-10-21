@@ -10,7 +10,7 @@ import type {
   Solution,
   WorkflowStepConfig,
 } from "@workspace/api-zod";
-import { WORKFLOW_STEPS, capabilityKeywords, getCapability, getSolution, portableCapabilitiesFor, solutionCapabilities } from "../data/catalog";
+import { WORKFLOW_STEPS, capabilityKeywords, getCapability, getSolution, portableCapabilitiesFor, solutionCapabilities, solutions } from "../data/catalog";
 import { tokenize } from "./matching";
 import { isExecutable } from "../engine/steps";
 
@@ -99,6 +99,38 @@ export function conflictingBaseCapability(cap: Capability, ctx: CaseContext): Ca
   for (const baseCap of ctx.baseCapabilities) {
     if (cap.incompatibleWith.includes(baseCap.id) || baseCap.incompatibleWith.includes(cap.id)) return baseCap;
   }
+  return null;
+}
+
+/** Products whose capabilities a case on this base can draw from: live products sharing a business problem. */
+export function candidatesFor(base: Solution): string[] {
+  return solutions
+    .filter((s) => s.id !== base.id && s.businessProblemIds.some((bp) => base.businessProblemIds.includes(bp)) && s.status !== "deprecated")
+    .map((s) => s.id);
+}
+
+/** A context for a fresh case on a product, as createCase would build it. */
+export function freshContext(base: Solution, parentVersion?: string): CaseContext {
+  return caseContext({ baseSolutionId: base.id, candidateSolutionIds: candidatesFor(base), parentVersion });
+}
+
+/**
+ * Why an external capability cannot be switched on in a case on this base, or null when it can. The same rules
+ * buildComponents applies ("incompatible" states and unmet dependencies), so a "Try in" offer never produces a case
+ * whose Version B silently equals Version A. `alsoOn` lists other modules being switched on at the same time.
+ */
+export function moduleBlockedReason(cap: Capability, ctx: CaseContext, alsoOn: string[] = []): string | null {
+  if (ctx.baseCapabilities.some((b) => b.id === cap.id)) return `${cap.name} is already part of ${ctx.base.name}.`;
+  if (!ctx.candidateCapabilities.some((c) => c.id === cap.id)) return `${cap.name} is not available for ${ctx.base.name}.`;
+  const conflict = conflictingBaseCapability(cap, ctx);
+  if (conflict) return `Conflicts with ${conflict.name} in ${ctx.base.name}. The base product's version is retained.`;
+  if (isUnsupported(cap) && !isRecommendedModule(cap, ctx)) return `${cap.supportStatus}. Cannot be added without an owner and evidence.`;
+  const baseOn = defaultModuleStates(ctx);
+  const missing = cap.dependsOn
+    .map((id) => getCapability(id))
+    .filter((d): d is Capability => !!d)
+    .filter((d) => !isActive(d, ctx, baseOn) && !alsoOn.includes(d.id));
+  if (missing.length > 0) return `Requires ${missing.map((m) => m.name).join(", ")} to be active.`;
   return null;
 }
 

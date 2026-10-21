@@ -14,12 +14,20 @@ export const ROLE_TABS: { role: Role; label: string; id: string }[] = [
   { role: "it", label: "Govern", id: "persona-it" },
 ];
 
-export function Logo({ light }: { light?: boolean }) {
+const BRAND = `${import.meta.env.BASE_URL}brand/`;
+
+/** FUSEBOX wordmark with the Power Cube mark. `light` = the version for dark surfaces. Vector artwork, never retyped. */
+export function Logo({ light, className }: { light?: boolean; className?: string }) {
   return (
-    <span data-testid="text-logo" className={cn("inline-flex items-center gap-2 text-[17px] tracking-tight", light ? "text-white" : "text-primary")}>
-      <span className="font-bold">Cenovus</span>
-      <span className={cn("h-5 w-px", light ? "bg-white/40" : "bg-primary/30")} />
-      <span className="font-medium opacity-90">Solutions</span>
+    <img data-testid="img-logo" src={`${BRAND}${light ? "fusebox-logo-dark" : "fusebox-logo-light"}.svg`} alt="FUSEBOX" className={cn("h-7 w-auto select-none", className)} draggable={false} />
+  );
+}
+
+/** Cenovus Energy endorsement: the official mark, unaltered, on its own white field with clear space. */
+export function CenovusEndorsement({ className }: { className?: string }) {
+  return (
+    <span data-testid="img-cenovus" className={cn("inline-flex shrink-0 items-center rounded-md bg-white px-2.5 py-1.5", className)} title="A Cenovus Energy product">
+      <img src={`${BRAND}cenovus-energy-logo.png`} alt="Cenovus Energy" className="h-[18px] w-auto select-none" draggable={false} />
     </span>
   );
 }
@@ -69,7 +77,7 @@ export function Frame({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh]">
       <header className="sticky top-0 z-40 bg-sidebar text-sidebar-foreground shadow-sm">
         <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-4 px-4 md:px-6">
-          <Link href={landingFor(persona.role)} data-testid="link-home" className="shrink-0"><Logo light /></Link>
+          <Link href={landingFor(persona.role)} data-testid="link-home" className="shrink-0" aria-label="FUSEBOX home"><Logo light /></Link>
           <form
             role="search"
             onSubmit={(e) => { e.preventDefault(); if (q.trim()) setLocation(`/search?q=${encodeURIComponent(q.trim())}`); }}
@@ -115,6 +123,7 @@ export function Frame({ children }: { children: ReactNode }) {
               <DropdownMenuItem data-testid="button-sign-out" onClick={() => { setPersona(null); setLocation("/"); }}><LogOut className="mr-2 h-4 w-4" /> Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <CenovusEndorsement className="ml-1 hidden md:inline-flex" />
         </div>
         <nav aria-label="Primary" className="border-t border-white/10">
           <ul className="mx-auto flex max-w-[1400px] gap-1 overflow-x-auto px-3 md:px-5">

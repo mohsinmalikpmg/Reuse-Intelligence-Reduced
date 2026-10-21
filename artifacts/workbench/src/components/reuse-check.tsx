@@ -65,7 +65,7 @@ export function RequirementChips({ items, busy, onChange }: { items: BriefRequir
 
 const STATUS_LABEL: Record<RequirementCoverage["status"], string> = { covered: "Covered", covered_reusable: "Covered by a reusable capability", uncovered: "Not currently covered" };
 
-export function CoverageTable({ rows, briefId, baseSolutionId, baseSolutionName }: { rows: RequirementCoverage[]; briefId: string; baseSolutionId: string; baseSolutionName: string }) {
+export function CoverageTable({ rows, briefId, baseSolutionId, baseSolutionName, baseLive = true }: { rows: RequirementCoverage[]; briefId: string; baseSolutionId: string; baseSolutionName: string; baseLive?: boolean }) {
   const [open, setOpen] = useState<string | null>(null);
   const [why, setWhy] = useState<string | null>(null);
   if (rows.length === 0) return null;
@@ -112,7 +112,7 @@ export function CoverageTable({ rows, briefId, baseSolutionId, baseSolutionName 
                   )}
                   {isOpen && (
                     <tr className="border-b border-border last:border-0"><td colSpan={4} className="bg-secondary/40 px-4 pb-4 pt-1">
-                      <ReuseCheckPanel need={r.text} requirementId={r.requirementId} briefId={briefId} baseSolutionId={baseSolutionId} baseSolutionName={baseSolutionName} onClose={() => setOpen(null)} />
+                      <ReuseCheckPanel need={r.text} requirementId={r.requirementId} briefId={briefId} baseSolutionId={baseSolutionId} baseSolutionName={baseSolutionName} baseLive={baseLive} onClose={() => setOpen(null)} />
                     </td></tr>
                   )}
                 </RowGroup>
@@ -141,7 +141,7 @@ const DIM_LABEL: { key: keyof NonNullable<ReuseOption["dimensions"]>; label: str
   { key: "maturityEvidence", label: "Maturity and evidence", weight: 10 },
 ];
 
-export function ReuseCheckPanel({ need, requirementId, briefId, baseSolutionId, baseSolutionName, onClose }: { need: string; requirementId?: string; briefId?: string; baseSolutionId: string; baseSolutionName: string; onClose: () => void }) {
+export function ReuseCheckPanel({ need, requirementId, briefId, baseSolutionId, baseSolutionName, baseLive = true, onClose }: { need: string; requirementId?: string; briefId?: string; baseSolutionId: string; baseSolutionName: string; baseLive?: boolean; onClose: () => void }) {
   const check = useReuseCheck();
   const [result, setResult] = useState<ReuseCheckResult | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -176,13 +176,13 @@ export function ReuseCheckPanel({ need, requirementId, briefId, baseSolutionId, 
             <div className="card-soft p-4" data-testid="card-reuse-none">
               <div className="text-[15px] font-semibold">Nothing existing scores 60 or more</div>
               <p className="mt-1 text-[14px] text-muted-foreground">{createOpt?.reasons[0] ?? "No existing step, product or experiment is about this need."} A new experiment is allowed.</p>
-              <div className="mt-3"><CreateAction briefId={briefId} baseSolutionId={baseSolutionId} onTaken={markTaken} /></div>
+              <div className="mt-3"><CreateAction briefId={briefId} baseSolutionId={baseSolutionId} baseSolutionName={baseSolutionName} baseLive={baseLive} onTaken={markTaken} /></div>
             </div>
           )}
           {excludedOnly && (
             <div className="mt-3 flex flex-wrap items-center gap-3 text-[14px] text-muted-foreground" data-testid="text-reuse-excluded-only">
               <span>The match above cannot be used here, so a new experiment is allowed.</span>
-              <CreateAction briefId={briefId} baseSolutionId={baseSolutionId} onTaken={markTaken} />
+              <CreateAction briefId={briefId} baseSolutionId={baseSolutionId} baseSolutionName={baseSolutionName} baseLive={baseLive} onTaken={markTaken} />
             </div>
           )}
           <div className="mt-2 flex items-center gap-3 text-[13px] text-muted-foreground">
@@ -265,11 +265,20 @@ function OptionAction({ o, primary, briefId, baseSolutionName, eventId, onTaken 
   return null;
 }
 
-function CreateAction({ briefId, baseSolutionId, onTaken }: { briefId?: string; baseSolutionId: string; onTaken: (p: "create") => void }) {
+function CreateAction({ briefId, baseSolutionId, baseSolutionName, baseLive, onTaken }: { briefId?: string; baseSolutionId: string; baseSolutionName: string; baseLive: boolean; onTaken: (p: "create") => void }) {
   const [, setLocation] = useLocation();
   const create = useCreateCase();
   const invalidate = useInvalidateAll();
   const say = useUndoToast();
+  // A product with only an output preview cannot run, so there is nothing to experiment against yet.
+  if (!baseLive) {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-2 text-[14px] text-muted-foreground" data-testid="text-preview-no-experiment">
+        {baseSolutionName} is catalogued with a sample-data preview and does not run on real input yet, so no experiment can be opened on it.
+        <Link href={`/solutions/${baseSolutionId}`} className={btn.secondary} data-testid="button-open-preview">See its output preview <ArrowRight className="h-4 w-4" /></Link>
+      </span>
+    );
+  }
   return (
     <button
       data-testid="button-start-experiment"

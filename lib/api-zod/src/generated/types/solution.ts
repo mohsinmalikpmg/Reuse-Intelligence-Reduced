@@ -5,11 +5,14 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessFunction } from './businessFunction';
 import type { Disposition } from './disposition';
 import type { EffortLevel } from './effortLevel';
 import type { EvidenceLevel } from './evidenceLevel';
 import type { Metrics } from './metrics';
+import type { OutputPreview } from './outputPreview';
 import type { ProductionConfig } from './productionConfig';
+import type { SolutionExecution } from './solutionExecution';
 import type { SolutionKind } from './solutionKind';
 import type { SolutionStatus } from './solutionStatus';
 import type { SolutionVersion } from './solutionVersion';
@@ -17,6 +20,22 @@ import type { SolutionVersion } from './solutionVersion';
 export interface Solution {
   id: string;
   name: string;
+  businessFunction: BusinessFunction;
+  /** Business roles that use the product day to day */
+  primaryUsers: string[];
+  /** e.g. Review and approve */
+  workflowType: string;
+  /** What the product produces */
+  outputType: string;
+  /** Business risk of the output; high for financial */
+  riskTier: EffortLevel;
+  dataInvolved: string[];
+  /** Controls the product applies (source linking, segregation of duties, no external publication, ...) */
+  controls: string[];
+  /** live = FUSEBOX runs this product's workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet */
+  execution: SolutionExecution;
+  /** Deterministic output preview on fixed sample data for products without an execution engine; never evidence */
+  outputPreview: OutputPreview | null;
   /** Governance disposition recorded for this product, if any */
   disposition: Disposition | null;
   /** Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply */

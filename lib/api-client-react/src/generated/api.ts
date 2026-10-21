@@ -36,9 +36,11 @@ import type {
   ChangeReview,
   CompareRequest,
   Configuration,
+  ConfigurationPreview,
   ConfigurationUpdate,
   ConsolidationDecisionView,
   DecisionInput,
+  DecisionView,
   DemoState,
   DispositionChoices,
   ErrorResponse,
@@ -72,6 +74,7 @@ import type {
   SimilarExperiments,
   Solution,
   SolutionDetail,
+  SolutionFamily,
   SolutionWorkbench,
   TestResponseInput,
   TestSession,
@@ -811,6 +814,165 @@ export function useGetRun<TData = Awaited<ReturnType<typeof getRun>>, TError = E
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetRunQueryOptions(runId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSolutionFamiliesUrl = () => {
+
+
+
+
+  return `/api/library/families`
+}
+
+/**
+ * @summary The library grouped by business problem - the preferred solution, its approved configurations, reusable capabilities and products being consolidated
+ */
+export const listSolutionFamilies = async ( options?: Parameters<typeof customFetch>[1]): Promise<SolutionFamily[]> => {
+
+  return customFetch<SolutionFamily[]>(getListSolutionFamiliesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSolutionFamiliesQueryKey = () => {
+    return [
+    `/api/library/families`
+    ] as const;
+    }
+
+
+export const getListSolutionFamiliesQueryOptions = <TData = Awaited<ReturnType<typeof listSolutionFamilies>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSolutionFamilies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSolutionFamiliesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSolutionFamilies>>> = ({ signal }) => listSolutionFamilies({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSolutionFamilies>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSolutionFamiliesQueryResult = NonNullable<Awaited<ReturnType<typeof listSolutionFamilies>>>
+export type ListSolutionFamiliesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary The library grouped by business problem - the preferred solution, its approved configurations, reusable capabilities and products being consolidated
+ */
+
+export function useListSolutionFamilies<TData = Awaited<ReturnType<typeof listSolutionFamilies>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSolutionFamilies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSolutionFamiliesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetConfigurationPreviewUrl = (solutionId: string,
+    version: string,) => {
+
+
+
+
+  return `/api/solutions/${solutionId}/configurations/${version}/preview`
+}
+
+/**
+ * @summary The same sample input run through the standard configuration and an approved configuration, with the differing lines
+ */
+export const getConfigurationPreview = async (solutionId: string,
+    version: string, options?: Parameters<typeof customFetch>[1]): Promise<ConfigurationPreview> => {
+
+  return customFetch<ConfigurationPreview>(getGetConfigurationPreviewUrl(solutionId,version),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetConfigurationPreviewQueryKey = (solutionId: string,
+    version: string,) => {
+    return [
+    `/api/solutions/${solutionId}/configurations/${version}/preview`
+    ] as const;
+    }
+
+
+export const getGetConfigurationPreviewQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationPreview>>, TError = ErrorType<ErrorResponse>>(solutionId: string,
+    version: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConfigurationPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationPreviewQueryKey(solutionId,version);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationPreview>>> = ({ signal }) => getConfigurationPreview(solutionId,version, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: solutionId !== null && solutionId !== undefined && version !== null && version !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationPreview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetConfigurationPreviewQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationPreview>>>
+export type GetConfigurationPreviewQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary The same sample input run through the standard configuration and an approved configuration, with the differing lines
+ */
+
+export function useGetConfigurationPreview<TData = Awaited<ReturnType<typeof getConfigurationPreview>>, TError = ErrorType<ErrorResponse>>(
+ solutionId: string,
+    version: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConfigurationPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetConfigurationPreviewQueryOptions(solutionId,version,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -2291,6 +2453,83 @@ export const useRemoveCapabilityRequest = <TError = ErrorType<ErrorResponse>,
       return useMutation(getRemoveCapabilityRequestMutationOptions(options));
     }
 
+export const getGetCaseBaselineUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/baseline`
+}
+
+/**
+ * @summary Version A of a case - the parent product as it stood at the version the case branched from, with its sample inputs and example run
+ */
+export const getCaseBaseline = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<SolutionWorkbench> => {
+
+  return customFetch<SolutionWorkbench>(getGetCaseBaselineUrl(caseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCaseBaselineQueryKey = (caseId: string,) => {
+    return [
+    `/api/cases/${caseId}/baseline`
+    ] as const;
+    }
+
+
+export const getGetCaseBaselineQueryOptions = <TData = Awaited<ReturnType<typeof getCaseBaseline>>, TError = ErrorType<ErrorResponse>>(caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCaseBaseline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCaseBaselineQueryKey(caseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCaseBaseline>>> = ({ signal }) => getCaseBaseline(caseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: caseId !== null && caseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCaseBaseline>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCaseBaselineQueryResult = NonNullable<Awaited<ReturnType<typeof getCaseBaseline>>>
+export type GetCaseBaselineQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Version A of a case - the parent product as it stood at the version the case branched from, with its sample inputs and example run
+ */
+
+export function useGetCaseBaseline<TData = Awaited<ReturnType<typeof getCaseBaseline>>, TError = ErrorType<ErrorResponse>>(
+ caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCaseBaseline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCaseBaselineQueryOptions(caseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetCaseRecommendationUrl = (caseId: string,) => {
 
 
@@ -3414,6 +3653,83 @@ export function useGetCaseReview<TData = Awaited<ReturnType<typeof getCaseReview
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCaseReviewQueryOptions(caseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCaseDecisionViewUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/decision-view`
+}
+
+/**
+ * @summary Read-only executive decision view for one experiment, built from the same persisted evidence as the workbench
+ */
+export const getCaseDecisionView = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<DecisionView> => {
+
+  return customFetch<DecisionView>(getGetCaseDecisionViewUrl(caseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCaseDecisionViewQueryKey = (caseId: string,) => {
+    return [
+    `/api/cases/${caseId}/decision-view`
+    ] as const;
+    }
+
+
+export const getGetCaseDecisionViewQueryOptions = <TData = Awaited<ReturnType<typeof getCaseDecisionView>>, TError = ErrorType<ErrorResponse>>(caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCaseDecisionView>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCaseDecisionViewQueryKey(caseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCaseDecisionView>>> = ({ signal }) => getCaseDecisionView(caseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: caseId !== null && caseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCaseDecisionView>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCaseDecisionViewQueryResult = NonNullable<Awaited<ReturnType<typeof getCaseDecisionView>>>
+export type GetCaseDecisionViewQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Read-only executive decision view for one experiment, built from the same persisted evidence as the workbench
+ */
+
+export function useGetCaseDecisionView<TData = Awaited<ReturnType<typeof getCaseDecisionView>>, TError = ErrorType<ErrorResponse>>(
+ caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCaseDecisionView>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCaseDecisionViewQueryOptions(caseId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

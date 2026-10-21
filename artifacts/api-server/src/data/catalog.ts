@@ -7,6 +7,7 @@ import type {
   SyntheticPersona,
   Metrics,
 } from "@workspace/api-zod";
+import { OPERATIONS_META, OPERATIONS_PROBLEM_META, enterpriseBusinessProblems, enterpriseCapabilitySeeds, enterpriseSolutionSeeds } from "./catalog-enterprise";
 
 export const WORKFLOW_STEPS = ["Ingest", "Analyze", "Review", "Decide", "Track"] as const;
 
@@ -64,7 +65,7 @@ type CapabilitySeed = Omit<Capability, "sourceSolutionName" | "ownerName"> & {
   portableTo?: string[];
 };
 
-const capabilitySeeds: CapabilitySeed[] = [
+const operationsCapabilitySeeds: CapabilitySeed[] = [
   // ---- Work Order Triage (A) ----
   {
     id: "cap-identity",
@@ -604,8 +605,10 @@ type SolutionSeed = Omit<Solution, "versions" | "disposition"> & {
   dataSources: string[];
   keywords: string[];
 };
+/** Operations seeds carry their enterprise metadata in OPERATIONS_META so the long-standing blocks below stay readable. */
+type OperationsSolutionSeed = Omit<SolutionSeed, keyof (typeof OPERATIONS_META)[string]>;
 
-const solutionSeeds: SolutionSeed[] = [
+const operationsSolutionSeeds: OperationsSolutionSeed[] = [
   {
     id: "sol-workorder-insight",
     name: "Work Order Triage",
@@ -868,7 +871,8 @@ const solutionSeeds: SolutionSeed[] = [
   },
 ];
 
-export const businessProblems: BusinessProblem[] = [
+type OperationsProblem = Omit<BusinessProblem, "businessFunction" | "primaryUser">;
+const operationsProblems: OperationsProblem[] = [
   {
     id: "bp-workorder-issues",
     title: "Work-order issue identification",
@@ -902,6 +906,28 @@ export const businessProblems: BusinessProblem[] = [
     status: "Unsupported",
   },
 ];
+
+/** The whole catalog: operations products (with execution engines) first, then the enterprise families. */
+const capabilitySeeds: CapabilitySeed[] = [...operationsCapabilitySeeds, ...enterpriseCapabilitySeeds];
+const solutionSeeds: SolutionSeed[] = [
+  ...operationsSolutionSeeds.map((s) => {
+    const meta = OPERATIONS_META[s.id];
+    if (!meta) throw new Error(`Missing enterprise metadata for ${s.id}`);
+    return { ...s, ...meta };
+  }),
+  ...enterpriseSolutionSeeds,
+];
+export const businessProblems: BusinessProblem[] = [
+  ...operationsProblems.map((b) => {
+    const meta = OPERATIONS_PROBLEM_META[b.id];
+    if (!meta) throw new Error(`Missing enterprise metadata for ${b.id}`);
+    return { ...b, ...meta };
+  }),
+  ...enterpriseBusinessProblems,
+];
+
+/** Enterprise functions in schematic (busbar) order: the ones that have at least one business problem. */
+export const businessFunctions = Array.from(new Set(businessProblems.map((b) => b.businessFunction)));
 
 export const syntheticPersonas: SyntheticPersona[] = [
   {

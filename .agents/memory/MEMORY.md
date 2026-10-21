@@ -7,3 +7,6 @@
 - [Reuse-fit scoring lessons](reuse-fit-scoring.md) — IDF over a tiny catalogue inflates generic verbs; require ≥2 shared words, scale other dimensions by relevance; portable modules are never auto-"covered".
 - [IT portfolio metrics](it-portfolio-metrics.md) — exploration is never reuse; proposals are decisions not statuses; "No data yet" never 0%; backdate seeds; pin the acted-on queue row.
 - [Governance overlay](governance-overlay.md) — experiments resolve parent as-of branch version; a published version must carry and apply the approved configuration, not just capability ids.
+- [Solution families](solution-families.md) — fresh demo has no approved configs; A resolves as-of parentVersion; B = fully resolved target version; "Try in" gated by addability.
+- [FUSEBOX circuit feedback](fusebox-circuits.md) — weld/illumination/convergence only from confirmed backend state; converge is illustrative until a persisted IT approval.
+- [Enterprise breadth without new engines](enterprise-breadth.md) — live vs preview products: previews never run/open cases/get "Try in"; gate at API and UI; Decision View reports measured value only.

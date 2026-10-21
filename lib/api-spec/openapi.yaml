@@ -200,6 +200,51 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /library/families:
+    get:
+      operationId: listSolutionFamilies
+      tags: [library]
+      summary: The library grouped by business problem - the preferred solution, its approved configurations, reusable capabilities and products being consolidated
+      responses:
+        "200":
+          description: One family per business problem
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SolutionFamily"
+
+  /solutions/{solutionId}/configurations/{version}/preview:
+    get:
+      operationId: getConfigurationPreview
+      tags: [library]
+      summary: The same sample input run through the standard configuration and an approved configuration, with the differing lines
+      parameters:
+        - name: solutionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Output preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigurationPreview"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /search:
     get:
       operationId: searchLibrary
@@ -654,6 +699,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /cases/{caseId}/baseline:
+    get:
+      operationId: getCaseBaseline
+      tags: [workbench]
+      summary: Version A of a case - the parent product as it stood at the version the case branched from, with its sample inputs and example run
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Baseline workbench
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionWorkbench"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /cases/{caseId}/recommendation:
     get:
       operationId: getCaseRecommendation
@@ -1047,6 +1117,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ChangeReview"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cases/{caseId}/decision-view:
+    get:
+      operationId: getCaseDecisionView
+      tags: [cases]
+      summary: Read-only executive decision view for one experiment, built from the same persisted evidence as the workbench
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Decision view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionView"
         "404":
           description: Not found
           content:
@@ -1727,9 +1822,42 @@ components:
         - supportModel
         - lastReviewedAt
         - disposition
+        - businessFunction
+        - primaryUsers
+        - workflowType
+        - outputType
+        - riskTier
+        - dataInvolved
+        - controls
+        - execution
+        - outputPreview
       properties:
         id: { type: string }
         name: { type: string }
+        businessFunction: { $ref: "#/components/schemas/BusinessFunction" }
+        primaryUsers:
+          type: array
+          description: Business roles that use the product day to day
+          items: { type: string }
+        workflowType: { type: string, description: e.g. Review and approve, Draft and proof, Plan and compare }
+        outputType: { type: string, description: What the product produces, e.g. Report, Draft disclosure, Schedule, Alert, Decision pack }
+        riskTier: { $ref: "#/components/schemas/EffortLevel", description: Business risk of the output; high for financial, investor and regulatory outputs }
+        dataInvolved:
+          type: array
+          items: { type: string }
+        controls:
+          type: array
+          description: Controls the product applies (source linking, segregation of duties, no external publication, ...)
+          items: { type: string }
+        execution:
+          type: string
+          enum: [live, preview]
+          description: live = FUSEBOX runs this product's workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet
+        outputPreview:
+          description: Deterministic output preview on fixed sample data for products without an execution engine; never evidence
+          oneOf:
+            - $ref: "#/components/schemas/OutputPreview"
+            - type: "null"
         disposition:
           description: Governance disposition recorded for this product, if any
           oneOf:
@@ -1853,12 +1981,41 @@ components:
           description: Saved or proposed experiments branched from this product; never library entries
           items: { $ref: "#/components/schemas/CaseSummary" }
 
+    BusinessFunction:
+      type: string
+      description: Enterprise function (the busbar a problem hangs from in the schematic)
+      enum: [Operations, Finance, Investor relations, ESG & Regulatory, Supply chain & Planning, Commercial & Legal, Corporate & Executive]
+
+    OutputPreview:
+      type: object
+      description: A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.
+      required: [title, inputs, sections, note]
+      properties:
+        title: { type: string, description: e.g. September 2026 management pack (sample) }
+        inputs:
+          type: array
+          description: The sample inputs the preview was built from
+          items: { type: string }
+        sections:
+          type: array
+          items:
+            type: object
+            required: [heading, lines]
+            properties:
+              heading: { type: string }
+              lines:
+                type: array
+                items: { type: string }
+        note: { type: string, description: Why this is a preview and what it would take to run it for real }
+
     BusinessProblem:
       type: object
-      required: [id, title, description, activeSolutionIds, recommendedAction, status]
+      required: [id, title, description, activeSolutionIds, recommendedAction, status, businessFunction, primaryUser]
       properties:
         id: { type: string }
         title: { type: string }
+        businessFunction: { $ref: "#/components/schemas/BusinessFunction" }
+        primaryUser: { type: string, description: The business role that owns this problem day to day }
         description: { type: string }
         activeSolutionIds:
           type: array
@@ -2341,6 +2498,9 @@ components:
         reuseEventId:
           type: string
           description: Reuse-check event this case acts on; recorded as the path taken
+        approvedVersion:
+          type: string
+          description: Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of
 
     CaseUpdate:
       type: object
@@ -2407,6 +2567,139 @@ components:
           type: array
           description: Locked controls that stay in place
           items: { type: string }
+
+    DecisionView:
+      type: object
+      description: One page for a decision-maker. Every field is derived from persisted records; nothing is projected.
+      required: [caseId, title, status, businessProblem, overlappingSolutions, recommendedBase, proposedImprovement, evidence, risksAndControls, measuredValue, ownerRecommendation, decisionRequired, decisions, generatedAt]
+      properties:
+        caseId: { type: string }
+        title: { type: string }
+        status: { $ref: "#/components/schemas/CaseStatus" }
+        businessProblem:
+          type: object
+          required: [id, title, businessFunction, primaryUser, description]
+          properties:
+            id: { type: string }
+            title: { type: string }
+            businessFunction: { $ref: "#/components/schemas/BusinessFunction" }
+            primaryUser: { type: string }
+            description: { type: string }
+        overlappingSolutions:
+          type: array
+          description: Every live product addressing the problem, the base first
+          items:
+            type: object
+            required: [id, name, status, ownerName, ownerTeam, activeUsers, role, disposition]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              status: { $ref: "#/components/schemas/SolutionStatus" }
+              ownerName: { type: string }
+              ownerTeam: { type: string }
+              activeUsers: { type: integer }
+              role: { type: string, enum: [base, candidate, other] }
+              disposition: { type: ["string", "null"], description: Recorded disposition label, if IT has recorded one }
+        recommendedBase:
+          type: object
+          required: [id, name, status, version, outputType, why]
+          properties:
+            id: { type: string }
+            name: { type: string }
+            status: { $ref: "#/components/schemas/SolutionStatus" }
+            version: { type: string }
+            outputType: { type: string }
+            why: { type: string }
+        proposedImprovement:
+          type: object
+          required: [summary, added, removed, changedSettings]
+          properties:
+            summary: { type: string }
+            added:
+              type: array
+              items:
+                type: object
+                required: [name, sourceSolutionName, workflowStep]
+                properties:
+                  name: { type: string }
+                  sourceSolutionName: { type: string }
+                  workflowStep: { type: string }
+            removed:
+              type: array
+              items: { type: string }
+            changedSettings:
+              type: array
+              items: { $ref: "#/components/schemas/ConfigChange" }
+        evidence:
+          type: object
+          required: [summary, description, latestComparison]
+          properties:
+            summary: { $ref: "#/components/schemas/EvidenceSummary" }
+            description: { type: string }
+            latestComparison:
+              description: Counts from the newest A/B comparison of the current configuration, if any
+              oneOf:
+                - type: object
+                  required: [inputName, ranAt, added, removed, changed, unchanged, stepsResponsible]
+                  properties:
+                    inputName: { type: string }
+                    ranAt: { type: string }
+                    added: { type: integer }
+                    removed: { type: integer }
+                    changed: { type: integer }
+                    unchanged: { type: integer }
+                    stepsResponsible:
+                      type: array
+                      items: { type: string }
+                - type: "null"
+        risksAndControls:
+          type: object
+          required: [riskTier, controls, newDependencies, knownGaps, mainRisk]
+          properties:
+            riskTier: { $ref: "#/components/schemas/EffortLevel" }
+            controls:
+              type: array
+              items: { type: string }
+            newDependencies:
+              type: array
+              items: { type: string }
+            knownGaps:
+              type: array
+              items: { type: string }
+            mainRisk: { type: string }
+        measuredValue:
+          type: object
+          description: Only what has been measured. When nothing has, it says so.
+          required: [lines, note]
+          properties:
+            lines:
+              type: array
+              items: { type: string }
+            note: { type: string }
+        ownerRecommendation:
+          type: object
+          required: [recommendation, narrative, confidence]
+          properties:
+            recommendation:
+              oneOf:
+                - $ref: "#/components/schemas/ExperimentRecommendation"
+                - type: "null"
+            narrative: { type: string }
+            confidence: { type: ["number", "null"] }
+        decisionRequired:
+          type: object
+          required: [role, label, detail]
+          properties:
+            role:
+              oneOf:
+                - $ref: "#/components/schemas/Role"
+                - type: "null"
+            label: { type: string }
+            detail: { type: string }
+        decisions:
+          type: array
+          items: { $ref: "#/components/schemas/Decision" }
+        generatedAt: { type: string }
 
     ConsolidationDecisionView:
       type: object
@@ -2712,9 +3005,10 @@ components:
 
     SolutionWorkbench:
       type: object
-      required: [solution, blocks, controls, sampleInputs, exampleRun]
+      required: [solution, liveVersion, blocks, controls, sampleInputs, exampleRun]
       properties:
         solution: { $ref: "#/components/schemas/Solution" }
+        liveVersion: { type: string, description: The product's current governed version; differs from solution.currentVersion when this workbench shows an earlier (standard) version }
         blocks:
           type: array
           description: Executable steps in execution order
@@ -2945,10 +3239,12 @@ components:
 
     SearchResult:
       type: object
-      required: [solution, score, reasons, matchedCapabilities]
+      required: [solution, score, reasons, matchedCapabilities, familyRole, familyTitle]
       properties:
         solution: { $ref: "#/components/schemas/Solution" }
         score: { type: number }
+        familyRole: { $ref: "#/components/schemas/FamilyRole" }
+        familyTitle: { type: string, description: The business problem this product belongs to }
         reasons:
           type: array
           items: { type: string }
@@ -2966,11 +3262,112 @@ components:
           items: { $ref: "#/components/schemas/SearchResult" }
         capabilities:
           type: array
-          description: Reusable capabilities matching the query on their own
-          items: { $ref: "#/components/schemas/Capability" }
+          description: Reusable capabilities matching the query on their own, each with its source family
+          items: { $ref: "#/components/schemas/FamilyCapability" }
         source:
           type: string
           enum: [keyword, hybrid]
+
+    FamilyRole:
+      type: string
+      enum: [preferred, alternative, consolidating]
+      description: preferred = the product to use for its business problem; alternative = another live product without a disposition; consolidating = a product IT has given a disposition
+
+    FamilyCapability:
+      type: object
+      description: A capability that can be reused across products, with where it comes from and where it is already used
+      required: [capability, familyId, familyTitle, sourceSolutionId, sourceSolutionName, usedIn, includedInPreferred, tryIn]
+      properties:
+        capability: { $ref: "#/components/schemas/Capability" }
+        familyId: { type: string, description: Business problem of the capability's source product }
+        familyTitle: { type: string }
+        sourceSolutionId: { type: string }
+        sourceSolutionName: { type: string }
+        usedIn:
+          type: array
+          description: Products whose current configuration includes this capability
+          items:
+            type: object
+            required: [solutionId, solutionName, version]
+            properties:
+              solutionId: { type: string }
+              solutionName: { type: string }
+              version: { type: string }
+        includedInPreferred: { type: boolean, description: Already part of the preferred product of the family card it is shown on }
+        tryIn:
+          description: The preferred product a new case would add this capability to (Version B); null when nothing can take it
+          oneOf:
+            - type: object
+              required: [solutionId, solutionName]
+              properties:
+                solutionId: { type: string }
+                solutionName: { type: string }
+            - type: "null"
+
+    ApprovedConfiguration:
+      type: object
+      description: A published configuration of the preferred product - what IT approved on top of the standard setup
+      required: [solutionId, version, baseVersion, title, changes, summary, releasedAt, caseId]
+      properties:
+        solutionId: { type: string }
+        version: { type: string }
+        baseVersion: { type: string, description: The standard configuration this one is compared against }
+        title: { type: string, description: Short name made from what changed, e.g. Safety Signals + Immediate notifications }
+        changes:
+          type: array
+          items: { type: string }
+        summary: { type: string }
+        releasedAt: { type: string }
+        caseId: { type: ["string", "null"] }
+
+    SolutionFamily:
+      type: object
+      required: [businessProblem, preferred, support, covers, approvedConfigurations, reusableCapabilities, alternatives, consolidating]
+      properties:
+        businessProblem: { $ref: "#/components/schemas/BusinessProblem" }
+        preferred: { $ref: "#/components/schemas/Solution" }
+        support: { type: string, description: Plain-language support status of the preferred product }
+        covers:
+          type: array
+          description: What the preferred product's production configuration does, one entry per active capability
+          items:
+            type: object
+            required: [capabilityId, name, workflowStep]
+            properties:
+              capabilityId: { type: string }
+              name: { type: string }
+              workflowStep: { type: string }
+        approvedConfigurations:
+          type: array
+          items: { $ref: "#/components/schemas/ApprovedConfiguration" }
+        reusableCapabilities:
+          type: array
+          items: { $ref: "#/components/schemas/FamilyCapability" }
+        alternatives:
+          type: array
+          description: Other live products for the problem without a disposition
+          items: { $ref: "#/components/schemas/Solution" }
+        consolidating:
+          type: array
+          description: Products IT has given a disposition; shown as being consolidated, never as alternatives
+          items: { $ref: "#/components/schemas/Solution" }
+
+    ConfigurationPreview:
+      type: object
+      description: Two real engine runs of the same sample input - standard configuration and the approved one - with the lines that differ
+      required: [solutionId, version, baseVersion, sampleInput, standard, variant, diff, explanation, catalogVersion]
+      properties:
+        solutionId: { type: string }
+        version: { type: string }
+        baseVersion: { type: string }
+        sampleInput: { $ref: "#/components/schemas/SampleInput" }
+        standard: { $ref: "#/components/schemas/Run" }
+        variant: { $ref: "#/components/schemas/Run" }
+        diff: { $ref: "#/components/schemas/OutputDiff" }
+        explanation:
+          type: array
+          items: { type: string }
+        catalogVersion: { type: string }
 
     OwnedSolution:
       type: object

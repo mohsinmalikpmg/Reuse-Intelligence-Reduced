@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
 import { errMsg } from "@/lib/case";
 import { CoverageTable, RequirementChips } from "@/components/reuse-check";
+import { MetaTags, isLive } from "@/components/enterprise";
 import { cn } from "@/lib/utils";
 
 const dropUnderPointer: CollisionDetection = (args) => { const hits = pointerWithin(args); return hits.length ? hits : rectIntersection(args); };
@@ -40,6 +41,10 @@ export default function Discover() {
     <Page className="max-w-[1000px] md:pt-14">
       <h1 data-testid="text-headline" className="text-[34px] font-bold leading-tight md:text-[44px]">What are you trying to solve?</h1>
       <p className="mt-2 text-[16px] text-muted-foreground">Describe it the way you would to a colleague. We will look for something that already exists.</p>
+      <p className="mt-1.5 text-[14px] text-muted-foreground" data-testid="text-enterprise-framing">
+        The library spans Operations, Finance, Investor relations, ESG &amp; Regulatory, Supply chain &amp; Planning, Commercial &amp; Legal and Corporate &amp; Executive.
+        Work Order Intelligence is one example of the model, the one wired to run on real input in this demo. <Link href="/library" className="font-semibold text-primary underline-offset-2 hover:underline" data-testid="link-framing-library">See the whole library</Link>.
+      </p>
       <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="card-soft mt-7 p-2 focus-within:border-primary/50">
         <Textarea
           data-testid="input-problem"
@@ -52,7 +57,7 @@ export default function Discover() {
         <div className="flex flex-wrap items-center gap-2 px-2 pb-1">
           {demo.data?.demoPrompt && !text && (
             <button type="button" data-testid="button-demo-prompt" onClick={() => setText(demo.data!.demoPrompt)} className={btn.quiet}>
-              <Sparkles className="h-4 w-4 text-siennaink" /> Use the maintenance example
+              <Sparkles className="h-4 w-4 text-siennaink" /> Use the live example: maintenance work orders
             </button>
           )}
           <span className="ml-auto hidden items-center gap-1 text-[12.5px] text-muted-foreground sm:inline-flex"><CornerDownLeft className="h-3.5 w-3.5" /> Enter</span>
@@ -200,7 +205,7 @@ function Results({ briefId }: { briefId: string }) {
     <section className="reveal mt-12" data-testid="section-results">
       <div className="eyebrow mb-2 !text-siennaink">Best match</div>
       <MatchCard m={best} big />
-      <CoverageTable rows={m.data.coverage} briefId={briefId} baseSolutionId={best.solution.id} baseSolutionName={best.solution.name} />
+      <CoverageTable rows={m.data.coverage} briefId={briefId} baseSolutionId={best.solution.id} baseSolutionName={best.solution.name} baseLive={isLive(best.solution)} />
       {rest.length > 0 && <>
         <h3 className="mb-3 mt-8 text-[17px] font-semibold">Other possibilities</h3>
         <div className="grid gap-3 md:grid-cols-2">{rest.slice(0, 2).map((x) => <MatchCard key={x.solution.id} m={x} />)}</div>
@@ -220,11 +225,12 @@ function MatchCard({ m, big }: { m: SolutionMatch; big?: boolean }) {
         <StatusPill status={m.solution.status} />
       </div>
       <p className="mt-1.5 text-[15px] text-foreground">{m.solution.outcome}</p>
+      <div className="mt-2"><MetaTags s={m.solution} compact testid={`meta-match-${m.solution.id}`} /></div>
       {m.whyMatched.length > 0 && (
         <div className="mt-3 text-[14px] text-muted-foreground"><span className="font-semibold text-siennaink">Why it matches: </span>{(big ? m.whyMatched.slice(0, 2) : m.whyMatched.slice(0, 1)).join(" ")}</div>
       )}
       <div className="mt-5">
-        <Link href={`/solutions/${m.solution.id}`} data-testid={`button-explore-${m.solution.id}`} className={big ? btn.primary : btn.secondary}>Explore solution <ArrowRight className="h-4 w-4" /></Link>
+        <Link href={`/solutions/${m.solution.id}`} data-testid={`button-explore-${m.solution.id}`} className={big ? btn.primary : btn.secondary}>{isLive(m.solution) ? "Explore solution" : "See output preview"} <ArrowRight className="h-4 w-4" /></Link>
       </div>
     </article>
   );

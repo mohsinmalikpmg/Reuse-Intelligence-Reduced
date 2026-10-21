@@ -2,8 +2,9 @@ import { desc, eq } from "drizzle-orm";
 import { db, briefsTable, casesTable, experimentsTable, decisionsTable } from "@workspace/db";
 import type { BriefRow, CaseRow, ExperimentRow, DecisionRow } from "@workspace/db";
 import type { Brief, Case, CaseSummary, Decision, Experiment, Role, Solution, SyntheticPersona, ExperimentMetric, SegmentResult } from "@workspace/api-zod";
-import { businessProblemById, getSolution, personas, solutions } from "../data/catalog";
-import { type CaseContext, addedExternalModules, caseContext, defaultConfigValues, defaultModuleStates } from "./configuration";
+import { businessProblemById, catalogSolutions, getCapability, getSolution, personas, solutions } from "../data/catalog";
+import { type CaseContext, addedExternalModules, candidatesFor, caseContext, defaultConfigValues, defaultModuleStates, moduleBlockedReason } from "./configuration";
+import { productionCapabilities } from "./workbench";
 import { caseLineage, defaultExperimentTitle } from "./lineage";
 import { SIMULATION_LABEL } from "./simulation";
 import { consolidationApproved, nextStep } from "./analysis";
@@ -126,11 +127,7 @@ export async function findCaseForBrief(briefId: string): Promise<Case | null> {
 }
 
 /** Candidate solutions = every other solution addressing the same business problem(s) as the base. */
-export function candidatesFor(base: Solution): string[] {
-  return solutions
-    .filter((s) => s.id !== base.id && s.businessProblemIds.some((bp) => base.businessProblemIds.includes(bp)) && s.status !== "deprecated")
-    .map((s) => s.id);
-}
+export class CaseInputError extends Error {}
 
 export async function createCase(input: {
   baseSolutionId: string;
@@ -140,21 +137,50 @@ export async function createCase(input: {
   createdByRole?: Role;
   id?: string;
   moduleIds?: string[];
+  /** Load this published configuration into Version B, with Version A as the standard configuration it was approved on top of. */
+  approvedVersion?: string;
   owner?: { name: string; team: string };
   demo?: boolean;
 }): Promise<Case> {
-  const base = getSolution(input.baseSolutionId);
-  if (!base) throw new Error(`Unknown solution ${input.baseSolutionId}`);
+  const live = getSolution(input.baseSolutionId);
+  if (!live) throw new Error(`Unknown solution ${input.baseSolutionId}`);
+  const approved = input.approvedVersion ? live.versions.find((v) => v.state === "current" && v.version === input.approvedVersion) : undefined;
+  if (input.approvedVersion && !approved) throw new CaseInputError(`v${input.approvedVersion} is not an approved configuration of ${live.name}.`);
+  // "Try both": A is the catalog (standard) configuration, so the branch point is the catalog version, not the live one.
+  const parentVersion = approved ? (catalogSolutions.find((s) => s.id === live.id)?.currentVersion ?? live.currentVersion) : live.currentVersion;
+  const base = approved ? (getSolution(live.id, parentVersion) ?? live) : live;
   const candidateSolutionIds = candidatesFor(base);
-  const ctx = caseContext({ baseSolutionId: base.id, candidateSolutionIds });
+  const ctx = caseContext({ baseSolutionId: base.id, candidateSolutionIds, parentVersion });
   const businessProblemId = base.businessProblemIds[0] ?? "bp-unknown";
   const id = input.id ?? newId("case");
   // Version B starts equal to Version A: base optional modules follow their evidence, additions from other
   // solutions stay off until the user adds them. The tray still marks the recommended ones.
   const moduleStates = defaultModuleStates(ctx);
   for (const cap of ctx.candidateCapabilities) moduleStates[cap.id] = false;
-  // Modules chosen through a reuse check start switched on in Version B, so the first run already shows them.
-  for (const id of input.moduleIds ?? []) if (ctx.candidateCapabilities.some((cap) => cap.id === id)) moduleStates[id] = true;
+  // Modules chosen through a reuse check or a library "Try in" start switched on in Version B, so the first run already
+  // shows them. A module that cannot actually run on this base is refused rather than silently ignored.
+  const wanted = input.moduleIds ?? [];
+  for (const id of wanted) {
+    const cap = ctx.candidateCapabilities.find((c) => c.id === id) ?? getCapability(id);
+    if (!cap) throw new CaseInputError(`Unknown capability ${id}.`);
+    const blocked = moduleBlockedReason(cap, ctx, wanted);
+    if (blocked) throw new CaseInputError(`${cap.name} cannot be tried in ${base.name}: ${blocked}`);
+    moduleStates[id] = true;
+  }
+  const configValues = defaultConfigValues(ctx);
+  if (approved) {
+    // Version B = the approved configuration exactly as it resolves at that version: every capability it runs (including
+    // those folded in by earlier published versions) and its setting values, so a later configuration is reproduced whole.
+    const target = getSolution(live.id, approved.version);
+    if (!target) throw new CaseInputError(`v${approved.version} of ${live.name} could not be resolved.`);
+    const known = new Set([...ctx.baseCapabilities, ...ctx.candidateCapabilities].map((cap) => cap.id));
+    const resolved = productionCapabilities(target);
+    const activeIds = new Set(resolved.active.map((cap) => cap.id));
+    for (const cap of ctx.baseCapabilities) if (cap.controlType === "optional") moduleStates[cap.id] = activeIds.has(cap.id);
+    for (const cap of ctx.candidateCapabilities) moduleStates[cap.id] = activeIds.has(cap.id);
+    for (const capId of activeIds) if (!known.has(capId)) throw new CaseInputError(`v${approved.version} runs ${capId}, which is not available on the standard configuration.`);
+    for (const [capId, value] of Object.entries(resolved.configValues)) if (ctx.baseCapabilities.some((cap) => cap.id === capId && cap.controlType === "configurable")) configValues[capId] = value;
+  }
   const role = input.createdByRole ?? "seeker";
   const persona = personas.find((p) => p.role === role);
   const owner = input.owner ?? { name: persona?.name ?? role, team: persona?.team ?? "" };
@@ -164,18 +190,18 @@ export async function createCase(input: {
       id,
       briefId: input.briefId ?? null,
       // Never a product of its own: the title says which product and version it branches from.
-      title: input.title ?? defaultExperimentTitle(base.name, base.currentVersion),
+      title: input.title ?? (approved ? `${base.name} v${parentVersion} vs v${approved.version}` : defaultExperimentTitle(base.name, parentVersion)),
       businessProblemId,
       baseSolutionId: base.id,
       candidateSolutionIds,
       status: "draft",
       moduleStates,
-      configValues: defaultConfigValues(ctx),
+      configValues,
       experimentId: null,
       pilotPercent: 10,
       createdByRole: role,
       saved: false,
-      parentVersion: base.currentVersion,
+      parentVersion,
       intent: input.intent?.trim() || null,
       ownerName: owner.name,
       ownerTeam: owner.team,

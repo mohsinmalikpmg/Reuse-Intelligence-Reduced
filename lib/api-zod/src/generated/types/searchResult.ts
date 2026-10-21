@@ -6,11 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Capability } from './capability';
+import type { FamilyRole } from './familyRole';
 import type { Solution } from './solution';
 
 export interface SearchResult {
   solution: Solution;
   score: number;
+  familyRole: FamilyRole;
+  /** The business problem this product belongs to */
+  familyTitle: string;
   reasons: string[];
   matchedCapabilities: Capability[];
 }

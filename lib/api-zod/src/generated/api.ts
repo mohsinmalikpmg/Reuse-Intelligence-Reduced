@@ -93,6 +93,23 @@ export const GetSeekerOverviewResponse = zod.object({
   "recommendedSolutions": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -221,6 +238,23 @@ export const GetSeekerOverviewResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -320,6 +354,23 @@ export const GetOwnerOverviewResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -453,6 +504,23 @@ export const GetOwnerOverviewResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -647,6 +715,23 @@ export const GetOwnerOverviewResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -746,6 +831,23 @@ export const ListSolutionsQueryParams = zod.object({
 export const ListSolutionsResponseItem = zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -831,6 +933,23 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -902,6 +1021,7 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "supportModel": zod.string(),
   "lastReviewedAt": zod.string()
 }),
+  "liveVersion": zod.string().describe('The product\'s current governed version; differs from solution.currentVersion when this workbench shows an earlier (standard) version'),
   "blocks": zod.array(zod.object({
   "capability": zod.object({
   "id": zod.string(),
@@ -1188,6 +1308,521 @@ export const GetRunResponse = zod.object({
 
 
 /**
+ * @summary The library grouped by business problem - the preferred solution, its approved configurations, reusable capabilities and products being consolidated
+ */
+export const ListSolutionFamiliesResponseItem = zod.object({
+  "businessProblem": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUser": zod.string().describe('The business role that owns this problem day to day'),
+  "description": zod.string(),
+  "activeSolutionIds": zod.array(zod.string()),
+  "recommendedAction": zod.enum(['consolidate', 'standardize', 'retain', 'retire']),
+  "status": zod.string()
+}),
+  "preferred": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
+  "disposition": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
+  "state": zod.enum(['proposed', 'confirmed']),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetVersion": zod.string().nullable(),
+  "reason": zod.string().nullable(),
+  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
+  "preferred": zod.boolean().describe('The product preferred for this business problem'),
+  "label": zod.string().describe('Plain-language badge')
+}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string(),
+  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
+  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
+  "foldedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "experimentOwner": zod.string(),
+  "tests": zod.number().int(),
+  "preferredPercent": zod.number().int().nullable(),
+  "provenance": zod.string().describe('e.g. from Pattern Finder')
+})),
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "support": zod.string().describe('Plain-language support status of the preferred product'),
+  "covers": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "name": zod.string(),
+  "workflowStep": zod.string()
+})).describe('What the preferred product\'s production configuration does, one entry per active capability'),
+  "approvedConfigurations": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "baseVersion": zod.string().describe('The standard configuration this one is compared against'),
+  "title": zod.string().describe('Short name made from what changed'),
+  "changes": zod.array(zod.string()),
+  "summary": zod.string(),
+  "releasedAt": zod.string(),
+  "caseId": zod.string().nullable()
+}).describe('A published configuration of the preferred product - what IT approved on top of the standard setup')),
+  "reusableCapabilities": zod.array(zod.object({
+  "capability": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}),
+  "familyId": zod.string().describe('Business problem of the capability\'s source product'),
+  "familyTitle": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "usedIn": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "version": zod.string()
+})).describe('Products whose current configuration includes this capability'),
+  "includedInPreferred": zod.boolean().describe('Already part of the preferred product of the family card it is shown on'),
+  "tryIn": zod.union([zod.object({
+  "solutionId": zod.string(),
+  "solutionName": zod.string()
+}),zod.null()]).describe('The preferred product a new case would add this capability to (Version B); null when nothing can take it')
+}).describe('A capability that can be reused across products, with where it comes from and where it is already used')),
+  "alternatives": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
+  "disposition": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
+  "state": zod.enum(['proposed', 'confirmed']),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetVersion": zod.string().nullable(),
+  "reason": zod.string().nullable(),
+  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
+  "preferred": zod.boolean().describe('The product preferred for this business problem'),
+  "label": zod.string().describe('Plain-language badge')
+}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string(),
+  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
+  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
+  "foldedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "experimentOwner": zod.string(),
+  "tests": zod.number().int(),
+  "preferredPercent": zod.number().int().nullable(),
+  "provenance": zod.string().describe('e.g. from Pattern Finder')
+})),
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+})).describe('Other live products for the problem without a disposition'),
+  "consolidating": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
+  "disposition": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
+  "state": zod.enum(['proposed', 'confirmed']),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetVersion": zod.string().nullable(),
+  "reason": zod.string().nullable(),
+  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
+  "preferred": zod.boolean().describe('The product preferred for this business problem'),
+  "label": zod.string().describe('Plain-language badge')
+}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string(),
+  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
+  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
+  "foldedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "experimentOwner": zod.string(),
+  "tests": zod.number().int(),
+  "preferredPercent": zod.number().int().nullable(),
+  "provenance": zod.string().describe('e.g. from Pattern Finder')
+})),
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+})).describe('Products IT has given a disposition; shown as being consolidated, never as alternatives')
+})
+export const ListSolutionFamiliesResponse = zod.array(ListSolutionFamiliesResponseItem)
+
+
+/**
+ * @summary The same sample input run through the standard configuration and an approved configuration, with the differing lines
+ */
+export const GetConfigurationPreviewParams = zod.object({
+  "solutionId": zod.coerce.string(),
+  "version": zod.coerce.string()
+})
+
+export const GetConfigurationPreviewResponse = zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "baseVersion": zod.string(),
+  "sampleInput": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "solutionIds": zod.array(zod.string()),
+  "text": zod.string(),
+  "hasExpected": zod.boolean().describe('True when labelled expected findings exist for objective scoring'),
+  "noteCount": zod.number().int()
+}),
+  "standard": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+}),
+  "variant": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+}),
+  "diff": zod.object({
+  "entries": zod.array(zod.object({
+  "change": zod.enum(['added', 'removed', 'changed']),
+  "sectionKey": zod.string(),
+  "sectionTitle": zod.string(),
+  "stepId": zod.string(),
+  "stepName": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "workflowStep": zod.string().describe('Workflow stage the responsible step belongs to'),
+  "addedModule": zod.boolean().describe('True when the responsible step was added to Version B from another product'),
+  "before": zod.string().nullable(),
+  "after": zod.string().nullable(),
+  "itemKey": zod.string(),
+  "kind": zod.string()
+})),
+  "added": zod.number().int(),
+  "removed": zod.number().int(),
+  "changed": zod.number().int(),
+  "unchanged": zod.number().int(),
+  "stepsResponsible": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "workflowStep": zod.string(),
+  "addedModule": zod.boolean(),
+  "changes": zod.number().int()
+}))
+}),
+  "explanation": zod.array(zod.string()),
+  "catalogVersion": zod.string()
+}).describe('Two real engine runs of the same sample input - standard configuration and the approved one - with the lines that differ')
+
+
+/**
  * @summary Global hybrid search across solutions and capabilities
  */
 export const SearchLibraryQueryParams = zod.object({
@@ -1204,6 +1839,23 @@ export const SearchLibraryResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -1276,6 +1928,8 @@ export const SearchLibraryResponse = zod.object({
   "lastReviewedAt": zod.string()
 }),
   "score": zod.number(),
+  "familyRole": zod.enum(['preferred', 'alternative', 'consolidating']).describe('preferred = the product to use for its business problem; alternative = another live product without a disposition; consolidating = a product IT has given a disposition'),
+  "familyTitle": zod.string().describe('The business problem this product belongs to'),
   "reasons": zod.array(zod.string()),
   "matchedCapabilities": zod.array(zod.object({
   "id": zod.string(),
@@ -1309,6 +1963,7 @@ export const SearchLibraryResponse = zod.object({
 }))
 })),
   "capabilities": zod.array(zod.object({
+  "capability": zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "description": zod.string(),
@@ -1337,7 +1992,22 @@ export const SearchLibraryResponse = zod.object({
   "supportStatus": zod.string(),
   "version": zod.string(),
   "evidence": zod.string()
-})).describe('Reusable capabilities matching the query on their own'),
+}),
+  "familyId": zod.string().describe('Business problem of the capability\'s source product'),
+  "familyTitle": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "usedIn": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "solutionName": zod.string(),
+  "version": zod.string()
+})).describe('Products whose current configuration includes this capability'),
+  "includedInPreferred": zod.boolean().describe('Already part of the preferred product of the family card it is shown on'),
+  "tryIn": zod.union([zod.object({
+  "solutionId": zod.string(),
+  "solutionName": zod.string()
+}),zod.null()]).describe('The preferred product a new case would add this capability to (Version B); null when nothing can take it')
+}).describe('A capability that can be reused across products, with where it comes from and where it is already used')).describe('Reusable capabilities matching the query on their own, each with its source family'),
   "source": zod.enum(['keyword', 'hybrid'])
 })
 
@@ -1349,6 +2019,23 @@ export const GetMySolutionsResponseItem = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -1477,6 +2164,23 @@ export const GetMySolutionsResponseItem = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -1623,6 +2327,23 @@ export const GetMySolutionsResponseItem = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -1734,6 +2455,23 @@ export const GetSolutionResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -1838,6 +2576,8 @@ export const GetSolutionResponse = zod.object({
   "businessProblems": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUser": zod.string().describe('The business role that owns this problem day to day'),
   "description": zod.string(),
   "activeSolutionIds": zod.array(zod.string()),
   "recommendedAction": zod.enum(['consolidate', 'standardize', 'retain', 'retire']),
@@ -1900,6 +2640,23 @@ export const GetSolutionResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -2042,6 +2799,23 @@ export const GetSolutionResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -2172,6 +2946,8 @@ export const ListCapabilitiesResponse = zod.array(ListCapabilitiesResponseItem)
 export const ListBusinessProblemsResponseItem = zod.object({
   "id": zod.string(),
   "title": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUser": zod.string().describe('The business role that owns this problem day to day'),
   "description": zod.string(),
   "activeSolutionIds": zod.array(zod.string()),
   "recommendedAction": zod.enum(['consolidate', 'standardize', 'retain', 'retire']),
@@ -2479,6 +3255,23 @@ export const GetBriefMatchesResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -2676,6 +3469,23 @@ export const ListCasesResponseItem = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -2774,7 +3584,8 @@ export const CreateCaseBody = zod.object({
   "intent": zod.string().optional(),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']).optional(),
   "moduleIds": zod.array(zod.string()).optional().describe('Addable modules switched on in Version B from the start (e.g. from a reuse check)'),
-  "reuseEventId": zod.string().optional().describe('Reuse-check event this case acts on; recorded as the path taken')
+  "reuseEventId": zod.string().optional().describe('Reuse-check event this case acts on; recorded as the path taken'),
+  "approvedVersion": zod.string().optional().describe('Load this approved configuration of the base solution into Version B; Version A stays the standard configuration it was approved on top of')
 })
 
 export const CreateCaseResponse = zod.object({
@@ -3364,6 +4175,242 @@ export const RemoveCapabilityRequestResponse = zod.object({
 
 
 /**
+ * @summary Version A of a case - the parent product as it stood at the version the case branched from, with its sample inputs and example run
+ */
+export const GetCaseBaselineParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const GetCaseBaselineResponse = zod.object({
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
+  "disposition": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "kind": zod.enum(['retain', 'fold_into', 'configure', 'rebuild', 'retire']),
+  "state": zod.enum(['proposed', 'confirmed']),
+  "targetSolutionId": zod.string().nullable(),
+  "targetSolutionName": zod.string().nullable(),
+  "targetVersion": zod.string().nullable(),
+  "reason": zod.string().nullable(),
+  "migrationNote": zod.string().nullable().describe('Recorded once users have moved; a retirement stays scheduled until then'),
+  "preferred": zod.boolean().describe('The product preferred for this business problem'),
+  "label": zod.string().describe('Plain-language badge')
+}).describe('What happens to a product under a consolidation; a proposal until IT confirms the direction'),zod.null()]).describe('Governance disposition recorded for this product, if any'),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('Published production overrides from governed successor versions (module states and configurable values); null when the catalog defaults apply'),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string(),
+  "state": zod.enum(['released', 'draft', 'current']).describe('released = catalog version; draft = owner-approved successor awaiting IT; current = published governed version'),
+  "caseId": zod.string().nullable().describe('The experiment whose evidence produced this version'),
+  "foldedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "experimentOwner": zod.string(),
+  "tests": zod.number().int(),
+  "preferredPercent": zod.number().int().nullable(),
+  "provenance": zod.string().describe('e.g. from Pattern Finder')
+})),
+  "changedSettings": zod.array(zod.string()),
+  "production": zod.union([zod.object({
+  "moduleStates": zod.record(zod.string(), zod.boolean()),
+  "configValues": zod.record(zod.string(), zod.string())
+}),zod.null()]).optional().describe('The production configuration this version applies (optional-module states and configurable values); absent for catalog versions')
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "liveVersion": zod.string().describe('The product\'s current governed version; differs from solution.currentVersion when this workbench shows an earlier (standard) version'),
+  "blocks": zod.array(zod.object({
+  "capability": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+}),
+  "stage": zod.string(),
+  "kind": zod.enum(['required', 'configurable', 'optional']),
+  "active": zod.boolean(),
+  "executable": zod.boolean().describe('False for controls (identity'),
+  "value": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "origin": zod.enum(['base', 'added']),
+  "blockedReason": zod.string().nullable()
+})).describe('Executable steps in execution order'),
+  "controls": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "ownerName": zod.string(),
+  "controlType": zod.enum(['locked', 'configurable', 'optional']),
+  "workflowStep": zod.string(),
+  "riskClass": zod.enum(['low', 'medium', 'high']),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "lockedReason": zod.string().nullable(),
+  "options": zod.array(zod.string()).nullable(),
+  "defaultOption": zod.string().nullable(),
+  "effects": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Expected deltas applied when the capability is active'),
+  "incompatibleWith": zod.array(zod.string()),
+  "dependsOn": zod.array(zod.string()),
+  "testCoverage": zod.string(),
+  "supportStatus": zod.string(),
+  "version": zod.string(),
+  "evidence": zod.string()
+})).describe('Locked controls preserved around the workflow'),
+  "sampleInputs": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "solutionIds": zod.array(zod.string()),
+  "text": zod.string(),
+  "hasExpected": zod.boolean().describe('True when labelled expected findings exist for objective scoring'),
+  "noteCount": zod.number().int()
+})),
+  "exampleRun": zod.object({
+  "id": zod.string(),
+  "caseId": zod.string().nullable(),
+  "solutionId": zod.string(),
+  "version": zod.enum(['A', 'B']),
+  "versionLabel": zod.string(),
+  "sampleInputId": zod.string().nullable(),
+  "inputText": zod.string(),
+  "inputHash": zod.string(),
+  "enabledCapabilityIds": zod.array(zod.string()),
+  "configValues": zod.record(zod.string(), zod.string()),
+  "configFingerprint": zod.string().describe('Server-computed fingerprint of the exact configuration that ran (sorted capability ids and versions'),
+  "output": zod.object({
+  "headline": zod.string(),
+  "sections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "refs": zod.array(zod.string())
+}))
+}))
+}),
+  "trace": zod.array(zod.object({
+  "stepId": zod.string(),
+  "name": zod.string(),
+  "stage": zod.string(),
+  "status": zod.enum(['ran', 'skipped', 'error']),
+  "inputSummary": zod.string(),
+  "transformation": zod.string(),
+  "outputSummary": zod.string(),
+  "itemCount": zod.number().int(),
+  "durationMs": zod.number().int(),
+  "error": zod.string().nullable()
+})),
+  "stats": zod.object({
+  "steps": zod.number().int(),
+  "sections": zod.number().int(),
+  "items": zod.number().int(),
+  "issues": zod.number().int(),
+  "patterns": zod.number().int(),
+  "actions": zod.number().int(),
+  "errors": zod.number().int()
+}),
+  "durationMs": zod.number().int(),
+  "errors": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
  * @summary Consolidation recommendation (Overview tab)
  */
 export const GetCaseRecommendationParams = zod.object({
@@ -3375,6 +4422,23 @@ export const GetCaseRecommendationResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -3449,6 +4513,23 @@ export const GetCaseRecommendationResponse = zod.object({
   "overlappingSolutions": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -3669,6 +4750,23 @@ export const GetCaseRecommendationResponse = zod.object({
   "retirementCandidates": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -4929,6 +6027,23 @@ export const GetCaseReviewResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -5196,6 +6311,126 @@ export const GetCaseReviewResponse = zod.object({
 
 
 /**
+ * @summary Read-only executive decision view for one experiment, built from the same persisted evidence as the workbench
+ */
+export const GetCaseDecisionViewParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const GetCaseDecisionViewResponse = zod.object({
+  "caseId": zod.string(),
+  "title": zod.string(),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected', 'folded']).describe('folded = the approved change was published as a successor version of the parent product'),
+  "businessProblem": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUser": zod.string(),
+  "description": zod.string()
+}),
+  "overlappingSolutions": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "activeUsers": zod.number().int(),
+  "role": zod.enum(['base', 'candidate', 'other']),
+  "disposition": zod.string().nullable().describe('Recorded disposition label')
+})).describe('Every live product addressing the problem, the base first'),
+  "recommendedBase": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "version": zod.string(),
+  "outputType": zod.string(),
+  "why": zod.string()
+}),
+  "proposedImprovement": zod.object({
+  "summary": zod.string(),
+  "added": zod.array(zod.object({
+  "name": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "workflowStep": zod.string()
+})),
+  "removed": zod.array(zod.string()),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+}))
+}),
+  "evidence": zod.object({
+  "summary": zod.object({
+  "currentFingerprint": zod.string(),
+  "inputsTested": zod.number().int().describe('Distinct inputs on which the current configuration ran against the baseline'),
+  "runtimeA": zod.number().int().nullable(),
+  "runtimeB": zod.number().int().nullable(),
+  "labelled": zod.union([zod.object({
+  "inputs": zod.number().int(),
+  "recallA": zod.number(),
+  "recallB": zod.number(),
+  "precisionA": zod.number(),
+  "precisionB": zod.number()
+}),zod.null()]),
+  "votes": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]),
+  "setAside": zod.number().int().describe('Votes from earlier configurations')
+}).describe('Evidence for the case\'s current Version B configuration, plus what was set aside'),
+  "description": zod.string(),
+  "latestComparison": zod.union([zod.object({
+  "inputName": zod.string(),
+  "ranAt": zod.string(),
+  "added": zod.number().int(),
+  "removed": zod.number().int(),
+  "changed": zod.number().int(),
+  "unchanged": zod.number().int(),
+  "stepsResponsible": zod.array(zod.string())
+}),zod.null()]).describe('Counts from the newest A/B comparison of the current configuration, if any')
+}),
+  "risksAndControls": zod.object({
+  "riskTier": zod.enum(['low', 'medium', 'high']),
+  "controls": zod.array(zod.string()),
+  "newDependencies": zod.array(zod.string()),
+  "knownGaps": zod.array(zod.string()),
+  "mainRisk": zod.string()
+}),
+  "measuredValue": zod.object({
+  "lines": zod.array(zod.string()),
+  "note": zod.string()
+}).describe('Only what has been measured. When nothing has, it says so.'),
+  "ownerRecommendation": zod.object({
+  "recommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "narrative": zod.string(),
+  "confidence": zod.number().nullable()
+}),
+  "decisionRequired": zod.object({
+  "role": zod.union([zod.enum(['seeker', 'owner', 'it']),zod.null()]),
+  "label": zod.string(),
+  "detail": zod.string()
+}),
+  "decisions": zod.array(zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'withdraw_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+})),
+  "generatedAt": zod.string()
+}).describe('One page for a decision-maker. Every field is derived from persisted records; nothing is projected.')
+
+
+/**
  * @summary Current-state to future-state consolidation summary for the Decide view
  */
 export const GetCaseConsolidationParams = zod.object({
@@ -5209,6 +6444,23 @@ export const GetCaseConsolidationResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -5361,6 +6613,23 @@ export const SetCaseDispositionsResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -5510,6 +6779,23 @@ export const RecordMigrationNoteResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -5791,6 +7077,23 @@ export const GetImprovementGroupResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -5885,6 +7188,23 @@ export const GetImprovementGroupResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -6017,6 +7337,23 @@ export const GetImprovementGroupResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -6204,6 +7541,23 @@ export const RecordGroupDecisionResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -6298,6 +7652,23 @@ export const RecordGroupDecisionResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -6430,6 +7801,23 @@ export const RecordGroupDecisionResponse = zod.object({
   "baseSolution": zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "businessFunction": zod.enum(['Operations', 'Finance', 'Investor relations', 'ESG & Regulatory', 'Supply chain & Planning', 'Commercial & Legal', 'Corporate & Executive']).describe('Enterprise function (the busbar a problem hangs from in the schematic)'),
+  "primaryUsers": zod.array(zod.string()).describe('Business roles that use the product day to day'),
+  "workflowType": zod.string().describe('e.g. Review and approve'),
+  "outputType": zod.string().describe('What the product produces'),
+  "riskTier": zod.enum(['low', 'medium', 'high']).describe('Business risk of the output; high for financial'),
+  "dataInvolved": zod.array(zod.string()),
+  "controls": zod.array(zod.string()).describe('Controls the product applies (source linking, segregation of duties, no external publication, ...)'),
+  "execution": zod.enum(['live', 'preview']).describe('live = FUSEBOX runs this product\'s workflow on real input for A/B tests; preview = only a deterministic output preview on sample data exists, so no A/B evidence can be produced yet'),
+  "outputPreview": zod.union([zod.object({
+  "title": zod.string().describe('e.g. September 2026 management pack (sample)'),
+  "inputs": zod.array(zod.string()).describe('The sample inputs the preview was built from'),
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "lines": zod.array(zod.string())
+})),
+  "note": zod.string().describe('Why this is a preview and what it would take to run it for real')
+}).describe('A fixed, deterministic preview of what a product produces, computed from named sample inputs. Shown as a preview, never as test evidence.'),zod.null()]).describe('Deterministic output preview on fixed sample data for products without an execution engine; never evidence'),
   "disposition": zod.union([zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
