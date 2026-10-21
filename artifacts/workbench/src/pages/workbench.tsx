@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, useLocation, useParams, useSearch } from "wouter";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, rectIntersection, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Equal, FileText, GitBranch, Info, LayoutList, ListPlus, Lock, Pencil, Play, RotateCcw, Save, Undo2, Workflow, Zap } from "lucide-react";
+import { Check, ChevronDown, Equal, FileText, GitBranch, Info, LayoutList, ListPlus, Pencil, Play, RotateCcw, Save, Undo2, Workflow, Zap } from "lucide-react";
 import {
   useGetDemoState,
   getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetCaseBaselineQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
@@ -154,7 +154,7 @@ export default function Workbench() {
     return { recs: sorted.slice(0, 3), more: sorted.slice(3) };
   }, [cfg, baseId]);
   const cmp: ABComparison | undefined = cmpQ.data?.[0];
-  const editable = role !== "it";
+  const editable = true;
   const inputArgs = edited ? { inputText: text } : { sampleInputId: sampleId };
   const changedFromA = useMemo(() => {
     const a = new Map(aBlocks.map((b) => [b.id, b]));
@@ -417,7 +417,6 @@ export default function Workbench() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {role === "it" && <span className="inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground"><Lock className="h-4 w-4" /> Governance view is read-only.</span>}
             {editable && <button data-testid="button-save" disabled={updCase.isPending} onClick={saveExperiment} className={btn.quiet}>
               <Save className="h-4 w-4" /> {theCase.saved ? "Saved experiment" : "Save experiment"}
             </button>}
@@ -559,7 +558,7 @@ export default function Workbench() {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3"><Measures cmp={cmp} /></div>
+                  {role === "it" && <div className="mt-3"><Measures cmp={cmp} /></div>}
                 </>
               ) : run ? (
                 <div className={narrow ? "space-y-3" : laneGrid}>
@@ -591,9 +590,7 @@ export default function Workbench() {
                     <Vote cmp={cmp} role={role} />
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <button data-testid="button-try-another" onClick={tryAnother} disabled={runBoth.isPending || samples.length < 2} className={btn.quiet}><RotateCcw className="h-4 w-4" /> Try another input</button>
-                      <InviteTesters caseId={caseId} />
                       <span className="flex-1" />
-                      <Link href={`/cases/${caseId}/decision`} className={btn.quiet} data-testid="link-decision-view"><FileText className="h-4 w-4" /> Decision view</Link>
                       <button data-testid="button-continue-testing" onClick={() => { setInputOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); }} className={btn.quiet}>Continue testing</button>
                       <ProposeActions theCase={theCase} quiet={!cmp.evaluation} />
                     </div>
@@ -605,13 +602,13 @@ export default function Workbench() {
                   <p className="mt-1 text-[14px] text-muted-foreground">Energize A/B first. Your preference is recorded only against a real comparison.</p>
                 </div>
               )}
-              {role === "owner" && (
+              {role === "it" && (
                 <section className="card-soft mt-4 p-5" data-testid="panel-owner">
-                  <h3 className="mb-2 text-[17px] font-semibold">Owner decision</h3>
+                  <h3 className="mb-2 text-[17px] font-semibold">IT Owner review</h3>
+                  <InviteTesters caseId={caseId} />
                   <OwnerDecision caseId={caseId} />
                 </section>
               )}
-              {role === "it" && <p className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground"><Lock className="h-4 w-4" /> Governance view is read-only: you can inspect every step and result, but not change Version B or vote.</p>}
             </BandRow>
           </div>
         </div>

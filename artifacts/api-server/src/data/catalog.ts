@@ -31,9 +31,9 @@ export const personas: Persona[] = [
   {
     id: "persona-it",
     role: "it",
-    name: "Jordan Okafor",
-    title: "Director of Enterprise Architecture",
-    team: "IT Governance",
+    name: "Priya Natarajan",
+    title: "IT Owner",
+    team: "Operations Platforms & IT Governance",
     headline: "See duplication, risk, ownership, and reuse in one place.",
   },
 ];

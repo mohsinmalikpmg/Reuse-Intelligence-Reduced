@@ -13,9 +13,8 @@ import { useUndoToast } from "@/components/bits";
 import { cn } from "@/lib/utils";
 
 export const ROLE_TABS: { role: Role; label: string; id: string }[] = [
-  { role: "seeker", label: "Find", id: "persona-seeker" },
-  { role: "owner", label: "Own", id: "persona-owner" },
-  { role: "it", label: "Govern", id: "persona-it" },
+  { role: "seeker", label: "Solution Seeker", id: "persona-seeker" },
+  { role: "it", label: "IT Owner", id: "persona-it" },
 ];
 
 const BRAND = `${import.meta.env.BASE_URL}brand/`;
@@ -101,13 +100,13 @@ export function Frame({ children }: { children: ReactNode }) {
 
   if (!persona) return null;
   const wbCase = caseId ?? demo.data?.demoCaseId;
-  const NAV: NavItem[] = [
+  const NAV: NavItem[] = ([
     { href: "/discover", label: "Discover", match: "/discover", icon: Compass, stage: "trace" },
     { href: "/library", label: "Library", match: "/library", icon: Network, stage: "trace" },
     { href: wbCase ? `/workbench/${wbCase}` : "/library", label: "Workbench", match: "/workbench", icon: Zap, stage: "connect" },
     { href: "/my-solutions", label: "My Solutions", match: "/my-solutions", icon: Layers, stage: "converge" },
     { href: "/portfolio", label: "Portfolio", match: "/portfolio", icon: ShieldCheck, stage: "converge" },
-  ];
+  ] satisfies NavItem[]).filter((n) => persona.role === "it" || !["/portfolio", "/my-solutions"].includes(n.href));
   const isOn = (n: NavItem) => location.startsWith(n.match) || (n.match === "/library" && (location.startsWith("/solutions") || location.startsWith("/search")));
   const crumbs = crumbsFor(location);
   const roleLabel = ROLE_TABS.find((t) => t.role === persona.role)?.label ?? "";

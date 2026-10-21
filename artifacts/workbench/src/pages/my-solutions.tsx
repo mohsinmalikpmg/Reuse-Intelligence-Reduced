@@ -18,7 +18,7 @@ export default function MySolutions() {
   return (
     <Page>
       <Headline stage="converge" title="Review the evidence." accent="Keep what works." sub={<>{me ? `${me.name} · ${me.team}. ` : ""}Your products, the improvements people are testing on them, and the evidence behind each one.</>} />
-      {q.data.length === 0 ? <Empty title="You do not own any solutions yet" sub="Switch to the Own role to see the demo owner's products." /> : (
+      {q.data.length === 0 ? <Empty title="You do not own any solutions yet" sub="Products assigned to the IT Owner will appear here." /> : (
         <div className="space-y-5">
           {q.data.map((o) => (
             <article key={o.solution.id} data-testid={`card-owned-${o.solution.id}`} className="card-soft p-6">

@@ -12,7 +12,8 @@ import { getPrototypeRow, listPrototypeRows, toRegisteredPrototype } from "../li
 const router: IRouter = Router();
 
 router.get("/personas", (_req, res) => {
-  res.json(personas);
+  // Legacy owner identities remain in historical records, not in the persona picker.
+  res.json(personas.filter((p) => p.role !== "owner"));
 });
 
 router.get("/solutions", (req, res) => {

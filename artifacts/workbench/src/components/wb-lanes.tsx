@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tag } from "@/components/bits";
 import type { FlowBlock } from "@/components/flow";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/lib/persona";
 
 /* ---------- Row model ---------- */
 
@@ -133,6 +134,8 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
 /* ---------- Step row ---------- */
 
 export function TraceBody({ t, label }: { t: StepTrace | null; label: string }) {
+  const role = useRole();
+  if (role !== "it") return t ? <p className="text-[13.5px]">{t.outputSummary}</p> : null;
   if (!t) return <p className="text-[13px] text-muted-foreground">Run to see what this step received and produced.</p>;
   return (
     <dl className="space-y-1.5 text-[13.5px] leading-snug">

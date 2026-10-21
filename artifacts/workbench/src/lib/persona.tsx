@@ -8,12 +8,18 @@ const KEY = "reuse-workbench.persona";
 const PersonaContext = createContext<Ctx>({ persona: null, setPersona: () => {} });
 
 const DEMO_IDS: Record<Role, string> = { seeker: "persona-seeker", owner: "persona-owner", it: "persona-it" };
+function normalize(p: Stored): Stored {
+  if (!p) return null;
+  return p.role === "owner" || p.role === "it"
+    ? { id: "persona-it", role: "it" }
+    : p.role === "seeker" ? { id: DEMO_IDS.seeker, role: "seeker" } : null;
+}
 
 /** Demo deep links: `?as=seeker|owner|it` signs in as that persona on load. */
 function fromQuery(): Stored {
   const as = new URLSearchParams(window.location.search).get("as");
   if (as === "seeker" || as === "owner" || as === "it") {
-    const p: Stored = { id: DEMO_IDS[as], role: as };
+    const p = normalize({ id: DEMO_IDS[as], role: as });
     localStorage.setItem(KEY, JSON.stringify(p));
     return p;
   }
@@ -27,7 +33,7 @@ function read(): Stored {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const v = JSON.parse(raw) as Stored;
-    return v && v.id && v.role ? v : null;
+    return normalize(v);
   } catch {
     return null;
   }
@@ -36,6 +42,7 @@ function read(): Stored {
 export function PersonaProvider({ children }: { children: ReactNode }) {
   const [persona, setState] = useState<Stored>(read);
   const setPersona = useCallback((p: Stored) => {
+    p = normalize(p);
     if (p) localStorage.setItem(KEY, JSON.stringify(p));
     else localStorage.removeItem(KEY);
     setState(p);

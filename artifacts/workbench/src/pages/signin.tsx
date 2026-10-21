@@ -10,7 +10,7 @@ import { Skel } from "@/components/bits";
 const LINE: Record<Role, { text: string; icon: typeof Compass }> = {
   seeker: { text: "Describe a problem. Find what already exists. Try it on real data.", icon: Compass },
   owner: { text: "Review proposed changes to your products with side-by-side output evidence.", icon: Wrench },
-  it: { text: "See overlap across the portfolio and approve a consolidation direction.", icon: ShieldCheck },
+  it: { text: "Review improvements, inspect evaluation evidence, and manage the solution portfolio.", icon: ShieldCheck },
 };
 
 export default function SignIn() {
@@ -40,7 +40,7 @@ export default function SignIn() {
         <div className="stage-eyebrow">Internal tool</div>
         <h1 className="mt-4 max-w-3xl text-balance text-[38px] md:text-[52px]">Find what exists. Improve what works. <span className="display-accent">Test the difference.</span></h1>
         <p className="mt-4 text-[17px] text-skyink">Sign in as one of the demo accounts.</p>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
           {ROLE_TABS.map((t) => {
             const p = personas.data?.find((x) => x.role === t.role);
             const Icon = LINE[t.role].icon;

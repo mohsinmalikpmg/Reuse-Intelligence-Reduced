@@ -2,6 +2,7 @@ import { Clock, Layers, ListChecks, AlertTriangle, Repeat, Wrench } from "lucide
 import type { DiffEntry, Run, RunOutput } from "@workspace/api-client-react";
 import { provenance } from "@/components/wb-lanes";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/lib/persona";
 
 const MARK = {
   added: { label: "New", cls: "border-l-ok bg-okbg/70", tag: "bg-okbg text-ok" },
@@ -59,6 +60,8 @@ export function OutputView({ output, marks, selectedKey, onPick, testid, dim }: 
 }
 
 export function RunMeta({ run, testid }: { run: Run; testid?: string }) {
+  const role = useRole();
+  if (role !== "it") return run.stats.errors > 0 ? <p className="text-sm text-bad">This run encountered errors. Ask the IT Owner to review it.</p> : null;
   const items = [
     { icon: Clock, label: `${run.durationMs} ms`, k: "duration" },
     { icon: Layers, label: `${run.stats.steps} steps`, k: "steps" },

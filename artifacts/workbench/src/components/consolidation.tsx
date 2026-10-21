@@ -178,7 +178,7 @@ export function Consolidation({ caseId, initialSelection = null }: { caseId: str
             {canWithdraw && <button data-testid="button-withdraw-direction" disabled={dec.isPending} onClick={() => decide("withdraw_consolidation", "Approval withdrawn. The successor is a draft again and every disposition a proposal.")} className={btn.quiet}><Undo2 className="h-4 w-4" /> Withdraw approval</button>}
           </>
         ) : canApprove ? <button data-testid="button-approve-direction" onClick={() => decide("approve_consolidation", `Consolidation direction approved. ${v.future.name} is the governed version.`)} disabled={dec.isPending} className={btn.primary}>Approve direction</button>
-          : <p className="text-[13.5px] text-muted-foreground" data-testid="text-not-ready">{role === "it" ? (v.successor ? "Not ready for an IT decision yet." : "Waiting for the owner to approve the pilot.") : "Switch to Govern to approve the direction."}</p>}
+          : <p className="text-[13.5px] text-muted-foreground" data-testid="text-not-ready">{role === "it" ? (v.successor ? "Not ready for a consolidation decision yet." : "Approve the improvement in the workbench first.") : "Switch to IT Owner to approve the direction."}</p>}
         <span className="text-[13px] text-muted-foreground">Main risk: {v.risk}</span>
       </div>
 

@@ -202,7 +202,7 @@ export function InviteTesters({ caseId }: { caseId: string }) {
   const create = useCreateTestSession();
   const invalidate = useInvalidateCase();
   const say = useUndoToast();
-  if (persona?.role === "it") return null;
+  if (persona?.role !== "it") return null;
   const latest = sessions.data?.[0];
   return (
     <div className="flex flex-wrap items-center gap-2">

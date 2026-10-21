@@ -3,8 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
-import { PersonaProvider } from '@/lib/persona';
+import { Route, Switch, useLocation, Redirect, Router as WouterRouter } from 'wouter';
+import { PersonaProvider, useRole } from '@/lib/persona';
 import { CaseProvider, httpStatus } from '@/lib/case';
 import { MotionProvider } from '@/lib/motion';
 import { Frame } from '@/components/frame';
@@ -26,7 +26,11 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10
 
 function Router() {
   const [location] = useLocation();
+  const role = useRole();
   if (location === '/') return <SignIn />;
+  if (role !== "it" && (location.startsWith("/portfolio") || location.startsWith("/my-solutions") || /^\/cases\/[^/]+\/decision/.test(location))) {
+    return <Redirect to="/discover" />;
+  }
   return (
     <Frame>
       <RoutedErrorBoundary>
