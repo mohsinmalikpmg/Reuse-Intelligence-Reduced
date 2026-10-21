@@ -211,3 +211,45 @@ function LinkDialog({ x, params, onClose }: { x: SolutionExport; params: { caseI
     </Dialog>
   );
 }
+
+/** Reusable export action and history for any case id (including combined cc_ proposals). */
+export function CaseExportHistory({ caseId, updatedAt, pending, onConflict, title = "Export the combination", note }: {
+  caseId: string; updatedAt: string; pending?: boolean; onConflict?: () => void; title?: string; note?: string;
+}) {
+  const qc = useQueryClient();
+  const say = useUndoToast();
+  const auth = useGetCurrentAuthUser();
+  const signedIn = !!auth.data?.user;
+  const create = useCreateSolutionExport();
+  const params = { caseId };
+  const q = useExports(params);
+  const build = () =>
+    create.mutate({ data: { caseId, expectedUpdatedAt: updatedAt } }, {
+      onSuccess: (x) => {
+        qc.invalidateQueries({ queryKey: ["/api/solution-exports"] });
+        say(x.status === "ready" ? `Export ${short(x.fingerprint, 8)} ready to download.` : x.status === "building" ? "Export is building." : `Export recorded as ${x.status}.`);
+      },
+      onError: (e) => {
+        if (httpStatus(e) === 409) { onConflict?.(); say("The combination changed since this page loaded. Refreshed; try the export again."); }
+        else say(errMsg(e));
+      },
+    });
+  return (
+    <section className="card-soft p-5" data-testid="panel-solution-exports">
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="flex items-center gap-2 text-[17px] font-semibold"><Package className="h-4 w-4 text-primary" /> {title}</h3>
+          <p className="mt-1 max-w-xl text-[13.5px] text-muted-foreground">{note ?? "Packages exactly what is saved as a versioned ZIP with its checks and known gaps. The same snapshot always gives the same record."}</p>
+        </div>
+        {auth.isLoading ? <Skel className="h-11 w-40" /> : !signedIn ? (
+          <a href={loginHref()} className={btn.secondary} data-testid="link-signin-export">Sign in to export</a>
+        ) : (
+          <button data-testid="button-export-solution" onClick={build} disabled={pending || create.isPending} className={btn.primary}>
+            <Package className="h-4 w-4" /> {create.isPending ? "Building…" : pending ? "Saving…" : "Export"}
+          </button>
+        )}
+      </div>
+      <ExportHistory q={q} params={params} signedIn={signedIn} />
+    </section>
+  );
+}

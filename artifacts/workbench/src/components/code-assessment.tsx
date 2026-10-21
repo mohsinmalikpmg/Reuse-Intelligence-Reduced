@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import {
-  createBriefWorkbench, getGetCodeAssessmentQueryKey, getGetIntakeSessionQueryKey,
+  createBriefWorkbench, getGetBriefQueryKey, getGetCodeAssessmentQueryKey, useGetBrief, getGetIntakeSessionQueryKey,
   useGetCodeAssessment, useGetIntakeSession, useGetLibraryCodePackage,
   type CodeCapabilityEvidence, type CodeRequirementAssessment, type LibraryCodePackage,
 } from "@workspace/api-client-react";
@@ -107,9 +107,11 @@ export function CodeAssessment({ briefId }: { briefId: string }) {
   if (query.isError || !query.data) return <section className="card-soft mt-10 p-5" role="alert"><h2 className="font-semibold">Recommendation unavailable</h2><p className="mt-2 text-[14px]">Source evidence could not load.</p><button className={`${btn.secondary} mt-3`} onClick={() => query.refetch()}>Retry</button></section>;
   const report = query.data;
   const best = report.candidates.find((c) => c.solutionId === report.bestSolutionId);
+  const combo = <CombineShortcut briefId={briefId} />;
   const alts = report.candidates.filter((c) => c.solutionId !== report.bestSolutionId).sort((a, b) => b.weightedCoverage - a.weightedCoverage).slice(0, 2);
   return (
     <section className="mt-10 space-y-5" data-testid="code-assessment">
+      {combo}
       <div className="card-soft border-l-4 border-l-primary p-6">
         <div className="eyebrow mb-2">Proposed workflow</div>
         <h2 className="text-[26px] font-semibold">{best ? `Start from ${best.name}` : "No existing solution fits as a base"}</h2>
@@ -164,5 +166,29 @@ export function SolutionCodePackage({ solutionId }: { solutionId: string }) {
       </details>
       <UploadedSourceEvidence solutionId={solutionId} />
     </section>
+  );
+}
+
+const FINANCE_RE = /\b(forecast|budget|management report|reporting|cost cent(re|er)s?|q4|p&l)\b/i;
+const INVOICE_RE = /\b(invoices?|suppliers?|approv(al|e|als)|spend|line items?|purchase)\b/i;
+
+/** When the brief reads like invoices or finance, offer the existing-source combination instead of a maintenance no-match. */
+function CombineShortcut({ briefId }: { briefId: string }) {
+  const q = useGetBrief(briefId, { query: { queryKey: getGetBriefQueryKey(briefId), enabled: !!briefId } });
+  const b = q.data;
+  if (!b) return null;
+  const text = [b.rawText, b.today, b.better, b.valueStatement, b.clarification, ...b.requirements.map((r) => JSON.stringify(r))].filter(Boolean).join(" ");
+  const recipe = FINANCE_RE.test(text) ? "finance" : INVOICE_RE.test(text) ? "invoice" : null;
+  if (!recipe) return null;
+  const need = (b.better || b.rawText || "").slice(0, 600);
+  const label = recipe === "finance" ? "Forecast to Report" : "Invoice Operations";
+  const href = `/library?combine=${recipe}&need=${encodeURIComponent(need)}`;
+  return (
+    <div className="card-soft border-l-4 border-l-sienna p-6" data-testid={`shortcut-combine-${recipe}`}>
+      <div className="eyebrow mb-2">Existing apps cover this</div>
+      <h2 className="text-[22px] font-semibold">Combine them as {label}</h2>
+      <p className="mt-2 text-[14.5px] text-muted-foreground">{recipe === "finance" ? "Budget & Forecast and Management Reporting already do the two halves. Connect them and try the result." : "Invoice Finder, Approval Desk and Spend Tracker each do part of this. Pick two or three and try the combination."}</p>
+      <Link href={href} className={`${btn.accent} mt-4`} data-testid="link-combine-shortcut">Choose sources <ArrowRight className="h-4 w-4" /></Link>
+    </div>
   );
 }

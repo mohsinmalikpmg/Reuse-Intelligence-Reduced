@@ -5,6 +5,142 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface ConsolidationWiring {
+  /** @maxItems 5 */
+  edgeIds: string[];
+}
+
+export type ConsolidationCaseInputRecipeId = typeof ConsolidationCaseInputRecipeId[keyof typeof ConsolidationCaseInputRecipeId];
+
+
+export const ConsolidationCaseInputRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export type ConsolidationCaseInputConfig = { [key: string]: unknown };
+
+export interface ConsolidationCaseInput {
+  recipeId: ConsolidationCaseInputRecipeId;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  need: string;
+  baseSolutionId: string;
+  /**
+     * @minItems 2
+     * @maxItems 5
+     */
+  selectedSourceIds: string[];
+  /**
+     * @minItems 1
+     * @maxItems 5
+     */
+  capabilityIds: string[];
+  wiring: ConsolidationWiring;
+  config: ConsolidationCaseInputConfig;
+}
+
+export type ConsolidationCaseUpdateInput = ConsolidationCaseInput & {
+  /** @minimum 1 */
+  expectedRevision: number;
+};
+
+export interface ConsolidationSelectedSource {
+  id: string;
+  solutionId: string;
+  version: string;
+  sha256: string;
+}
+
+export type ConsolidationCaseRecipeId = typeof ConsolidationCaseRecipeId[keyof typeof ConsolidationCaseRecipeId];
+
+
+export const ConsolidationCaseRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export type ConsolidationCaseConfig = { [key: string]: unknown };
+
+export interface ConsolidationCase {
+  id: string;
+  recipeId: ConsolidationCaseRecipeId;
+  title: string;
+  need: string;
+  baseSolutionId: string;
+  selectedSources: ConsolidationSelectedSource[];
+  capabilityIds: string[];
+  config: ConsolidationCaseConfig;
+  wiring: ConsolidationWiring;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+  fingerprint: string;
+  runUrl: string;
+}
+
+export type ConsolidationRecipeId = typeof ConsolidationRecipeId[keyof typeof ConsolidationRecipeId];
+
+
+export const ConsolidationRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export type ConsolidationRecipeDefaultConfig = { [key: string]: unknown };
+
+export type ConsolidationRecipeCapabilitiesItem = {
+  id: string;
+  name: string;
+  sourceId: string;
+  edgeId: string;
+};
+
+export type ConsolidationRecipeEdgesItem = {
+  id: string;
+  from: string;
+  to: string;
+  contract: string;
+};
+
+export interface ConsolidationRecipe {
+  id: ConsolidationRecipeId;
+  name: string;
+  sourceIds: string[];
+  baseSolutionIds: string[];
+  runPath: string;
+  defaultConfig: ConsolidationRecipeDefaultConfig;
+  capabilities: ConsolidationRecipeCapabilitiesItem[];
+  edges: ConsolidationRecipeEdgesItem[];
+}
+
+export type ConsolidationSourceFilesItem = {
+  path: string;
+  sha256: string;
+  size: number;
+};
+
+export type ConsolidationSource = ConsolidationSelectedSource & {
+  name: string;
+  recipeId: string;
+  kind: string;
+  filename: string;
+  size: number;
+  files: ConsolidationSourceFilesItem[];
+  registeredBy: string;
+  registeredAt: string;
+  downloadUrl: string;
+  provenance: string;
+  limitations: string[];
+};
+
 export type FinanceWiringConfigSchemaVersion = typeof FinanceWiringConfigSchemaVersion[keyof typeof FinanceWiringConfigSchemaVersion];
 
 
@@ -3106,6 +3242,11 @@ export interface PrototypeDetail {
  * Opaque session token, Bearer sid.
  */
 export type AuthorizationSessionHeaderParameter = string;
+
+export type RunConsolidationCase200 = {
+  runUrl: string;
+  fingerprint: string;
+};
 
 export type ListSolutionExportsParams = {
 caseId?: string;

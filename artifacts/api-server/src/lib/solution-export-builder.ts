@@ -107,11 +107,11 @@ export async function getExportSourceFingerprint(): Promise<string> {
 }
 
 /** Bounded, no shell, isolated process group, no inherited environment or secret-bearing NODE_OPTIONS. */
-async function subprocess(command: string, args: string[], cwd: string, timeoutMs = 20_000): Promise<string> {
+export async function subprocess(command: string, args: string[], cwd: string, timeoutMs = 20_000): Promise<string> {
   return new Promise((resolveResult, reject) => {
     const child = spawn(command, args, {
       cwd, detached: true, stdio: ["ignore", "pipe", "pipe"],
-      env: { HOME: cwd, TMPDIR: cwd, NODE_ENV: "production", TZ: "UTC", LANG: "C", GOMAXPROCS: "2", GOMEMLIMIT: "128MiB" },
+      env: { PATH: process.env.PATH, HOME: cwd, TMPDIR: cwd, NODE_ENV: "production", TZ: "UTC", LANG: "C", GOMAXPROCS: "2", GOMEMLIMIT: "128MiB", PORT: "4173", BASE_PATH: "./" },
     });
     let output = "", size = 0, failure: Error | undefined;
     const kill = () => { try { if (child.pid) process.kill(-child.pid, "SIGKILL"); } catch { /* process already exited */ } };
@@ -142,7 +142,7 @@ function crc32(data: Buffer): number {
 }
 
 /** ZIP STORE with sorted entries, UTF-8 names, fixed DOS epoch and regular 0644 modes. */
-function deterministicZip(files: Map<string, Buffer>): Buffer {
+export function deterministicZip(files: Map<string, Buffer>): Buffer {
   const local: Buffer[] = [], central: Buffer[] = [];
   let offset = 0;
   for (const [path, body] of [...files].sort(([a], [b]) => a < b ? -1 : 1)) {
@@ -162,7 +162,7 @@ function deterministicZip(files: Map<string, Buffer>): Buffer {
 }
 
 /** Extract the artifact bytes, not the staging directory, and verify every file against the manifest. */
-async function extract(bytes: Buffer, destination: string, expected: Map<string, Buffer>) {
+export async function extract(bytes: Buffer, destination: string, expected: Map<string, Buffer>) {
   await new Promise<void>((resolveExtract, reject) => {
     yauzl.fromBuffer(bytes, { lazyEntries: true, strictFileNames: true, validateEntrySizes: true }, (error, zip) => {
       if (error || !zip) { reject(error ?? new Error("Cannot open generated ZIP")); return; }

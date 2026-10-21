@@ -15,7 +15,7 @@ import IntakeShell from '@/components/intake/Shell';
 import Library from '@/pages/library';
 import SolutionPage from '@/pages/solution';
 import SearchPage from '@/pages/search';
-import Workbench from '@/pages/workbench';
+import { WorkbenchRoute } from '@/pages/combined-case';
 import FinanceWiringPage from '@/pages/finance-wiring';
 import TestSessionPage from '@/pages/test-session';
 import MySolutions from '@/pages/my-solutions';
@@ -43,7 +43,7 @@ function Router() {
           <Route path="/solutions/:id" component={SolutionPage} />
           <Route path="/search" component={SearchPage} />
           <Route path="/workbench/wiring" component={FinanceWiringPage} />
-          <Route path="/workbench/:caseId" component={Workbench} />
+          <Route path="/workbench/:caseId" component={WorkbenchRoute} />
           <Route path="/cases/:caseId/decision" component={DecisionPage} />
           <Route path="/test/:sessionId" component={TestSessionPage} />
           <Route path="/my-solutions" component={MySolutions} />

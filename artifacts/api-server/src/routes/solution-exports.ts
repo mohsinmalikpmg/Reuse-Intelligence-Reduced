@@ -5,7 +5,9 @@ import { eq } from "drizzle-orm";
 import { CreateSolutionExportBody, SaveSolutionExportLinkBody } from "@workspace/api-zod";
 import { toCase } from "../lib/store";
 import { buildConfiguration, caseContext } from "../lib/configuration";
-import { buildSolutionExport, getExportSourceFingerprint, type SolutionExportResult } from "../lib/solution-export-builder";
+import { buildSolutionExport, getExportSourceFingerprint, type SolutionExportResult, type SolutionExportSnapshot } from "../lib/solution-export-builder";
+import { ownedConsolidationCase, validateConsolidationCase, ConsolidationError } from "../lib/consolidation-recipes";
+import { buildConsolidationExport, getConsolidationExportFingerprint } from "../lib/consolidation-export-builder";
 import { packageObject, savePackageOriginal } from "../lib/solution-package-storage";
 import { validateExportLinks } from "../lib/solution-export-links";
 
@@ -38,8 +40,8 @@ router.use(base, async (req, res, next) => {
 });
 router.get(base, async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT * FROM solution_exports WHERE ($1::text IS NULL OR case_id=$1) AND ($2::text IS NULL OR solution_id=$2) ORDER BY created_at DESC",
-    [typeof req.query.caseId === "string" ? req.query.caseId : null, typeof req.query.solutionId === "string" ? req.query.solutionId : null],
+    "SELECT * FROM solution_exports WHERE ($1::text IS NULL OR case_id=$1) AND ($2::text IS NULL OR solution_id=$2) AND (case_id NOT LIKE 'cc\\_%' ESCAPE '\\' OR created_by=$3 OR $4) ORDER BY created_at DESC",
+    [typeof req.query.caseId === "string" ? req.query.caseId : null, typeof req.query.solutionId === "string" ? req.query.solutionId : null, req.user!.id, res.locals.manager],
   );
   res.json(rows.map(row => present(row, req.user!.id, res.locals.manager)));
 });
@@ -47,20 +49,32 @@ router.post(base, async (req, res) => {
   const parsed = CreateSolutionExportBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "A case and its current update timestamp are required." }); return; }
   // Read the whole case once. All build inputs below derive from this immutable snapshot.
-  const [row] = await db.select().from(casesTable).where(eq(casesTable.id, parsed.data.caseId));
-  if (!row) { res.status(404).json({ error: "Case not found." }); return; }
-  const c = toCase(row);
+  const combined = parsed.data.caseId.startsWith("cc_")
+    ? await ownedConsolidationCase(req.user!.id, parsed.data.caseId) : null;
+  const [row] = combined ? [] : await db.select().from(casesTable).where(eq(casesTable.id, parsed.data.caseId));
+  if (!combined && !row) { res.status(404).json({ error: "Case not found." }); return; }
+  const c = combined ? { ...combined, parentVersion: combined.fingerprint } : toCase(row!);
   if (c.updatedAt !== parsed.data.expectedUpdatedAt) { res.status(409).json({ error: "This case changed. Refresh it before exporting." }); return; }
-  const context = caseContext(c, c.requirements.map(r => r.text));
+  let snapshot: SolutionExportSnapshot | typeof combined;
+  let source: string;
+  if (combined) {
+    await validateConsolidationCase(combined);
+    snapshot = combined;
+    source = await getConsolidationExportFingerprint(combined.recipeId);
+  } else {
+  const maintenance = toCase(row!);
+  const context = caseContext(maintenance, maintenance.requirements.map(r => r.text));
   if (context.base.execution !== "live") { res.status(409).json({ error: "Only supported demo-engine compositions can be exported." }); return; }
-  const components = buildConfiguration(c, context).steps.flatMap(s => s.components).filter(s => s.active);
-  const snapshot = {
+  const components = buildConfiguration(maintenance, context).steps.flatMap(s => s.components).filter(s => s.active);
+  snapshot = {
     caseId: c.id, title: c.title, baseSolutionId: c.baseSolutionId, parentVersion: c.parentVersion,
     capabilities: components.map(s => s.capability),
     configValues: Object.fromEntries(components.filter(s => s.value).map(s => [s.capability.id, s.value!])),
-    unresolvedRequests: c.capabilityRequests, requirements: c.requirements,
+    unresolvedRequests: maintenance.capabilityRequests, requirements: maintenance.requirements,
   };
-  const fingerprint = digest({ snapshot, source: await getExportSourceFingerprint() });
+  source = await getExportSourceFingerprint();
+  }
+  const fingerprint = digest({ snapshot, source });
   const id = digest({ fingerprint, creator: req.user!.id });
   const client = await pool.connect();
   let locked = false;
@@ -83,7 +97,7 @@ router.post(base, async (req, res) => {
     }
     let output: SolutionExportResult | undefined;
     try {
-      output = await buildSolutionExport(snapshot);
+      output = combined ? await buildConsolidationExport(combined, source) : await buildSolutionExport(snapshot as SolutionExportSnapshot);
       if (output.checks.some(check => !check.passed)) throw Object.assign(new Error("Export validation failed."), output);
       const objectPath = await savePackageOriginal(output.sha256, output.bytes);
       const [stored] = await packageObject(objectPath).download();
@@ -121,11 +135,16 @@ router.put(`${base}/:id/link`, async (req, res) => {
 router.get(`${base}/:id/download`, async (req, res) => {
   const { rows } = await pool.query("SELECT * FROM solution_exports WHERE id=$1", [String(req.params.id)]);
   const row = rows[0];
+  if (row?.case_id?.startsWith("cc_") && row.created_by !== req.user!.id && !res.locals.manager) { res.status(404).json({ error: "Export not found." }); return; }
   if (!row?.object_path || !["ready","incomplete"].includes(row.status)) { res.status(404).json({ error: "No validated ZIP available for this export." }); return; }
   try {
     const [bytes] = await packageObject(row.object_path).download();
     if (createHash("sha256").update(bytes).digest("hex") !== row.sha256) throw new Error("ZIP hash mismatch");
     res.type("application/zip").set("Content-Disposition", `attachment; filename="solution-${row.id.slice(0,12)}.zip"`).set("X-Content-Type-Options","nosniff").send(bytes);
   } catch (error) { req.log.error({err:error},"Export download failed"); res.status(503).json({error:"Stored export is unavailable or failed integrity verification."}); }
+});
+router.use((err: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
+  if (err instanceof ConsolidationError) { res.status(err.status).json({ error: err.message }); return; }
+  next(err);
 });
 export default router;

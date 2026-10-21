@@ -13,3 +13,4 @@ export * from "./acceptance";
 export * from "./solution-packages";
 export * from "./solution-exports";
 export * from "./finance-wiring";
+export * from "./consolidation-cases";

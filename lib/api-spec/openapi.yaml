@@ -20,6 +20,120 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /consolidation/recipes:
+    get:
+      operationId: listConsolidationRecipes
+      responses:
+        "200":
+          description: Bounded reviewed recipes and supported wiring
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ConsolidationRecipe" }
+  /consolidation/sources:
+    get:
+      operationId: listConsolidationSources
+      responses:
+        "200":
+          description: Authenticated registered source provenance
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ConsolidationSource" }
+  /consolidation/sources/register:
+    post:
+      operationId: registerConsolidationSources
+      description: Requires an existing IT package-management grant. Ingests only server-owned allowlisted sources; never executes uploaded code.
+      responses:
+        "200":
+          description: Registered immutable source versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ConsolidationSource" }
+  /consolidation/sources/{id}/download:
+    get:
+      operationId: downloadConsolidationSource
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Authenticated hash-verified source ZIP; finance originals are not scrubbed
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+  /consolidation/cases:
+    get:
+      operationId: listConsolidationCases
+      responses:
+        "200":
+          description: Current user's persisted cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ConsolidationCase" }
+    post:
+      operationId: createConsolidationCase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConsolidationCaseInput" }
+      responses:
+        "201":
+          description: Validated persisted recipe with pinned sources
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsolidationCase" }
+  /consolidation/cases/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getConsolidationCase
+      responses:
+        "200":
+          description: Owned case; another owner's ID returns 404
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsolidationCase" }
+    put:
+      operationId: updateConsolidationCase
+      description: Full validated replacement with optimistic revision check. Undo submits the previous selection using the current expectedRevision. Recipe identity is immutable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConsolidationCaseUpdateInput" }
+      responses:
+        "200":
+          description: Updated case
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsolidationCase" }
+        "409":
+          description: Stale revision or changed source
+        "422":
+          description: Unsupported capability, wiring, source or configuration
+  /consolidation/cases/{id}/run:
+    post:
+      operationId: runConsolidationCase
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Validated actual application URL, not maintenance simulation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [runUrl, fingerprint]
+                properties:
+                  runUrl: { type: string }
+                  fingerprint: { type: string }
   /finance-wiring/catalog:
     get:
       operationId: getFinanceWiringCatalog
@@ -2276,6 +2390,112 @@ components:
       schema:
         type: string
   schemas:
+    ConsolidationWiring:
+      type: object
+      additionalProperties: false
+      required: [edgeIds]
+      properties:
+        edgeIds: { type: array, maxItems: 5, items: { type: string } }
+    ConsolidationCaseInput:
+      type: object
+      required: [recipeId, title, need, baseSolutionId, selectedSourceIds, capabilityIds, wiring, config]
+      properties:
+        recipeId: { type: string, enum: [invoice, finance] }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        need: { type: string, minLength: 1, maxLength: 4000 }
+        baseSolutionId: { type: string }
+        selectedSourceIds: { type: array, minItems: 2, maxItems: 5, items: { type: string } }
+        capabilityIds: { type: array, minItems: 1, maxItems: 5, items: { type: string } }
+        wiring: { $ref: "#/components/schemas/ConsolidationWiring" }
+        config: { type: object, additionalProperties: true }
+    ConsolidationCaseUpdateInput:
+      allOf:
+        - { $ref: "#/components/schemas/ConsolidationCaseInput" }
+        - type: object
+          required: [expectedRevision]
+          properties:
+            expectedRevision: { type: integer, minimum: 1 }
+    ConsolidationSelectedSource:
+      type: object
+      required: [id, solutionId, version, sha256]
+      properties:
+        id: { type: string }
+        solutionId: { type: string }
+        version: { type: string }
+        sha256: { type: string }
+    ConsolidationCase:
+      type: object
+      required: [id, recipeId, title, need, baseSolutionId, selectedSources, capabilityIds, config, wiring, revision, createdAt, updatedAt, fingerprint, runUrl]
+      properties:
+        id: { type: string }
+        recipeId: { type: string, enum: [invoice, finance] }
+        title: { type: string }
+        need: { type: string }
+        baseSolutionId: { type: string }
+        selectedSources: { type: array, items: { $ref: "#/components/schemas/ConsolidationSelectedSource" } }
+        capabilityIds: { type: array, items: { type: string } }
+        config: { type: object, additionalProperties: true }
+        wiring: { $ref: "#/components/schemas/ConsolidationWiring" }
+        revision: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        fingerprint: { type: string }
+        runUrl: { type: string }
+    ConsolidationRecipe:
+      type: object
+      required: [id, name, sourceIds, baseSolutionIds, runPath, capabilities, edges, defaultConfig]
+      properties:
+        id: { type: string, enum: [invoice, finance] }
+        name: { type: string }
+        sourceIds: { type: array, items: { type: string } }
+        baseSolutionIds: { type: array, items: { type: string } }
+        runPath: { type: string }
+        defaultConfig: { type: object, additionalProperties: true }
+        capabilities:
+          type: array
+          items:
+            type: object
+            required: [id, name, sourceId, edgeId]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              sourceId: { type: string }
+              edgeId: { type: string }
+        edges:
+          type: array
+          items:
+            type: object
+            required: [id, from, to, contract]
+            properties:
+              id: { type: string }
+              from: { type: string }
+              to: { type: string }
+              contract: { type: string }
+    ConsolidationSource:
+      allOf:
+        - { $ref: "#/components/schemas/ConsolidationSelectedSource" }
+        - type: object
+          required: [name, recipeId, kind, filename, size, files, registeredBy, registeredAt, downloadUrl, provenance, limitations]
+          properties:
+            name: { type: string }
+            recipeId: { type: string }
+            kind: { type: string }
+            filename: { type: string }
+            size: { type: integer }
+            files:
+              type: array
+              items:
+                type: object
+                required: [path, sha256, size]
+                properties:
+                  path: { type: string }
+                  sha256: { type: string }
+                  size: { type: integer }
+            registeredBy: { type: string }
+            registeredAt: { type: string }
+            downloadUrl: { type: string }
+            provenance: { type: string }
+            limitations: { type: array, items: { type: string } }
     FinanceWiringConfig:
       type: object
       additionalProperties: false

@@ -2,6 +2,7 @@ import copy
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -87,6 +88,47 @@ class WiringTests(unittest.TestCase):
         self.assertEqual(fingerprint(a), fingerprint(b))
         self.assertNotEqual(fingerprint(a), fingerprint(canonical_config(config(period="october"))))
         self.assertEqual(len(catalog()["sources"]), 4)
+
+    def test_changed_adjustment_matches_combined_and_export_workers(self):
+        spec = importlib.util.spec_from_file_location("export_wiring", ROOT / "export-wiring.py")
+        exporter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(exporter)
+        results = []
+        for adjustment in (0, 720):
+            with self.subTest(adjustment=adjustment):
+                cfg = config(adjustment=adjustment)
+                payload = json.dumps({"action": "run", "config": cfg})
+                # The combined app sends this full config to /api/finance-wiring/run;
+                # the API executes this exact worker and action.
+                combined = subprocess.run(
+                    [sys.executable, "-B", str(ROOT / "wiring-worker.py")],
+                    input=payload, text=True, capture_output=True, cwd=ROOT, timeout=20,
+                    env={"PATH": os.defpath})
+                self.assertEqual(combined.returncode, 0, combined.stderr)
+                actual = json.loads(combined.stdout)
+                self.assertEqual(actual["config"], cfg)
+                archive_bytes = exporter.build_export({
+                    "config": cfg,
+                    "version": {"id": "adjustment-parity-test", "number": 1,
+                                "fingerprint": actual["fingerprint"]},
+                })
+                with tempfile.TemporaryDirectory(prefix="finance-parity-", dir="/tmp") as folder:
+                    with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
+                        archive.extractall(folder)
+                    saved = json.loads((Path(folder) / "saved-wiring.json").read_text())
+                    standalone = subprocess.run(
+                        [sys.executable, "-B", str(Path(folder) / "wiring-worker.py")],
+                        input=json.dumps({"action": "run", "config": saved["config"]}),
+                        text=True, capture_output=True, cwd=folder, timeout=20,
+                        env={"PATH": os.defpath})
+                    self.assertEqual(standalone.returncode, 0, standalone.stderr)
+                    self.assertEqual(json.loads(standalone.stdout), actual)
+                    self.assertEqual(json.loads((Path(folder) / "expected-result.json").read_text()), actual)
+                self.assertEqual(line(actual, 3)["difference"], f"{adjustment}.00")
+                self.assertEqual(line(actual, "profit")["difference"], "0.00" if not adjustment else "-720.00")
+                results.append(actual)
+        self.assertNotEqual(results[0]["fingerprint"], results[1]["fingerprint"])
+        self.assertNotEqual(results[0]["lines"], results[1]["lines"])
 
     def test_export_reexecutes_saved_config_without_workspace(self):
         spec = importlib.util.spec_from_file_location("export_wiring", ROOT / "export-wiring.py")

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ChevronDown, Loader2, RotateCcw, Play, FileCode2 } from 'lucide-react';
 import { applyForecast, type FinanceResult, type ReportLine } from './finance-api';
+import { SavedFinanceCase } from './SavedFinanceCase';
 
 const MIN = -600;
 const MAX = 6000;
@@ -258,6 +259,15 @@ function Home() {
 }
 
 function App() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('consolidationCaseId')) {
+    return (
+      <SavedFinanceCase
+        caseId={params.get('consolidationCaseId') ?? ''}
+        renderLines={(lines, id) => <LinesTable lines={lines} id={id} />}
+      />
+    );
+  }
   return <Home />;
 }
 

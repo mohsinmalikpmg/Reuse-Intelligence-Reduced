@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/invoice-consolidation/"
+title = "Invoice Operations"
+description = "Configurable composition of Invoice Finder, Approval Desk, and Spend Tracker using isolated recipe snapshots."
+version = "1.0.0"
+id = "artifacts/invoice-consolidation"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/invoice-consolidation/" ]
+localPort = 18904
+
+[services.development]
+run = "pnpm --filter @workspace/invoice-consolidation run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/invoice-consolidation", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/invoice-consolidation/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18904"
+BASE_PATH = "/invoice-consolidation/"

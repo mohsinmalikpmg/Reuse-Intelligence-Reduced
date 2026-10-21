@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "artifactDir": "artifacts/invoice-consolidation",
+  "build": {
+    "command": "pnpm --filter @workspace/invoice-consolidation build",
+    "env": { "NODE_ENV": "production", "BASE_PATH": "./", "PORT": "4173" },
+    "output": "artifacts/invoice-consolidation/dist/public"
+  },
+  "configuration": {
+    "fileInOutput": "recipe.json",
+    "mapping": {
+      "schemaVersion": "literal:1",
+      "snapshotId": "case.fingerprint",
+      "sources": "case.selectedSources.map(source => source.id)",
+      "capabilities": "case.capabilityIds",
+      "baseSourceId": "case.baseSolutionId",
+      "wiring": "case.wiring"
+    },
+    "instruction": "Write validated mapped recipe into copied output recipe.json; never mutate shared public/recipe.json during concurrent exports. Serve extracted export at root with no consolidationCaseId query."
+  },
+  "integrationTest": {
+    "entry": "artifacts/invoice-consolidation/src/domain/integration.test.ts",
+    "compileCommand": "artifacts/api-server/node_modules/.bin/esbuild artifacts/invoice-consolidation/src/domain/integration.test.ts --bundle --platform=node --format=esm --outfile=invoice-integration.test.mjs",
+    "runCommand": "node --test invoice-integration.test.mjs",
+    "runtimeDependencies": ["node:test", "node:assert/strict"]
+  },
+  "savedSnapshotTest": {
+    "entry": "artifacts/invoice-consolidation/tests/export-snapshot.test.ts",
+    "compileCommand": "artifacts/api-server/node_modules/.bin/esbuild artifacts/invoice-consolidation/tests/export-snapshot.test.ts --bundle --platform=node --format=esm --outfile=export-snapshot.test.mjs",
+    "runCommand": "node --test export-snapshot.test.mjs",
+    "workingDirectory": "directory containing exported recipe.json",
+    "runtimeDependencies": ["node:test", "node:assert/strict", "node:fs"]
+  },
+  "sourceFingerprintPaths": [
+    "artifacts/invoice-consolidation/src",
+    "artifacts/invoice-consolidation/index.html",
+    "artifacts/invoice-consolidation/vite.config.ts",
+    "artifacts/invoice-consolidation/package.json",
+    "artifacts/invoice-consolidation/public/recipe.json",
+    "artifacts/invoice-finder/src/domain/fixture.ts",
+    "artifacts/invoice-finder/src/domain/fuzzy.ts",
+    "artifacts/invoice-finder/src/domain/search.ts",
+    "artifacts/invoice-finder/src/domain/types.ts",
+    "artifacts/approval-desk/src/domain/bulk.ts",
+    "artifacts/approval-desk/src/domain/ledger.ts",
+    "artifacts/approval-desk/src/domain/seed.ts",
+    "artifacts/spend-tracker/src/domain/lines.ts",
+    "artifacts/spend-tracker/src/domain/model.ts"
+  ]
+}

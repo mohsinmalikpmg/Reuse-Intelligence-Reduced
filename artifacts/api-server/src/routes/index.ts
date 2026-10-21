@@ -15,11 +15,13 @@ import codeAssessmentRouter from "./code-assessment";
 import solutionPackagesRouter from "./solution-packages";
 import solutionExportsRouter from "./solution-exports";
 import financeWiringRouter from "./finance-wiring";
+import consolidationCasesRouter from "./consolidation-cases";
 
 const router: IRouter = Router();
 router.use(authRouter);
 router.use(solutionExportsRouter);
 router.use(financeWiringRouter);
+router.use(consolidationCasesRouter);
 router.use(solutionPackagesRouter);
 router.use(solutionCodeRouter);
 router.use(codeAssessmentRouter);

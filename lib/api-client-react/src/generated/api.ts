@@ -44,7 +44,12 @@ import type {
   Configuration,
   ConfigurationPreview,
   ConfigurationUpdate,
+  ConsolidationCase,
+  ConsolidationCaseInput,
+  ConsolidationCaseUpdateInput,
   ConsolidationDecisionView,
+  ConsolidationRecipe,
+  ConsolidationSource,
   CreateSolutionPackageUploadUrl200,
   DecisionInput,
   DecisionView,
@@ -102,6 +107,7 @@ import type {
   ReuseEvent,
   ReuseEventUpdate,
   Run,
+  RunConsolidationCase200,
   RunRequest,
   SampleInput,
   SearchLibraryParams,
@@ -149,6 +155,668 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListConsolidationRecipesUrl = () => {
+
+
+
+
+  return `/api/consolidation/recipes`
+}
+
+export const listConsolidationRecipes = async ( options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationRecipe[]> => {
+
+  return customFetch<ConsolidationRecipe[]>(getListConsolidationRecipesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListConsolidationRecipesQueryKey = () => {
+    return [
+    `/api/consolidation/recipes`
+    ] as const;
+    }
+
+
+export const getListConsolidationRecipesQueryOptions = <TData = Awaited<ReturnType<typeof listConsolidationRecipes>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConsolidationRecipes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListConsolidationRecipesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listConsolidationRecipes>>> = ({ signal }) => listConsolidationRecipes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listConsolidationRecipes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListConsolidationRecipesQueryResult = NonNullable<Awaited<ReturnType<typeof listConsolidationRecipes>>>
+export type ListConsolidationRecipesQueryError = ErrorType<unknown>
+
+
+
+export function useListConsolidationRecipes<TData = Awaited<ReturnType<typeof listConsolidationRecipes>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConsolidationRecipes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListConsolidationRecipesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListConsolidationSourcesUrl = () => {
+
+
+
+
+  return `/api/consolidation/sources`
+}
+
+export const listConsolidationSources = async ( options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationSource[]> => {
+
+  return customFetch<ConsolidationSource[]>(getListConsolidationSourcesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListConsolidationSourcesQueryKey = () => {
+    return [
+    `/api/consolidation/sources`
+    ] as const;
+    }
+
+
+export const getListConsolidationSourcesQueryOptions = <TData = Awaited<ReturnType<typeof listConsolidationSources>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConsolidationSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListConsolidationSourcesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listConsolidationSources>>> = ({ signal }) => listConsolidationSources({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listConsolidationSources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListConsolidationSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof listConsolidationSources>>>
+export type ListConsolidationSourcesQueryError = ErrorType<unknown>
+
+
+
+export function useListConsolidationSources<TData = Awaited<ReturnType<typeof listConsolidationSources>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConsolidationSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListConsolidationSourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegisterConsolidationSourcesUrl = () => {
+
+
+
+
+  return `/api/consolidation/sources/register`
+}
+
+/**
+ * Requires an existing IT package-management grant. Ingests only server-owned allowlisted sources; never executes uploaded code.
+ */
+export const registerConsolidationSources = async ( options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationSource[]> => {
+
+  return customFetch<ConsolidationSource[]>(getRegisterConsolidationSourcesUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRegisterConsolidationSourcesMutationKey = () => ['registerConsolidationSources'] as const;
+
+export const getRegisterConsolidationSourcesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerConsolidationSources>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerConsolidationSources>>, TError,void, TContext> => {
+
+const mutationKey = getRegisterConsolidationSourcesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerConsolidationSources>>, void> = () => {
+
+
+          return  registerConsolidationSources(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterConsolidationSourcesMutationResult = NonNullable<Awaited<ReturnType<typeof registerConsolidationSources>>>
+
+    export type RegisterConsolidationSourcesMutationError = ErrorType<unknown>
+
+
+    export const useRegisterConsolidationSources = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerConsolidationSources>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerConsolidationSources>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRegisterConsolidationSourcesMutationOptions(options));
+    }
+
+export const getDownloadConsolidationSourceUrl = (id: string,) => {
+
+
+
+
+  return `/api/consolidation/sources/${id}/download`
+}
+
+export const downloadConsolidationSource = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadConsolidationSourceUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadConsolidationSourceQueryKey = (id: string,) => {
+    return [
+    `/api/consolidation/sources/${id}/download`
+    ] as const;
+    }
+
+
+export const getDownloadConsolidationSourceQueryOptions = <TData = Awaited<ReturnType<typeof downloadConsolidationSource>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConsolidationSource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadConsolidationSourceQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadConsolidationSource>>> = ({ signal }) => downloadConsolidationSource(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadConsolidationSource>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadConsolidationSourceQueryResult = NonNullable<Awaited<ReturnType<typeof downloadConsolidationSource>>>
+export type DownloadConsolidationSourceQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadConsolidationSource<TData = Awaited<ReturnType<typeof downloadConsolidationSource>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadConsolidationSource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadConsolidationSourceQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListConsolidationCasesUrl = () => {
+
+
+
+
+  return `/api/consolidation/cases`
+}
+
+export const listConsolidationCases = async ( options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationCase[]> => {
+
+  return customFetch<ConsolidationCase[]>(getListConsolidationCasesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListConsolidationCasesQueryKey = () => {
+    return [
+    `/api/consolidation/cases`
+    ] as const;
+    }
+
+
+export const getListConsolidationCasesQueryOptions = <TData = Awaited<ReturnType<typeof listConsolidationCases>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConsolidationCases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListConsolidationCasesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listConsolidationCases>>> = ({ signal }) => listConsolidationCases({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listConsolidationCases>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListConsolidationCasesQueryResult = NonNullable<Awaited<ReturnType<typeof listConsolidationCases>>>
+export type ListConsolidationCasesQueryError = ErrorType<unknown>
+
+
+
+export function useListConsolidationCases<TData = Awaited<ReturnType<typeof listConsolidationCases>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConsolidationCases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListConsolidationCasesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateConsolidationCaseUrl = () => {
+
+
+
+
+  return `/api/consolidation/cases`
+}
+
+export const createConsolidationCase = async (consolidationCaseInput: ConsolidationCaseInput, options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationCase> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ConsolidationCase>(getCreateConsolidationCaseUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(consolidationCaseInput)
+  }
+);}
+
+
+
+
+
+export const getCreateConsolidationCaseMutationKey = () => ['createConsolidationCase'] as const;
+
+export const getCreateConsolidationCaseMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConsolidationCase>>, TError,CreateConsolidationCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createConsolidationCase>>, TError,CreateConsolidationCaseMutationVariables, TContext> => {
+
+const mutationKey = getCreateConsolidationCaseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createConsolidationCase>>, CreateConsolidationCaseMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createConsolidationCase(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateConsolidationCaseMutationResult = NonNullable<Awaited<ReturnType<typeof createConsolidationCase>>>
+    export type CreateConsolidationCaseMutationBody = BodyType<ConsolidationCaseInput>
+    export type CreateConsolidationCaseMutationError = ErrorType<unknown>
+    export type CreateConsolidationCaseMutationVariables = {data: BodyType<ConsolidationCaseInput>}
+
+    export const useCreateConsolidationCase = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConsolidationCase>>, TError,CreateConsolidationCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createConsolidationCase>>,
+        TError,
+        CreateConsolidationCaseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateConsolidationCaseMutationOptions(options));
+    }
+
+export const getGetConsolidationCaseUrl = (id: string,) => {
+
+
+
+
+  return `/api/consolidation/cases/${id}`
+}
+
+export const getConsolidationCase = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationCase> => {
+
+  return customFetch<ConsolidationCase>(getGetConsolidationCaseUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetConsolidationCaseQueryKey = (id: string,) => {
+    return [
+    `/api/consolidation/cases/${id}`
+    ] as const;
+    }
+
+
+export const getGetConsolidationCaseQueryOptions = <TData = Awaited<ReturnType<typeof getConsolidationCase>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConsolidationCase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConsolidationCaseQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConsolidationCase>>> = ({ signal }) => getConsolidationCase(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConsolidationCase>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetConsolidationCaseQueryResult = NonNullable<Awaited<ReturnType<typeof getConsolidationCase>>>
+export type GetConsolidationCaseQueryError = ErrorType<unknown>
+
+
+
+export function useGetConsolidationCase<TData = Awaited<ReturnType<typeof getConsolidationCase>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConsolidationCase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetConsolidationCaseQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateConsolidationCaseUrl = (id: string,) => {
+
+
+
+
+  return `/api/consolidation/cases/${id}`
+}
+
+/**
+ * Full validated replacement with optimistic revision check. Undo submits the previous selection using the current expectedRevision. Recipe identity is immutable.
+ */
+export const updateConsolidationCase = async (id: string,
+    consolidationCaseUpdateInput: ConsolidationCaseUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationCase> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ConsolidationCase>(getUpdateConsolidationCaseUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(consolidationCaseUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateConsolidationCaseMutationKey = () => ['updateConsolidationCase'] as const;
+
+export const getUpdateConsolidationCaseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConsolidationCase>>, TError,UpdateConsolidationCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateConsolidationCase>>, TError,UpdateConsolidationCaseMutationVariables, TContext> => {
+
+const mutationKey = getUpdateConsolidationCaseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateConsolidationCase>>, UpdateConsolidationCaseMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateConsolidationCase(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateConsolidationCaseMutationResult = NonNullable<Awaited<ReturnType<typeof updateConsolidationCase>>>
+    export type UpdateConsolidationCaseMutationBody = BodyType<ConsolidationCaseUpdateInput>
+    export type UpdateConsolidationCaseMutationError = ErrorType<void>
+    export type UpdateConsolidationCaseMutationVariables = {id: string;data: BodyType<ConsolidationCaseUpdateInput>}
+
+    export const useUpdateConsolidationCase = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConsolidationCase>>, TError,UpdateConsolidationCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateConsolidationCase>>,
+        TError,
+        UpdateConsolidationCaseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateConsolidationCaseMutationOptions(options));
+    }
+
+export const getRunConsolidationCaseUrl = (id: string,) => {
+
+
+
+
+  return `/api/consolidation/cases/${id}/run`
+}
+
+export const runConsolidationCase = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<RunConsolidationCase200> => {
+
+  return customFetch<RunConsolidationCase200>(getRunConsolidationCaseUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRunConsolidationCaseMutationKey = () => ['runConsolidationCase'] as const;
+
+export const getRunConsolidationCaseMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runConsolidationCase>>, TError,RunConsolidationCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runConsolidationCase>>, TError,RunConsolidationCaseMutationVariables, TContext> => {
+
+const mutationKey = getRunConsolidationCaseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runConsolidationCase>>, RunConsolidationCaseMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  runConsolidationCase(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunConsolidationCaseMutationResult = NonNullable<Awaited<ReturnType<typeof runConsolidationCase>>>
+
+    export type RunConsolidationCaseMutationError = ErrorType<unknown>
+    export type RunConsolidationCaseMutationVariables = {id: string}
+
+    export const useRunConsolidationCase = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runConsolidationCase>>, TError,RunConsolidationCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runConsolidationCase>>,
+        TError,
+        RunConsolidationCaseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRunConsolidationCaseMutationOptions(options));
+    }
 
 export const getGetFinanceWiringCatalogUrl = () => {
 

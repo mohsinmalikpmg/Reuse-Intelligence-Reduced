@@ -36,3 +36,15 @@ uploaded-code execution and automatic finance-product merging.
 **How to apply:** preserve immutable export lineage and exact-output test
 evidence; leave external launch awaiting import or link recorded/unverified
 until actual user-participating launch verification is available.
+
+## Exported UI evidence
+
+Check the mounted exported application, not just a successful HTTP response and
+engine tests.
+
+**Why:** a relative-asset build can serve valid HTML and pass all domain tests
+while its client router shows a missing-page screen at the exported root.
+
+**How to apply:** when changing export routing or build bases, include one
+extracted-bundle UI check. Report remote-browser connectivity limitations
+separately from direct local HTTP and calculation checks.

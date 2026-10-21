@@ -8,6 +8,282 @@
 import * as zod from 'zod';
 
 
+export const ListConsolidationRecipesResponseItem = zod.object({
+  "id": zod.enum(['invoice', 'finance']),
+  "name": zod.string(),
+  "sourceIds": zod.array(zod.string()),
+  "baseSolutionIds": zod.array(zod.string()),
+  "runPath": zod.string(),
+  "defaultConfig": zod.record(zod.string(), zod.unknown()),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.string(),
+  "edgeId": zod.string()
+})),
+  "edges": zod.array(zod.object({
+  "id": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "contract": zod.string()
+}))
+})
+export const ListConsolidationRecipesResponse = zod.array(ListConsolidationRecipesResponseItem)
+
+
+export const ListConsolidationSourcesResponseItem = zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+}).and(zod.object({
+  "name": zod.string(),
+  "recipeId": zod.string(),
+  "kind": zod.string(),
+  "filename": zod.string(),
+  "size": zod.number().int(),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string(),
+  "size": zod.number().int()
+})),
+  "registeredBy": zod.string(),
+  "registeredAt": zod.string(),
+  "downloadUrl": zod.string(),
+  "provenance": zod.string(),
+  "limitations": zod.array(zod.string())
+}))
+export const ListConsolidationSourcesResponse = zod.array(ListConsolidationSourcesResponseItem)
+
+
+/**
+ * Requires an existing IT package-management grant. Ingests only server-owned allowlisted sources; never executes uploaded code.
+ */
+export const RegisterConsolidationSourcesResponseItem = zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+}).and(zod.object({
+  "name": zod.string(),
+  "recipeId": zod.string(),
+  "kind": zod.string(),
+  "filename": zod.string(),
+  "size": zod.number().int(),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string(),
+  "size": zod.number().int()
+})),
+  "registeredBy": zod.string(),
+  "registeredAt": zod.string(),
+  "downloadUrl": zod.string(),
+  "provenance": zod.string(),
+  "limitations": zod.array(zod.string())
+}))
+export const RegisterConsolidationSourcesResponse = zod.array(RegisterConsolidationSourcesResponseItem)
+
+
+export const DownloadConsolidationSourceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadConsolidationSourceResponse = zod.unknown()
+
+
+export const listConsolidationCasesResponseWiringEdgeIdsMax = 5;
+
+
+
+export const ListConsolidationCasesResponseItem = zod.object({
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(listConsolidationCasesResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+export const ListConsolidationCasesResponse = zod.array(ListConsolidationCasesResponseItem)
+
+
+export const createConsolidationCaseBodyTitleMax = 200;
+
+export const createConsolidationCaseBodyNeedMax = 4000;
+
+export const createConsolidationCaseBodySelectedSourceIdsMin = 2;
+export const createConsolidationCaseBodySelectedSourceIdsMax = 5;
+
+export const createConsolidationCaseBodyCapabilityIdsMax = 5;
+
+export const createConsolidationCaseBodyWiringEdgeIdsMax = 5;
+
+
+
+export const CreateConsolidationCaseBody = zod.object({
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string().min(1).max(createConsolidationCaseBodyTitleMax),
+  "need": zod.string().min(1).max(createConsolidationCaseBodyNeedMax),
+  "baseSolutionId": zod.string(),
+  "selectedSourceIds": zod.array(zod.string()).min(createConsolidationCaseBodySelectedSourceIdsMin).max(createConsolidationCaseBodySelectedSourceIdsMax),
+  "capabilityIds": zod.array(zod.string()).min(1).max(createConsolidationCaseBodyCapabilityIdsMax),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(createConsolidationCaseBodyWiringEdgeIdsMax)
+}),
+  "config": zod.record(zod.string(), zod.unknown())
+})
+
+export const createConsolidationCaseResponseWiringEdgeIdsMax = 5;
+
+
+
+export const CreateConsolidationCaseResponse = zod.object({
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(createConsolidationCaseResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
+export const GetConsolidationCaseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getConsolidationCaseResponseWiringEdgeIdsMax = 5;
+
+
+
+export const GetConsolidationCaseResponse = zod.object({
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(getConsolidationCaseResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
+/**
+ * Full validated replacement with optimistic revision check. Undo submits the previous selection using the current expectedRevision. Recipe identity is immutable.
+ */
+export const UpdateConsolidationCaseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateConsolidationCaseBodyOneTitleMax = 200;
+
+export const updateConsolidationCaseBodyOneNeedMax = 4000;
+
+export const updateConsolidationCaseBodyOneSelectedSourceIdsMin = 2;
+export const updateConsolidationCaseBodyOneSelectedSourceIdsMax = 5;
+
+export const updateConsolidationCaseBodyOneCapabilityIdsMax = 5;
+
+export const updateConsolidationCaseBodyOneWiringEdgeIdsMax = 5;
+
+
+
+
+export const UpdateConsolidationCaseBody = zod.object({
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string().min(1).max(updateConsolidationCaseBodyOneTitleMax),
+  "need": zod.string().min(1).max(updateConsolidationCaseBodyOneNeedMax),
+  "baseSolutionId": zod.string(),
+  "selectedSourceIds": zod.array(zod.string()).min(updateConsolidationCaseBodyOneSelectedSourceIdsMin).max(updateConsolidationCaseBodyOneSelectedSourceIdsMax),
+  "capabilityIds": zod.array(zod.string()).min(1).max(updateConsolidationCaseBodyOneCapabilityIdsMax),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(updateConsolidationCaseBodyOneWiringEdgeIdsMax)
+}),
+  "config": zod.record(zod.string(), zod.unknown())
+}).and(zod.object({
+  "expectedRevision": zod.number().int().min(1)
+}))
+
+export const updateConsolidationCaseResponseWiringEdgeIdsMax = 5;
+
+
+
+export const UpdateConsolidationCaseResponse = zod.object({
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(updateConsolidationCaseResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
+export const RunConsolidationCaseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RunConsolidationCaseResponse = zod.object({
+  "runUrl": zod.string(),
+  "fingerprint": zod.string()
+})
+
+
 export const getFinanceWiringCatalogResponseDefaultConfigAdjustmentMin = -600;
 export const getFinanceWiringCatalogResponseDefaultConfigAdjustmentMax = 6000;
 export const getFinanceWiringCatalogResponseDefaultConfigAdjustmentMultipleOf = 6;
