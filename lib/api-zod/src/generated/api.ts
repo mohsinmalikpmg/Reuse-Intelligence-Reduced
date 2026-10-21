@@ -135,7 +135,29 @@ export const GetSeekerOverviewResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -207,7 +229,7 @@ export const GetSeekerOverviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -274,7 +296,29 @@ export const GetOwnerOverviewResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -346,7 +390,7 @@ export const GetOwnerOverviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -410,7 +454,29 @@ export const GetOwnerOverviewResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -482,7 +548,7 @@ export const GetOwnerOverviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -1042,7 +1108,29 @@ export const GetMySolutionsResponseItem = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -1114,12 +1202,129 @@ export const GetMySolutionsResponseItem = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
   "nextStep": zod.string().describe('Plain-language next action for the current state')
 })),
+  "groups": zod.array(zod.object({
+  "key": zod.string(),
+  "solutionId": zod.string(),
+  "intent": zod.string(),
+  "experiments": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "baseSolution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "businessProblemTitle": zod.string(),
+  "addedCapabilities": zod.array(zod.string()),
+  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "latestDecision": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "nextStep": zod.string().describe('Plain-language next action for the current state')
+})),
+  "teams": zod.number().int(),
+  "completedTests": zod.number().int().describe('Recorded votes on the current configuration of each experiment'),
+  "preferredModifiedPercent": zod.number().nullable().describe('Share of those votes that preferred the modified output; null when there are none'),
+  "approaches": zod.number().int().describe('Distinct current configurations across the experiments'),
+  "pendingReview": zod.boolean().describe('At least one experiment is proposed and awaiting the owner')
+}).describe('Experiments on one parent product that share an intent, with counts from current-configuration evidence only')).describe('Saved or proposed experiments on this product, grouped by intent'),
+  "experimentsInProgress": zod.number().int(),
   "openTests": zod.number().int().describe('Cases with runs but no owner decision yet'),
   "evaluations": zod.number().int().describe('Recorded preference votes across proposals'),
   "evaluationsSetAside": zod.number().int().describe('Votes recorded against earlier configurations of those proposals'),
@@ -1219,7 +1424,29 @@ export const GetSolutionResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -1291,12 +1518,118 @@ export const GetSolutionResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
   "nextStep": zod.string().describe('Plain-language next action for the current state')
-}))
+})),
+  "experimentsInProgress": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "baseSolution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "businessProblemTitle": zod.string(),
+  "addedCapabilities": zod.array(zod.string()),
+  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "latestDecision": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "nextStep": zod.string().describe('Plain-language next action for the current state')
+})).describe('Saved or proposed experiments branched from this product; never library entries')
 })
 
 
@@ -1760,7 +2093,29 @@ export const ListCasesResponseItem = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -1832,7 +2187,7 @@ export const ListCasesResponseItem = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),
@@ -1848,6 +2203,7 @@ export const CreateCaseBody = zod.object({
   "baseSolutionId": zod.string(),
   "briefId": zod.string().optional(),
   "title": zod.string().optional(),
+  "intent": zod.string().optional(),
   "createdByRole": zod.enum(['seeker', 'owner', 'it']).optional(),
   "moduleIds": zod.array(zod.string()).optional().describe('Addable modules switched on in Version B from the start (e.g. from a reuse check)'),
   "reuseEventId": zod.string().optional().describe('Reuse-check event this case acts on; recorded as the path taken')
@@ -1858,7 +2214,29 @@ export const CreateCaseResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -1897,7 +2275,29 @@ export const GetCaseResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -1934,8 +2334,10 @@ export const UpdateCaseParams = zod.object({
 
 
 
+
 export const UpdateCaseBody = zod.object({
   "title": zod.string().min(1).optional(),
+  "intent": zod.string().min(1).optional(),
   "saved": zod.boolean().optional(),
   "pilotPercent": zod.union([zod.literal(5),zod.literal(10),zod.literal(20)]).optional()
 })
@@ -1945,7 +2347,29 @@ export const UpdateCaseResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -1997,7 +2421,29 @@ export const AddCaseRequirementResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -2157,7 +2603,29 @@ export const RemoveCaseRequirementResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -2209,7 +2677,29 @@ export const AddCapabilityRequestResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -2249,7 +2739,29 @@ export const RemoveCapabilityRequestResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -3656,7 +4168,29 @@ export const GetCaseReviewResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -3934,13 +4468,13 @@ export const GetCaseReviewResponse = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 })),
   "availableActions": zod.array(zod.object({
   "role": zod.enum(['seeker', 'owner', 'it']),
-  "actions": zod.array(zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']))
+  "actions": zod.array(zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'))
 })).describe('Decision actions currently permitted per role')
 })
 
@@ -4012,9 +4546,695 @@ export const GetCaseConsolidationResponse = zod.object({
   "evidence": zod.array(zod.string()).describe('Supporting evidence for the detail drawer'),
   "availableActions": zod.array(zod.object({
   "role": zod.enum(['seeker', 'owner', 'it']),
-  "actions": zod.array(zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']))
+  "actions": zod.array(zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'))
 })).describe('Decision actions currently permitted per role'),
   "decided": zod.string().nullable().describe('Summary of the IT consolidation decision, if one exists')
+})
+
+
+/**
+ * @summary Other active experiments on the same parent with a similar intent or change
+ */
+export const GetSimilarExperimentsParams = zod.object({
+  "caseId": zod.coerce.string()
+})
+
+export const GetSimilarExperimentsResponse = zod.object({
+  "count": zod.number().int(),
+  "teams": zod.number().int().describe('Distinct teams behind the similar experiments'),
+  "experiments": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "sameApproach": zod.boolean().describe('True when the other experiment\'s current configuration is identical'),
+  "changes": zod.array(zod.string()),
+  "votes": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]).describe('Preference votes on that experiment\'s current configuration only'),
+  "inputsTested": zod.number().int()
+}))
+})
+
+
+/**
+ * @summary Grouped evidence for one shared improvement on an owned product
+ */
+export const GetImprovementGroupParams = zod.object({
+  "solutionId": zod.coerce.string(),
+  "groupKey": zod.coerce.string()
+})
+
+export const GetImprovementGroupResponse = zod.object({
+  "group": zod.object({
+  "key": zod.string(),
+  "solutionId": zod.string(),
+  "intent": zod.string(),
+  "experiments": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "baseSolution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "businessProblemTitle": zod.string(),
+  "addedCapabilities": zod.array(zod.string()),
+  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "latestDecision": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "nextStep": zod.string().describe('Plain-language next action for the current state')
+})),
+  "teams": zod.number().int(),
+  "completedTests": zod.number().int().describe('Recorded votes on the current configuration of each experiment'),
+  "preferredModifiedPercent": zod.number().nullable().describe('Share of those votes that preferred the modified output; null when there are none'),
+  "approaches": zod.number().int().describe('Distinct current configurations across the experiments'),
+  "pendingReview": zod.boolean().describe('At least one experiment is proposed and awaiting the owner')
+}).describe('Experiments on one parent product that share an intent, with counts from current-configuration evidence only'),
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "approaches": zod.array(zod.object({
+  "fingerprint": zod.string(),
+  "label": zod.string(),
+  "changes": zod.array(zod.string()),
+  "experiments": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "baseSolution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "businessProblemTitle": zod.string(),
+  "addedCapabilities": zod.array(zod.string()),
+  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "latestDecision": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "nextStep": zod.string().describe('Plain-language next action for the current state')
+})),
+  "teams": zod.array(zod.string()),
+  "votes": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]),
+  "inputsTested": zod.number().int()
+})),
+  "decisions": zod.array(zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+})),
+  "availableActions": zod.array(zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'))
+})
+
+
+/**
+ * @summary Record one owner decision across every experiment in the group
+ */
+export const RecordGroupDecisionParams = zod.object({
+  "solutionId": zod.coerce.string(),
+  "groupKey": zod.coerce.string()
+})
+
+export const RecordGroupDecisionBody = zod.object({
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "caseId": zod.string().optional().describe('The experiment adopted; required for adopt_approach'),
+  "reason": zod.string().optional()
+})
+
+export const RecordGroupDecisionResponse = zod.object({
+  "group": zod.object({
+  "key": zod.string(),
+  "solutionId": zod.string(),
+  "intent": zod.string(),
+  "experiments": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "baseSolution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "businessProblemTitle": zod.string(),
+  "addedCapabilities": zod.array(zod.string()),
+  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "latestDecision": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "nextStep": zod.string().describe('Plain-language next action for the current state')
+})),
+  "teams": zod.number().int(),
+  "completedTests": zod.number().int().describe('Recorded votes on the current configuration of each experiment'),
+  "preferredModifiedPercent": zod.number().nullable().describe('Share of those votes that preferred the modified output; null when there are none'),
+  "approaches": zod.number().int().describe('Distinct current configurations across the experiments'),
+  "pendingReview": zod.boolean().describe('At least one experiment is proposed and awaiting the owner')
+}).describe('Experiments on one parent product that share an intent, with counts from current-configuration evidence only'),
+  "solution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "approaches": zod.array(zod.object({
+  "fingerprint": zod.string(),
+  "label": zod.string(),
+  "changes": zod.array(zod.string()),
+  "experiments": zod.array(zod.object({
+  "case": zod.object({
+  "id": zod.string(),
+  "briefId": zod.string().nullable(),
+  "title": zod.string(),
+  "businessProblemId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
+  "candidateSolutionIds": zod.array(zod.string()),
+  "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
+  "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
+  "configValues": zod.record(zod.string(), zod.string()).describe('Configurable capability id -> selected option'),
+  "experimentId": zod.string().nullable(),
+  "pilotPercent": zod.number().int().describe('Pilot exposure chosen for this case (5'),
+  "createdByRole": zod.enum(['seeker', 'owner', 'it']),
+  "saved": zod.boolean(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "createdAt": zod.string()
+})).describe('Requirements added while testing, on top of the brief\'s list'),
+  "capabilityRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string().describe('What should happen'),
+  "missing": zod.string().describe('What the existing approach does not do'),
+  "afterStepId": zod.string().nullable().describe('Capability id of the step the request was placed after; null for the end of the workflow'),
+  "reuseEventId": zod.string().nullable(),
+  "createdAt": zod.string()
+})).describe('Capabilities the person asked for that do not exist yet; recorded, never run'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "baseSolution": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "outcome": zod.string().describe('One-sentence outcome'),
+  "description": zod.string(),
+  "status": zod.enum(['certified', 'pilot', 'experimental', 'deprecated']),
+  "kind": zod.enum(['complete_solution', 'configurable_product', 'capability_module', 'prototype']),
+  "ownerName": zod.string(),
+  "ownerTeam": zod.string(),
+  "businessUnits": zod.array(zod.string()),
+  "activeUsers": zod.number().int(),
+  "evidenceLevel": zod.enum(['strong', 'moderate', 'limited', 'none']),
+  "timeToAdopt": zod.string(),
+  "adoptionEffort": zod.enum(['low', 'medium', 'high']),
+  "workflowSteps": zod.array(zod.string()),
+  "currentVersion": zod.string(),
+  "versions": zod.array(zod.object({
+  "version": zod.string(),
+  "releasedAt": zod.string(),
+  "summary": zod.string()
+})),
+  "knownGaps": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "businessProblemIds": zod.array(zod.string()),
+  "baselineMetrics": zod.object({
+  "taskMinutes": zod.number().describe('Average minutes to complete the task'),
+  "successRate": zod.number().describe('0-100 percent'),
+  "effortScore": zod.number().describe('1 (low) to 10 (high) user effort'),
+  "errorRate": zod.number().describe('0-100 percent exceptions'),
+  "adoption": zod.number().describe('0-100 percent expected adoption'),
+  "costPerTask": zod.number().describe('Currency per task')
+}).describe('Operating metrics for one task on one solution version'),
+  "retirementCandidate": zod.boolean(),
+  "architectureStatus": zod.string(),
+  "controlStatus": zod.string(),
+  "supportModel": zod.string(),
+  "lastReviewedAt": zod.string()
+}),
+  "businessProblemTitle": zod.string(),
+  "addedCapabilities": zod.array(zod.string()),
+  "experimentRecommendation": zod.union([zod.enum(['proceed_to_pilot', 'revise_configuration', 'gather_more_evidence', 'do_not_proceed']),zod.null()]),
+  "latestDecision": zod.union([zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "nextStep": zod.string().describe('Plain-language next action for the current state')
+})),
+  "teams": zod.array(zod.string()),
+  "votes": zod.union([zod.object({
+  "tests": zod.number().int().describe('Recorded evaluations; computed only from stored votes'),
+  "aPreferred": zod.number().int(),
+  "bPreferred": zod.number().int(),
+  "neither": zod.number().int(),
+  "averageRating": zod.number().nullable(),
+  "distinctInputs": zod.number().int(),
+  "blindVotes": zod.number().int(),
+  "demoVotes": zod.number().int()
+}),zod.null()]),
+  "inputsTested": zod.number().int()
+})),
+  "decisions": zod.array(zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "role": zod.enum(['seeker', 'owner', 'it']),
+  "actor": zod.string(),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
+  "reason": zod.string().nullable(),
+  "createdAt": zod.string()
+})),
+  "availableActions": zod.array(zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'))
 })
 
 
@@ -4027,7 +5247,7 @@ export const RecordCaseDecisionParams = zod.object({
 
 export const RecordCaseDecisionBody = zod.object({
   "role": zod.enum(['seeker', 'owner', 'it']),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().optional()
 })
 
@@ -4036,7 +5256,29 @@ export const RecordCaseDecisionResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -4303,7 +5545,29 @@ export const GetPortfolioResponse = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -4572,7 +5836,29 @@ export const GetDecisionQueueResponseItem = zod.object({
   "briefId": zod.string().nullable(),
   "title": zod.string(),
   "businessProblemId": zod.string(),
-  "baseSolutionId": zod.string(),
+  "baseSolutionId": zod.string().describe('The parent product this experiment branches from'),
+  "parentVersion": zod.string().describe('Parent product version the experiment branched from'),
+  "intent": zod.string().nullable().describe('Intent set by the person; null when derived from the change'),
+  "ownerName": zod.string().describe('Person who owns this experiment'),
+  "ownerTeam": zod.string(),
+  "promotionState": zod.enum(['experiment', 'proposed_to_parent', 'proposed_capability', 'new_family_requested']).describe('Where the experiment stands relative to its parent product; it never becomes a product on its own'),
+  "demo": zod.boolean().describe('Seeded demo experiment from another persona'),
+  "lineage": zod.object({
+  "parentSolutionId": zod.string(),
+  "parentSolutionName": zod.string(),
+  "parentVersion": zod.string(),
+  "fingerprint": zod.string().describe('Fingerprint of the experiment\'s current configuration'),
+  "added": zod.array(zod.string()).describe('Capability names switched on that the parent version does not run'),
+  "removed": zod.array(zod.string()).describe('Parent capabilities switched off in the experiment'),
+  "changedSettings": zod.array(zod.object({
+  "capabilityName": zod.string(),
+  "from": zod.string(),
+  "to": zod.string()
+})),
+  "intent": zod.string().describe('The requirement or added capability that defines the experiment'),
+  "intentKey": zod.string().describe('Stable key used to group experiments with the same intent'),
+  "summary": zod.string().describe('One line')
+}).describe('The exact difference between this experiment and its parent version, derived from the configuration fingerprint'),
   "candidateSolutionIds": zod.array(zod.string()),
   "status": zod.enum(['draft', 'tested', 'pilot_proposed', 'approved', 'changes_requested', 'deferred', 'rejected']),
   "moduleStates": zod.record(zod.string(), zod.boolean()).describe('Optional module id -> active'),
@@ -4644,7 +5930,7 @@ export const GetDecisionQueueResponseItem = zod.object({
   "caseId": zod.string(),
   "role": zod.enum(['seeker', 'owner', 'it']),
   "actor": zod.string(),
-  "action": zod.enum(['propose_pilot', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation']),
+  "action": zod.enum(['propose_pilot', 'propose_capability', 'request_new_family', 'approve_pilot', 'request_changes', 'defer', 'reject', 'approve_consolidation', 'adopt_approach', 'merge_approaches', 'request_more_evidence', 'keep_local', 'decline']).describe('propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.'),
   "reason": zod.string().nullable(),
   "createdAt": zod.string()
 }),zod.null()]),

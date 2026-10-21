@@ -7,9 +7,11 @@
  */
 import type { CapabilityRequest } from './capabilityRequest';
 import type { CaseConfigValues } from './caseConfigValues';
+import type { CaseLineage } from './caseLineage';
 import type { CaseModuleStates } from './caseModuleStates';
 import type { CaseRequirement } from './caseRequirement';
 import type { CaseStatus } from './caseStatus';
+import type { PromotionState } from './promotionState';
 import type { Role } from './role';
 
 export interface Case {
@@ -18,7 +20,22 @@ export interface Case {
   briefId: string | null;
   title: string;
   businessProblemId: string;
+  /** The parent product this experiment branches from */
   baseSolutionId: string;
+  /** Parent product version the experiment branched from */
+  parentVersion: string;
+  /**
+     * Intent set by the person; null when derived from the change
+     * @nullable
+     */
+  intent: string | null;
+  /** Person who owns this experiment */
+  ownerName: string;
+  ownerTeam: string;
+  promotionState: PromotionState;
+  /** Seeded demo experiment from another persona */
+  demo: boolean;
+  lineage: CaseLineage;
   candidateSolutionIds: string[];
   status: CaseStatus;
   /** Optional module id -> active */

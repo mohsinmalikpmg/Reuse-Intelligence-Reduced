@@ -45,7 +45,9 @@ import type {
   EvaluationList,
   Experiment,
   ExperimentPlan,
+  GroupDecisionInput,
   HealthStatus,
+  ImprovementGroupDetail,
   ListCasesParams,
   ListSampleInputsParams,
   ListSolutionsParams,
@@ -65,6 +67,7 @@ import type {
   SearchLibraryParams,
   SearchResults,
   SeekerOverview,
+  SimilarExperiments,
   Solution,
   SolutionDetail,
   SolutionWorkbench,
@@ -3497,6 +3500,256 @@ export function useGetCaseConsolidation<TData = Awaited<ReturnType<typeof getCas
 
 
 
+
+export const getGetSimilarExperimentsUrl = (caseId: string,) => {
+
+
+
+
+  return `/api/cases/${caseId}/similar`
+}
+
+/**
+ * @summary Other active experiments on the same parent with a similar intent or change
+ */
+export const getSimilarExperiments = async (caseId: string, options?: Parameters<typeof customFetch>[1]): Promise<SimilarExperiments> => {
+
+  return customFetch<SimilarExperiments>(getGetSimilarExperimentsUrl(caseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSimilarExperimentsQueryKey = (caseId: string,) => {
+    return [
+    `/api/cases/${caseId}/similar`
+    ] as const;
+    }
+
+
+export const getGetSimilarExperimentsQueryOptions = <TData = Awaited<ReturnType<typeof getSimilarExperiments>>, TError = ErrorType<void>>(caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSimilarExperiments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSimilarExperimentsQueryKey(caseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSimilarExperiments>>> = ({ signal }) => getSimilarExperiments(caseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: caseId !== null && caseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSimilarExperiments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSimilarExperimentsQueryResult = NonNullable<Awaited<ReturnType<typeof getSimilarExperiments>>>
+export type GetSimilarExperimentsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Other active experiments on the same parent with a similar intent or change
+ */
+
+export function useGetSimilarExperiments<TData = Awaited<ReturnType<typeof getSimilarExperiments>>, TError = ErrorType<void>>(
+ caseId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSimilarExperiments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSimilarExperimentsQueryOptions(caseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetImprovementGroupUrl = (solutionId: string,
+    groupKey: string,) => {
+
+
+
+
+  return `/api/my-solutions/${solutionId}/groups/${groupKey}`
+}
+
+/**
+ * @summary Grouped evidence for one shared improvement on an owned product
+ */
+export const getImprovementGroup = async (solutionId: string,
+    groupKey: string, options?: Parameters<typeof customFetch>[1]): Promise<ImprovementGroupDetail> => {
+
+  return customFetch<ImprovementGroupDetail>(getGetImprovementGroupUrl(solutionId,groupKey),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetImprovementGroupQueryKey = (solutionId: string,
+    groupKey: string,) => {
+    return [
+    `/api/my-solutions/${solutionId}/groups/${groupKey}`
+    ] as const;
+    }
+
+
+export const getGetImprovementGroupQueryOptions = <TData = Awaited<ReturnType<typeof getImprovementGroup>>, TError = ErrorType<void>>(solutionId: string,
+    groupKey: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getImprovementGroup>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetImprovementGroupQueryKey(solutionId,groupKey);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getImprovementGroup>>> = ({ signal }) => getImprovementGroup(solutionId,groupKey, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: solutionId !== null && solutionId !== undefined && groupKey !== null && groupKey !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getImprovementGroup>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetImprovementGroupQueryResult = NonNullable<Awaited<ReturnType<typeof getImprovementGroup>>>
+export type GetImprovementGroupQueryError = ErrorType<void>
+
+
+/**
+ * @summary Grouped evidence for one shared improvement on an owned product
+ */
+
+export function useGetImprovementGroup<TData = Awaited<ReturnType<typeof getImprovementGroup>>, TError = ErrorType<void>>(
+ solutionId: string,
+    groupKey: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getImprovementGroup>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetImprovementGroupQueryOptions(solutionId,groupKey,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordGroupDecisionUrl = (solutionId: string,
+    groupKey: string,) => {
+
+
+
+
+  return `/api/my-solutions/${solutionId}/groups/${groupKey}/decisions`
+}
+
+/**
+ * @summary Record one owner decision across every experiment in the group
+ */
+export const recordGroupDecision = async (solutionId: string,
+    groupKey: string,
+    groupDecisionInput: GroupDecisionInput, options?: Parameters<typeof customFetch>[1]): Promise<ImprovementGroupDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ImprovementGroupDetail>(getRecordGroupDecisionUrl(solutionId,groupKey),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(groupDecisionInput)
+  }
+);}
+
+
+
+
+
+export const getRecordGroupDecisionMutationKey = () => ['recordGroupDecision'] as const;
+
+export const getRecordGroupDecisionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordGroupDecision>>, TError,RecordGroupDecisionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordGroupDecision>>, TError,RecordGroupDecisionMutationVariables, TContext> => {
+
+const mutationKey = getRecordGroupDecisionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordGroupDecision>>, RecordGroupDecisionMutationVariables> = (props) => {
+          const {solutionId,groupKey,data} = props ?? {};
+
+          return  recordGroupDecision(solutionId,groupKey,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordGroupDecisionMutationResult = NonNullable<Awaited<ReturnType<typeof recordGroupDecision>>>
+    export type RecordGroupDecisionMutationBody = BodyType<GroupDecisionInput>
+    export type RecordGroupDecisionMutationError = ErrorType<void>
+    export type RecordGroupDecisionMutationVariables = {solutionId: string;groupKey: string;data: BodyType<GroupDecisionInput>}
+
+    /**
+ * @summary Record one owner decision across every experiment in the group
+ */
+export const useRecordGroupDecision = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordGroupDecision>>, TError,RecordGroupDecisionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordGroupDecision>>,
+        TError,
+        RecordGroupDecisionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordGroupDecisionMutationOptions(options));
+    }
 
 export const getRecordCaseDecisionUrl = (caseId: string,) => {
 

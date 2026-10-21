@@ -16,6 +16,7 @@ import SearchPage from '@/pages/search';
 import Workbench from '@/pages/workbench';
 import TestSessionPage from '@/pages/test-session';
 import MySolutions from '@/pages/my-solutions';
+import ImprovementPage from '@/pages/improvement';
 import Portfolio from '@/pages/portfolio';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: false } } });
@@ -34,6 +35,7 @@ function Router() {
           <Route path="/workbench/:caseId" component={Workbench} />
           <Route path="/test/:sessionId" component={TestSessionPage} />
           <Route path="/my-solutions" component={MySolutions} />
+          <Route path="/my-solutions/:solutionId/improvements/:key" component={ImprovementPage} />
           <Route path="/portfolio" component={Portfolio} />
           <Route component={NotFound} />
         </Switch>

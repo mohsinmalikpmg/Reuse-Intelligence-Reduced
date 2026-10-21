@@ -6,14 +6,24 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.
+ */
 export type DecisionAction = typeof DecisionAction[keyof typeof DecisionAction];
 
 
 export const DecisionAction = {
   propose_pilot: 'propose_pilot',
+  propose_capability: 'propose_capability',
+  request_new_family: 'request_new_family',
   approve_pilot: 'approve_pilot',
   request_changes: 'request_changes',
   defer: 'defer',
   reject: 'reject',
   approve_consolidation: 'approve_consolidation',
+  adopt_approach: 'adopt_approach',
+  merge_approaches: 'merge_approaches',
+  request_more_evidence: 'request_more_evidence',
+  keep_local: 'keep_local',
+  decline: 'decline',
 } as const;

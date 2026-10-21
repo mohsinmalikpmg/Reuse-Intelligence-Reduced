@@ -6,11 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CaseSummary } from './caseSummary';
+import type { ImprovementGroup } from './improvementGroup';
 import type { Solution } from './solution';
 
 export interface OwnedSolution {
   solution: Solution;
   proposals: CaseSummary[];
+  /** Saved or proposed experiments on this product, grouped by intent */
+  groups: ImprovementGroup[];
+  experimentsInProgress: number;
   /** Cases with runs but no owner decision yet */
   openTests: number;
   /** Recorded preference votes across proposals */

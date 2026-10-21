@@ -18,6 +18,8 @@ import { matchBrief } from "../lib/matching";
 import { demoState, resetDemo } from "../lib/seed";
 import { getExperiment, listAllDecisions, listBriefs, listCaseRows, listExperiments, summarizeAll } from "../lib/store";
 import { currentFingerprints } from "../lib/workbench";
+import { GroupDecisionError, experimentsInProgress, improvementGroupDetail, improvementGroups, recordGroupDecision } from "../lib/experiments";
+import { RecordGroupDecisionBody } from "@workspace/api-zod";
 import { countSearches, listAllEvaluations, listAllRuns, summarizeEvaluations } from "../lib/workbench-store";
 
 /** True when a vote was cast on the case's current Version B against the governed baseline. */
@@ -102,6 +104,8 @@ router.get("/my-solutions", async (_req, res) => {
     out.push({
       solution,
       proposals: await summarizeAll(proposals),
+      groups: await improvementGroups(solution.id, cases),
+      experimentsInProgress: experimentsInProgress(solution.id, cases).length,
       openTests: proposals.filter((c) => runs.some((r) => r.caseId === c.id) && !ownerDecided.has(c.id)).length,
       evaluations: evaluations.filter((e) => proposalIds.has(e.caseId) && countsForCurrent(e)).length,
       evaluationsSetAside: evaluations.filter((e) => proposalIds.has(e.caseId) && !countsForCurrent(e)).length,
@@ -109,6 +113,37 @@ router.get("/my-solutions", async (_req, res) => {
     });
   }
   res.json(out);
+});
+
+router.get("/my-solutions/:solutionId/groups/:groupKey", async (req, res) => {
+  const detail = await improvementGroupDetail(String(req.params["solutionId"]), String(req.params["groupKey"]));
+  if (!detail) {
+    res.status(404).json({ error: "This improvement group no longer exists." });
+    return;
+  }
+  res.json(detail);
+});
+
+router.post("/my-solutions/:solutionId/groups/:groupKey/decisions", async (req, res) => {
+  const parsed = RecordGroupDecisionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  try {
+    const detail = await recordGroupDecision(String(req.params["solutionId"]), String(req.params["groupKey"]), parsed.data);
+    if (!detail) {
+      res.status(404).json({ error: "This improvement group no longer exists." });
+      return;
+    }
+    res.status(201).json(detail);
+  } catch (err) {
+    if (err instanceof GroupDecisionError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    throw err;
+  }
 });
 
 async function consolidationSummaries(): Promise<ConsolidationSummary[]> {

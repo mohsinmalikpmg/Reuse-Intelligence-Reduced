@@ -36,9 +36,7 @@ import { bumpVersion, proposedName } from "./simulation";
 const READINESS: Record<Solution["status"], number> = { certified: 1, pilot: 0.7, experimental: 0.35, deprecated: 0.1 };
 const EVIDENCE: Record<Solution["evidenceLevel"], number> = { strong: 1, moderate: 0.7, limited: 0.4, none: 0.1 };
 
-function provenance(cap: Capability, reason: string, state: CapabilityProvenance["state"]): CapabilityProvenance {
-  return { capability: cap, sourceSolutionName: cap.sourceSolutionName, reason, evidence: cap.evidence, state };
-}
+import { configDiff, provenance } from "./lineage";
 
 export function isDuplicate(cap: Capability, ctx: CaseContext): Capability | null {
   const conflict = conflictingBaseCapability(cap, ctx);
@@ -166,10 +164,16 @@ export function buildPilotPlan(c: Case, ctx: CaseContext, evidence: ABEvidence):
 }
 
 const ROLE_ACTIONS: Record<Role, DecisionAction[]> = {
-  seeker: ["propose_pilot"],
-  owner: ["propose_pilot", "approve_pilot", "request_changes", "defer", "reject"],
+  seeker: ["propose_pilot", "propose_capability", "request_new_family"],
+  owner: ["propose_pilot", "propose_capability", "request_new_family", "approve_pilot", "request_changes", "defer", "reject"],
   it: ["approve_consolidation", "defer", "reject"],
 };
+
+/** Decisions recorded on a whole improvement group by the owner; never offered on a single case. */
+export const GROUP_ACTIONS: DecisionAction[] = ["adopt_approach", "merge_approaches", "request_more_evidence", "keep_local", "decline"];
+
+/** Statuses in which an experiment is still being worked on or awaiting a decision. */
+export const ACTIVE_STATUSES: Case["status"][] = ["draft", "tested", "pilot_proposed", "approved", "changes_requested", "deferred"];
 
 export function allowedActions(c: Case, decisions: Decision[]): { role: Role; actions: DecisionAction[] }[] {
   const itApproved = decisions.some((d) => d.action === "approve_consolidation");
@@ -178,6 +182,11 @@ export function allowedActions(c: Case, decisions: Decision[]): { role: Role; ac
     return candidates.filter((action) => {
       switch (action) {
         case "propose_pilot":
+          return c.status === "tested";
+        case "propose_capability":
+          // Only an experiment that adds a capability can propose it as reusable.
+          return c.status === "tested" && c.lineage.added.length > 0;
+        case "request_new_family":
           return c.status === "tested";
         case "approve_pilot":
         case "request_changes":
@@ -189,26 +198,63 @@ export function allowedActions(c: Case, decisions: Decision[]): { role: Role; ac
           return c.status === "pilot_proposed" || c.status === "approved";
         case "reject":
           return c.status !== "rejected" && c.status !== "draft";
+        default:
+          return false;
       }
     });
   };
   return (["seeker", "owner", "it"] as Role[]).map((role) => ({ role, actions: byRole(role) }));
 }
 
+/** Grouped owner decisions available for a set of experiments sharing an intent. */
+export function allowedGroupActions(members: Case[]): DecisionAction[] {
+  // Once an approach is adopted the group is settled; what follows is consolidation, not another group decision.
+  if (members.some((c) => c.status === "approved")) return [];
+  const decidable = members.some((c) => c.status === "pilot_proposed" || c.status === "tested" || c.status === "deferred" || c.status === "changes_requested");
+  if (!decidable) return [];
+  return GROUP_ACTIONS.filter((a) => a !== "adopt_approach" || members.some((c) => c.status === "pilot_proposed" || c.status === "tested" || c.status === "deferred"));
+}
+
 export function nextStatus(c: Case, action: DecisionAction): Case["status"] {
   switch (action) {
     case "propose_pilot":
+    case "propose_capability":
+    case "request_new_family":
       return "pilot_proposed";
     case "approve_pilot":
+    case "adopt_approach":
       return "approved";
     case "approve_consolidation":
       return c.status;
     case "request_changes":
+    case "merge_approaches":
+    case "request_more_evidence":
       return "changes_requested";
     case "defer":
       return "deferred";
+    case "keep_local":
+      // Stays an experiment under the parent: testable, not proposed.
+      return c.status === "draft" ? "draft" : "tested";
     case "reject":
+    case "decline":
       return "rejected";
+  }
+}
+
+export function promotionStateFor(action: DecisionAction, current: Case["promotionState"]): Case["promotionState"] {
+  switch (action) {
+    case "propose_pilot":
+      return "proposed_to_parent";
+    case "propose_capability":
+      return "proposed_capability";
+    case "request_new_family":
+      return "new_family_requested";
+    case "keep_local":
+    case "request_more_evidence":
+    case "merge_approaches":
+      return "experiment";
+    default:
+      return current;
   }
 }
 
@@ -219,12 +265,16 @@ export function nextStep(c: Case, evidence: ABEvidence, latest: Decision | null,
       return "Build Version B in the workbench and run both versions on the same input.";
     case "tested":
       return favour === null
-        ? "Record which output better solves the problem, then propose a limited pilot."
+        ? `Record which output better solves the problem, then propose the improvement to ${c.lineage.parentSolutionName}.`
         : favour
-          ? "Recorded votes favour the proposed version. Propose a limited pilot."
-          : "Recorded votes do not favour the proposed version yet. Revise Version B or test more inputs before proposing a pilot.";
+          ? `Recorded votes favour the modified version. Propose the improvement to ${c.lineage.parentSolutionName}.`
+          : "Recorded votes do not favour the modified version yet. Revise Version B or test more inputs before proposing it.";
     case "pilot_proposed":
-      return itApproved ? "IT approved the direction. Awaiting the owner's pilot decision." : "Awaiting owner review of the proposed version and pilot plan.";
+      return c.promotionState === "new_family_requested"
+        ? "A new solution family was requested. Awaiting the owner's view on whether the parent can absorb the change."
+        : c.promotionState === "proposed_capability"
+          ? "Proposed as a reusable capability. Awaiting the owner's review."
+          : itApproved ? "IT approved the direction. Awaiting the owner's decision on the proposed improvement." : `Awaiting owner review of the proposed improvement to ${c.lineage.parentSolutionName}.`;
     case "approved":
       return itApproved ? "Approved by owner and IT. Pilot can start." : "Owner approved the pilot. Awaiting IT consolidation decision.";
     case "changes_requested":
@@ -263,25 +313,10 @@ export function promotionGate(c: Case, ctx: CaseContext, decisions: Decision[], 
 }
 
 export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | null, decisions: Decision[], evidence: ABEvidence): ChangeReview {
-  const defaults = defaultModuleStates(ctx);
-  const defaultValues = defaultConfigValues(ctx);
-  const components = buildComponents(c, ctx);
-  const baseIds = new Set(ctx.baseCapabilities.map((b) => b.id));
-
-  const currentCaps = ctx.baseCapabilities.filter((cap) => cap.controlType !== "optional" || defaultBaseActive(cap));
   const active = activeModules(c, ctx);
   const proposedCaps = [...ctx.baseCapabilities.filter((cap) => cap.controlType !== "optional"), ...active];
-
-  const added: CapabilityProvenance[] = active
-    .filter((cap) => !currentCaps.some((cc) => cc.id === cap.id))
-    .map((cap) => provenance(cap, baseIds.has(cap.id) ? `Optional ${ctx.base.name} module switched on.` : `Added from ${cap.sourceSolutionName}: ${cap.description}`, baseIds.has(cap.id) ? "optional" : "recommended"));
-  const removed: CapabilityProvenance[] = currentCaps
-    .filter((cap) => cap.controlType === "optional" && !active.some((a) => a.id === cap.id))
-    .map((cap) => provenance(cap, "Optional module switched off in the proposed version.", "optional"));
-
-  const changedConfig: ConfigChange[] = components
-    .filter((comp) => comp.controlType === "configurable" && comp.value && comp.value !== (defaultValues[comp.capability.id] ?? comp.capability.defaultOption))
-    .map((comp) => ({ capabilityName: comp.capability.name, from: defaultValues[comp.capability.id] ?? comp.capability.defaultOption ?? "", to: comp.value ?? "" }));
+  // The same diff the case's lineage shows, so the review and the header never disagree.
+  const { added, removed, changedConfig, currentCaps } = configDiff(c, ctx);
 
   const unchanged = ctx.baseCapabilities
     .filter((cap) => cap.controlType !== "optional" && !changedConfig.some((ch) => ch.capabilityName === cap.name))
@@ -350,10 +385,6 @@ export function buildReview(c: Case, ctx: CaseContext, experiment: Experiment | 
     evidence: evidenceSummary(evidence),
     promotionGate: promotionGate(c, ctx, decisions, evidence),
   };
-
-  function defaultBaseActive(cap: Capability): boolean {
-    return defaults[cap.id] === true;
-  }
 }
 
 export function metricsFromExperiment(experiment: Experiment) {

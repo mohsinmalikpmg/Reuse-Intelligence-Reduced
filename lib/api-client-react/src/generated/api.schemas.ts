@@ -95,35 +95,177 @@ export const CaseStatus = {
   rejected: 'rejected',
 } as const;
 
+/**
+ * propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal); propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required); adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.
+ */
 export type DecisionAction = typeof DecisionAction[keyof typeof DecisionAction];
 
 
 export const DecisionAction = {
   propose_pilot: 'propose_pilot',
+  propose_capability: 'propose_capability',
+  request_new_family: 'request_new_family',
   approve_pilot: 'approve_pilot',
   request_changes: 'request_changes',
   defer: 'defer',
   reject: 'reject',
   approve_consolidation: 'approve_consolidation',
+  adopt_approach: 'adopt_approach',
+  merge_approaches: 'merge_approaches',
+  request_more_evidence: 'request_more_evidence',
+  keep_local: 'keep_local',
+  decline: 'decline',
 } as const;
 
-export type ExperimentRecommendation = typeof ExperimentRecommendation[keyof typeof ExperimentRecommendation];
+/**
+ * Where the experiment stands relative to its parent product; it never becomes a product on its own
+ */
+export type PromotionState = typeof PromotionState[keyof typeof PromotionState];
 
 
-export const ExperimentRecommendation = {
-  proceed_to_pilot: 'proceed_to_pilot',
-  revise_configuration: 'revise_configuration',
-  gather_more_evidence: 'gather_more_evidence',
-  do_not_proceed: 'do_not_proceed',
+export const PromotionState = {
+  experiment: 'experiment',
+  proposed_to_parent: 'proposed_to_parent',
+  proposed_capability: 'proposed_capability',
+  new_family_requested: 'new_family_requested',
 } as const;
 
-export interface Persona {
+export interface ConfigChange {
+  capabilityName: string;
+  from: string;
+  to: string;
+}
+
+/**
+ * The exact difference between this experiment and its parent version, derived from the configuration fingerprint
+ */
+export interface CaseLineage {
+  parentSolutionId: string;
+  parentSolutionName: string;
+  parentVersion: string;
+  /** Fingerprint of the experiment's current configuration */
+  fingerprint: string;
+  /** Capability names switched on that the parent version does not run */
+  added: string[];
+  /** Parent capabilities switched off in the experiment */
+  removed: string[];
+  changedSettings: ConfigChange[];
+  /** The requirement or added capability that defines the experiment */
+  intent: string;
+  /** Stable key used to group experiments with the same intent */
+  intentKey: string;
+  /** One line */
+  summary: string;
+}
+
+export interface CaseRequirement {
   id: string;
-  role: Role;
-  name: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface CapabilityRequest {
+  id: string;
+  /** What should happen */
+  need: string;
+  /** What the existing approach does not do */
+  missing: string;
+  /**
+     * Capability id of the step the request was placed after; null for the end of the workflow
+     * @nullable
+     */
+  afterStepId: string | null;
+  /** @nullable */
+  reuseEventId: string | null;
+  createdAt: string;
+}
+
+/**
+ * Optional module id -> active
+ */
+export type CaseModuleStates = {[key: string]: boolean};
+
+/**
+ * Configurable capability id -> selected option
+ */
+export type CaseConfigValues = {[key: string]: string};
+
+export interface Case {
+  id: string;
+  /** @nullable */
+  briefId: string | null;
   title: string;
-  team: string;
-  headline: string;
+  businessProblemId: string;
+  /** The parent product this experiment branches from */
+  baseSolutionId: string;
+  /** Parent product version the experiment branched from */
+  parentVersion: string;
+  /**
+     * Intent set by the person; null when derived from the change
+     * @nullable
+     */
+  intent: string | null;
+  /** Person who owns this experiment */
+  ownerName: string;
+  ownerTeam: string;
+  promotionState: PromotionState;
+  /** Seeded demo experiment from another persona */
+  demo: boolean;
+  lineage: CaseLineage;
+  candidateSolutionIds: string[];
+  status: CaseStatus;
+  /** Optional module id -> active */
+  moduleStates: CaseModuleStates;
+  /** Configurable capability id -> selected option */
+  configValues: CaseConfigValues;
+  /** @nullable */
+  experimentId: string | null;
+  /** Pilot exposure chosen for this case (5 */
+  pilotPercent: number;
+  createdByRole: Role;
+  saved: boolean;
+  /** Requirements added while testing, on top of the brief's list */
+  requirements: CaseRequirement[];
+  /** Capabilities the person asked for that do not exist yet; recorded, never run */
+  capabilityRequests: CapabilityRequest[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvaluationSummary {
+  /** Recorded evaluations; computed only from stored votes */
+  tests: number;
+  aPreferred: number;
+  bPreferred: number;
+  neither: number;
+  /** @nullable */
+  averageRating: number | null;
+  distinctInputs: number;
+  blindVotes: number;
+  demoVotes: number;
+}
+
+export interface SimilarExperiment {
+  case: Case;
+  /** True when the other experiment's current configuration is identical */
+  sameApproach: boolean;
+  changes: string[];
+  /** Preference votes on that experiment's current configuration only */
+  votes: EvaluationSummary | null;
+  inputsTested: number;
+}
+
+export interface SimilarExperiments {
+  count: number;
+  /** Distinct teams behind the similar experiments */
+  teams: number;
+  experiments: SimilarExperiment[];
+}
+
+export interface SolutionVersion {
+  version: string;
+  releasedAt: string;
+  summary: string;
 }
 
 /**
@@ -142,12 +284,6 @@ export interface Metrics {
   adoption: number;
   /** Currency per task */
   costPerTask: number;
-}
-
-export interface SolutionVersion {
-  version: string;
-  releasedAt: string;
-  summary: string;
 }
 
 export interface Solution {
@@ -178,6 +314,94 @@ export interface Solution {
   controlStatus: string;
   supportModel: string;
   lastReviewedAt: string;
+}
+
+export type ExperimentRecommendation = typeof ExperimentRecommendation[keyof typeof ExperimentRecommendation];
+
+
+export const ExperimentRecommendation = {
+  proceed_to_pilot: 'proceed_to_pilot',
+  revise_configuration: 'revise_configuration',
+  gather_more_evidence: 'gather_more_evidence',
+  do_not_proceed: 'do_not_proceed',
+} as const;
+
+export interface Decision {
+  id: string;
+  caseId: string;
+  role: Role;
+  actor: string;
+  action: DecisionAction;
+  /** @nullable */
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface CaseSummary {
+  case: Case;
+  baseSolution: Solution;
+  businessProblemTitle: string;
+  addedCapabilities: string[];
+  experimentRecommendation: ExperimentRecommendation | null;
+  latestDecision: Decision | null;
+  /** Plain-language next action for the current state */
+  nextStep: string;
+}
+
+/**
+ * Experiments on one parent product that share an intent, with counts from current-configuration evidence only
+ */
+export interface ImprovementGroup {
+  key: string;
+  solutionId: string;
+  intent: string;
+  experiments: CaseSummary[];
+  teams: number;
+  /** Recorded votes on the current configuration of each experiment */
+  completedTests: number;
+  /**
+     * Share of those votes that preferred the modified output; null when there are none
+     * @nullable
+     */
+  preferredModifiedPercent: number | null;
+  /** Distinct current configurations across the experiments */
+  approaches: number;
+  /** At least one experiment is proposed and awaiting the owner */
+  pendingReview: boolean;
+}
+
+export interface ImprovementApproach {
+  fingerprint: string;
+  label: string;
+  changes: string[];
+  experiments: CaseSummary[];
+  teams: string[];
+  votes: EvaluationSummary | null;
+  inputsTested: number;
+}
+
+export interface ImprovementGroupDetail {
+  group: ImprovementGroup;
+  solution: Solution;
+  approaches: ImprovementApproach[];
+  decisions: Decision[];
+  availableActions: DecisionAction[];
+}
+
+export interface GroupDecisionInput {
+  action: DecisionAction;
+  /** The experiment adopted; required for adopt_approach */
+  caseId?: string;
+  reason?: string;
+}
+
+export interface Persona {
+  id: string;
+  role: Role;
+  name: string;
+  title: string;
+  team: string;
+  headline: string;
 }
 
 export interface Capability {
@@ -227,92 +451,13 @@ export interface BusinessProblem {
   status: string;
 }
 
-export interface CaseRequirement {
-  id: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface CapabilityRequest {
-  id: string;
-  /** What should happen */
-  need: string;
-  /** What the existing approach does not do */
-  missing: string;
-  /**
-     * Capability id of the step the request was placed after; null for the end of the workflow
-     * @nullable
-     */
-  afterStepId: string | null;
-  /** @nullable */
-  reuseEventId: string | null;
-  createdAt: string;
-}
-
-/**
- * Optional module id -> active
- */
-export type CaseModuleStates = {[key: string]: boolean};
-
-/**
- * Configurable capability id -> selected option
- */
-export type CaseConfigValues = {[key: string]: string};
-
-export interface Case {
-  id: string;
-  /** @nullable */
-  briefId: string | null;
-  title: string;
-  businessProblemId: string;
-  baseSolutionId: string;
-  candidateSolutionIds: string[];
-  status: CaseStatus;
-  /** Optional module id -> active */
-  moduleStates: CaseModuleStates;
-  /** Configurable capability id -> selected option */
-  configValues: CaseConfigValues;
-  /** @nullable */
-  experimentId: string | null;
-  /** Pilot exposure chosen for this case (5 */
-  pilotPercent: number;
-  createdByRole: Role;
-  saved: boolean;
-  /** Requirements added while testing, on top of the brief's list */
-  requirements: CaseRequirement[];
-  /** Capabilities the person asked for that do not exist yet; recorded, never run */
-  capabilityRequests: CapabilityRequest[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Decision {
-  id: string;
-  caseId: string;
-  role: Role;
-  actor: string;
-  action: DecisionAction;
-  /** @nullable */
-  reason: string | null;
-  createdAt: string;
-}
-
-export interface CaseSummary {
-  case: Case;
-  baseSolution: Solution;
-  businessProblemTitle: string;
-  addedCapabilities: string[];
-  experimentRecommendation: ExperimentRecommendation | null;
-  latestDecision: Decision | null;
-  /** Plain-language next action for the current state */
-  nextStep: string;
-}
-
 export interface SolutionDetail {
   solution: Solution;
   capabilities: Capability[];
   businessProblems: BusinessProblem[];
   openCases: CaseSummary[];
+  /** Saved or proposed experiments branched from this product; never library entries */
+  experimentsInProgress: CaseSummary[];
 }
 
 export interface BriefField {
@@ -692,6 +837,7 @@ export interface CaseInput {
   baseSolutionId: string;
   briefId?: string;
   title?: string;
+  intent?: string;
   createdByRole?: Role;
   /** Addable modules switched on in Version B from the start (e.g. from a reuse check) */
   moduleIds?: string[];
@@ -711,6 +857,8 @@ export const CaseUpdatePilotPercent = {
 export interface CaseUpdate {
   /** @minLength 1 */
   title?: string;
+  /** @minLength 1 */
+  intent?: string;
   saved?: boolean;
   pilotPercent?: CaseUpdatePilotPercent;
 }
@@ -1118,19 +1266,6 @@ export interface EvaluationInput {
   evaluator: string;
 }
 
-export interface EvaluationSummary {
-  /** Recorded evaluations; computed only from stored votes */
-  tests: number;
-  aPreferred: number;
-  bPreferred: number;
-  neither: number;
-  /** @nullable */
-  averageRating: number | null;
-  distinctInputs: number;
-  blindVotes: number;
-  demoVotes: number;
-}
-
 export interface EvaluationList {
   /** Votes recorded against the case's current Version B configuration only */
   summary: EvaluationSummary;
@@ -1223,6 +1358,9 @@ export interface SearchResults {
 export interface OwnedSolution {
   solution: Solution;
   proposals: CaseSummary[];
+  /** Saved or proposed experiments on this product, grouped by intent */
+  groups: ImprovementGroup[];
+  experimentsInProgress: number;
   /** Cases with runs but no owner decision yet */
   openTests: number;
   /** Recorded preference votes across proposals */
@@ -1384,12 +1522,6 @@ export interface VersionSnapshot {
   userGroups: string[];
   /** Measured production metrics; null for a proposed version that has not run in production */
   performance: Metrics | null;
-}
-
-export interface ConfigChange {
-  capabilityName: string;
-  from: string;
-  to: string;
 }
 
 export interface AffectedGroup {

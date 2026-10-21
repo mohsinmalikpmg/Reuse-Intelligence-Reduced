@@ -13,7 +13,8 @@ import {
 import { getCapability, getSolution, personas } from "../data/catalog";
 import { coveredByVersionA, performReuseCheck } from "../lib/reuse-service";
 import { ConfigurationError, applyConfigurationUpdate, buildConfiguration, caseContext } from "../lib/configuration";
-import { allowedActions, buildConsolidation, buildRecommendation, buildReview, nextStatus } from "../lib/analysis";
+import { allowedActions, buildConsolidation, buildRecommendation, buildReview, nextStatus, promotionStateFor } from "../lib/analysis";
+import { similarExperiments } from "../lib/experiments";
 import { buildExperimentPlan, runSimulation } from "../lib/simulation";
 import { matchBrief } from "../lib/matching";
 import { caseEvidence } from "../lib/evidence";
@@ -70,6 +71,7 @@ router.post("/cases", async (req, res) => {
     baseSolutionId: base.id,
     briefId: parsed.data.briefId ?? null,
     title: parsed.data.title,
+    intent: parsed.data.intent,
     createdByRole: parsed.data.createdByRole,
     moduleIds: parsed.data.moduleIds,
   });
@@ -90,8 +92,9 @@ router.patch("/cases/:caseId", async (req, res) => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const patch: { title?: string; saved?: boolean; pilotPercent?: number } = {};
+  const patch: { title?: string; intent?: string; saved?: boolean; pilotPercent?: number } = {};
   if (parsed.data.title !== undefined) patch.title = parsed.data.title;
+  if (parsed.data.intent !== undefined) patch.intent = parsed.data.intent.trim();
   if (parsed.data.saved !== undefined) patch.saved = parsed.data.saved;
   if (parsed.data.pilotPercent !== undefined) patch.pilotPercent = parsed.data.pilotPercent;
   res.json(await updateCaseRow(c.id, patch));
@@ -138,6 +141,8 @@ router.put("/cases/:caseId/configuration", async (req, res) => {
       moduleStates: next.moduleStates,
       configValues: next.configValues,
       status: c.status === "changes_requested" ? "changes_requested" : status,
+      // An edit withdraws any proposal: the experiment is an experimental branch again until it is proposed anew.
+      promotionState: status === "draft" ? "experiment" : c.promotionState,
       experimentId: null,
     });
     res.json(buildConfiguration(updated, ctx));
@@ -227,6 +232,12 @@ router.post("/cases/:caseId/experiments", async (req, res) => {
   res.status(201).json(experiment);
 });
 
+router.get("/cases/:caseId/similar", async (req, res) => {
+  const c = await loadCase(String(req.params["caseId"]), res);
+  if (!c) return;
+  res.json(await similarExperiments(c));
+});
+
 router.get("/cases/:caseId/review", async (req, res) => {
   const c = await loadCase(String(req.params["caseId"]), res);
   if (!c) return;
@@ -263,10 +274,14 @@ router.post("/cases/:caseId/decisions", async (req, res) => {
     res.status(400).json({ error: "A reason is required to reject." });
     return;
   }
-  const actor = personas.find((p) => p.role === role)?.name ?? role;
+  if (action === "request_new_family" && !reason?.trim()) {
+    res.status(400).json({ error: `Say why ${c.lineage.parentSolutionName} cannot absorb this change. A new solution family is the exception.` });
+    return;
+  }
+  const actor = (role === "seeker" || role === "owner") && c.ownerName && role === c.createdByRole ? c.ownerName : (personas.find((p) => p.role === role)?.name ?? role);
   await insertDecision({ id: newId("dec"), caseId: c.id, role, actor, action, reason: reason?.trim() || null });
   const status = nextStatus(c, action);
-  const updated = await updateCaseRow(c.id, { status, saved: true });
+  const updated = await updateCaseRow(c.id, { status, saved: true, promotionState: promotionStateFor(action, c.promotionState) });
   res.status(201).json(updated);
 });
 

@@ -19,6 +19,13 @@ export const casesTable = pgTable("cases", {
   pilotPercent: integer("pilot_percent").notNull().default(10),
   createdByRole: text("created_by_role").notNull().default("seeker"),
   saved: boolean("saved").notNull().default(false),
+  // Lineage: every case is an experimental branch of its parent product, never a product of its own.
+  parentVersion: text("parent_version").notNull().default(""),
+  intent: text("intent"),
+  ownerName: text("owner_name").notNull().default(""),
+  ownerTeam: text("owner_team").notNull().default(""),
+  promotionState: text("promotion_state").notNull().default("experiment"),
+  demo: boolean("demo").notNull().default(false),
   requirements: jsonb("requirements").$type<CaseRequirementRow[]>().notNull().default([]),
   capabilityRequests: jsonb("capability_requests").$type<CapabilityRequestRow[]>().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

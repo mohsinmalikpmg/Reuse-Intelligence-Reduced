@@ -1079,6 +1079,87 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /cases/{caseId}/similar:
+    get:
+      operationId: getSimilarExperiments
+      tags: [cases]
+      summary: Other active experiments on the same parent with a similar intent or change
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Similar experiments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimilarExperiments"
+        "404":
+          description: Case not found
+
+  /my-solutions/{solutionId}/groups/{groupKey}:
+    get:
+      operationId: getImprovementGroup
+      tags: [home]
+      summary: Grouped evidence for one shared improvement on an owned product
+      parameters:
+        - name: solutionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: groupKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Improvement group detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImprovementGroupDetail"
+        "404":
+          description: Group not found
+
+  /my-solutions/{solutionId}/groups/{groupKey}/decisions:
+    post:
+      operationId: recordGroupDecision
+      tags: [home]
+      summary: Record one owner decision across every experiment in the group
+      parameters:
+        - name: solutionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: groupKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupDecisionInput"
+      responses:
+        "201":
+          description: Updated group detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImprovementGroupDetail"
+        "400":
+          description: Decision not allowed
+        "404":
+          description: Group not found
+
   /cases/{caseId}/decisions:
     post:
       operationId: recordCaseDecision
@@ -1332,7 +1413,130 @@ components:
 
     DecisionAction:
       type: string
-      enum: [propose_pilot, approve_pilot, request_changes, defer, reject, approve_consolidation]
+      description: >-
+        propose_pilot = propose the improvement to the parent product (pilot exposure is a detail of that proposal);
+        propose_capability = propose an added capability as reusable; request_new_family = ask for a new solution family (reason required);
+        adopt_approach, merge_approaches, request_more_evidence, keep_local, decline = grouped owner decisions on a shared improvement.
+      enum: [propose_pilot, propose_capability, request_new_family, approve_pilot, request_changes, defer, reject, approve_consolidation, adopt_approach, merge_approaches, request_more_evidence, keep_local, decline]
+
+    PromotionState:
+      type: string
+      description: Where the experiment stands relative to its parent product; it never becomes a product on its own
+      enum: [experiment, proposed_to_parent, proposed_capability, new_family_requested]
+
+    CaseLineage:
+      type: object
+      description: The exact difference between this experiment and its parent version, derived from the configuration fingerprint
+      required: [parentSolutionId, parentSolutionName, parentVersion, fingerprint, added, removed, changedSettings, intent, intentKey, summary]
+      properties:
+        parentSolutionId: { type: string }
+        parentSolutionName: { type: string }
+        parentVersion: { type: string }
+        fingerprint: { type: string, description: Fingerprint of the experiment's current configuration }
+        added:
+          type: array
+          description: Capability names switched on that the parent version does not run
+          items: { type: string }
+        removed:
+          type: array
+          description: Parent capabilities switched off in the experiment
+          items: { type: string }
+        changedSettings:
+          type: array
+          items: { $ref: "#/components/schemas/ConfigChange" }
+        intent: { type: string, description: The requirement or added capability that defines the experiment }
+        intentKey: { type: string, description: Stable key used to group experiments with the same intent }
+        summary: { type: string, description: One line, e.g. "Adds Safety Signals · 1 setting changed" }
+
+    SimilarExperiment:
+      type: object
+      required: [case, sameApproach, changes, votes, inputsTested]
+      properties:
+        case: { $ref: "#/components/schemas/Case" }
+        sameApproach: { type: boolean, description: True when the other experiment's current configuration is identical }
+        changes:
+          type: array
+          items: { type: string }
+        votes:
+          oneOf:
+            - $ref: "#/components/schemas/EvaluationSummary"
+            - type: "null"
+          description: Preference votes on that experiment's current configuration only
+        inputsTested: { type: integer }
+
+    SimilarExperiments:
+      type: object
+      required: [count, teams, experiments]
+      properties:
+        count: { type: integer }
+        teams: { type: integer, description: Distinct teams behind the similar experiments }
+        experiments:
+          type: array
+          items: { $ref: "#/components/schemas/SimilarExperiment" }
+
+    ImprovementGroup:
+      type: object
+      description: Experiments on one parent product that share an intent, with counts from current-configuration evidence only
+      required: [key, solutionId, intent, experiments, teams, completedTests, preferredModifiedPercent, approaches, pendingReview]
+      properties:
+        key: { type: string }
+        solutionId: { type: string }
+        intent: { type: string }
+        experiments:
+          type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+        teams: { type: integer }
+        completedTests: { type: integer, description: Recorded votes on the current configuration of each experiment }
+        preferredModifiedPercent:
+          type: ["number", "null"]
+          description: Share of those votes that preferred the modified output; null when there are none
+        approaches: { type: integer, description: Distinct current configurations across the experiments }
+        pendingReview: { type: boolean, description: At least one experiment is proposed and awaiting the owner }
+
+    ImprovementApproach:
+      type: object
+      required: [fingerprint, label, changes, experiments, teams, votes, inputsTested]
+      properties:
+        fingerprint: { type: string }
+        label: { type: string }
+        changes:
+          type: array
+          items: { type: string }
+        experiments:
+          type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+        teams:
+          type: array
+          items: { type: string }
+        votes:
+          oneOf:
+            - $ref: "#/components/schemas/EvaluationSummary"
+            - type: "null"
+        inputsTested: { type: integer }
+
+    ImprovementGroupDetail:
+      type: object
+      required: [group, solution, approaches, decisions, availableActions]
+      properties:
+        group: { $ref: "#/components/schemas/ImprovementGroup" }
+        solution: { $ref: "#/components/schemas/Solution" }
+        approaches:
+          type: array
+          items: { $ref: "#/components/schemas/ImprovementApproach" }
+        decisions:
+          type: array
+          items: { $ref: "#/components/schemas/Decision" }
+        availableActions:
+          type: array
+          items: { $ref: "#/components/schemas/DecisionAction" }
+
+    GroupDecisionInput:
+      type: object
+      required: [action]
+      properties:
+        action: { $ref: "#/components/schemas/DecisionAction" }
+        caseId: { type: string, description: The experiment adopted; required for adopt_approach }
+        reason: { type: string }
 
     ExperimentRecommendation:
       type: string
@@ -1497,7 +1701,7 @@ components:
 
     SolutionDetail:
       type: object
-      required: [solution, capabilities, businessProblems, openCases]
+      required: [solution, capabilities, businessProblems, openCases, experimentsInProgress]
       properties:
         solution: { $ref: "#/components/schemas/Solution" }
         capabilities:
@@ -1508,6 +1712,10 @@ components:
           items: { $ref: "#/components/schemas/BusinessProblem" }
         openCases:
           type: array
+          items: { $ref: "#/components/schemas/CaseSummary" }
+        experimentsInProgress:
+          type: array
+          description: Saved or proposed experiments branched from this product; never library entries
           items: { $ref: "#/components/schemas/CaseSummary" }
 
     BusinessProblem:
@@ -1875,6 +2083,13 @@ components:
         - saved
         - requirements
         - capabilityRequests
+        - parentVersion
+        - intent
+        - ownerName
+        - ownerTeam
+        - promotionState
+        - demo
+        - lineage
         - createdAt
         - updatedAt
       properties:
@@ -1882,7 +2097,14 @@ components:
         briefId: { type: ["string", "null"] }
         title: { type: string }
         businessProblemId: { type: string }
-        baseSolutionId: { type: string }
+        baseSolutionId: { type: string, description: The parent product this experiment branches from }
+        parentVersion: { type: string, description: Parent product version the experiment branched from }
+        intent: { type: ["string", "null"], description: Intent set by the person; null when derived from the change }
+        ownerName: { type: string, description: Person who owns this experiment }
+        ownerTeam: { type: string }
+        promotionState: { $ref: "#/components/schemas/PromotionState" }
+        demo: { type: boolean, description: Seeded demo experiment from another persona }
+        lineage: { $ref: "#/components/schemas/CaseLineage" }
         candidateSolutionIds:
           type: array
           items: { type: string }
@@ -1972,6 +2194,7 @@ components:
         baseSolutionId: { type: string }
         briefId: { type: string }
         title: { type: string }
+        intent: { type: string }
         createdByRole: { $ref: "#/components/schemas/Role" }
         moduleIds:
           type: array
@@ -1985,6 +2208,7 @@ components:
       type: object
       properties:
         title: { type: string, minLength: 1 }
+        intent: { type: string, minLength: 1 }
         saved: { type: boolean }
         pilotPercent: { type: integer, enum: [5, 10, 20] }
 
@@ -2578,12 +2802,17 @@ components:
 
     OwnedSolution:
       type: object
-      required: [solution, proposals, openTests, evaluations, evaluationsSetAside, recentRuns]
+      required: [solution, proposals, groups, experimentsInProgress, openTests, evaluations, evaluationsSetAside, recentRuns]
       properties:
         solution: { $ref: "#/components/schemas/Solution" }
         proposals:
           type: array
           items: { $ref: "#/components/schemas/CaseSummary" }
+        groups:
+          type: array
+          description: Saved or proposed experiments on this product, grouped by intent
+          items: { $ref: "#/components/schemas/ImprovementGroup" }
+        experimentsInProgress: { type: integer }
         openTests: { type: integer, description: Cases with runs but no owner decision yet }
         evaluations: { type: integer, description: Recorded preference votes across proposals, current configurations only }
         evaluationsSetAside: { type: integer, description: Votes recorded against earlier configurations of those proposals }

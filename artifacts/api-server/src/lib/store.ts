@@ -2,8 +2,9 @@ import { desc, eq } from "drizzle-orm";
 import { db, briefsTable, casesTable, experimentsTable, decisionsTable } from "@workspace/db";
 import type { BriefRow, CaseRow, ExperimentRow, DecisionRow } from "@workspace/db";
 import type { Brief, Case, CaseSummary, Decision, Experiment, Role, Solution, SyntheticPersona, ExperimentMetric, SegmentResult } from "@workspace/api-zod";
-import { businessProblemById, getSolution, solutions } from "../data/catalog";
+import { businessProblemById, getSolution, personas, solutions } from "../data/catalog";
 import { type CaseContext, addedExternalModules, caseContext, defaultConfigValues, defaultModuleStates } from "./configuration";
+import { caseLineage, defaultExperimentTitle } from "./lineage";
 import { SIMULATION_LABEL } from "./simulation";
 import { nextStep } from "./analysis";
 import { caseEvidence } from "./evidence";
@@ -31,7 +32,7 @@ export function toBrief(row: BriefRow): Brief {
 }
 
 export function toCase(row: CaseRow): Case {
-  return {
+  const c: Case = {
     id: row.id,
     briefId: row.briefId,
     title: row.title,
@@ -47,9 +48,19 @@ export function toCase(row: CaseRow): Case {
     saved: row.saved,
     requirements: row.requirements ?? [],
     capabilityRequests: row.capabilityRequests ?? [],
+    parentVersion: row.parentVersion,
+    intent: row.intent,
+    ownerName: row.ownerName,
+    ownerTeam: row.ownerTeam,
+    promotionState: row.promotionState as Case["promotionState"],
+    demo: row.demo,
+    lineage: { parentSolutionId: row.baseSolutionId, parentSolutionName: "", parentVersion: row.parentVersion, fingerprint: "", added: [], removed: [], changedSettings: [], intent: "", intentKey: "", summary: "" },
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+  // Lineage is derived from the stored configuration every time, so it can never drift from the fingerprint.
+  c.lineage = caseLineage(c, caseContext(c));
+  return c;
 }
 
 export function toExperiment(row: ExperimentRow): Experiment {
@@ -119,7 +130,17 @@ export function candidatesFor(base: Solution): string[] {
     .map((s) => s.id);
 }
 
-export async function createCase(input: { baseSolutionId: string; briefId?: string | null; title?: string; createdByRole?: Role; id?: string; moduleIds?: string[] }): Promise<Case> {
+export async function createCase(input: {
+  baseSolutionId: string;
+  briefId?: string | null;
+  title?: string;
+  intent?: string | null;
+  createdByRole?: Role;
+  id?: string;
+  moduleIds?: string[];
+  owner?: { name: string; team: string };
+  demo?: boolean;
+}): Promise<Case> {
   const base = getSolution(input.baseSolutionId);
   if (!base) throw new Error(`Unknown solution ${input.baseSolutionId}`);
   const candidateSolutionIds = candidatesFor(base);
@@ -132,12 +153,16 @@ export async function createCase(input: { baseSolutionId: string; briefId?: stri
   for (const cap of ctx.candidateCapabilities) moduleStates[cap.id] = false;
   // Modules chosen through a reuse check start switched on in Version B, so the first run already shows them.
   for (const id of input.moduleIds ?? []) if (ctx.candidateCapabilities.some((cap) => cap.id === id)) moduleStates[id] = true;
+  const role = input.createdByRole ?? "seeker";
+  const persona = personas.find((p) => p.role === role);
+  const owner = input.owner ?? { name: persona?.name ?? role, team: persona?.team ?? "" };
   const [row] = await db
     .insert(casesTable)
     .values({
       id,
       briefId: input.briefId ?? null,
-      title: input.title ?? `${base.name}: proposed change`,
+      // Never a product of its own: the title says which product and version it branches from.
+      title: input.title ?? defaultExperimentTitle(base.name, base.currentVersion),
       businessProblemId,
       baseSolutionId: base.id,
       candidateSolutionIds,
@@ -146,8 +171,14 @@ export async function createCase(input: { baseSolutionId: string; briefId?: stri
       configValues: defaultConfigValues(ctx),
       experimentId: null,
       pilotPercent: 10,
-      createdByRole: input.createdByRole ?? "seeker",
+      createdByRole: role,
       saved: false,
+      parentVersion: base.currentVersion,
+      intent: input.intent?.trim() || null,
+      ownerName: owner.name,
+      ownerTeam: owner.team,
+      promotionState: "experiment",
+      demo: input.demo ?? false,
     })
     .returning();
   return toCase(row!);

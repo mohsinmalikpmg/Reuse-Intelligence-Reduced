@@ -15,4 +15,6 @@ export interface SolutionDetail {
   capabilities: Capability[];
   businessProblems: BusinessProblem[];
   openCases: CaseSummary[];
+  /** Saved or proposed experiments branched from this product; never library entries */
+  experimentsInProgress: CaseSummary[];
 }

@@ -73,7 +73,9 @@ export async function resetDemo(): Promise<DemoState> {
 
   // Demo case: Work Order Triage as the base. Version B starts equal to Version A (recommended additions switched
   // off) so the seeker gets to add them in the workbench and see the output change.
-  await createCase({ id: DEMO_CASE_ID, baseSolutionId: "sol-workorder-insight", briefId: DEMO_BRIEF_ID, title: "Work Order Intelligence", createdByRole: "seeker" });
+  await createCase({ id: DEMO_CASE_ID, baseSolutionId: "sol-workorder-insight", briefId: DEMO_BRIEF_ID, createdByRole: "seeker" });
+
+  await seedSimilarExperiments();
 
   // Secondary case already in the owner's queue: Procedure search with conversational answers, run on the sample
   // question, with two demo-labelled votes, and proposed for pilot.
@@ -90,6 +92,47 @@ export async function resetDemo(): Promise<DemoState> {
 
   logger.info("Demo scenario reset");
   return demoState();
+}
+
+export const DEMO_EXPERIMENT_IDS = { marcus: "case_demo_safety_marcus", lena: "case_demo_safety_lena" } as const;
+
+/**
+ * Two other teams are already testing the same intent on Work Order Triage (safety-risk classification), with
+ * two different approaches. Labelled demo; their votes are demo votes. They make the save-time "similar work"
+ * prompt and the owner's grouped review visible from the first minute of the demo.
+ */
+async function seedSimilarExperiments(): Promise<void> {
+  const intent = "Safety-risk classification";
+  const demoVote = async (c: { id: string }, sampleInputId: string, choice: "A" | "B" | "neither", evaluator: string, reason: string) => {
+    const fresh = await getCase(c.id);
+    if (!fresh) return;
+    const { runA, runB } = await runComparison(fresh, sampleInputId, undefined);
+    await insertEvaluation({ caseId: fresh.id, sessionId: null, sampleInputId, inputHash: runA.inputHash, runAId: runA.id, runBId: runB.id, fingerprintA: runA.configFingerprint, fingerprintB: runB.configFingerprint, choice, reason, rating: null, evaluator, role: "seeker", blind: false, demo: true });
+  };
+
+  // Approach 1: Safety Signals added, everything else as in production. Proposed to the owner already.
+  const marcus = await createCase({
+    id: DEMO_EXPERIMENT_IDS.marcus, baseSolutionId: "sol-workorder-insight", createdByRole: "seeker", intent,
+    owner: { name: "Marcus Chen", team: "Maintenance Planning, Oil Sands" }, demo: true, moduleIds: ["cap-safety-signals"],
+  });
+  await demoVote(marcus, "wo-related", "B", "Marcus Chen", "WO-1056 is flagged before the routine vibration finding.");
+  await demoVote(marcus, "wo-two-months", "B", "Demo tester", "Safety items come first in the queue.");
+  await demoVote(marcus, "wo-two-months", "A", "Demo tester", "Too many flags on the two-month set; the current list is easier to act on.");
+  await demoVote(marcus, "wo-single", "neither", "Demo tester", "One note: nothing to flag either way.");
+  const marcusTested = await updateCaseRow(marcus.id, { status: "tested", saved: true });
+  await insertDecision({ id: newId("dec"), caseId: marcus.id, role: "seeker", actor: "Marcus Chen", action: "propose_pilot", reason: "Planners want safety items at the top of the morning queue." });
+  await updateCaseRow(marcus.id, { status: nextStatus(marcusTested, "propose_pilot"), promotionState: "proposed_to_parent" });
+
+  // Approach 2: Safety Signals plus immediate notification, so a flagged note reaches the supervisor at once.
+  const lena = await createCase({
+    id: DEMO_EXPERIMENT_IDS.lena, baseSolutionId: "sol-workorder-insight", createdByRole: "seeker", intent,
+    owner: { name: "Lena Fischer", team: "Reliability Engineering" }, demo: true, moduleIds: ["cap-safety-signals"],
+  });
+  await updateCaseRow(lena.id, { configValues: { ...lena.configValues, "cap-notify": "Immediate" } });
+  await demoVote(lena, "wo-related", "B", "Lena Fischer", "The supervisor hears about the leak the same shift.");
+  await demoVote(lena, "wo-two-months", "B", "Demo tester", "Immediate notices on safety flags only; the rest stays in the digest.");
+  await demoVote(lena, "wo-two-months", "B", "Demo tester", "Same ranking as the other approach, but the alert matters.");
+  await updateCaseRow(lena.id, { status: "tested", saved: true });
 }
 
 /**

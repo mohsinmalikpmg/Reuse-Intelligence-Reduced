@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, useParams, useSearch } from "wouter";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, rectIntersection, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Equal, FileText, Info, ListPlus, Lock, Play, RotateCcw, Save, Undo2 } from "lucide-react";
+import { Check, ChevronDown, Equal, FileText, GitBranch, Info, ListPlus, Lock, Pencil, Play, RotateCcw, Save, Undo2 } from "lucide-react";
 import {
   getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetSolutionWorkbenchQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
-  useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseConfiguration, useGetSolutionWorkbench, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
+  getSimilarExperiments, useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseConfiguration, useGetSolutionWorkbench, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
   useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
-  type ABComparison, type CapabilityRequest, type Case, type CaseRequirementResult, type ComponentConfig, type Configuration, type ConfigurationUpdate, type DiffEntry, type Run, type SampleInput,
+  type ABComparison, type CapabilityRequest, type Case, type CaseRequirementResult, type ComponentConfig, type Configuration, type ConfigurationUpdate, type DiffEntry, type Run, type SampleInput, type SimilarExperiments,
 } from "@workspace/api-client-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SimilarPrompt } from "@/components/wb-similar";
 import { ErrorView, LoadingView, Skel, Tag, btn, useUndoToast } from "@/components/bits";
 import { blocksFromConfig, blocksFromWorkbench, controlsFromConfig } from "@/components/flow";
 import { OutputView, RunMeta } from "@/components/output-view";
@@ -16,7 +18,7 @@ import { InputPanel, SummaryCounts, Tray } from "@/components/wb-parts";
 import { Measures, StaleHint, Vote } from "@/components/wb-compare";
 import { AddSlot, BandRow, LaneHeaders, RequestRow, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type LaneRow, type MapEntry } from "@/components/wb-lanes";
 import { RequirementAdder, StepPicker, type ReuseActions } from "@/components/wb-reuse";
-import { InviteTesters, OwnerDecision, PilotButton, STATUS_LABEL } from "@/components/wb-pilot";
+import { InviteTesters, OwnerDecision, PROMOTION_LABEL, ProposeActions, STATUS_LABEL, lineageChanges } from "@/components/wb-pilot";
 import { errMsg, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
 import { cn } from "@/lib/utils";
@@ -81,6 +83,9 @@ export default function Workbench() {
   const [slotOpen, setSlotOpen] = useState<string | null>(null);
   const [showA, setShowA] = useState(false);
   const [reqOpen, setReqOpen] = useState(false);
+  const [similar, setSimilar] = useState<SimilarExperiments | null>(null);
+  const [intentOpen, setIntentOpen] = useState(false);
+  const [intentDraft, setIntentDraft] = useState("");
   const jumpedRef = useRef(false);
 
   const samples = samplesQ.data ?? wbQ.data?.sampleInputs ?? [];
@@ -191,6 +196,25 @@ export default function Workbench() {
     setCase(r.case);
     say(`Added "${r.requirement.text}"`, () => dropRequirement(r.requirement.id, r.requirement.text));
   };
+  const saveExperiment = () =>
+    updCase.mutate({ caseId, data: { saved: true } }, {
+      onSuccess: async (c) => {
+        setCase(c); invalidateCase(caseId);
+        say(`Saved as an experimental improvement to ${c.lineage.parentSolutionName}.`);
+        // Other teams on the same change are shown after the save, never instead of it.
+        try { const s = await getSimilarExperiments(caseId); if (s.count > 0) setSimilar(s); } catch { /* the save already succeeded */ }
+      },
+      onError: (e) => say(errMsg(e)),
+    });
+  const saveIntent = () => {
+    const next = intentDraft.trim();
+    if (!next) { setIntentOpen(false); return; }
+    const before = caseQ.data?.intent ?? null;
+    updCase.mutate({ caseId, data: { intent: next } }, {
+      onSuccess: (c) => { setCase(c); setIntentOpen(false); say(`Intent: ${c.lineage.intent}`, before ? () => updCase.mutate({ caseId, data: { intent: before } }, { onSuccess: setCase }) : undefined); },
+      onError: (e) => say(errMsg(e)),
+    });
+  };
   const afterBoth = (r: ABComparison, msg?: string) => {
     qc.setQueryData<ABComparison[]>(getGetCaseComparisonQueryKey(caseId), (old) => [r, ...(old ?? [])]);
     setPicked(null); invalidateCase(caseId);
@@ -294,23 +318,49 @@ export default function Workbench() {
   return (
     <DndContext sensors={sensors} collisionDetection={dropUnderPointer} onDragStart={(e) => setDragging(String(e.active.id))} onDragCancel={() => setDragging(null)} onDragEnd={onDragEnd}>
       <div className="mx-auto max-w-[1400px] px-4 pb-24 pt-5 md:px-6">
-        {/* Title */}
+        {/* Title: an experimental branch of the parent product, never a product of its own */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
-              <span>Workbench</span><span>/</span><Link href={`/solutions/${baseId}`} className="hover:text-primary hover:underline">{wbQ.data?.solution.name ?? "Solution"}</Link>
+              <span>Workbench</span><span>/</span><Link href={`/solutions/${baseId}`} className="hover:text-primary hover:underline">{theCase.lineage.parentSolutionName}</Link>
               <Tag tone={status.tone} testid="status-case">{status.l}</Tag>
               {theCase.saved && <Tag tone="slate">Saved</Tag>}
+              {theCase.demo && <Tag>Demo</Tag>}
             </div>
             <h1 data-testid="text-headline" className="mt-0.5 truncate text-[24px] font-bold md:text-[28px]">{theCase.title}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5" data-testid="text-promotion-state"><GitBranch className="h-3.5 w-3.5" /> {PROMOTION_LABEL[theCase.promotionState]}</span>
+              <span>·</span>
+              <span data-testid="text-lineage">{theCase.lineage.summary}</span>
+              <span>·</span>
+              <span data-testid="text-owner">{theCase.ownerName}{theCase.ownerTeam ? `, ${theCase.ownerTeam}` : ""}</span>
+              <span>·</span>
+              {intentOpen ? (
+                <form className="inline-flex items-center gap-1" onSubmit={(e) => { e.preventDefault(); saveIntent(); }}>
+                  <input autoFocus data-testid="input-intent" value={intentDraft} onChange={(e) => setIntentDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setIntentOpen(false); }} placeholder="What this experiment is for" className="h-8 w-64 rounded-lg border border-input px-2 text-[13px] text-foreground outline-none focus:border-primary" />
+                  <button type="submit" data-testid="button-save-intent" disabled={updCase.isPending} className={cn(btn.quiet, "min-h-8 px-2 text-primary")}>Save</button>
+                  <button type="button" onClick={() => setIntentOpen(false)} className={cn(btn.quiet, "min-h-8 px-2")}>Cancel</button>
+                </form>
+              ) : (
+                <button data-testid="button-edit-intent" disabled={!editable} onClick={() => { setIntentDraft(theCase.intent ?? (theCase.lineage.intentKey === "none" ? "" : theCase.lineage.intent)); setIntentOpen(true); }} className="inline-flex items-center gap-1 rounded hover:text-primary disabled:pointer-events-none">
+                  Intent: <span className="font-medium text-foreground" data-testid="text-intent">{theCase.lineage.intent}</span>{editable && <Pencil className="h-3 w-3" />}
+                </button>
+              )}
+            </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
             {role === "it" && <span className="inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground"><Lock className="h-4 w-4" /> Governance view is read-only.</span>}
-            {editable && <button data-testid="button-save" disabled={updCase.isPending} onClick={() => updCase.mutate({ caseId, data: { saved: true } }, { onSuccess: () => { invalidateCase(caseId); say("Version B saved."); }, onError: (e) => say(errMsg(e)) })} className={btn.quiet}>
-              <Save className="h-4 w-4" /> {theCase.saved ? "Saved" : "Save version"}
+            {editable && <button data-testid="button-save" disabled={updCase.isPending} onClick={saveExperiment} className={btn.quiet}>
+              <Save className="h-4 w-4" /> {theCase.saved ? "Saved experiment" : "Save experiment"}
             </button>}
           </div>
         </div>
+        <Dialog open={!!similar} onOpenChange={(o) => { if (!o) setSimilar(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle className="text-primary">Saved. Others are on the same change.</DialogTitle><DialogDescription>Your experiment stays under {theCase.lineage.parentSolutionName}; so do theirs.</DialogDescription></DialogHeader>
+            {similar && <SimilarPrompt similar={similar} mine={{ changes: lineageChanges(theCase.lineage), votes: `${votes} vote${votes === 1 ? "" : "s"} so far` }} onContinue={() => setSimilar(null)} />}
+          </DialogContent>
+        </Dialog>
 
         {/* Pinned input bar */}
         <div id="row-input" className="sticky top-[101px] z-30 mt-4 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur-sm">
@@ -429,7 +479,8 @@ export default function Workbench() {
                       <button data-testid="button-try-another" onClick={tryAnother} disabled={runBoth.isPending || samples.length < 2} className={btn.quiet}><RotateCcw className="h-4 w-4" /> Try another input</button>
                       <InviteTesters caseId={caseId} />
                       <span className="flex-1" />
-                      <PilotButton caseId={caseId} status={theCase.status} pilotPercent={theCase.pilotPercent} quiet={!cmp.evaluation} />
+                      <button data-testid="button-continue-testing" onClick={() => { setInputOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); }} className={btn.quiet}>Continue testing</button>
+                      <ProposeActions theCase={theCase} quiet={!cmp.evaluation} />
                     </div>
                   </>}
                 </>

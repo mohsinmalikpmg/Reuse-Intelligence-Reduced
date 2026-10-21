@@ -3,6 +3,7 @@ import { ListSolutionsQueryParams, SearchLibraryQueryParams, type SearchResults,
 import { businessProblems, capabilities, getSolution, personas, solutionCapabilities } from "../data/catalog";
 import { searchLibrary, searchSolutions } from "../lib/matching";
 import { listCaseRows, summarizeAll } from "../lib/store";
+import { experimentsInProgress } from "../lib/experiments";
 import { recordSearch } from "../lib/workbench-store";
 
 const router: IRouter = Router();
@@ -39,14 +40,15 @@ router.get("/solutions/:solutionId", async (req, res) => {
     res.status(404).json({ error: "Solution not found" });
     return;
   }
-  const cases = (await listCaseRows()).filter(
-    (c) => (c.baseSolutionId === solution.id || c.candidateSolutionIds.includes(solution.id)) && c.status !== "rejected",
-  );
+  const all = await listCaseRows();
+  const cases = all.filter((c) => (c.baseSolutionId === solution.id || c.candidateSolutionIds.includes(solution.id)) && c.status !== "rejected");
   const detail: SolutionDetail = {
     solution,
     capabilities: solutionCapabilities(solution),
     businessProblems: businessProblems.filter((bp) => solution.businessProblemIds.includes(bp.id)),
     openCases: await summarizeAll(cases),
+    // Experiments are listed on their parent only; the library and search index catalogue products, never cases.
+    experimentsInProgress: await summarizeAll(experimentsInProgress(solution.id, all)),
   };
   res.json(detail);
 });

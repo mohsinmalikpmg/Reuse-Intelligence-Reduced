@@ -10,6 +10,8 @@ import type { CaseUpdatePilotPercent } from './caseUpdatePilotPercent';
 export interface CaseUpdate {
   /** @minLength 1 */
   title?: string;
+  /** @minLength 1 */
+  intent?: string;
   saved?: boolean;
   pilotPercent?: CaseUpdatePilotPercent;
 }

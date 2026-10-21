@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { ArrowRight, ChevronRight, Eye, EyeOff, GitCompare, History, Info, Lock, PencilRuler, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronRight, Eye, EyeOff, FlaskConical, GitCompare, History, Info, Lock, PencilRuler, ShieldCheck } from "lucide-react";
+import { Link } from "wouter";
 import {
   getGetSolutionQueryKey, getGetSolutionWorkbenchQueryKey, useCreateCase, useGetSolution, useGetSolutionWorkbench, useListSolutions, type Capability,
 } from "@workspace/api-client-react";
 import { DSection, Drawer, ErrorView, LoadingView, Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
+import { STATUS_LABEL } from "@/components/wb-pilot";
 import { OutputView, RunMeta } from "@/components/output-view";
 import { blocksFromWorkbench, type FlowBlock } from "@/components/flow";
 import { errMsg, useCurrentCase } from "@/lib/case";
@@ -28,7 +30,7 @@ export default function SolutionPage() {
 
   if (d.isLoading) return <LoadingView />;
   if (d.isError || !d.data) return <ErrorView onRetry={() => d.refetch()} message="This solution could not load." />;
-  const { solution: s, capabilities } = d.data;
+  const { solution: s, capabilities, experimentsInProgress } = d.data;
 
   const start = (mode?: "edit" | "compare") =>
     create.mutate({ data: { baseSolutionId: s.id, createdByRole: "seeker" } }, {
@@ -125,6 +127,30 @@ export default function SolutionPage() {
             })}
           </ul>
         </div>
+      </section>
+
+      {/* Experiments branch from this product and are listed here only; they never appear in the library or search. */}
+      <section className="mt-8" data-testid="panel-experiments">
+        <h2 className="mb-2 flex items-center gap-2 text-[16px] font-semibold"><FlaskConical className="h-4 w-4 text-primary" /> Experiments in progress ({experimentsInProgress.length})</h2>
+        {experimentsInProgress.length === 0 ? (
+          <p className="text-[14px] text-muted-foreground">No one is testing a change to this product right now.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {experimentsInProgress.map((e) => {
+              const st = STATUS_LABEL[e.case.status];
+              return (
+                <li key={e.case.id} data-testid={`experiment-${e.case.id}`} className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-[14.5px]">
+                  <span className="font-medium">{e.case.lineage.intent}</span>
+                  <span className="text-[13px] text-muted-foreground">{e.case.lineage.summary} · {e.case.ownerName}{e.case.ownerTeam ? `, ${e.case.ownerTeam}` : ""}</span>
+                  <Tag tone={st.tone}>{st.l}</Tag>
+                  {e.case.demo && <Tag>Demo</Tag>}
+                  <span className="flex-1" />
+                  <Link href={`/workbench/${e.case.id}?mode=compare`} data-testid={`link-experiment-${e.case.id}`} className="text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">Open</Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <Drawer open={stepDrawer && !!step} onClose={() => setStepDrawer(false)} title={step?.name ?? ""} sub={step?.description} testid="drawer-step">

@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronDown, FlaskConical, GitCompare, Workflow } from "lucide-react";
-import { useCreateCase, useGetMySolutions, type CaseSummary } from "@workspace/api-client-react";
+import { FlaskConical, GitCompare, Workflow } from "lucide-react";
+import { useCreateCase, useGetMySolutions, type ImprovementGroup } from "@workspace/api-client-react";
 import { Empty, ErrorView, Headline, Page, Skel, StatusPill, Tag, btn, useUndoToast } from "@/components/bits";
-import { OwnerDecision, STATUS_LABEL } from "@/components/wb-pilot";
 import { errMsg, useCurrentCase, useMe } from "@/lib/case";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +17,7 @@ export default function MySolutions() {
   const test = (id: string) => create.mutate({ data: { baseSolutionId: id, createdByRole: "owner" } }, { onSuccess: (c) => { setCaseId(c.id); setLocation(`/workbench/${c.id}?mode=edit`); }, onError: (e) => say(errMsg(e)) });
   return (
     <Page>
-      <Headline eyebrow={me ? `${me.name} · ${me.team}` : "Owner"} title="My Solutions" sub="Your products, the changes people are proposing, and the evidence behind them." />
+      <Headline eyebrow={me ? `${me.name} · ${me.team}` : "Owner"} title="My Solutions" sub="Your products, the improvements people are testing on them, and the evidence behind each one." />
       {q.data.length === 0 ? <Empty title="You do not own any solutions yet" sub="Switch to the Own role to see the demo owner's products." /> : (
         <div className="space-y-5">
           {q.data.map((o) => (
@@ -35,12 +33,12 @@ export default function MySolutions() {
                 </div>
               </div>
               <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-[13.5px]">
-                {[["Proposed changes", o.proposals.length, "proposals"], ["Open tests", o.openTests, "open-tests"], ["Preference votes", o.evaluations, "evaluations"], ["Runs, last 30 days", o.recentRuns, "recent-runs"]].map(([l, v, k]) => (
+                {[["Experiments in progress", o.experimentsInProgress, "experiments"], ["Open tests", o.openTests, "open-tests"], ["Preference votes", o.evaluations, "evaluations"], ["Runs, last 30 days", o.recentRuns, "recent-runs"]].map(([l, v, k]) => (
                   <div key={k} className="flex items-baseline gap-1.5"><dd data-testid={`text-${k}-${o.solution.id}`} className="text-[18px] font-bold text-primary">{v}</dd><dt className="text-muted-foreground">{l}</dt></div>
                 ))}
               </dl>
-              {o.evaluationsSetAside > 0 && <p className="mt-1 text-[12.5px] text-muted-foreground" data-testid={`text-set-aside-${o.solution.id}`}>Preference votes count the current configuration of each proposal; {o.evaluationsSetAside} vote{o.evaluationsSetAside === 1 ? "" : "s"} from earlier configurations (set aside).</p>}
-              {o.proposals.length > 0 && <div className="mt-4 space-y-2 border-t border-border pt-4">{o.proposals.map((p) => <Proposal key={p.case.id} p={p} />)}</div>}
+              {o.evaluationsSetAside > 0 && <p className="mt-1 text-[12.5px] text-muted-foreground" data-testid={`text-set-aside-${o.solution.id}`}>Preference votes count the current configuration of each experiment; {o.evaluationsSetAside} vote{o.evaluationsSetAside === 1 ? "" : "s"} from earlier configurations (set aside).</p>}
+              {o.groups.length > 0 && <div className="mt-4 space-y-2 border-t border-border pt-4">{o.groups.map((g) => <GroupRow key={g.key} g={g} />)}</div>}
             </article>
           ))}
         </div>
@@ -49,21 +47,27 @@ export default function MySolutions() {
   );
 }
 
-function Proposal({ p }: { p: CaseSummary }) {
-  const [open, setOpen] = useState(p.case.status === "pilot_proposed");
-  const st = STATUS_LABEL[p.case.status];
+export function groupSentence(g: ImprovementGroup): string {
+  const n = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+  const parts = [`${n(g.experiments.length, "related experiment")}`, n(g.teams, "team"), n(g.completedTests, "completed test")];
+  if (g.preferredModifiedPercent !== null) parts.push(`${g.preferredModifiedPercent}% preferred the modified output`);
+  parts.push(g.approaches === 1 ? "1 implementation approach" : `${g.approaches} implementation approaches`);
+  return parts.join(" · ");
+}
+
+function GroupRow({ g }: { g: ImprovementGroup }) {
+  const demo = g.experiments.filter((e) => e.case.demo).length;
   return (
-    <div className={cn("rounded-xl border border-border", p.case.status === "pilot_proposed" && "border-sienna/50")} data-testid={`proposal-${p.case.id}`}>
-      <div className="flex flex-wrap items-center gap-3 p-3">
-        <button onClick={() => setOpen((v) => !v)} className="flex min-w-0 flex-1 items-center gap-2 text-left" data-testid={`button-expand-${p.case.id}`}>
-          <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
-          <span className="truncate font-medium">{p.case.title}</span>
-          <Tag tone={st.tone}>{st.l}</Tag>
-        </button>
-        {p.addedCapabilities.length > 0 && <span className="text-[12.5px] text-muted-foreground">Adds {p.addedCapabilities.join(", ")}</span>}
-        <Link href={`/workbench/${p.case.id}?mode=compare`} data-testid={`link-review-${p.case.id}`} className={cn(btn.primary, "min-h-10 px-4 text-[14px]")}><GitCompare className="h-4 w-4" /> Review proposal</Link>
+    <div className={cn("flex flex-wrap items-center gap-3 rounded-xl border border-border p-3", g.pendingReview && "border-sienna/50")} data-testid={`group-${g.key}`}>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold text-primary" data-testid={`text-group-intent-${g.key}`}>{g.intent}</span>
+          {g.pendingReview && <Tag tone="sienna">Awaiting your review</Tag>}
+          {demo > 0 && <Tag>{demo} demo</Tag>}
+        </div>
+        <div className="text-[13px] text-muted-foreground" data-testid={`text-group-summary-${g.key}`}>{groupSentence(g)}</div>
       </div>
-      {open && <div className="reveal border-t border-border p-4"><p className="mb-3 text-[13px] text-muted-foreground">{p.nextStep}</p><OwnerDecision caseId={p.case.id} /></div>}
+      <Link href={`/my-solutions/${g.solutionId}/improvements/${g.key}`} data-testid={`link-review-group-${g.key}`} className={cn(g.pendingReview ? btn.primary : btn.secondary, "min-h-10 px-4 text-[14px]")}><GitCompare className="h-4 w-4" /> Review shared improvement</Link>
     </div>
   );
 }

@@ -11,6 +11,7 @@ export interface CaseInput {
   baseSolutionId: string;
   briefId?: string;
   title?: string;
+  intent?: string;
   createdByRole?: Role;
   /** Addable modules switched on in Version B from the start (e.g. from a reuse check) */
   moduleIds?: string[];
