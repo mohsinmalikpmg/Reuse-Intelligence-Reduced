@@ -9,6 +9,12 @@ Treat ZIP management as a privileged account action, not a demo-persona action. 
 
 **How to apply:** preserve explicit administrative grants when adding management features; never derive upload/review permissions from a selected persona or request body.
 
+Source registration is IT setup, not a step for a solution seeker completing intake.
+
+**Why:** the user approved separating these after intake exposed a registration action their account could not perform.
+
+**How to apply:** let seekers use the registered library; keep registration in the IT Owner view with a real account entitlement. Missing setup must be stated plainly, not bypassed by granting rights or relabeling every forbidden request as a permission failure.
+
 Keep uploader claims, static source mappings, and executed sandbox results distinct. Approval of a file mapping does not establish runtime behavior or make a preview product executable.
 
 **Why:** ZIP intake is intentionally non-executing. Human-reviewed source evidence cannot prove full requirements, integration compatibility, or production readiness.

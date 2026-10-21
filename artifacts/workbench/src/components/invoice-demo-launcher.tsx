@@ -4,8 +4,10 @@ import { ArrowRight, Check, Download, ExternalLink, Layers, Lock, Plug, RefreshC
 import { useGetCurrentAuthUser } from "@workspace/api-client-react";
 import { Skel, Tag, btn, useUndoToast } from "@/components/bits";
 import { cn } from "@/lib/utils";
+import { usePackagesQuery } from "@/components/solution-packages";
+import { useRole } from "@/lib/persona";
 import {
-  SOURCE_COPY, SOURCE_NAMES, edgesFor, msgOf, statusOf, useCombinedCases, useCreateCombinedCase, useRecipes, useRegisterSources, useRegisteredSources,
+  SOURCE_COPY, SOURCE_NAMES, edgesFor, msgOf, useCombinedCases, useCreateCombinedCase, useRecipes, useRegisterSources, useRegisteredSources,
   type CombinedCase, type Recipe, type RecipeId,
 } from "@/lib/consolidation";
 
@@ -16,6 +18,45 @@ const NEED_HINT: Record<RecipeId, string> = {
 };
 
 type Draft = { sources: string[]; base: string; caps: string[]; need: string; title: string };
+
+/** Persona controls visibility; the server-provided entitlement controls actions. */
+export function ConsolidationSourceSetup() {
+  const role = useRole();
+  return role === "it" ? <SourceSetup /> : null;
+}
+
+function SourceSetup() {
+  const permissions = usePackagesQuery();
+  const recipes = useRecipes();
+  const sources = useRegisteredSources(permissions.isSuccess);
+  const register = useRegisterSources();
+  const [error, setError] = useState<string | null>(null);
+  const missing = [...new Set((recipes.data ?? []).flatMap(r => r.sourceIds))]
+    .filter(id => !sources.data?.some(source => source.id === id));
+  const ready = recipes.isSuccess && sources.isSuccess;
+  return (
+    <section className="mb-5 rounded-xl border border-border bg-card p-5" data-testid="it-source-setup">
+      <h2 className="font-display text-xl text-primary">Source library setup</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Register the supplied demo packages once so solution seekers can use them in Workbench.</p>
+      {permissions.isLoading ? <Skel className="mt-3 h-9" /> : permissions.isError ? (
+        <p role="alert" className="mt-3 text-sm">Sign in with an authorized IT account to manage sources. <button className={btn.quiet} onClick={() => void permissions.refetch()}>Retry</button> <a className={btn.quiet} href={loginHref()}>Sign in</a></p>
+      ) : !permissions.data?.canManage ? (
+        <p className="mt-3 text-sm" data-testid="source-setup-no-permission">Your signed-in account does not have source-management permission. An authorized IT administrator must complete setup; changing personas does not grant access.</p>
+      ) : !ready ? (
+        <p className="mt-3 text-sm">{recipes.isError || sources.isError ? "Source setup could not load." : "Checking source setup…"} <button className={btn.quiet} onClick={() => { void recipes.refetch(); void sources.refetch(); }}>Refresh</button></p>
+      ) : missing.length ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <span className="flex-1 text-sm">Ready to register: {missing.map(id => SOURCE_NAMES[id] ?? id).join(", ")}</span>
+          <button className={btn.secondary} disabled={register.isPending} data-testid="button-register-sources" onClick={() => {
+            setError(null);
+            register.mutate(undefined, { onError: e => setError(msgOf(e)) });
+          }}><ShieldCheck className="h-4 w-4" />{register.isPending ? "Registering…" : "Register demo sources"}</button>
+        </div>
+      ) : <p className="mt-3 text-sm text-primary" role="status">All demo sources are available in Workbench.</p>}
+      {error && <p role="alert" className="mt-3 text-sm text-siennaink">{error}</p>}
+    </section>
+  );
+}
 
 /** Choose existing sources, say what you need, and open a persisted combined proposal. Originals open as separate apps. */
 export function InvoiceDemoLauncher() {
@@ -74,7 +115,6 @@ function Composer({ recipe, draft, setDraft, signedIn, authLoading, sourcesQ }: 
   const [, navigate] = useLocation();
   const say = useUndoToast();
   const create = useCreateCombinedCase();
-  const register = useRegisterSources();
   const [err, setErr] = useState<string | null>(null);
   const registered = sourcesQ.data ?? [];
   const isReg = (id: string) => registered.some((r) => r.id === id);
@@ -98,7 +138,8 @@ function Composer({ recipe, draft, setDraft, signedIn, authLoading, sourcesQ }: 
   if (!draft.sources.includes(draft.base)) problems.push("The starting app must be one of the chosen sources.");
   if (!activeCaps.length) problems.push("Keep at least one capability switched on.");
   if (!draft.need.trim()) problems.push("Describe what you need in a sentence.");
-  if (signedIn && sourcesQ.isSuccess && unregistered.length) problems.push(`${unregistered.map((s) => SOURCE_NAMES[s] ?? s).join(", ")} must be registered by IT first.`);
+  if (signedIn && !sourcesQ.isSuccess) problems.push(sourcesQ.isError ? "The source library could not load. Retry below." : "Checking available sources…");
+  if (signedIn && sourcesQ.isSuccess && unregistered.length) problems.push("Some selected sources are awaiting IT setup.");
 
   const submit = () => {
     setErr(null);
@@ -112,10 +153,6 @@ function Composer({ recipe, draft, setDraft, signedIn, authLoading, sourcesQ }: 
       onError: (e) => setErr(msgOf(e)),
     });
   };
-  const doRegister = () => register.mutate(undefined, {
-    onSuccess: () => say("Sources registered with their verified hashes."),
-    onError: (e) => setErr(statusOf(e) === 403 ? "Registering sources needs IT package-management permission. Ask IT to register them." : msgOf(e)),
-  });
 
   return (
     <div className="mt-5 grid gap-5 lg:grid-cols-[1.35fr_1fr]">
@@ -151,10 +188,11 @@ function Composer({ recipe, draft, setDraft, signedIn, authLoading, sourcesQ }: 
         {signedIn && sourcesQ.isSuccess && unregistered.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-input bg-card px-4 py-3 text-[13px]" data-testid="panel-unregistered">
             <Lock className="h-4 w-4 text-siennaink" />
-            <span className="min-w-0 flex-1">Unavailable until IT registers {unregistered.map((s) => SOURCE_NAMES[s] ?? s).join(", ")}. Registration pins each source to an exact verified version, so the combination always uses what was reviewed.</span>
-            <button className={btn.secondary} onClick={doRegister} disabled={register.isPending} data-testid="button-register-sources"><ShieldCheck className="h-4 w-4" /> {register.isPending ? "Registering…" : "Register sources (IT)"}</button>
+            <span className="min-w-0 flex-1">Awaiting IT setup: {unregistered.map((s) => SOURCE_NAMES[s] ?? s).join(", ")}. Your selections stay here while you check availability.</span>
+            <button className={btn.quiet} onClick={() => void sourcesQ.refetch()} disabled={sourcesQ.isFetching}><RefreshCw className="h-4 w-4" /> Check availability</button>
           </div>
         )}
+        {signedIn && sourcesQ.isError && <div role="alert" className="mt-3 text-sm">The source library could not load. <button className={btn.quiet} onClick={() => void sourcesQ.refetch()}>Retry</button></div>}
 
         <div className="mt-5 text-[13px] font-semibold">2 · What should it do?</div>
         <div className="mt-2 flex flex-wrap gap-2">

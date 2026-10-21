@@ -23,7 +23,7 @@ export const ccKeys = {
 const noRetry = (n: number, e: unknown) => ![401, 403, 404].includes(httpStatus(e) ?? 0) && n < 2;
 
 export const useRecipes = () => useListConsolidationRecipes();
-export const useRegisteredSources = (enabled = true) => useListConsolidationSources({ query: { queryKey: ccKeys.sources, enabled, retry: noRetry } });
+export const useRegisteredSources = (enabled = true) => useListConsolidationSources({ query: { queryKey: ccKeys.sources, enabled, retry: noRetry, staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: true, refetchInterval: 30000 } });
 export const useCombinedCases = (enabled = true) => useListConsolidationCases({ query: { queryKey: ccKeys.cases, enabled, retry: noRetry } });
 export const useCombinedCase = (id: string) => useGetConsolidationCase(id, { query: { queryKey: ccKeys.case(id), enabled: !!id, retry: noRetry } });
 
