@@ -33,6 +33,8 @@ import { InputUpload } from "@/components/input-upload";
 import { addBackState, sectionPresence } from "@/lib/ab-output";
 import { outputRanked, summarize } from "@/lib/step-output";
 import { useCaseComposition, useRefreshCaseComposition } from "@/lib/composition";
+import { planInclusions } from "@/lib/plan-inclusions";
+import { inclusionNodeId, PlanInclusions, PlanStepAttribution, UnmappedPlanSteps } from "@/components/plan-inclusions";
 
 type Snap = { moduleStates: Record<string, boolean>; configValues: Record<string, string> };
 const darkTool = "inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium text-[#9ED9E3] transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-40";
@@ -169,7 +171,10 @@ export default function Workbench() {
   }, [samples, sampleId, wbQ.data, caseQ.data?.presetInputText, runParam]);
 
   const cfg = cfgQ.data;
-  const bBlocks = useMemo(() => (cfg && baseId ? blocksFromConfig(cfg, baseId) : []), [cfg, baseId]);
+  const inclusions = compQ.data ? planInclusions(compQ.data, (cfg?.steps ?? []).flatMap((s) => s.components).map((x) => ({
+    id: x.capability.id, sourceId: x.capability.sourceSolutionId, active: x.active, executable: x.executable, blockedReason: x.blockedReason,
+  }))) : [];
+  const bBlocks = cfg && baseId ? blocksFromConfig(cfg, baseId, new Set(inclusions.filter((x) => x.represented).map((x) => x.capabilityId))) : [];
   const aBlocks = useMemo(() => (wbQ.data ? blocksFromWorkbench(wbQ.data.blocks) : []), [wbQ.data]);
   const controls = useMemo(() => (cfg ? controlsFromConfig(cfg) : []), [cfg]);
   const { recs, more } = useMemo(() => {
@@ -527,6 +532,7 @@ export default function Workbench() {
                             {r.kind === "required" && <span className="text-[11.5px] opacity-70">required</span>}
                           </div>
                           {!r.b.active && (() => { const st = addBackState(r.b, false); return st.kind === "blocked" ? <p className="mt-1 pl-7 text-[12px] opacity-80" data-testid={`text-blocked-reason-${r.id}`}>{st.reason}</p> : null; })()}
+                          <PlanStepAttribution items={inclusions.filter((x) => x.represented && x.capabilityId === r.id)} />
                         </div>
                       </li>{slotFor(r.id, r.name)}</Fragment>
                     );
@@ -535,6 +541,7 @@ export default function Workbench() {
                 </ol>
               )}
               {controls.length > 0 && <p className="mt-3 text-[12px] opacity-75" data-testid="list-controls">Controls in place: {controls.map((c) => c.name).join(", ")}</p>}
+              <UnmappedPlanSteps items={inclusions} />
             </section>
           </LanesDrop>
 
@@ -542,9 +549,14 @@ export default function Workbench() {
             {editable && (
               <section className="card-soft p-5" data-testid="panel-library">
                 <h2 className="text-[16px] font-semibold">Add from other apps</h2>
-                <p className="mt-1 text-[13px] text-muted-foreground">Governed capabilities this workflow can actually run. Each shows the app it comes from.</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">Available runnable capabilities below. Features already in your plan remain listed here with their current status.</p>
+                <PlanInclusions items={inclusions.filter((x) => x.sourceId !== baseId)} locate={(item) => {
+                  if (item.represented) scrollToRow(item.capabilityId);
+                  else document.getElementById(inclusionNodeId(item))?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }} />
+                {!!inclusions.length && <h3 className="mt-4 text-[13px] font-semibold">Available to add</h3>}
                 <div className="mt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={add} /></div>
-                {recs.length + more.length === 0 && <p className="mt-2 text-[13px] text-muted-foreground" data-testid="text-no-reuse">Every compatible capability is already included.</p>}
+                {recs.length + more.length === 0 && <p className="mt-2 text-[13px] text-muted-foreground" data-testid="text-no-reuse">No additional runnable capabilities are available here. Proposed plan additions are shown separately in the workflow.</p>}
                 <button onClick={() => setSlotOpen(slotOpen ? null : "end")} className={cn(btn.quiet, "mt-2 px-0")} data-testid="button-open-picker"><ListPlus className="h-4 w-4" /> Need something not listed?</button>
                 {slotOpen === "end" && <div className="mt-3"><StepPicker afterId={slotRow?.id ?? null} afterName={null} actions={reuseActions} browse={null} onClose={() => setSlotOpen(null)} /></div>}
               </section>

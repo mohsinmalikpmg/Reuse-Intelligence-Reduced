@@ -14,6 +14,8 @@ import { useCaseComposition, useRefreshCaseComposition } from "@/lib/composition
 import { ProposalWorkbenchPage } from "@/pages/proposal-workbench";
 import { InputUpload } from "@/components/input-upload";
 import { FeatureRedundancy } from "@/components/feature-redundancy";
+import { planInclusions } from "@/lib/plan-inclusions";
+import { inclusionNodeId, PlanInclusions, PlanStepAttribution, UnmappedPlanSteps } from "@/components/plan-inclusions";
 import {
   SOURCE_COPY, SOURCE_NAMES, ccKeys, edgesFor, inputFrom, msgOf, statusOf, useCombinedCase, useRecipes, useRunCombinedCase, useUpdateCombinedCase,
   type CombinedCase, type CombinedCaseInput, type Recipe, type RecipeEdge,
@@ -63,6 +65,9 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
   const edges = recipe.edges.filter((e) => c.wiring.edgeIds.includes(e.id));
   const compQ = useCaseComposition(c.id);
   const refreshComp = useRefreshCaseComposition();
+  const inclusions = compQ.data ? planInclusions(compQ.data, recipe.capabilities.map((x) => ({
+    id: x.id, sourceId: x.sourceId, active: c.capabilityIds.includes(x.id), visible: c.capabilityIds.includes(x.id), executable: true,
+  }))) : [];
 
   const save = (patch: Partial<CombinedCaseInput>, label: string, undoable = true) => {
     const before = inputFrom(c);
@@ -115,9 +120,9 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
               return (
                 <li key={cap.id}>
                   {e && <button onClick={() => setEdge(e)} className="workflow-connection mx-auto my-1 flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-[12px] hover:bg-white/10" data-testid={`button-edge-${cap.id}`}><Cable className="h-3.5 w-3.5" /> adapter: {nodeName(e.from)} to {nodeName(e.to)}</button>}
-                  <div className="workflow-capability flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3" data-testid={`node-cap-${cap.id}`}>
+                  <div id={`row-${cap.id}`} className="workflow-capability scroll-mt-28 flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3" data-testid={`node-cap-${cap.id}`}>
                     <Check className="h-4 w-4 shrink-0 text-[#9ED9E3]" />
-                    <div className="min-w-0 flex-1"><div className="font-semibold">{cap.name}</div><div className="text-[12.5px] opacity-75">from {name(cap.sourceId)} · {SOURCE_COPY[cap.sourceId]?.label}</div></div>
+                    <div className="min-w-0 flex-1"><div className="font-semibold">{cap.name}</div><div className="text-[12.5px] opacity-75">from {name(cap.sourceId)} · {SOURCE_COPY[cap.sourceId]?.label}</div><PlanStepAttribution items={inclusions.filter((x) => x.represented && x.capabilityId === cap.id && x.sourceId === cap.sourceId)} /></div>
                     {finance ? <span className="text-[11.5px] opacity-70" title="Forecast to Report needs both engines and their adapter.">required</span>
                       : <button onClick={() => removeCap(cap.id)} disabled={upd.isPending || enabled.length <= 1} title={enabled.length <= 1 ? "Keep at least one capability" : "Remove from the combination"} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-remove-${cap.id}`}><Minus className="h-3.5 w-3.5" /> Remove</button>}
                   </div>
@@ -126,6 +131,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
             })}
             <Node title={finance ? "Monthly management report" : "One combined invoice app"} sub={`Opens at ${recipe.runPath}`} />
           </ol>
+          <UnmappedPlanSteps items={inclusions} />
           {edge && (
             <div className="mt-4 rounded-xl bg-card p-4 text-foreground" role="dialog" aria-label="Adapter detail" data-testid="panel-adapter">
               <div className="flex items-start gap-2"><Cable className="mt-0.5 h-4 w-4 text-primary" /><div className="min-w-0 flex-1"><div className="font-semibold">{nodeName(edge.from)} to {nodeName(edge.to)}</div><p className="mt-1 text-[13.5px]">{edge.contract}</p><p className="mt-1 font-mono text-[11.5px] text-muted-foreground">{edge.id}</p></div>
@@ -135,6 +141,12 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
         </section>
 
         <aside className="space-y-4">
+          {inclusions.some((x) => x.sourceId !== c.baseSolutionId) && <section className="card-soft p-5">
+            <h2 className="text-[16px] font-semibold">From other apps</h2>
+            <PlanInclusions items={inclusions.filter((x) => x.sourceId !== c.baseSolutionId)} locate={(item) => {
+              document.getElementById(item.represented ? `row-${item.capabilityId}` : inclusionNodeId(item))?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }} />
+          </section>}
           {excluded.length > 0 && <section className="card-soft p-5" data-testid="panel-excluded">
             <h2 className="text-[16px] font-semibold">Not selected</h2>
               <ul className="mt-2 space-y-2">{excluded.map((m) => {

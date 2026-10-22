@@ -19,3 +19,4 @@
 - [Invoice source-demo boundaries](invoice-source-demo.md) — constructed originals must stay independent; shared fixtures are allowed, shared feature engines are not.
 - [Recharts axis discovery](recharts-axis-discovery.md) — keep axes as direct chart children; fragments can silently hide axes and bars.
 - [Authentication after testing](auth-after-testing.md) — browser testing can leave a runtime-only login override; restore the API and verify the login destination.
+- [Mutation callback inference](mutation-callback-inference.md) — shared React Query error callbacks can narrow mutation variables unexpectedly; preserve the full variables generic.

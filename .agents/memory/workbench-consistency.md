@@ -50,3 +50,9 @@ Existing native capabilities with real executors may be exercised in their own p
 **Why:** Applying external-donor restrictions to Pattern Finder's own reader and summarizer prevented users from adding back real native steps. Evidence maturity and sandbox executability are distinct.
 
 **How to apply:** Retain risk labels, real dependency checks and external-donor restrictions; explain genuinely blocked steps visibly rather than presenting unexplained disabled controls.
+
+Accepted suggestions must remain discoverable in the workbench's reuse section and workflow, including proposed-only features.
+
+**Why:** The user could not find referenced plan inclusions in “Add from other apps” or the workflow after acceptance. Hiding them inside plan details made acceptance appear ineffective.
+
+**How to apply:** Distinguish active, switched-off and proposed-only inclusions, preserve source attribution, and visibly separate non-executed additions from the runnable engine. Do not filter accepted items out simply because they are no longer available to add.

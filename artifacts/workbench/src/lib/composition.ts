@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useIsMutating, useMutation, useQuery, useQueryClient, type DataTag, type QueryKey } from "@tanstack/react-query";
 import {
   acceptCompositionSuggestion, analyzeFeatureRedundancy, applyCompositionRefinement, cancelCompositionRefinement, editCompositionPlan, createComposition, getComposition, getGetBriefQueryKey, getGetCompositionQueryKey, getListCompositionsQueryKey,
   listCompositions, previewCompositionRefinement, undoCompositionRefinement, useGetBrief,
@@ -32,19 +32,22 @@ export const compMsg = (e: unknown) => {
 const noRetry = (n: number, e: unknown) => ![401, 403, 404].includes(compStatus(e)) && n < 2;
 
 export const compKeys = {
-  one: (id: string) => getGetCompositionQueryKey(id),
-  forCase: (caseId: string) => getListCompositionsQueryKey({ caseId }),
+  one: (id: string) => getGetCompositionQueryKey(id) as unknown as DataTag<QueryKey, Composition>,
+  // This app stores the first result, NOT the list endpoint's array.
+  // Keep it separate from generated list-query caches.
+  forCase: (caseId: string) => [...getListCompositionsQueryKey({ caseId }), "linked-plan"] as unknown as DataTag<QueryKey, Composition | null>,
 };
 
 export const useComposition = (id: string) =>
   useQuery({ queryKey: compKeys.one(id), queryFn: () => getComposition(id), enabled: !!id, retry: noRetry });
 
 /** The recommendation linked to an existing case or combined case, if any. Silent when signed out. */
-export const useCaseComposition = (caseId: string) =>
-  useQuery({
+export const caseCompositionOptions = (caseId: string) =>
+  queryOptions({
     queryKey: compKeys.forCase(caseId), enabled: !!caseId, retry: false,
     queryFn: async () => { try { return (await listCompositions({ caseId }))[0] ?? null; } catch (e) { if ([401, 404].includes(compStatus(e))) return null; throw e; } },
   });
+export const useCaseComposition = (caseId: string) => useQuery(caseCompositionOptions(caseId));
 
 /** Call after any manual change to a case so the linked recommendation re-reads the saved state. */
 export function useRefreshCaseComposition() {
@@ -65,39 +68,49 @@ export function useCreateComposition() {
   });
 }
 
-function useSync() {
+function useSyncedMutation<T extends { id: string }>(mutationFn: (variables: T) => Promise<Composition>) {
   const qc = useQueryClient();
-  return (c: Composition) => {
+  const onSuccess = (c: Composition) => {
+    // A read started before the mutation must not overwrite the saved response.
+    void qc.cancelQueries({ queryKey: compKeys.one(c.id), exact: true });
+    if (c.caseId) void qc.cancelQueries({ queryKey: compKeys.forCase(c.caseId), exact: true });
     qc.setQueryData(compKeys.one(c.id), c);
     if (c.caseId) {
       const id = c.caseId;
-      qc.setQueryData(compKeys.forCase(id), [c]);
+      qc.setQueryData(compKeys.forCase(id), c);
       // Apply/undo changed the same saved case the manual controls use: refresh it, never keep a parallel copy.
       const own = JSON.stringify(compKeys.forCase(id));
       void qc.invalidateQueries({ predicate: (q) => { const k = JSON.stringify(q.queryKey); return k.includes(id) && k !== own; } });
     }
   };
+  const onError = (error: unknown, { id }: T) => {
+    if (compStatus(error) !== 409) return;
+    // Hook-level handling survives a suggestion card unmounting, including toast Undo.
+    const linked = qc.getQueryCache().findAll().filter((q) => {
+      const data = q.state.data as Composition | null | undefined;
+      return q.queryKey.at(-1) === "linked-plan" && data?.id === id;
+    });
+    void qc.invalidateQueries({ queryKey: compKeys.one(id), exact: true });
+    for (const query of linked) void qc.invalidateQueries({ queryKey: query.queryKey, exact: true });
+  };
+  return useMutation<Composition, unknown, T>({ mutationFn, onSuccess, onError });
 }
 
 export const usePreviewRefinement = () => useMutation({
   mutationFn: ({ id, expectedRevision, instruction }: { id: string; expectedRevision: number; instruction: string }) => previewCompositionRefinement(id, { expectedRevision, instruction }),
 });
 export function useApplyRefinement() {
-  const sync = useSync();
-  return useMutation({
-    mutationFn: ({ id, previewId, expectedRevision }: { id: string; previewId: string; expectedRevision: number }) => applyCompositionRefinement(id, previewId, { expectedRevision }),
-    onSuccess: sync,
-  });
+  return useSyncedMutation(
+    ({ id, previewId, expectedRevision }: { id: string; previewId: string; expectedRevision: number }) => applyCompositionRefinement(id, previewId, { expectedRevision }),
+  );
 }
 export const useCancelRefinement = () => useMutation({
   mutationFn: ({ id, previewId }: { id: string; previewId: string }) => cancelCompositionRefinement(id, previewId),
 });
 export function useUndoComposition() {
-  const sync = useSync();
-  return useMutation({
-    mutationFn: ({ id, expectedRevision }: { id: string; expectedRevision: number }) => undoCompositionRefinement(id, { expectedRevision }),
-    onSuccess: sync,
-  });
+  return useSyncedMutation(
+    ({ id, expectedRevision }: { id: string; expectedRevision: number }) => undoCompositionRefinement(id, { expectedRevision }),
+  );
 }
 
 /** Where a saved composition lives in this app. Proposal-only plans never pretend to be cases. */
@@ -146,22 +159,18 @@ export const gapsOf = (c: Composition) => ({ capabilityGaps: c.plan.capabilityGa
 const acceptKeys = new Map<string, string>();
 export const acceptKeyFor = (id: string, sid: string, rev: number) => { const k = `${id}:${sid}:${rev}`; if (!acceptKeys.has(k)) acceptKeys.set(k, newKey()); return acceptKeys.get(k)!; };
 export function useAcceptSuggestion() {
-  const sync = useSync();
-  return useMutation({
-    mutationFn: ({ id, suggestionId, expectedRevision }: { id: string; suggestionId: string; expectedRevision: number }) =>
+  return useSyncedMutation(
+    ({ id, suggestionId, expectedRevision }: { id: string; suggestionId: string; expectedRevision: number }) =>
       acceptCompositionSuggestion(id, suggestionId, { expectedRevision, idempotencyKey: acceptKeyFor(id, suggestionId, expectedRevision) }),
-    onSuccess: sync,
-  });
+  );
 }
 
 /** Manual edit of the same persisted proposal plan. Revision-checked; Undo uses the shared undo route. */
 export function useSavePlan() {
-  const sync = useSync();
-  return useMutation({
-    mutationFn: ({ id, expectedRevision, plan }: { id: string; expectedRevision: number; plan: CompositionPlan }) =>
+  return useSyncedMutation(
+    ({ id, expectedRevision, plan }: { id: string; expectedRevision: number; plan: CompositionPlan }) =>
       editCompositionPlan(id, { expectedRevision, plan }),
-    onSuccess: sync,
-  });
+  );
 }
 
 /* ---- Selection + inputs that survive sign-in redirects, errors and retries ---- */

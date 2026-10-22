@@ -251,6 +251,48 @@
   color: #edf7f8;
 }
 
+/* Every workflow map uses a neutral dark surface, including ordinary linked cases.
+   (the aqua dark primary must never be a workflow background). Light mode is untouched. */
+.dark section[data-testid="panel-map"]:not(.invoice-workflow) {
+  background: #0d2632;
+  color: #edf7f8;
+  border: 1px solid #3f6572;
+}
+.dark section[data-testid="panel-map"] h2 { color: #edf7f8; }
+.dark section[data-testid="panel-map"] :is(.opacity-75, .opacity-70, .opacity-80, .opacity-90) { color: #c6dce2; opacity: 1; }
+.dark section[data-testid="panel-map"] [data-testid^="node-step-"],
+.dark section[data-testid="panel-map"] [data-testid^="node-cap-"],
+.dark [data-testid="view-combined"] section[data-testid="panel-map"]:not(.invoice-workflow) .workflow-capability {
+  background: #234653;
+  border: 1px solid #638c99;
+  border-left: 3px solid #9ed9e3;
+}
+.dark section[data-testid="panel-map"] :is([data-testid="node-baseline-a"], [data-testid="node-not-runnable"], .workflow-endpoint) {
+  background: #102f3b;
+  border-color: #638c99;
+}
+.dark section[data-testid="panel-map"] :is([data-testid^="handoff-"], .workflow-connection) {
+  background: #081e28;
+  border-color: #547d8a;
+  color: #bcebf0;
+}
+.dark section[data-testid="panel-map"] [data-testid^="handoff-"][class*="F2B8A0"] { color: #f7d4c4; border-color: #b7836d; }
+.dark section[data-testid="panel-map"] button { color: #edf7f8; }
+.dark section[data-testid="panel-map"] button:not(:disabled):hover { background: #345d6b; }
+.dark section[data-testid="panel-map"] button:disabled { color: #9fb8bf; opacity: .7; }
+.dark section[data-testid="panel-map"] button:focus-visible { outline: 2px solid #bcebf0; outline-offset: 3px; }
+.dark section[data-testid="panel-map"] [data-testid="panel-adapter"] button { color: inherit; }
+.dark section[data-testid="panel-map"] select {
+  background: #102f3b;
+  color: #edf7f8;
+  border-color: #638c99;
+}
+.dark section[data-testid="panel-map"] [data-testid^="proposed-plan-step-"] {
+  background: #102f3b;
+  color: #edf7f8;
+  border-color: #b7836d;
+}
+
 @layer base {
   * {
     @apply border-border;
