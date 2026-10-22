@@ -3,6 +3,12 @@ name: Workbench consistency
 description: User's target experience and functionality to preserve when unifying workbench entry points.
 ---
 
+Keep this hackathon prototype desktop-focused. Do not spend time or resources optimizing for mobile or cross-device layouts or testing.
+
+**Why:** The user explicitly rejected mobile and cross-device optimization as unnecessary scope for this prototype.
+
+**How to apply:** Exclude mobile optimization and cross-device verification from implementation plans and acceptance criteria.
+
 Use the invoice demo workbench's UX and UI throughout, including the workbench reached through the app library's Try action. Preserve the ability to interchange components/features identified from other apps in the libraries.
 
 **Why:** The user identified inconsistent workbench experiences resulting from multiple project iterations and explicitly chose the invoice demo as the target.
