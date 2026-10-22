@@ -9,6 +9,12 @@ Intake should be one of FUSEBOX's most critical steps: validate understanding of
 
 **How to apply:** Support business needs, existing prototypes/solutions, and configured agents. Interpret by input type, normalize a shared profile and deduplicated requirements, then let users correct and confirm. Corrections revisit affected interpretation before approval. Include drag-and-drop ordering of requirements by priority, with accessible click alternatives. Keep supplied statements, inferences, and open gaps distinct; confirming an accurate description is not evidence that a capability works. The provided slide's sequence is collect → extract by input type → normalize → validate with users → confirm intake and open gaps.
 
+Intake outputs must visibly include a MECE requirements breakdown for business-problem inputs. Solution inputs must show both the understood business problem and the MECE supplied features/capabilities. Automatically suggest a representative descriptive name from the inputs, with user editing preserved.
+
+**Why:** The user reiterated that these breakdowns were still not visible and explicitly requested automatic descriptive naming.
+
+**How to apply:** Treat these as reviewable intake outputs before comparison, not hidden interpretation data. Completeness is relative to supplied scope; expose gaps and inferences rather than inventing requirements or proof.
+
 The approved canvas intake has a standalone artifact; the user subsequently chose to replace Discover's initial intake screen in Reuse Workbench with this design, keeping comparison results and IT Owner pages.
 
 **Why:** The user explicitly selected “Replace Discover’s intake screen” when asked where to integrate the selected design.
