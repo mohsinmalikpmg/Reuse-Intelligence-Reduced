@@ -15,6 +15,8 @@ type Options<T> = {
   force?: boolean;
   responseSchema?: Record<string, unknown>;
   maxCompletionTokens?: number;
+  /** Private interpretation outputs may quote source material: never cache them. */
+  private?: boolean;
 };
 function canonical(value: unknown): string {
   if (value === undefined) return "null";
@@ -41,6 +43,7 @@ const running = new Map<string, Promise<{ data: unknown; provenance: AnalysisPro
 
 /** Read persisted analysis only. Never initializes or calls the model provider. */
 export async function readSavedAnalysis<T>(opts: Options<T>): Promise<{ data: T; provenance: AnalysisProvenance } | null> {
+  if (opts.private) return null;
   const fingerprint = analysisFingerprint({ model: ANALYSIS_MODEL, version: opts.promptVersion, instructions: opts.instructions, input: opts.input, ...(opts.responseSchema ? {responseSchema:opts.responseSchema} : {}) });
   const { rows } = await pool.query("SELECT * FROM ai_analysis_records WHERE purpose=$1 AND input_fingerprint=$2 ORDER BY created_at DESC LIMIT 1", [opts.purpose, fingerprint]);
   const r = rows[0];
@@ -57,7 +60,7 @@ export async function readSavedAnalysis<T>(opts: Options<T>): Promise<{ data: T;
 export async function analyze<T>(opts: Options<T>): Promise<{ data: T; provenance: AnalysisProvenance }> {
   const fingerprint = analysisFingerprint({ model: ANALYSIS_MODEL, version: opts.promptVersion, instructions: opts.instructions, input: opts.input, ...(opts.responseSchema ? {responseSchema:opts.responseSchema} : {}) });
   const key = `${opts.purpose}:${fingerprint}`;
-  if (!opts.force) {
+  if (!opts.force && !opts.private) {
     const { rows } = await pool.query("SELECT * FROM ai_analysis_records WHERE purpose=$1 AND input_fingerprint=$2 ORDER BY created_at DESC LIMIT 1", [opts.purpose, fingerprint]);
     if (rows[0]) {
       const r = rows[0];
@@ -88,7 +91,7 @@ export async function analyze<T>(opts: Options<T>): Promise<{ data: T; provenanc
     catch { throw new AnalysisError("AI returned an invalid analysis. Nothing was applied; please retry.", 502); }
     const id = randomUUID();
     const createdAt = new Date().toISOString();
-    await pool.query("INSERT INTO ai_analysis_records (id,purpose,model,prompt_version,input_fingerprint,result,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+    if (!opts.private) await pool.query("INSERT INTO ai_analysis_records (id,purpose,model,prompt_version,input_fingerprint,result,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)",
       [id, opts.purpose, ANALYSIS_MODEL, opts.promptVersion, fingerprint, JSON.stringify(data), createdAt]);
     return { data, provenance: { id, model: ANALYSIS_MODEL, promptVersion: opts.promptVersion, inputFingerprint: fingerprint, createdAt, cached: false } };
   })();

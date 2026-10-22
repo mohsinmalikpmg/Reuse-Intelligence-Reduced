@@ -191,7 +191,7 @@ export async function matchBrief(brief: Brief, options: { force?: boolean; analy
     }
   });
   const result = await (options.analyzer ?? analyze)({
-    purpose: "brief-matching", promptVersion: "brief-matching-evidence-v1", force: options.force, schema,
+    private: true, purpose: "brief-matching", promptVersion: "brief-matching-evidence-v1", force: options.force, schema,
     instructions: `${groundingInstructions} Semantically assess and order retrieved solution candidates; omit irrelevant candidates. Recommend at most one candidate. Assess reusable capabilities from supplied catalogue. List unmet requirements honestly. coverage maps each requirement to one capability ONLY if its documented scope fully addresses it (null for partial/negative/unknown). No cost savings, time estimates, certainty or execution claims. Numeric retrieval scores are lexical heuristics, not measured fit. Return JSON {"matches":[{"solutionId":"...","fitLabel":"partial","reason":"...","gaps":["..."]}],"recommendedId":null,"capabilityMatches":[{"capabilityId":"...","reason":"..."}],"missingRequirements":["..."],"headline":"...","valueStatement":"...","coverage":[{"requirementId":"...","capabilityId":null}]}.`,
     input: { brief: briefEvidence(brief), candidates: candidates.map(c => ({ solution: c.solution, retrievalScore: c.fitScore })), capabilities: caps },
   });

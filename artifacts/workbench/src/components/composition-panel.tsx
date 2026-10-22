@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Check, Sparkles, Undo2, X } from "lucide-react";
 import { Tag, btn, useUndoToast } from "@/components/bits";
 import { cn } from "@/lib/utils";
+import { RequirementLedger } from "@/components/requirement-ledger";
 import { CompositionGaps } from "@/components/composition-gaps";
 import {
   DISPOSITION, compKeys, evidenceOf, compMsg, compStatus, loginHref, useApplyRefinement, useCancelRefinement, usePreviewRefinement, useUndoComposition,
@@ -117,5 +118,5 @@ export function RefinePanel({ c, onApplied }: { c: Composition; onApplied?: (c: 
 
 /** Mounted inside the existing case pages: shows only when the case came from a composition. */
 export function LinkedComposition({ c, names, savedAt }: { c: Composition; names: (id: string) => string; savedAt?: string }) {
-  return <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]" data-testid="panel-linked-composition"><CompositionSummary c={c} names={names} savedAt={savedAt} /><RefinePanel c={c} /></div>;
+  return <div className="grid gap-4" data-testid="panel-linked-composition"><div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]"><CompositionSummary c={c} names={names} savedAt={savedAt} /><RefinePanel c={c} /></div><RequirementLedger c={c} /></div>;
 }

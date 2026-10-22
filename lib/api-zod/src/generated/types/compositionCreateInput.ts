@@ -14,8 +14,8 @@ export interface CompositionCreateInput {
      */
   idempotencyKey: string;
   /**
-     * @minItems 2
-     * @maxItems 3
+     * @minItems 1
+     * @maxItems 12
      */
   sources: CompositionSource[];
   /** @maxLength 4000 */

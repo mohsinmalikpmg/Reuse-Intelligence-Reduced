@@ -3,11 +3,11 @@ name: Intake as collaborative validation
 description: User intent for the intake redesign and the boundary between confirmation and proof.
 ---
 
-Discover should offer a catalog starting point and a synthesized multi-source experiment plan using the library composition tooling. Users choose which complementary capabilities to include together, not only one missing capability at a time.
+Keep Discover's proposed-workflow entry simple: do not recommend invoice workflows for unrelated intakes, and carry the intake context into Workbench when opening the proposed workflow. Keep capability editing in Workbench, not an extra selection-review step in Discover. Present one recommendation, with supporting evidence under its details; do not add separate maintenance-code or catalog-description recommendation sections.
 
-**Why:** The user explicitly requested a synthesized selection review and continuity from discovery to the experiment.
+**Why:** The user called the expanded discovery experience a regression and clarified that relevant recommendations and intake-context continuity were the important changes.
 
-**How to apply:** Persist the originating intake context and all requirements in the experiment. Keep missing requirements visible whether there is no match, no compatible match, or the user excludes the suggested component. Never discard those gaps on plan edits or treat proposed coverage as proven satisfaction.
+**How to apply:** Persist the originating intake context and all requirements in the experiment. Keep missing requirements visible whether there is no match, no compatible match, or the user excludes the suggested component. Never discard those gaps on plan edits or treat proposed coverage as proven satisfaction. The authorized requirement snapshot is revision-bound: reopening an experiment must not substitute a newer intake. Private raw intake material must not be copied into shared analysis storage.
 
 Keep the primary intake experience simple: describe → review → find matching solutions. Show an editable name, business problem, concise distinct requirements and supplied capabilities only when a solution is provided. Keep groups, boundaries, source evidence and coverage in collapsed Analysis details; do not require per-item confirmation checkboxes.
 

@@ -100,6 +100,31 @@ export interface CompositionAcceptedSuggestion {
   suggestionReason?: string;
 }
 
+export type DiscoveryRequirementRelationshipCoverage = typeof DiscoveryRequirementRelationshipCoverage[keyof typeof DiscoveryRequirementRelationshipCoverage];
+
+
+export const DiscoveryRequirementRelationshipCoverage = {
+  proposed: 'proposed',
+  partial: 'partial',
+} as const;
+
+export type DiscoveryRequirementRelationshipEvidenceLevel = typeof DiscoveryRequirementRelationshipEvidenceLevel[keyof typeof DiscoveryRequirementRelationshipEvidenceLevel];
+
+
+export const DiscoveryRequirementRelationshipEvidenceLevel = {
+  documented: 'documented',
+  'code-inspected': 'code-inspected',
+} as const;
+
+export interface DiscoveryRequirementRelationship {
+  requirementId: string;
+  sourceSolutionId: string;
+  capabilityId: string;
+  coverage: DiscoveryRequirementRelationshipCoverage;
+  reason: string;
+  evidenceLevel?: DiscoveryRequirementRelationshipEvidenceLevel;
+}
+
 export type CompositionPlanDecisionsItemDisposition = typeof CompositionPlanDecisionsItemDisposition[keyof typeof CompositionPlanDecisionsItemDisposition];
 
 
@@ -122,6 +147,7 @@ export type CompositionPlanFlowItem = {
 };
 
 export interface CompositionPlan {
+  requirementRelationships?: DiscoveryRequirementRelationship[];
   title: string;
   goal: string;
   goalInferred: boolean;
@@ -254,6 +280,104 @@ export interface CompositionRefinementInput {
   instruction: string;
 }
 
+export interface DiscoveryCompositionInput {
+  briefId: string;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+}
+
+export interface DiscoveryCapabilityReference {
+  sourceSolutionId: string;
+  capabilityId: string;
+}
+
+export interface DiscoveryMaterializationInput {
+  /** @minimum 1 */
+  expectedRevision: number;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+  excludedCapabilities: DiscoveryCapabilityReference[];
+}
+
+export interface DiscoveryRequirement {
+  id: string;
+  text: string;
+  priority: number;
+  source?: string;
+}
+
+export type DiscoveryRequirementSnapshotCodeInspection = {
+  file: string;
+  sha256: string;
+  capabilityIds: string[];
+};
+
+export type DiscoveryRequirementSnapshotStartingPoint = {
+  solutionId: string;
+  version: string;
+  reason: string;
+};
+
+export interface DiscoveryRequirementSnapshot {
+  codeInspection?: DiscoveryRequirementSnapshotCodeInspection;
+  briefId: string;
+  sourceRevision: string;
+  /** @nullable */
+  intakeId: string | null;
+  /** @nullable */
+  intakeRevision: number | null;
+  capturedAt: string;
+  targetGroup: string;
+  constraints: string;
+  requiredControls: string;
+  requirements: DiscoveryRequirement[];
+  relationships: DiscoveryRequirementRelationship[];
+  startingPoint: DiscoveryRequirementSnapshotStartingPoint;
+}
+
+export type DiscoveryRequirementCoverageStatus = typeof DiscoveryRequirementCoverageStatus[keyof typeof DiscoveryRequirementCoverageStatus];
+
+
+export const DiscoveryRequirementCoverageStatus = {
+  proposed: 'proposed',
+  partial: 'partial',
+  'no-match': 'no-match',
+  'no-compatible-match': 'no-compatible-match',
+  'user-excluded': 'user-excluded',
+} as const;
+
+export type DiscoveryRequirementCoverageMatchesItemEvidenceLevel = typeof DiscoveryRequirementCoverageMatchesItemEvidenceLevel[keyof typeof DiscoveryRequirementCoverageMatchesItemEvidenceLevel];
+
+
+export const DiscoveryRequirementCoverageMatchesItemEvidenceLevel = {
+  documented: 'documented',
+  'code-inspected': 'code-inspected',
+  executed: 'executed',
+} as const;
+
+export type DiscoveryRequirementCoverageMatchesItem = DiscoveryRequirementRelationship & {
+  selected: boolean;
+  evidenceLevel: DiscoveryRequirementCoverageMatchesItemEvidenceLevel;
+  executed: boolean;
+};
+
+export interface DiscoveryRequirementCoverage {
+  id: string;
+  text: string;
+  priority: number;
+  status: DiscoveryRequirementCoverageStatus;
+  matches: DiscoveryRequirementCoverageMatchesItem[];
+  limitations: string[];
+  untestedConstraints: string[];
+  note: string;
+}
+
 export interface CompositionCreateInput {
   /**
      * @minLength 8
@@ -261,8 +385,8 @@ export interface CompositionCreateInput {
      */
   idempotencyKey: string;
   /**
-     * @minItems 2
-     * @maxItems 3
+     * @minItems 1
+     * @maxItems 12
      */
   sources: CompositionSource[];
   /** @maxLength 4000 */
@@ -273,6 +397,14 @@ export interface CompositionCreateInput {
   comparisonContext?: string;
   briefId?: string;
 }
+
+export type CompositionDiscoveryState = typeof CompositionDiscoveryState[keyof typeof CompositionDiscoveryState];
+
+
+export const CompositionDiscoveryState = {
+  review: 'review',
+  materialized: 'materialized',
+} as const;
 
 export type CompositionProvenance = { [key: string]: unknown };
 
@@ -321,6 +453,9 @@ export type CompositionSupportedExecution = {
 } | null;
 
 export interface Composition {
+  discoveryState?: CompositionDiscoveryState;
+  discoverySnapshot?: DiscoveryRequirementSnapshot;
+  requirementCoverage?: DiscoveryRequirementCoverage[];
   id: string;
   revision: number;
   sources: CompositionSource[];

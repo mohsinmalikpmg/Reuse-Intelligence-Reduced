@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const compositionInput = z.object({
   idempotencyKey: z.string().min(8).max(200),
-  sources: z.array(z.object({ solutionId: z.string().min(1).max(150), version: z.string().min(1).max(150) }).strict()).min(2).max(3),
+  sources: z.array(z.object({ solutionId: z.string().min(1).max(150), version: z.string().min(1).max(150) }).strict()).min(1).max(12),
   desiredOutcome: z.string().max(4000).default(""),
   targetGroup: z.string().max(1000).default(""),
   comparisonContext: z.string().max(12000).default(""),
@@ -11,10 +11,11 @@ export const compositionInput = z.object({
 export const compositionPlan = z.object({
   title: z.string().min(1).max(200), goal: z.string().min(1).max(4000), goalInferred: z.boolean(),
   baseSolutionId: z.string(), rationale: z.string(),
-  decisions: z.array(z.object({ solutionId: z.string(), disposition: z.enum(["included", "not_suitable", "unnecessary"]), reason: z.string().min(1) })).min(2).max(12),
+  decisions: z.array(z.object({ solutionId: z.string(), disposition: z.enum(["included", "not_suitable", "unnecessary"]), reason: z.string().min(1) })).min(1).max(12),
   flow: z.array(z.object({ sourceSolutionId: z.string(), capabilityId: z.string(), reason: z.string().min(1) })).min(1).max(160),
   overlapDecisions: z.array(z.string()), dependencies: z.array(z.string()),
   integrationGaps: z.array(z.string()), clarifications: z.array(z.string()),
+  requirementRelationships:z.array(z.object({requirementId:z.string(),sourceSolutionId:z.string(),capabilityId:z.string(),coverage:z.enum(["proposed","partial"]),reason:z.string().min(1)}).strict()).max(160).optional(),
   capabilityGaps:z.array(z.object({id:z.string().min(1).max(100),need:z.string().min(1).max(2000),reason:z.string().min(1).max(3000)}).strict()).max(20).optional(),
   librarySuggestions:z.array(z.object({
     id:z.string().min(1).max(100),sourceSolutionId:z.string(),version:z.string(),
@@ -29,7 +30,7 @@ export type SourceEvidence = {
   constraints: unknown; registeredSource?: { id: string; solutionId: string; version: string; sha256: string };
 };
 export class CompositionError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public state?:string) { super(message); }
 }
 export function validatePlan(plan: CompositionPlan, sources: SourceEvidence[]) {
   const ids = sources.map(s => s.solutionId);

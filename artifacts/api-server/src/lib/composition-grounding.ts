@@ -23,11 +23,14 @@ function responseSchema(selected:SourceEvidence[],library:SourceEvidence[]) {
     decisions:{type:"array",items:object({solutionId:{type:"string",enum:selected.map(s=>s.solutionId)},disposition:{type:"string",enum:["included","not_suitable","unnecessary"]},reason:text})},
     flow:{type:"array",items:{anyOf:selected.filter(s=>s.capabilities.length).map(s=>object({sourceSolutionId:{type:"string",enum:[s.solutionId]},capabilityId:{type:"string",enum:s.capabilities.map(c=>c.id)},reason:text}))}},
     overlapDecisions:strings,dependencies:strings,integrationGaps:strings,clarifications:strings,
+    requirementRelationships:{type:"array",items:object({requirementId:text,sourceSolutionId:text,capabilityId:text,coverage:{type:"string",enum:["proposed","partial"]},reason:text})},
     capabilityGaps:{type:"array",items:object({id:text,need:text,reason:text})},
     librarySuggestions:{type:"array",items:eligible.length?{anyOf:eligible.map(s=>object({id:text,sourceSolutionId:{type:"string",enum:[s.solutionId]},version:{type:"string",enum:[s.version]},capabilityIds:{type:"array",items:{type:"string",enum:s.capabilities.map(c=>c.id)}},gapIds:strings,reason:text}))}:object({id:text,sourceSolutionId:text,version:text,capabilityIds:strings,gapIds:strings,reason:text})},
   });
 }
 const instructions=`Recommend a grounded workbench composition from selectedSources. Return the strict supplied plan schema.
+If request.pinnedBase is supplied, baseSolutionId MUST equal that assessed starting point. For discovery, use the complete authorized requirement ledger and the supplied requirement relationships, preserving unsupported and partial needs as gaps. Include all relevant complementary contributions in one reviewable flow, not a sequence of mandatory donor-acceptance interactions.
+Return requirementRelationships for the supplied brief: exact requirement ID and selected source/capability pair, proposed or partial coverage and evidence-grounded reason. Unknown needs have no relationship and remain gaps. If no brief is supplied, return an empty array.
 The ordered flow may contain ONLY source/capability pairs actually present in selectedSources, and each selected source is accounted for exactly once in decisions. Include a selected source only when it contributes at least one grounded capability. Preserve source constraints, mandatory controls, approvals, requirements, and the real selected baseline.
 Desired outcomes are not capabilities. Missing needs, unsupported automation, process-improvement inference, adapters, source functions absent from selected catalogs, or unknown integrations go into capabilityGaps and integrationGaps, NEVER fabricated flow steps. A proposal with honest gaps is useful and should still be saved.
 The separate libraryCatalog contains all available Library sources. These are NOT selected. When a concrete missing capability is available there, suggest an exact unselected source/version/capability in librarySuggestions and reference its capabilityGaps IDs. Explain why it could help and what is unproven. Do not silently add any Library donor to selected flow or decisions. Do not infer compatibility from similar wording. If no catalog source meets a need, preserve the gap without inventing a suggestion.
@@ -50,7 +53,7 @@ export async function recommendGroundedComposition(input:unknown,selected:Source
     });
     const schema=z.preprocess(raw=>{lastRaw=raw;return raw;},checked);
     try {
-      return await analyzer<CompositionPlan>({purpose:"composition",promptVersion:"composition-grounded-gaps-v1",instructions:instructions+(attempt?`\nREPAIR the previous invalid proposal using diagnostics. Correct source references; preserve EACH requiredGapId as a capabilityGap explaining the unsupported prior step, even if it also has a valid Library donor. Do not silently discard it.`:""),
+      return await analyzer<CompositionPlan>({private:true,purpose:"composition",promptVersion:"composition-grounded-gaps-v1",instructions:instructions+(attempt?`\nREPAIR the previous invalid proposal using diagnostics. Correct source references; preserve EACH requiredGapId as a capabilityGap explaining the unsupported prior step, even if it also has a valid Library donor. Do not silently discard it.`:""),
         input:{request:input,selectedSources:selected,libraryCatalog:library,diagnostics,requiredGapIds,attempt},
         schema:schema as z.ZodType<CompositionPlan>,responseSchema:responseSchema(selected,library)});
     }catch(error){

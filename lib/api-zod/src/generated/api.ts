@@ -9,6 +9,419 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Synthesize a private revision-bound discovery composition for bulk review
+ */
+export const createDiscoveryCompositionBodyIdempotencyKeyMin = 8;
+export const createDiscoveryCompositionBodyIdempotencyKeyMax = 200;
+
+
+
+export const CreateDiscoveryCompositionBody = zod.object({
+  "briefId": zod.string(),
+  "idempotencyKey": zod.string().min(createDiscoveryCompositionBodyIdempotencyKeyMin).max(createDiscoveryCompositionBodyIdempotencyKeyMax)
+})
+
+export const CreateDiscoveryCompositionResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Apply all inclusion choices atomically and create the supported experiment or proposal
+ */
+export const MaterializeDiscoveryCompositionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const materializeDiscoveryCompositionBodyIdempotencyKeyMin = 8;
+export const materializeDiscoveryCompositionBodyIdempotencyKeyMax = 200;
+
+
+
+export const MaterializeDiscoveryCompositionBody = zod.object({
+  "expectedRevision": zod.number().int().min(1),
+  "idempotencyKey": zod.string().min(materializeDiscoveryCompositionBodyIdempotencyKeyMin).max(materializeDiscoveryCompositionBodyIdempotencyKeyMax),
+  "excludedCapabilities": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string()
+}))
+})
+
+export const MaterializeDiscoveryCompositionResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
  * @summary Validate a transient custom file against actual selected workbench ingestion contracts
  */
 export const ValidateWorkbenchInputParams = zod.object({
@@ -67,6 +480,62 @@ export const AcceptCompositionSuggestionBody = zod.object({
 })
 
 export const AcceptCompositionSuggestionResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "revision": zod.number().int(),
   "sources": zod.array(zod.object({
@@ -78,6 +547,14 @@ export const AcceptCompositionSuggestionResponse = zod.object({
   "comparisonContext": zod.string(),
   "briefId": zod.string().optional(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -116,6 +593,14 @@ export const AcceptCompositionSuggestionResponse = zod.object({
   "provenance": zod.record(zod.string(), zod.unknown()),
   "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
   "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -244,6 +729,14 @@ export const EditCompositionPlanParams = zod.object({
 export const EditCompositionPlanBody = zod.object({
   "expectedRevision": zod.number().int().min(1),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -282,6 +775,62 @@ export const EditCompositionPlanBody = zod.object({
 })
 
 export const EditCompositionPlanResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "revision": zod.number().int(),
   "sources": zod.array(zod.object({
@@ -293,6 +842,14 @@ export const EditCompositionPlanResponse = zod.object({
   "comparisonContext": zod.string(),
   "briefId": zod.string().optional(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -331,6 +888,14 @@ export const EditCompositionPlanResponse = zod.object({
   "provenance": zod.record(zod.string(), zod.unknown()),
   "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
   "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -403,6 +968,62 @@ export const ListCompositionsQueryParams = zod.object({
 })
 
 export const ListCompositionsResponseItem = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "revision": zod.number().int(),
   "sources": zod.array(zod.object({
@@ -414,6 +1035,14 @@ export const ListCompositionsResponseItem = zod.object({
   "comparisonContext": zod.string(),
   "briefId": zod.string().optional(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -452,6 +1081,14 @@ export const ListCompositionsResponseItem = zod.object({
   "provenance": zod.record(zod.string(), zod.unknown()),
   "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
   "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -523,8 +1160,7 @@ export const ListCompositionsResponse = zod.array(ListCompositionsResponseItem)
 export const createCompositionBodyIdempotencyKeyMin = 8;
 export const createCompositionBodyIdempotencyKeyMax = 200;
 
-export const createCompositionBodySourcesMin = 2;
-export const createCompositionBodySourcesMax = 3;
+export const createCompositionBodySourcesMax = 12;
 
 export const createCompositionBodyDesiredOutcomeMax = 4000;
 
@@ -539,7 +1175,7 @@ export const CreateCompositionBody = zod.object({
   "sources": zod.array(zod.object({
   "solutionId": zod.string(),
   "version": zod.string()
-})).min(createCompositionBodySourcesMin).max(createCompositionBodySourcesMax),
+})).min(1).max(createCompositionBodySourcesMax),
   "desiredOutcome": zod.string().max(createCompositionBodyDesiredOutcomeMax).optional(),
   "targetGroup": zod.string().max(createCompositionBodyTargetGroupMax).optional(),
   "comparisonContext": zod.string().max(createCompositionBodyComparisonContextMax).optional(),
@@ -547,6 +1183,62 @@ export const CreateCompositionBody = zod.object({
 })
 
 export const CreateCompositionResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "revision": zod.number().int(),
   "sources": zod.array(zod.object({
@@ -558,6 +1250,14 @@ export const CreateCompositionResponse = zod.object({
   "comparisonContext": zod.string(),
   "briefId": zod.string().optional(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -596,6 +1296,14 @@ export const CreateCompositionResponse = zod.object({
   "provenance": zod.record(zod.string(), zod.unknown()),
   "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
   "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -668,6 +1376,62 @@ export const GetCompositionParams = zod.object({
 })
 
 export const GetCompositionResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "revision": zod.number().int(),
   "sources": zod.array(zod.object({
@@ -679,6 +1443,14 @@ export const GetCompositionResponse = zod.object({
   "comparisonContext": zod.string(),
   "briefId": zod.string().optional(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -717,6 +1489,14 @@ export const GetCompositionResponse = zod.object({
   "provenance": zod.record(zod.string(), zod.unknown()),
   "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
   "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -804,6 +1584,14 @@ export const PreviewCompositionRefinementResponse = zod.object({
   "expectedRevision": zod.number().int(),
   "currentFingerprint": zod.string(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -863,6 +1651,62 @@ export const ApplyCompositionRefinementBody = zod.object({
 })
 
 export const ApplyCompositionRefinementResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "revision": zod.number().int(),
   "sources": zod.array(zod.object({
@@ -874,6 +1718,14 @@ export const ApplyCompositionRefinementResponse = zod.object({
   "comparisonContext": zod.string(),
   "briefId": zod.string().optional(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -912,6 +1764,14 @@ export const ApplyCompositionRefinementResponse = zod.object({
   "provenance": zod.record(zod.string(), zod.unknown()),
   "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
   "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -1001,6 +1861,62 @@ export const UndoCompositionRefinementBody = zod.object({
 })
 
 export const UndoCompositionRefinementResponse = zod.object({
+  "discoveryState": zod.enum(['review', 'materialized']).optional(),
+  "discoverySnapshot": zod.object({
+  "codeInspection": zod.object({
+  "file": zod.string(),
+  "sha256": zod.string(),
+  "capabilityIds": zod.array(zod.string())
+}).optional(),
+  "briefId": zod.string(),
+  "sourceRevision": zod.string(),
+  "intakeId": zod.string().nullable(),
+  "intakeRevision": zod.number().int().nullable(),
+  "capturedAt": zod.string(),
+  "targetGroup": zod.string(),
+  "constraints": zod.string(),
+  "requiredControls": zod.string(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "source": zod.string().optional()
+})),
+  "relationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})),
+  "startingPoint": zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "reason": zod.string()
+})
+}).optional(),
+  "requirementCoverage": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['proposed', 'partial', 'no-match', 'no-compatible-match', 'user-excluded']),
+  "matches": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected'])
+}).and(zod.object({
+  "selected": zod.boolean(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected', 'executed']),
+  "executed": zod.boolean()
+}))),
+  "limitations": zod.array(zod.string()),
+  "untestedConstraints": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "revision": zod.number().int(),
   "sources": zod.array(zod.object({
@@ -1012,6 +1928,14 @@ export const UndoCompositionRefinementResponse = zod.object({
   "comparisonContext": zod.string(),
   "briefId": zod.string().optional(),
   "plan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),
@@ -1050,6 +1974,14 @@ export const UndoCompositionRefinementResponse = zod.object({
   "provenance": zod.record(zod.string(), zod.unknown()),
   "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
   "originalPlan": zod.object({
+  "requirementRelationships": zod.array(zod.object({
+  "requirementId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "coverage": zod.enum(['proposed', 'partial']),
+  "reason": zod.string(),
+  "evidenceLevel": zod.enum(['documented', 'code-inspected']).optional()
+})).optional(),
   "title": zod.string(),
   "goal": zod.string(),
   "goalInferred": zod.boolean(),

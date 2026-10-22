@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Cable, Info, Lock, Minus, Play, Plus, Undo2 } from "lucide-react";
 import { ErrorView, LoadingView, Page, StageEyebrow, Tag, btn, useUndoToast } from "@/components/bits";
 import { CompositionSummary, RefinePanel } from "@/components/composition-panel";
+import { RequirementLedger } from "@/components/requirement-ledger";
 import { FeatureRedundancy } from "@/components/feature-redundancy";
 import { InputUpload } from "@/components/input-upload";
 import { cn } from "@/lib/utils";
@@ -156,6 +157,7 @@ function ProposalWorkbench({ c }: { c: Composition }) {
 
         <aside className="space-y-4">
           <CompositionSummary c={c} names={nameOf} />
+          <RequirementLedger c={c} />
           <section className="card-soft p-5" data-testid="panel-sources">
             <h2 className="text-[16px] font-semibold">Sources</h2>
             <ul className="mt-3 space-y-3">

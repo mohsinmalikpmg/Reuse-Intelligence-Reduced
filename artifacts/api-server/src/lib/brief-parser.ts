@@ -63,7 +63,7 @@ export async function parseBrief(text: string, force = true): Promise<ParsedBrie
   if (!text.trim()) throw new Error("Describe the intake before requesting AI analysis.");
   if (text.length > 80000) throw new Error("This brief is too large to analyze. Shorten it and try again.");
   const result = await analyze({
-    purpose: "legacy-brief", promptVersion: "brief-evidence-v2", instructions: SYSTEM_PROMPT,
+    private: true, purpose: "legacy-brief", promptVersion: "brief-evidence-v2", instructions: SYSTEM_PROMPT,
     input: { text: text.trim() },
     schema: z.any().transform((raw, ctx): z.infer<typeof briefAnalysisSchema> => {
       const parsed = briefAnalysisSchema.safeParse(raw);

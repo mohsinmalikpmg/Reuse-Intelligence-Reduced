@@ -8,6 +8,9 @@ import { SummaryCounts } from "@/components/wb-parts";
 import { useUndoToast } from "@/components/bits";
 import { errMsg, useInvalidateCase, useMe } from "@/lib/case";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { caseCompositionOptions } from "@/lib/composition";
+import { RequirementLedger } from "@/components/requirement-ledger";
 
 export function Measures({ cmp }: { cmp: ABComparison }) {
   const rows: [string, string | number, string | number][] = [
@@ -36,6 +39,7 @@ export function Measures({ cmp }: { cmp: ABComparison }) {
           <><div className="font-semibold">Against labelled expected findings</div><div>A: {score(cmp.scoreA)}</div><div>B: {score(cmp.scoreB)}</div></>
         ) : <span className="text-muted-foreground">No labelled expected findings for this input, so no accuracy is claimed.</span>}
       </div>
+      <ABLedger caseId={cmp.caseId} />
     </details>
   );
 }
@@ -88,4 +92,11 @@ export function StaleHint({ onRun, busy }: { onRun: () => void; busy: boolean })
       <button data-testid="button-rerun" onClick={onRun} disabled={busy} className="font-semibold underline underline-offset-2">Fuse A/B again</button>
     </div>
   );
+}
+
+/** A/B results read against the complete original need, including what these runs cannot check. */
+function ABLedger({ caseId }: { caseId: string }) {
+  const q = useQuery(caseCompositionOptions(caseId));
+  if (!q.data) return null;
+  return <div className="mt-4" data-testid="ab-requirement-ledger"><p className="mb-2 text-[12.5px] text-muted-foreground">These runs do not test requirements or constraints outside the executable demo.</p><RequirementLedger c={q.data} /></div>;
 }

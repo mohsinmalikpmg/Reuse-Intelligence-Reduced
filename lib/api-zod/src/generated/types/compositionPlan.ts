@@ -9,8 +9,10 @@ import type { CompositionCapabilityGap } from './compositionCapabilityGap';
 import type { CompositionLibrarySuggestion } from './compositionLibrarySuggestion';
 import type { CompositionPlanDecisionsItem } from './compositionPlanDecisionsItem';
 import type { CompositionPlanFlowItem } from './compositionPlanFlowItem';
+import type { DiscoveryRequirementRelationship } from './discoveryRequirementRelationship';
 
 export interface CompositionPlan {
+  requirementRelationships?: DiscoveryRequirementRelationship[];
   title: string;
   goal: string;
   goalInferred: boolean;

@@ -9,6 +9,7 @@ import type { CompositionAcceptedSuggestion } from './compositionAcceptedSuggest
 import type { CompositionBaseline } from './compositionBaseline';
 import type { CompositionCaseKind } from './compositionCaseKind';
 import type { CompositionCreationProvenance } from './compositionCreationProvenance';
+import type { CompositionDiscoveryState } from './compositionDiscoveryState';
 import type { CompositionExecutionState } from './compositionExecutionState';
 import type { CompositionFlowSemantics } from './compositionFlowSemantics';
 import type { CompositionPlan } from './compositionPlan';
@@ -17,8 +18,13 @@ import type { CompositionRequirementsItem } from './compositionRequirementsItem'
 import type { CompositionSource } from './compositionSource';
 import type { CompositionSourceEvidenceItem } from './compositionSourceEvidenceItem';
 import type { CompositionSupportedExecution } from './compositionSupportedExecution';
+import type { DiscoveryRequirementCoverage } from './discoveryRequirementCoverage';
+import type { DiscoveryRequirementSnapshot } from './discoveryRequirementSnapshot';
 
 export interface Composition {
+  discoveryState?: CompositionDiscoveryState;
+  discoverySnapshot?: DiscoveryRequirementSnapshot;
+  requirementCoverage?: DiscoveryRequirementCoverage[];
   id: string;
   revision: number;
   sources: CompositionSource[];

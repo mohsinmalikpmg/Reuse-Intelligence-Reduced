@@ -1,19 +1,12 @@
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
-import { Link, useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
 import {
-  createBriefWorkbench, getGetBriefQueryKey, getGetCodeAssessmentQueryKey, useGetBrief, getGetIntakeSessionQueryKey,
-  useGetCodeAssessment, useGetIntakeSession, useGetLibraryCodePackage,
-  useOpenIntakeCombination, useGetCurrentAuthUser,
-  type Brief, type CodeCapabilityEvidence, type CodeRequirementAssessment, type LibraryCodePackage,
+  getGetBriefQueryKey, useGetBrief, getGetIntakeSessionQueryKey,
+  useGetIntakeSession, useGetLibraryCodePackage,
+  type CodeCapabilityEvidence, type LibraryCodePackage,
 } from "@workspace/api-client-react";
 import { Skel, Tag, btn } from "@/components/bits";
-import { errMsg, useCurrentCase } from "@/lib/case";
 import { UploadedSourceEvidence } from "@/components/solution-packages";
-import { AcceptanceChecks } from "@/components/acceptance-checks";
-
-const labels = { covered: "Source reviewed", borrow: "Needs integration", partial: "Partial · build needed", missing: "Missing · investigate or build", constraint: "Constraint · validate" } as const;
+import { DiscoveryPlan } from "@/components/discovery-plan";
 
 function SourceEvidence({ evidence }: { evidence: CodeCapabilityEvidence }) {
   return (
@@ -24,30 +17,6 @@ function SourceEvidence({ evidence }: { evidence: CodeCapabilityEvidence }) {
         <ul className="list-disc pl-5">{evidence.limitations.map((text, i) => <li key={i}>{text}</li>)}</ul>
       )}
     </div>
-  );
-}
-
-function Requirement({ item }: { item: CodeRequirementAssessment }) {
-  return (
-    <li className="card-soft p-4" data-testid={`code-requirement-${item.id}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        <Tag>Priority {item.priority}</Tag>
-        <Tag tone={item.status === "covered" ? "green" : item.status === "borrow" ? "sky" : "sienna"}>{labels[item.status]}</Tag>
-      </div>
-      <h4 className="mt-2 text-[15px] font-semibold">{item.text}</h4>
-      <p className="mt-1 text-[14px] text-muted-foreground">{item.note}</p>
-      <details className="mt-3 text-[14px]">
-        <summary className="cursor-pointer font-semibold text-primary">Source &amp; integration details ({item.matches.length})</summary>
-        {item.matches.length ? item.matches.map((match, i) => (
-          <div key={`${match.solutionId}-${match.capabilityId}-${i}`} className="mt-3 border-t border-border pt-3">
-            <Link href={`/solutions/${match.solutionId}`} className="font-semibold text-primary underline">{match.solutionName}</Link>
-            <span> · {match.capabilityName}</span>
-            <SourceEvidence evidence={match.evidence} />
-            <p className="mt-2"><span className="font-semibold">Integration: </span>{match.integration || "No integration instructions recorded."}</p>
-          </div>
-        )) : <p className="mt-2 text-muted-foreground">No matching source implementation indexed for this requirement.</p>}
-      </details>
-    </li>
   );
 }
 
@@ -83,71 +52,11 @@ function PackageMetadata({ pkg }: { pkg: LibraryCodePackage }) {
   );
 }
 
-function OpenProposal({ briefId, enabled, label }: { briefId: string; enabled: boolean; label: string }) {
-  const [, navigate] = useLocation();
-  const { setCaseId } = useCurrentCase();
-  // Idempotent on the server: going back and pressing again reopens the same case.
-  const open = useMutation({
-    mutationFn: () => createBriefWorkbench(briefId),
-    onSuccess: (c) => { setCaseId(c.id); navigate(`/workbench/${c.id}?view=proposal`); },
-  });
-  return (
-    <div className="flex flex-wrap items-center gap-3">
-      <button className={btn.primary} data-testid="button-open-proposed-workflow" disabled={!enabled || open.isPending} onClick={() => open.mutate()}>
-        {open.isPending ? "Opening…" : label} <ArrowRight className="h-5 w-5" />
-      </button>
-      {open.isError && <span role="alert" className="text-[14px] text-bad" data-testid="error-open-proposed-workflow">{errMsg(open.error)} <button className="underline" onClick={() => open.mutate()}>Retry</button></span>}
-    </div>
-  );
-}
-
 export function CodeAssessment({ briefId }: { briefId: string }) {
   const brief = useGetBrief(briefId, { query: { queryKey: getGetBriefQueryKey(briefId), enabled: !!briefId } });
   if (brief.isLoading) return <Skel className="mt-10 h-44" />;
   if (!brief.data) return <div role="alert" className="mt-10">Intake could not load. <button className={btn.quiet} onClick={() => void brief.refetch()}>Retry</button></div>;
-  const b = brief.data;
-  const text = [b.rawText, b.today, b.better, b.valueStatement, b.clarification, ...b.requirements.map(r => r.text)].filter(Boolean).join(" ");
-  const recipe = FINANCE_RE.test(text) ? "finance" : INVOICE_RE.test(text) ? "invoice" : null;
-  return recipe ? <CombineShortcut brief={b} recipe={recipe} /> : <MaintenanceAssessment briefId={briefId} />;
-}
-
-function MaintenanceAssessment({ briefId }: { briefId: string }) {
-  const query = useGetCodeAssessment(briefId, { query: { queryKey: getGetCodeAssessmentQueryKey(briefId), enabled: !!briefId } });
-  const [tech, setTech] = useState(false);
-  if (query.isLoading) return <section className="mt-10" aria-label="Code-grounded assessment" role="status"><p className="mb-3 text-[14px] text-muted-foreground">Checking which existing code fits your need…</p><Skel className="h-44" /></section>;
-  if (query.isError || !query.data) return <section className="card-soft mt-10 p-5" role="alert"><h2 className="font-semibold">Recommendation unavailable</h2><p className="mt-2 text-[14px]">Source evidence could not load.</p><button className={`${btn.secondary} mt-3`} onClick={() => query.refetch()}>Retry</button></section>;
-  const report = query.data;
-  const best = report.candidates.find((c) => c.solutionId === report.bestSolutionId);
-  const alts = report.candidates.filter((c) => c.solutionId !== report.bestSolutionId).sort((a, b) => b.weightedCoverage - a.weightedCoverage).slice(0, 2);
-  return (
-    <section className="mt-10 space-y-5" data-testid="code-assessment">
-      <div className="card-soft border-l-4 border-l-primary p-6">
-        <div className="eyebrow mb-2">Proposed workflow</div>
-        <h2 className="text-[26px] font-semibold">{best ? `Start from ${best.name}` : "No existing solution fits as a base"}</h2>
-        {best && <p className="mt-2 text-[14.5px] text-muted-foreground" data-testid="proposal-summary">See how the pieces fit together.</p>}
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <OpenProposal briefId={briefId} enabled={!!best} label="Open proposed workflow" />
-          {best && <Link href={`/solutions/${best.solutionId}`} className={btn.quiet}>See examples</Link>}
-        </div>
-        {!best && <p className="mt-3 text-[14px] text-muted-foreground" data-testid="text-no-base">Nothing indexed covers your top needs. See technical details for the gaps.</p>}
-      </div>
-      {alts.length > 0 && <div>
-        <h3 className="mb-2 text-[15px] font-semibold text-muted-foreground">Other starting points</h3>
-        <ul className="grid gap-3 md:grid-cols-2">{alts.map((a) => <li key={a.solutionId} className="card-soft flex items-center gap-3 p-4" data-testid={`alt-${a.solutionId}`}>
-          <span className="min-w-0 flex-1 font-semibold">{a.name}</span>
-          <Link href={`/solutions/${a.solutionId}`} className={btn.secondary}>Explore</Link>
-        </li>)}</ul>
-      </div>}
-
-      <button className={btn.quiet} onClick={() => setTech(!tech)} aria-expanded={tech} data-testid="button-technical-details">{tech ? "Hide" : "Show"} technical details</button>
-      {tech && <>
-        <div><h3 className="mb-3 text-[17px] font-semibold">Every requirement, by priority</h3>
-          {report.requirements.length ? <ol className="space-y-3">{report.requirements.map((item) => <Requirement key={item.id} item={item} />)}</ol> : <p className="text-[14px] text-muted-foreground">No requirements were available to assess.</p>}</div>
-        <PackageMetadata pkg={report.package} />
-        <AcceptanceChecks briefId={briefId} />
-      </>}
-    </section>
-  );
+  return <DiscoveryPlan key={briefId} briefId={briefId} confirmed={!!brief.data.confirmed} />;
 }
 
 /** Code package evidence; IT sees it directly, seekers open it on request. */
@@ -175,28 +84,5 @@ export function SolutionCodePackage({ solutionId }: { solutionId: string }) {
       </details>
       <UploadedSourceEvidence solutionId={solutionId} />
     </section>
-  );
-}
-
-const FINANCE_RE = /\b(forecast|budget|management report|reporting|cost cent(re|er)s?|q4|p&l)\b/i;
-const INVOICE_RE = /\b(invoices?|suppliers?|approv(al|e|als)|spend|line items?|purchase)\b/i;
-
-/** When the brief reads like invoices or finance, offer the existing-source combination instead of a maintenance no-match. */
-function CombineShortcut({ brief: b, recipe }: { brief: Brief; recipe: "invoice" | "finance" }) {
-  const [, navigate] = useLocation();
-  const open = useOpenIntakeCombination();
-  const auth = useGetCurrentAuthUser();
-  const label = recipe === "finance" ? "Forecast to Report" : "Invoice Operations";
-  return (
-    <div className="card-soft mt-10 border-l-4 border-l-sienna p-6" data-testid={`shortcut-combine-${recipe}`}>
-      <div className="eyebrow mb-2">Proposed workflow</div>
-      <h2 className="text-[22px] font-semibold">Combine them as {label}</h2>
-      <p className="mt-2 text-[14.5px] text-muted-foreground">Your confirmed requirements go with you. Adjust the capabilities and wiring in Workbench.</p>
-      {!auth.isLoading && !auth.data?.user ? <a href={`/api/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`} className={`${btn.accent} mt-4`}>Sign in to open Workbench</a> :
-        <button className={`${btn.accent} mt-4`} data-testid="button-open-proposed-workflow" disabled={auth.isLoading || !b.confirmed || open.isPending} onClick={() => open.mutate({ briefId: b.id, data: { recipeId: recipe } }, { onSuccess: c => navigate(`/workbench/${c.id}`) })}>
-          {open.isPending ? "Opening…" : "Open proposed workflow"} <ArrowRight className="h-4 w-4" />
-        </button>}
-      {open.isError && <p role="alert" className="mt-3 text-sm text-bad">{errMsg(open.error)}</p>}
-    </div>
   );
 }

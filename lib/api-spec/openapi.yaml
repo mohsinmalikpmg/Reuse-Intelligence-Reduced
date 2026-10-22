@@ -20,6 +20,38 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /compositions/discovery:
+    post:
+      operationId: createDiscoveryComposition
+      summary: Synthesize a private revision-bound discovery composition for bulk review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DiscoveryCompositionInput" }
+      responses:
+        "201":
+          description: Persisted review draft; no experiment is created until materialization
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
+  /compositions/{id}/materialize:
+    post:
+      operationId: materializeDiscoveryComposition
+      summary: Apply all inclusion choices atomically and create the supported experiment or proposal
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DiscoveryMaterializationInput" }
+      responses:
+        "200":
+          description: Same composition identity with immutable requirements and a validated destination
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
   /workbench-inputs/{targetId}/validate:
     post:
       operationId: validateWorkbenchInput
@@ -2778,12 +2810,105 @@ components:
       properties:
         expectedRevision: { type: integer, minimum: 1 }
         instruction: { type: string, minLength: 1, maxLength: 4000 }
+    DiscoveryCompositionInput:
+      type: object
+      required: [briefId, idempotencyKey]
+      properties:
+        briefId: { type: string }
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+    DiscoveryCapabilityReference:
+      type: object
+      required: [sourceSolutionId, capabilityId]
+      properties:
+        sourceSolutionId: { type: string }
+        capabilityId: { type: string }
+    DiscoveryMaterializationInput:
+      type: object
+      required: [expectedRevision, idempotencyKey, excludedCapabilities]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+        excludedCapabilities:
+          type: array
+          items: { $ref: "#/components/schemas/DiscoveryCapabilityReference" }
+    DiscoveryRequirement:
+      type: object
+      required: [id, text, priority]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        priority: { type: integer }
+        source: { type: string }
+    DiscoveryRequirementRelationship:
+      type: object
+      required: [requirementId, sourceSolutionId, capabilityId, coverage, reason]
+      properties:
+        requirementId: { type: string }
+        sourceSolutionId: { type: string }
+        capabilityId: { type: string }
+        coverage: { type: string, enum: [proposed, partial] }
+        reason: { type: string }
+        evidenceLevel: { type: string, enum: [documented, code-inspected] }
+    DiscoveryRequirementSnapshot:
+      type: object
+      required: [briefId, sourceRevision, intakeId, intakeRevision, capturedAt, targetGroup, constraints, requiredControls, requirements, relationships, startingPoint]
+      properties:
+        codeInspection:
+          type: object
+          required: [file, sha256, capabilityIds]
+          properties:
+            file: { type: string }
+            sha256: { type: string }
+            capabilityIds: { type: array, items: { type: string } }
+        briefId: { type: string }
+        sourceRevision: { type: string }
+        intakeId: { type: ["string", "null"] }
+        intakeRevision: { type: ["integer", "null"] }
+        capturedAt: { type: string }
+        targetGroup: { type: string }
+        constraints: { type: string }
+        requiredControls: { type: string }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/DiscoveryRequirement" }
+        relationships:
+          type: array
+          items: { $ref: "#/components/schemas/DiscoveryRequirementRelationship" }
+        startingPoint:
+          type: object
+          required: [solutionId, version, reason]
+          properties:
+            solutionId: { type: string }
+            version: { type: string }
+            reason: { type: string }
+    DiscoveryRequirementCoverage:
+      type: object
+      required: [id, text, priority, status, matches, limitations, untestedConstraints, note]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        priority: { type: integer }
+        status: { type: string, enum: [proposed, partial, no-match, no-compatible-match, user-excluded] }
+        matches:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/DiscoveryRequirementRelationship"
+              - type: object
+                required: [selected, evidenceLevel, executed]
+                properties:
+                  selected: { type: boolean }
+                  evidenceLevel: { type: string, enum: [documented, code-inspected, executed] }
+                  executed: { type: boolean }
+        limitations: { type: array, items: { type: string } }
+        untestedConstraints: { type: array, items: { type: string } }
+        note: { type: string }
     CompositionCreateInput:
       type: object
       required: [idempotencyKey, sources]
       properties:
         idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
-        sources: { type: array, minItems: 2, maxItems: 3, items: { $ref: "#/components/schemas/CompositionSource" } }
+        sources: { type: array, minItems: 1, maxItems: 12, items: { $ref: "#/components/schemas/CompositionSource" } }
         desiredOutcome: { type: string, maxLength: 4000 }
         targetGroup: { type: string, maxLength: 1000 }
         comparisonContext: { type: string, maxLength: 12000 }
@@ -2792,6 +2917,9 @@ components:
       type: object
       required: [title, goal, goalInferred, baseSolutionId, rationale, decisions, flow, overlapDecisions, dependencies, integrationGaps, clarifications]
       properties:
+        requirementRelationships:
+          type: array
+          items: { $ref: "#/components/schemas/DiscoveryRequirementRelationship" }
         title: { type: string }
         goal: { type: string }
         goalInferred: { type: boolean }
@@ -2826,6 +2954,11 @@ components:
       type: object
       required: [id, revision, sources, desiredOutcome, targetGroup, comparisonContext, plan, provenance, caseId, caseKind, executable, limitations, createdAt, updatedAt, sourceEvidence, sourceFingerprint, baseline, canUndo]
       properties:
+        discoveryState: { type: string, enum: [review, materialized] }
+        discoverySnapshot: { $ref: "#/components/schemas/DiscoveryRequirementSnapshot" }
+        requirementCoverage:
+          type: array
+          items: { $ref: "#/components/schemas/DiscoveryRequirementCoverage" }
         id: { type: string }
         revision: { type: integer }
         sources: { type: array, items: { $ref: "#/components/schemas/CompositionSource" } }

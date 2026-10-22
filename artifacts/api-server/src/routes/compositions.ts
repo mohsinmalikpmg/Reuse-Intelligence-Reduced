@@ -7,6 +7,7 @@ import { ConsolidationError } from "../lib/consolidation-recipes";
 import { ConfigurationError } from "../lib/configuration";
 import { pool } from "@workspace/db";
 import { caseAccessScope } from "../lib/case-access";
+import { createDiscoveryComposition, materializeDiscoveryComposition } from "../lib/compositions";
 
 const router: IRouter = Router();
 const revision = z.object({ expectedRevision: z.number().int().min(1) }).strict();
@@ -72,6 +73,14 @@ router.get("/compositions", async (req,res) => {
 router.post("/compositions", async (req,res) => {
   res.status(201).json(await createComposition(req.user!.id,compositionInput.parse(req.body)));
 });
+router.post("/compositions/discovery",async(req,res)=>{
+  const input=z.object({briefId:z.string().min(1).max(200),idempotencyKey:z.string().min(8).max(200)}).strict().parse(req.body);
+  res.status(201).json(await createDiscoveryComposition(req.user!.id,input));
+});
+router.post("/compositions/:id/materialize",async(req,res)=>{
+  const input=revision.extend({idempotencyKey:z.string().min(8).max(200),excludedCapabilities:z.array(z.object({sourceSolutionId:z.string(),capabilityId:z.string()}).strict()).max(160)}).strict().parse(req.body);
+  res.json(await materializeDiscoveryComposition(req.user!.id,String(req.params.id),input));
+});
 router.get("/compositions/:id", async (req,res) => { res.json(await readComposition(req.user!.id,String(req.params.id))); });
 router.put("/compositions/:id/plan",async(req,res)=>{
   const input=revision.extend({plan:compositionPlan}).parse(req.body);
@@ -97,7 +106,7 @@ router.post("/compositions/:id/undo", async (req,res) => {
 });
 router.use((err: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
   if (err instanceof z.ZodError) { res.status(400).json({ error: err.message }); return; }
-  if (err instanceof CompositionError || err instanceof AnalysisError || err instanceof ConsolidationError) { res.status(err.status).json({ error: err.message }); return; }
+  if (err instanceof CompositionError || err instanceof AnalysisError || err instanceof ConsolidationError) { res.status(err.status).json({ error: err.message,...(err instanceof CompositionError&&err.state?{state:err.state}:{}) }); return; }
   if (err instanceof ConfigurationError) { res.status(422).json({ error: err.message }); return; }
   next(err);
 });

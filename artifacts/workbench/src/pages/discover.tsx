@@ -5,14 +5,13 @@ import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, pointerWithin, 
 import { ArrowRight, Check, CornerDownLeft, GripVertical, Pencil, Plus, Sparkles, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  getGetBriefQueryKey, getGetBriefMatchesQueryKey, getGetCodeAssessmentQueryKey, useCreateBrief, useGetBrief, useGetBriefMatches, useGetDemoState, useUpdateBrief,
-  type Brief, type BriefFieldValues, type SolutionMatch,
+  getGetBriefQueryKey, getGetBriefMatchesQueryKey, getGetCodeAssessmentQueryKey, useCreateBrief, useGetBrief, useGetDemoState, useUpdateBrief,
+  type Brief, type BriefFieldValues,
 } from "@workspace/api-client-react";
 import { Textarea } from "@/components/ui/textarea";
-import { Page, Skel, StatusPill, Tag, btn, useUndoToast, Headline } from "@/components/bits";
+import { Page, Skel, Tag, btn, useUndoToast, Headline } from "@/components/bits";
 import { errMsg } from "@/lib/case";
-import { CoverageTable, RequirementChips } from "@/components/reuse-check";
-import { MetaTags, isLive } from "@/components/enterprise";
+import { RequirementChips } from "@/components/reuse-check";
 import { PrototypeIntake } from "@/components/prototype-intake";
 import { cn } from "@/lib/utils";
 import { CodeAssessment } from "@/components/code-assessment";
@@ -182,7 +181,12 @@ function Understanding({ briefId, showResults, onFind }: { briefId: string; show
       </DndContext>
       {!showResults && (
         <div className="mt-8 flex items-center gap-4">
-          <button data-testid="button-find-existing" onClick={onFind} className={btn.primary}>Find existing solutions <ArrowRight className="h-5 w-5" /></button>
+          <button data-testid="button-find-existing" disabled={upd.isPending} onClick={() => {
+            upd.mutate({ briefId, data: { confirmed: true } }, {
+              onSuccess: (confirmed) => { qc.setQueryData(getGetBriefQueryKey(briefId), confirmed); onFind(); },
+              onError: (e) => say(errMsg(e)),
+            });
+          }} className={btn.primary}>{upd.isPending ? "Confirming…" : "Confirm and find existing solutions"} <ArrowRight className="h-5 w-5" /></button>
           <span className="text-[14px] text-muted-foreground">{b.valueStatement}</span>
         </div>
       )}
@@ -233,56 +237,5 @@ function Chip({ k, value, picked, onPick, onRemove }: { k: keyof BriefFieldValue
 }
 
 function Results({ briefId }: { briefId: string }) {
-  return (
-    <>
-      <CodeAssessment briefId={briefId} />
-      <details className="card-soft mt-8 p-5" data-testid="catalog-descriptions">
-        <summary className="cursor-pointer text-[17px] font-semibold text-primary">Catalog descriptions</summary>
-        <p className="mt-3 text-[14px] text-muted-foreground">Secondary comparison based on catalog descriptions, not implemented code. These suggestions do not override the code-grounded starting solution or establish verified coverage.</p>
-        <CatalogResults briefId={briefId} />
-      </details>
-    </>
-  );
-}
-
-function CatalogResults({ briefId }: { briefId: string }) {
-  const m = useGetBriefMatches(briefId, { query: { enabled: !!briefId, queryKey: getGetBriefMatchesQueryKey(briefId) } });
-  const [more, setMore] = useState(false);
-  if (m.isLoading) return <div className="mt-10 space-y-3"><Skel className="h-44" /><div className="grid gap-3 md:grid-cols-2"><Skel className="h-32" /><Skel className="h-32" /></div></div>;
-  if (m.isError || !m.data) return <p className="mt-10 text-bad">Matches could not load. <button className="underline" onClick={() => m.refetch()}>Retry</button></p>;
-  const [best, ...rest] = m.data.matches;
-  if (!best) return <p className="mt-10 text-muted-foreground">Nothing in the library matches yet. Try wording it differently, or browse the <Link href="/library" className="text-primary underline">library</Link>.</p>;
-  return (
-    <section className="reveal mt-12" data-testid="section-results">
-      <div className="eyebrow mb-2 !text-siennaink">Catalog suggestion</div>
-      <MatchCard m={best} big />
-      <CoverageTable rows={m.data.coverage} briefId={briefId} baseSolutionId={best.solution.id} baseSolutionName={best.solution.name} baseLive={isLive(best.solution)} />
-      {rest.length > 0 && <>
-        <h3 className="mb-3 mt-8 text-[17px] font-semibold">Other possibilities</h3>
-        <div className="grid gap-3 md:grid-cols-2">{rest.slice(0, 2).map((x) => <MatchCard key={x.solution.id} m={x} />)}</div>
-        {rest.length > 2 && (more
-          ? <div className="mt-3 grid gap-3 md:grid-cols-2">{rest.slice(2).map((x) => <MatchCard key={x.solution.id} m={x} />)}</div>
-          : <button data-testid="button-show-more" onClick={() => setMore(true)} className={cn(btn.quiet, "mt-3")}>Show {rest.length - 2} more</button>)}
-      </>}
-    </section>
-  );
-}
-
-function MatchCard({ m, big }: { m: SolutionMatch; big?: boolean }) {
-  return (
-    <article data-testid={big ? "card-best-match" : `card-match-${m.solution.id}`} className={cn("card-soft flex flex-col p-5", big && "border-l-4 border-l-sienna p-7")}>
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className={cn("font-semibold", big ? "text-[24px]" : "text-[18px]")}>{m.solution.name}</h3>
-        <StatusPill status={m.solution.status} />
-      </div>
-      <p className="mt-1.5 text-[15px] text-foreground">{m.solution.outcome}</p>
-      <div className="mt-2"><MetaTags s={m.solution} compact testid={`meta-match-${m.solution.id}`} /></div>
-      {m.whyMatched.length > 0 && (
-        <div className="mt-3 text-[14px] text-muted-foreground"><span className="font-semibold text-siennaink">Why it matches: </span>{(big ? m.whyMatched.slice(0, 2) : m.whyMatched.slice(0, 1)).join(" ")}</div>
-      )}
-      <div className="mt-5">
-        <Link href={`/solutions/${m.solution.id}`} data-testid={`button-explore-${m.solution.id}`} className={big ? btn.primary : btn.secondary}>{isLive(m.solution) ? "Explore solution" : "See output preview"} <ArrowRight className="h-4 w-4" /></Link>
-      </div>
-    </article>
-  );
+  return <CodeAssessment briefId={briefId} />;
 }

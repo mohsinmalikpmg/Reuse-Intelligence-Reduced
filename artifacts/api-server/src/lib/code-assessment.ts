@@ -15,7 +15,7 @@ export async function assessCode(brief: Brief, pkg: LibraryCodePackage, options:
     throw new AnalysisError("The indexed source package no longer matches the reviewed engine. Refresh the package before assessing code.", 409);
   }
   const result = await (options.analyzer ?? analyze)({
-    purpose: "code-assessment", promptVersion: "code-evidence-v1", force: options.force,
+    private: true, purpose: "code-assessment", promptVersion: "code-evidence-v1", force: options.force,
     instructions: `${groundingInstructions} Review actual source plus the indexed manifest, including each capability's limitations. Map each requirement to the minimal relevant indexed implementation. Mark complete only when the whole positive requirement is supported by source; otherwise list unmet portions. Do not infer task persistence, identity controls, delivery, semantic clustering or ML from output-generating demo code. Return JSON exactly: ${mappingShape}`,
     input: { brief: briefEvidence(brief), package: pkg, source: { file: "engine/steps.ts", text: source } },
     schema: requirementMappingSchema(brief.requirements.map(r => r.id), pkg.capabilities.map(c => c.capabilityId)),

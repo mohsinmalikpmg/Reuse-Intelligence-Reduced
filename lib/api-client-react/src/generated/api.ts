@@ -63,6 +63,8 @@ import type {
   DecisionInput,
   DecisionView,
   DemoState,
+  DiscoveryCompositionInput,
+  DiscoveryMaterializationInput,
   DispositionChoices,
   ErrorEnvelope,
   ErrorResponse,
@@ -173,6 +175,183 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getCreateDiscoveryCompositionUrl = () => {
+
+
+
+
+  return `/api/compositions/discovery`
+}
+
+/**
+ * @summary Synthesize a private revision-bound discovery composition for bulk review
+ */
+export const createDiscoveryComposition = async (discoveryCompositionInput: DiscoveryCompositionInput, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Composition>(getCreateDiscoveryCompositionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(discoveryCompositionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateDiscoveryCompositionMutationKey = () => ['createDiscoveryComposition'] as const;
+
+export const getCreateDiscoveryCompositionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDiscoveryComposition>>, TError,CreateDiscoveryCompositionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDiscoveryComposition>>, TError,CreateDiscoveryCompositionMutationVariables, TContext> => {
+
+const mutationKey = getCreateDiscoveryCompositionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDiscoveryComposition>>, CreateDiscoveryCompositionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDiscoveryComposition(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDiscoveryCompositionMutationResult = NonNullable<Awaited<ReturnType<typeof createDiscoveryComposition>>>
+    export type CreateDiscoveryCompositionMutationBody = BodyType<DiscoveryCompositionInput>
+    export type CreateDiscoveryCompositionMutationError = ErrorType<unknown>
+    export type CreateDiscoveryCompositionMutationVariables = {data: BodyType<DiscoveryCompositionInput>}
+
+    /**
+ * @summary Synthesize a private revision-bound discovery composition for bulk review
+ */
+export const useCreateDiscoveryComposition = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDiscoveryComposition>>, TError,CreateDiscoveryCompositionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createDiscoveryComposition>>,
+        TError,
+        CreateDiscoveryCompositionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateDiscoveryCompositionMutationOptions(options));
+    }
+
+export const getMaterializeDiscoveryCompositionUrl = (id: string,) => {
+
+
+
+
+  return `/api/compositions/${id}/materialize`
+}
+
+/**
+ * @summary Apply all inclusion choices atomically and create the supported experiment or proposal
+ */
+export const materializeDiscoveryComposition = async (id: string,
+    discoveryMaterializationInput: DiscoveryMaterializationInput, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Composition>(getMaterializeDiscoveryCompositionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(discoveryMaterializationInput)
+  }
+);}
+
+
+
+
+
+export const getMaterializeDiscoveryCompositionMutationKey = () => ['materializeDiscoveryComposition'] as const;
+
+export const getMaterializeDiscoveryCompositionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof materializeDiscoveryComposition>>, TError,MaterializeDiscoveryCompositionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof materializeDiscoveryComposition>>, TError,MaterializeDiscoveryCompositionMutationVariables, TContext> => {
+
+const mutationKey = getMaterializeDiscoveryCompositionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof materializeDiscoveryComposition>>, MaterializeDiscoveryCompositionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  materializeDiscoveryComposition(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MaterializeDiscoveryCompositionMutationResult = NonNullable<Awaited<ReturnType<typeof materializeDiscoveryComposition>>>
+    export type MaterializeDiscoveryCompositionMutationBody = BodyType<DiscoveryMaterializationInput>
+    export type MaterializeDiscoveryCompositionMutationError = ErrorType<unknown>
+    export type MaterializeDiscoveryCompositionMutationVariables = {id: string;data: BodyType<DiscoveryMaterializationInput>}
+
+    /**
+ * @summary Apply all inclusion choices atomically and create the supported experiment or proposal
+ */
+export const useMaterializeDiscoveryComposition = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof materializeDiscoveryComposition>>, TError,MaterializeDiscoveryCompositionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof materializeDiscoveryComposition>>,
+        TError,
+        MaterializeDiscoveryCompositionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMaterializeDiscoveryCompositionMutationOptions(options));
+    }
 
 export const getValidateWorkbenchInputUrl = (targetId: string,) => {
 
