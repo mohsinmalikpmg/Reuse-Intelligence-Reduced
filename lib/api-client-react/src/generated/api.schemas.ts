@@ -3112,6 +3112,215 @@ export interface Portfolio {
   redirects: RedirectEvent[];
 }
 
+export type AppRecordSource = typeof AppRecordSource[keyof typeof AppRecordSource];
+
+
+export const AppRecordSource = {
+  catalog: 'catalog',
+  prototype: 'prototype',
+  consolidation_source: 'consolidation_source',
+} as const;
+
+export interface AppRecord {
+  id: string;
+  name: string;
+  /** @nullable */
+  kind: string | null;
+  /** @nullable */
+  status: string | null;
+  source: AppRecordSource;
+  /** @nullable */
+  ownerName: string | null;
+  /** @nullable */
+  registeredAt: string | null;
+  /** @nullable */
+  registeredBy: string | null;
+  /** @nullable */
+  provenance: string | null;
+  /** @nullable */
+  platform: string | null;
+  demo: boolean;
+}
+
+export interface AppsMeasure {
+  total: number;
+  /** Seeded demonstration catalog products (no registration timestamp) */
+  catalog: number;
+  /** Actual registrations (consolidation sources plus prototypes */
+  registered: number;
+  /** Registered consolidation sources (persisted */
+  consolidationSources: number;
+  /** Prototypes registered through the prototype entrance */
+  prototypes: number;
+  /** Registered apps with a registration timestamp inside the window */
+  newRegistered: number;
+  newWindowDays: number;
+  definition: string;
+  records: AppRecord[];
+}
+
+export interface CapabilityRecord {
+  id: string;
+  name: string;
+  sourceSolutionId: string;
+  sourceSolutionName: string;
+  usedBy: number;
+  demo: boolean;
+}
+
+export interface CapabilitiesMeasure {
+  unique: number;
+  sourceApps: number;
+  /** Capabilities used by more than one app */
+  shared: number;
+  definition: string;
+  records: CapabilityRecord[];
+}
+
+export type CombinationRecordStage = typeof CombinationRecordStage[keyof typeof CombinationRecordStage];
+
+
+export const CombinationRecordStage = {
+  saved: 'saved',
+  proposed: 'proposed',
+  approved: 'approved',
+  published: 'published',
+  withdrawn: 'withdrawn',
+} as const;
+
+export interface CombinationRecord {
+  caseId: string;
+  title: string;
+  baseSolutionId: string;
+  baseSolutionName: string;
+  status: string;
+  stage: CombinationRecordStage;
+  /** @nullable */
+  proposedAt: string | null;
+  demo: boolean;
+}
+
+export interface CombinationsMeasure {
+  /** Saved combined cases (consolidation workbench); saving or running is not a proposal */
+  saved: number;
+  proposed: number;
+  approved: number;
+  published: number;
+  definition: string;
+  records: CombinationRecord[];
+}
+
+export interface ConsolidatedApp {
+  solutionId: string;
+  name: string;
+  caseId: string;
+  /** @nullable */
+  version: string | null;
+  demo: boolean;
+}
+
+export interface AdoptionMeasure {
+  /** False until FUSEBOX records usage of consolidated apps */
+  tracked: boolean;
+  note: string;
+  consolidatedApps: ConsolidatedApp[];
+}
+
+export interface PortfolioAnalytics {
+  generatedAt: string;
+  apps: AppsMeasure;
+  capabilities: CapabilitiesMeasure;
+  combinations: CombinationsMeasure;
+  adoption: AdoptionMeasure;
+}
+
+export type CapabilityExplorerEntryReuse = typeof CapabilityExplorerEntryReuse[keyof typeof CapabilityExplorerEntryReuse];
+
+
+export const CapabilityExplorerEntryReuse = {
+  shared: 'shared',
+  single_app: 'single_app',
+  not_assessed: 'not_assessed',
+} as const;
+
+export interface NamedRef {
+  id: string;
+  name: string;
+}
+
+export interface CapabilitySourceApp {
+  id: string;
+  name: string;
+  /** @nullable */
+  status: string | null;
+  /** In-app path for the record */
+  link: string;
+  /** True for the app the capability was first built in */
+  origin: boolean;
+}
+
+/**
+ * @nullable
+ */
+export type CapabilityImplementationExecution = typeof CapabilityImplementationExecution[keyof typeof CapabilityImplementationExecution] | null;
+
+
+export const CapabilityImplementationExecution = {
+  live: 'live',
+  preview: 'preview',
+} as const;
+
+/**
+ * Null fields were never assessed
+ */
+export interface CapabilityImplementation {
+  /** @nullable */
+  platform: string | null;
+  /**
+     * Implementation architecture type; null until assessed
+     * @nullable
+     */
+  architecture: string | null;
+  /**
+     * Architecture approval status of the source app (governance
+     * @nullable
+     */
+  governanceStatus: string | null;
+  /** @nullable */
+  execution: CapabilityImplementationExecution;
+  /** @nullable */
+  controlType: string | null;
+  /** @nullable */
+  version: string | null;
+  /** @nullable */
+  testCoverage: string | null;
+  /** @nullable */
+  supportStatus: string | null;
+  /** @nullable */
+  evidenceLevel: string | null;
+  dependsOn: string[];
+}
+
+export interface CapabilityExplorerEntry {
+  id: string;
+  name: string;
+  /** @nullable */
+  purpose: string | null;
+  /** @nullable */
+  category: string | null;
+  /** @nullable */
+  workflowStep: string | null;
+  /** @nullable */
+  ownerName: string | null;
+  /** Where the record comes from (demo catalog */
+  provenance: string;
+  businessProblems: NamedRef[];
+  sourceApps: CapabilitySourceApp[];
+  reuse: CapabilityExplorerEntryReuse;
+  implementation: CapabilityImplementation;
+  demo: boolean;
+}
+
 export interface SeekerOverview {
   headline: string;
   recentBriefs: Brief[];

@@ -31,6 +31,7 @@ import type {
   BriefUpdate,
   BusinessProblem,
   Capability,
+  CapabilityExplorerEntry,
   CapabilityRequestInput,
   Case,
   CaseInput,
@@ -98,6 +99,7 @@ import type {
   OwnerOverview,
   Persona,
   Portfolio,
+  PortfolioAnalytics,
   PrototypeAnalysis,
   PrototypeDetail,
   PrototypeIntake,
@@ -8343,6 +8345,160 @@ export function useGetExperiment<TData = Awaited<ReturnType<typeof getExperiment
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetExperimentQueryOptions(experimentId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPortfolioAnalyticsUrl = () => {
+
+
+
+
+  return `/api/portfolio/analytics`
+}
+
+/**
+ * @summary IT analytics - four headline measures, each with the records it counts. No review actions.
+ */
+export const getPortfolioAnalytics = async ( options?: Parameters<typeof customFetch>[1]): Promise<PortfolioAnalytics> => {
+
+  return customFetch<PortfolioAnalytics>(getGetPortfolioAnalyticsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPortfolioAnalyticsQueryKey = () => {
+    return [
+    `/api/portfolio/analytics`
+    ] as const;
+    }
+
+
+export const getGetPortfolioAnalyticsQueryOptions = <TData = Awaited<ReturnType<typeof getPortfolioAnalytics>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortfolioAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPortfolioAnalyticsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortfolioAnalytics>>> = ({ signal }) => getPortfolioAnalytics({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPortfolioAnalytics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPortfolioAnalyticsQueryResult = NonNullable<Awaited<ReturnType<typeof getPortfolioAnalytics>>>
+export type GetPortfolioAnalyticsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary IT analytics - four headline measures, each with the records it counts. No review actions.
+ */
+
+export function useGetPortfolioAnalytics<TData = Awaited<ReturnType<typeof getPortfolioAnalytics>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPortfolioAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPortfolioAnalyticsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListPortfolioCapabilitiesUrl = () => {
+
+
+
+
+  return `/api/portfolio/capabilities`
+}
+
+/**
+ * @summary Capability explorer - every capability with its purpose, source apps, owner, reuse status and implementation metadata
+ */
+export const listPortfolioCapabilities = async ( options?: Parameters<typeof customFetch>[1]): Promise<CapabilityExplorerEntry[]> => {
+
+  return customFetch<CapabilityExplorerEntry[]>(getListPortfolioCapabilitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPortfolioCapabilitiesQueryKey = () => {
+    return [
+    `/api/portfolio/capabilities`
+    ] as const;
+    }
+
+
+export const getListPortfolioCapabilitiesQueryOptions = <TData = Awaited<ReturnType<typeof listPortfolioCapabilities>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortfolioCapabilities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPortfolioCapabilitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPortfolioCapabilities>>> = ({ signal }) => listPortfolioCapabilities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPortfolioCapabilities>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPortfolioCapabilitiesQueryResult = NonNullable<Awaited<ReturnType<typeof listPortfolioCapabilities>>>
+export type ListPortfolioCapabilitiesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Capability explorer - every capability with its purpose, source apps, owner, reuse status and implementation metadata
+ */
+
+export function useListPortfolioCapabilities<TData = Awaited<ReturnType<typeof listPortfolioCapabilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPortfolioCapabilities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPortfolioCapabilitiesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

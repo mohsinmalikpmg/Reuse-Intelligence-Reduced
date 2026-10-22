@@ -10595,6 +10595,119 @@ export const GetExperimentResponse = zod.object({
 
 
 /**
+ * @summary IT analytics - four headline measures, each with the records it counts. No review actions.
+ */
+export const GetPortfolioAnalyticsResponse = zod.object({
+  "generatedAt": zod.string(),
+  "apps": zod.object({
+  "total": zod.number().int(),
+  "catalog": zod.number().int().describe('Seeded demonstration catalog products (no registration timestamp)'),
+  "registered": zod.number().int().describe('Actual registrations (consolidation sources plus prototypes'),
+  "consolidationSources": zod.number().int().describe('Registered consolidation sources (persisted'),
+  "prototypes": zod.number().int().describe('Prototypes registered through the prototype entrance'),
+  "newRegistered": zod.number().int().describe('Registered apps with a registration timestamp inside the window'),
+  "newWindowDays": zod.number().int(),
+  "definition": zod.string(),
+  "records": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "kind": zod.string().nullable(),
+  "status": zod.string().nullable(),
+  "source": zod.enum(['catalog', 'prototype', 'consolidation_source']),
+  "ownerName": zod.string().nullable(),
+  "registeredAt": zod.string().nullable(),
+  "registeredBy": zod.string().nullable(),
+  "provenance": zod.string().nullable(),
+  "platform": zod.string().nullable(),
+  "demo": zod.boolean()
+}))
+}),
+  "capabilities": zod.object({
+  "unique": zod.number().int(),
+  "sourceApps": zod.number().int(),
+  "shared": zod.number().int().describe('Capabilities used by more than one app'),
+  "definition": zod.string(),
+  "records": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "sourceSolutionName": zod.string(),
+  "usedBy": zod.number().int(),
+  "demo": zod.boolean()
+}))
+}),
+  "combinations": zod.object({
+  "saved": zod.number().int().describe('Saved combined cases (consolidation workbench); saving or running is not a proposal'),
+  "proposed": zod.number().int(),
+  "approved": zod.number().int(),
+  "published": zod.number().int(),
+  "definition": zod.string(),
+  "records": zod.array(zod.object({
+  "caseId": zod.string(),
+  "title": zod.string(),
+  "baseSolutionId": zod.string(),
+  "baseSolutionName": zod.string(),
+  "status": zod.string(),
+  "stage": zod.enum(['saved', 'proposed', 'approved', 'published', 'withdrawn']),
+  "proposedAt": zod.string().nullable(),
+  "demo": zod.boolean()
+}))
+}),
+  "adoption": zod.object({
+  "tracked": zod.boolean().describe('False until FUSEBOX records usage of consolidated apps'),
+  "note": zod.string(),
+  "consolidatedApps": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "name": zod.string(),
+  "caseId": zod.string(),
+  "version": zod.string().nullable(),
+  "demo": zod.boolean()
+}))
+})
+})
+
+
+/**
+ * @summary Capability explorer - every capability with its purpose, source apps, owner, reuse status and implementation metadata
+ */
+export const ListPortfolioCapabilitiesResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "purpose": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "workflowStep": zod.string().nullable(),
+  "ownerName": zod.string().nullable(),
+  "provenance": zod.string().describe('Where the record comes from (demo catalog'),
+  "businessProblems": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+})),
+  "sourceApps": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "status": zod.string().nullable(),
+  "link": zod.string().describe('In-app path for the record'),
+  "origin": zod.boolean().describe('True for the app the capability was first built in')
+})),
+  "reuse": zod.enum(['shared', 'single_app', 'not_assessed']),
+  "implementation": zod.object({
+  "platform": zod.string().nullable(),
+  "architecture": zod.string().nullable().describe('Implementation architecture type; null until assessed'),
+  "governanceStatus": zod.string().nullable().describe('Architecture approval status of the source app (governance'),
+  "execution": zod.union([zod.literal('live'),zod.literal('preview'),zod.literal(null)]).nullable(),
+  "controlType": zod.string().nullable(),
+  "version": zod.string().nullable(),
+  "testCoverage": zod.string().nullable(),
+  "supportStatus": zod.string().nullable(),
+  "evidenceLevel": zod.string().nullable(),
+  "dependsOn": zod.array(zod.string())
+}).describe('Null fields were never assessed'),
+  "demo": zod.boolean()
+})
+export const ListPortfolioCapabilitiesResponse = zod.array(ListPortfolioCapabilitiesResponseItem)
+
+
+/**
  * @summary IT portfolio decision dashboard
  */
 export const GetPortfolioResponse = zod.object({

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronDown, Compass, Layers, LogOut, Menu, Network, RotateCcw, Search, ShieldCheck, Zap, type LucideIcon } from "lucide-react";
+import { BarChart3, Blocks, ChevronDown, ClipboardCheck, Compass, Layers, LogOut, Menu, Network, RotateCcw, Search, Zap, type LucideIcon } from "lucide-react";
 import { useGetDemoState, useListPersonas, useResetDemo, type Role } from "@workspace/api-client-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -61,7 +61,9 @@ function crumbsFor(location: string): { stage: Stage; page: string } {
   if (location.startsWith("/cases/")) return { stage: "converge", page: "Decision view" };
   if (/^\/my-solutions\/.+\/improvements\//.test(location)) return { stage: "converge", page: "Shared improvement" };
   if (location.startsWith("/my-solutions")) return { stage: "converge", page: "My Solutions" };
-  if (location.startsWith("/portfolio")) return { stage: "converge", page: "Portfolio" };
+  if (location.startsWith("/portfolio/analytics")) return { stage: "converge", page: "Analytics" };
+  if (location.startsWith("/portfolio/capabilities")) return { stage: "converge", page: "Capabilities" };
+  if (location.startsWith("/portfolio")) return { stage: "converge", page: "Review" };
   return { stage: "trace", page: "Not found" };
 }
 
@@ -110,8 +112,10 @@ export function Frame({ children }: { children: ReactNode }) {
     { href: "/library", label: "Library", match: "/library", icon: Network, stage: "trace" },
     { href: wbCase ? `/workbench/${wbCase}` : "/library", label: "Workbench", match: "/workbench", icon: Zap, stage: "connect" },
     { href: "/my-solutions", label: "My Solutions", match: "/my-solutions", icon: Layers, stage: "converge" },
-    { href: "/portfolio", label: "Portfolio", match: "/portfolio", icon: ShieldCheck, stage: "converge" },
-  ] satisfies NavItem[]).filter((n) => persona.role === "it" || !["/portfolio", "/my-solutions"].includes(n.href));
+    { href: "/portfolio/analytics", label: "Analytics", match: "/portfolio/analytics", icon: BarChart3, stage: "converge" },
+    { href: "/portfolio/capabilities", label: "Capabilities", match: "/portfolio/capabilities", icon: Blocks, stage: "converge" },
+    { href: "/portfolio/review", label: "Review", match: "/portfolio/review", icon: ClipboardCheck, stage: "converge" },
+  ] satisfies NavItem[]).filter((n) => persona.role === "it" || !(n.href.startsWith("/portfolio") || n.href === "/my-solutions"));
   const isOn = (n: NavItem) => location.startsWith(n.match) || (n.match === "/library" && (location.startsWith("/solutions") || location.startsWith("/search")));
   const crumbs = crumbsFor(location);
   const roleLabel = ROLE_TABS.find((t) => t.role === persona.role)?.label ?? "";
@@ -172,7 +176,7 @@ export function Frame({ children }: { children: ReactNode }) {
               const on = isOn(n);
               const Icon = n.icon;
               const link = (
-                <Link href={n.href} data-testid={`link-nav-${n.match.slice(1)}`} aria-current={on ? "page" : undefined} aria-label={rail ? n.label : undefined}
+                <Link href={n.href} data-testid={`link-nav-${n.match.slice(1).replace("portfolio/", "")}`} aria-current={on ? "page" : undefined} aria-label={rail ? n.label : undefined}
                   className={cn("relative flex min-h-11 items-center gap-3 rounded-xl text-[14.5px] font-medium transition-colors", rail ? "justify-center px-0" : "px-3",
                     on ? "bg-sidebar-accent text-white shadow-[inset_0_0_0_1px_hsl(var(--sidebar-border))]" : "text-white/70 hover:bg-white/5 hover:text-white")}>
                   {on && <span aria-hidden className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r bg-sienna" />}

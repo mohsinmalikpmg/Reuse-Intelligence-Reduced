@@ -102,7 +102,7 @@ export function ITLibrary({ onBrowse }: { onBrowse: () => void }) {
         {pages > 1 && <div className="mt-4 flex items-center gap-3"><button className={btn.quiet} disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button><span className="text-[14px] text-muted-foreground">Page {page + 1} of {pages}</span><button className={btn.quiet} disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</button></div>}
         <div className="mt-8 flex flex-wrap gap-2">
           <button className={btn.primary} onClick={onBrowse} data-testid="button-browse-catalog">Browse the full catalog <ArrowRight className="h-5 w-5" /></button>
-          <Link href="/portfolio" className={btn.quiet}>Open the decision queue</Link>
+          <Link href="/portfolio/review" className={btn.quiet}>Open the decision queue</Link>
         </div>
       </div>
     </Page>

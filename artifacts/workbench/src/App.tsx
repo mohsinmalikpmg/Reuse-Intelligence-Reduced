@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Route, Switch, useLocation, Redirect, Router as WouterRouter } from 'wouter';
+import { Route, Switch, useLocation, useSearch, Redirect, Router as WouterRouter } from 'wouter';
 import { PersonaProvider, useRole } from '@/lib/persona';
 import { CaseProvider, httpStatus } from '@/lib/case';
 import { MotionProvider } from '@/lib/motion';
@@ -20,7 +20,9 @@ import { WiringRedirect } from '@/components/wiring-entry';
 import TestSessionPage from '@/pages/test-session';
 import MySolutions from '@/pages/my-solutions';
 import ImprovementPage from '@/pages/improvement';
-import Portfolio from '@/pages/portfolio';
+import PortfolioAnalytics from '@/pages/portfolio/analytics';
+import PortfolioCapabilities from '@/pages/portfolio/capabilities';
+import PortfolioReview from '@/pages/portfolio/review';
 import DecisionPage from '@/pages/decision';
 
 // A 4xx answer is final (a missing or removed record); retrying only leaves the page on a skeleton for seconds.
@@ -48,12 +50,21 @@ function Router() {
           <Route path="/test/:sessionId" component={TestSessionPage} />
           <Route path="/my-solutions" component={MySolutions} />
           <Route path="/my-solutions/:solutionId/improvements/:key" component={ImprovementPage} />
-          <Route path="/portfolio" component={Portfolio} />
+          <Route path="/portfolio" component={LegacyPortfolio} />
+          <Route path="/portfolio/analytics" component={PortfolioAnalytics} />
+          <Route path="/portfolio/capabilities" component={PortfolioCapabilities} />
+          <Route path="/portfolio/review" component={PortfolioReview} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>
     </Frame>
   );
+}
+
+/** Legacy /portfolio links (and ?case= deep links from version history) land on Review, where decisions live. */
+function LegacyPortfolio() {
+  const search = useSearch();
+  return <Redirect to={`/portfolio/review${search ? `?${search}` : ''}`} replace />;
 }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {

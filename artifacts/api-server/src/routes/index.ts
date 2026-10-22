@@ -16,6 +16,7 @@ import solutionPackagesRouter from "./solution-packages";
 import solutionExportsRouter from "./solution-exports";
 import financeWiringRouter from "./finance-wiring";
 import consolidationCasesRouter from "./consolidation-cases";
+import portfolioAnalyticsRouter from "./portfolio-analytics";
 
 const router: IRouter = Router();
 router.use(authRouter);
@@ -32,6 +33,7 @@ router.use(healthRouter);
 router.use(libraryRouter);
 router.use(briefsRouter);
 router.use(casesRouter);
+router.use(portfolioAnalyticsRouter);
 router.use(overviewRouter);
 router.use(workbenchRouter);
 router.use(reuseRouter);

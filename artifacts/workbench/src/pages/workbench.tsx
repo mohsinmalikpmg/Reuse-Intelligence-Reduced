@@ -361,9 +361,16 @@ export default function Workbench() {
           <Tag tone={status.tone} testid="status-case">{status.l}</Tag>
         </div>
         <h1 data-testid="text-headline" className="mt-0.5 break-words text-[24px] md:text-[28px]">{theCase.title}</h1>
-        <p className="mt-1 text-[14px] text-muted-foreground">Starts from {baseName}. Click any block for what it does and where it comes from.</p>
+        <p className="mt-1 text-[14px] text-muted-foreground">Starts from {baseName}. Version A is the locked baseline; Version B is what you are configuring. Click any block for detail.</p>
         <div className="mt-5">
-          {wbQ.isLoading ? <Skel className="h-60 rounded-[20px]" /> : <ProposalMap nodes={nodes} baseName={baseName} />}
+          {wbQ.isLoading ? <Skel className="h-60 rounded-[20px]" /> : <ProposalMap lane={lane} baseName={baseName} edit={{
+            editable, busy: put.isPending || addRequest.isPending || removeRequest.isPending,
+            onSwitch: (id, name, on) => toggle(id, name, on),
+            onSetOption: (id, name, v) => apply({ configValues: { [id]: v } }, `${name}: ${v}`),
+            onRemoveRequest: (req) => dropRequest(req),
+            picker: (afterId, afterName, close) => <StepPicker afterId={afterId} afterName={afterName} actions={{ ...reuseActions, onAdd: (c) => { add(c); close(); }, onOpenStep: () => close(), onRequest: async (input) => { await recordRequest(input); close(); } }} browse={<Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={(c) => { add(c); close(); }} />} onClose={close} />,
+            canUndo: undo.length > 0, onUndo: () => restore(undo[undo.length - 1]),
+          }} />}
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <button data-testid="button-try-proposal" onClick={tryIt} disabled={!runnable || runOne.isPending || noInput} className={cn(btn.accent, "min-h-12 px-6")}>

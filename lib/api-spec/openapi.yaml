@@ -2136,6 +2136,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /portfolio/analytics:
+    get:
+      operationId: getPortfolioAnalytics
+      tags: [portfolio]
+      summary: IT analytics - four headline measures, each with the records it counts. No review actions.
+      responses:
+        "200":
+          description: Analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioAnalytics"
+  /portfolio/capabilities:
+    get:
+      operationId: listPortfolioCapabilities
+      tags: [portfolio]
+      summary: Capability explorer - every capability with its purpose, source apps, owner, reuse status and implementation metadata
+      responses:
+        "200":
+          description: Capabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CapabilityExplorerEntry" }
   /portfolio:
     get:
       operationId: getPortfolio
@@ -5407,6 +5432,161 @@ components:
           type: array
           description: Recent reuse checks where a person used or improved an existing capability instead of building
           items: { $ref: "#/components/schemas/RedirectEvent" }
+
+    PortfolioAnalytics:
+      type: object
+      required: [generatedAt, apps, capabilities, combinations, adoption]
+      properties:
+        generatedAt: { type: string }
+        apps: { $ref: "#/components/schemas/AppsMeasure" }
+        capabilities: { $ref: "#/components/schemas/CapabilitiesMeasure" }
+        combinations: { $ref: "#/components/schemas/CombinationsMeasure" }
+        adoption: { $ref: "#/components/schemas/AdoptionMeasure" }
+    AppsMeasure:
+      type: object
+      required: [total, catalog, registered, consolidationSources, prototypes, newRegistered, newWindowDays, definition, records]
+      properties:
+        total: { type: integer }
+        catalog: { type: integer, description: Seeded demonstration catalog products (no registration timestamp) }
+        registered: { type: integer, description: Actual registrations (consolidation sources plus prototypes, deduplicated by id) }
+        consolidationSources: { type: integer, description: Registered consolidation sources (persisted, timestamped) }
+        prototypes: { type: integer, description: Prototypes registered through the prototype entrance }
+        newRegistered: { type: integer, description: Registered apps with a registration timestamp inside the window }
+        newWindowDays: { type: integer }
+        definition: { type: string }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/AppRecord" }
+    AppRecord:
+      type: object
+      required: [id, name, kind, status, source, ownerName, registeredAt, registeredBy, platform, provenance, demo]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { type: ["string", "null"] }
+        status: { type: ["string", "null"] }
+        source: { type: string, enum: [catalog, prototype, consolidation_source] }
+        ownerName: { type: ["string", "null"] }
+        registeredAt: { type: ["string", "null"] }
+        registeredBy: { type: ["string", "null"] }
+        provenance: { type: ["string", "null"] }
+        platform: { type: ["string", "null"] }
+        demo: { type: boolean }
+    CapabilitiesMeasure:
+      type: object
+      required: [unique, sourceApps, shared, definition, records]
+      properties:
+        unique: { type: integer }
+        sourceApps: { type: integer }
+        shared: { type: integer, description: Capabilities used by more than one app }
+        definition: { type: string }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilityRecord" }
+    CapabilityRecord:
+      type: object
+      required: [id, name, sourceSolutionId, sourceSolutionName, usedBy, demo]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        sourceSolutionId: { type: string }
+        sourceSolutionName: { type: string }
+        usedBy: { type: integer }
+        demo: { type: boolean }
+    CombinationsMeasure:
+      type: object
+      required: [saved, proposed, approved, published, definition, records]
+      properties:
+        saved: { type: integer, description: Saved combined cases (consolidation workbench); saving or running is not a proposal }
+        proposed: { type: integer }
+        approved: { type: integer }
+        published: { type: integer }
+        definition: { type: string }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/CombinationRecord" }
+    CombinationRecord:
+      type: object
+      required: [caseId, title, baseSolutionId, baseSolutionName, status, stage, proposedAt, demo]
+      properties:
+        caseId: { type: string }
+        title: { type: string }
+        baseSolutionId: { type: string }
+        baseSolutionName: { type: string }
+        status: { type: string }
+        stage: { type: string, enum: [saved, proposed, approved, published, withdrawn] }
+        proposedAt: { type: ["string", "null"] }
+        demo: { type: boolean }
+    AdoptionMeasure:
+      type: object
+      required: [tracked, note, consolidatedApps]
+      properties:
+        tracked: { type: boolean, description: False until FUSEBOX records usage of consolidated apps }
+        note: { type: string }
+        consolidatedApps:
+          type: array
+          items: { $ref: "#/components/schemas/ConsolidatedApp" }
+    ConsolidatedApp:
+      type: object
+      required: [solutionId, name, caseId, version, demo]
+      properties:
+        solutionId: { type: string }
+        name: { type: string }
+        caseId: { type: string }
+        version: { type: ["string", "null"] }
+        demo: { type: boolean }
+    CapabilityExplorerEntry:
+      type: object
+      required: [id, name, purpose, category, workflowStep, ownerName, provenance, businessProblems, sourceApps, reuse, implementation, demo]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        purpose: { type: ["string", "null"] }
+        category: { type: ["string", "null"] }
+        workflowStep: { type: ["string", "null"] }
+        ownerName: { type: ["string", "null"] }
+        provenance: { type: string, description: Where the record comes from (demo catalog, registered prototype, registered consolidation recipe) }
+        businessProblems:
+          type: array
+          items: { $ref: "#/components/schemas/NamedRef" }
+        sourceApps:
+          type: array
+          items: { $ref: "#/components/schemas/CapabilitySourceApp" }
+        reuse: { type: string, enum: [shared, single_app, not_assessed] }
+        implementation: { $ref: "#/components/schemas/CapabilityImplementation" }
+        demo: { type: boolean }
+    NamedRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+    CapabilitySourceApp:
+      type: object
+      required: [id, name, status, link, origin]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status: { type: ["string", "null"] }
+        link: { type: string, description: In-app path for the record }
+        origin: { type: boolean, description: True for the app the capability was first built in }
+    CapabilityImplementation:
+      type: object
+      description: Null fields were never assessed
+      required: [platform, architecture, governanceStatus, execution, controlType, version, testCoverage, supportStatus, evidenceLevel, dependsOn]
+      properties:
+        platform: { type: ["string", "null"] }
+        architecture: { type: ["string", "null"], description: Implementation architecture type; null until assessed }
+        governanceStatus: { type: ["string", "null"], description: Architecture approval status of the source app (governance, not an implementation type) }
+        execution: { type: ["string", "null"], enum: [live, preview, null] }
+        controlType: { type: ["string", "null"] }
+        version: { type: ["string", "null"] }
+        testCoverage: { type: ["string", "null"] }
+        supportStatus: { type: ["string", "null"] }
+        evidenceLevel: { type: ["string", "null"] }
+        dependsOn:
+          type: array
+          items: { type: string }
 
     SeekerOverview:
       type: object
