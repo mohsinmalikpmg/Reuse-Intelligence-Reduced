@@ -11,6 +11,12 @@ Intake should be one of FUSEBOX's most critical steps: validate understanding of
 
 Intake outputs must visibly include a MECE requirements breakdown for business-problem inputs. Solution inputs must show both the understood business problem and the MECE supplied features/capabilities. Automatically suggest a representative descriptive name from the inputs, with user editing preserved.
 
+Interpretation and analytical conclusions must use active AI analysis, not canned deterministic outputs or silent rule-based fallbacks.
+
+**Why:** The user explicitly requested AI connections wherever required and rejected deterministic/automated outputs where active analysis and interpretation are expected.
+
+**How to apply:** Configure and verify the provider, ground analysis in input/source evidence, and expose errors rather than substituting canned conclusions. Preserve deterministic calculations, authorization, source integrity and measured evidence; those are not interpretive judgments.
+
 **Why:** The user reiterated that these breakdowns were still not visible and explicitly requested automatic descriptive naming.
 
 **How to apply:** Treat these as reviewable intake outputs before comparison, not hidden interpretation data. Completeness is relative to supplied scope; expose gaps and inferences rather than inventing requirements or proof.
