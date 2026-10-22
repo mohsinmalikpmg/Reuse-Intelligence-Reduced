@@ -1,0 +1,10 @@
+[
+  ".gitignore", ".replitignore", "README.md", "SCENARIO.md", "DEMONSTRATION.md",
+  "capability-manifest.json", "package.json", "pnpm-lock.yaml", "tsconfig.json",
+  "vite.config.ts", "index.html", "public/favicon.svg",
+  "package-source.py", "package-files.json",
+  "src/main.tsx", "src/App.tsx", "src/pages.tsx", "src/ui.tsx", "src/store.ts",
+  "src/index.css", "src/domain/seed.ts", "src/domain/ledger.ts",
+  "src/domain/storage.ts", "src/domain/domain.test.ts",
+  "src/domain/bulk.ts", "src/domain/bulk.test.ts", "src/bulk.tsx"
+]

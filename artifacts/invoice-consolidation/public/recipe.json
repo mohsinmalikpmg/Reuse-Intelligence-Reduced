@@ -1,0 +1,1 @@
+{"schemaVersion":1,"snapshotId":"synthetic-invoice-demo-v1","sources":["invoice-finder","approval-desk","spend-tracker"],"capabilities":["fuzzy-search","bulk-decisions","spend-tracing"],"baseSourceId":"invoice-finder","wiring":{"edgeIds":["invoice-to-search","invoice-to-decisions","invoice-to-spend"]}}

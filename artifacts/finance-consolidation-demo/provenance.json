@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "modules": [
+    {
+      "path": "vendor/forecast/data.py",
+      "originalPath": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/data.py",
+      "archive": "Budget-and-Forecast-Agent-main_1792619794109.zip",
+      "sha256": "2baaf58c0fc08733e6d544a9e7965a0d4bcccd19a676ee254eaccf0d43e76855",
+      "bytes": 8554
+    },
+    {
+      "path": "vendor/forecast/calculations.py",
+      "originalPath": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/calculations.py",
+      "archive": "Budget-and-Forecast-Agent-main_1792619794109.zip",
+      "sha256": "2ad3acf2d22988529073167adc13c2eff591142b62c7bd08599c0249d74dce1a",
+      "bytes": 2597
+    },
+    {
+      "path": "vendor/reporting/data.py",
+      "originalPath": "Management-Reporting-Agent-main/artifacts/api-server/finance/data.py",
+      "archive": "Management-Reporting-Agent-main_1792619794108.zip",
+      "sha256": "cdd06c425f02be7b94eb5d91b1ae7f4d99bb2c048121f1016b9cb07deb26c35a",
+      "bytes": 7213
+    },
+    {
+      "path": "vendor/reporting/reporting.py",
+      "originalPath": "Management-Reporting-Agent-main/artifacts/api-server/finance/reporting.py",
+      "archive": "Management-Reporting-Agent-main_1792619794108.zip",
+      "sha256": "a198dd51a8a378360f9837d75435718a1526680cdb897104b54ef6e07400e077",
+      "bytes": 9265
+    }
+  ],
+  "archives": [
+    {
+      "filename": "Budget-and-Forecast-Agent-main_1792619794109.zip",
+      "sha256": "1f5c4f3e57430bdc6ea2de2856f7d127b5ef545ad44b29d2938ed71fc961b4b7"
+    },
+    {
+      "filename": "Management-Reporting-Agent-main_1792619794108.zip",
+      "sha256": "369013b1523f1e1e6786ad8095e98402988565cfbc46ff1d885dfffef2422310"
+    }
+  ]
+}

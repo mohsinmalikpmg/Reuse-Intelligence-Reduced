@@ -1,0 +1,611 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "testsRun": 20,
+  "failures": [],
+  "testLog": "test_bad_application_preserves_previous_report (test_integration.BoundaryTests.test_bad_application_preserves_previous_report) ... ok\ntest_idempotent_application_and_aggregation (test_integration.BoundaryTests.test_idempotent_application_and_aggregation) ... ok\ntest_missing_mapping_fields_duplicates_and_periods_rejected (test_integration.BoundaryTests.test_missing_mapping_fields_duplicates_and_periods_rejected) ... ok\ntest_period_alignment_and_original_forecast_execution (test_integration.BoundaryTests.test_period_alignment_and_original_forecast_execution) ... ok\ntest_reporting_dollar_semantics_and_cent_lift_are_equivalent (test_integration.BoundaryTests.test_reporting_dollar_semantics_and_cent_lift_are_equivalent) ... ok\ntest_baseline_reset_repeat_and_negative (test_integration.IntegrationTests.test_baseline_reset_repeat_and_negative) ... ok\ntest_concurrent_requests_isolated (test_integration.IntegrationTests.test_concurrent_requests_isolated) ... ok\ntest_currency_precision (test_integration.IntegrationTests.test_currency_precision) ... ok\ntest_invalid_assumptions (test_integration.IntegrationTests.test_invalid_assumptions) ... ok\ntest_known_change_independent_expectations (test_integration.IntegrationTests.test_known_change_independent_expectations) ... ok\ntest_source_hashes_and_archive_preservation (test_integration.IntegrationTests.test_source_hashes_and_archive_preservation) ... ok\ntest_account_remapping_changes_real_report_rows (test_wiring.WiringTests.test_account_remapping_changes_real_report_rows) ... ok\ntest_assumption_account_drives_selected_mapping (test_wiring.WiringTests.test_assumption_account_drives_selected_mapping) ... ok\ntest_canonical_order_and_change_fingerprint (test_wiring.WiringTests.test_canonical_order_and_change_fingerprint) ... ok\ntest_default_matches_independent_quarter_expectation (test_wiring.WiringTests.test_default_matches_independent_quarter_expectation) ... ok\ntest_export_reexecutes_saved_config_without_workspace (test_wiring.WiringTests.test_export_reexecutes_saved_config_without_workspace) ... ok\ntest_invalid_connections_blocked (test_wiring.WiringTests.test_invalid_connections_blocked) ... ok\ntest_original_projection_methods_change_run_rate (test_wiring.WiringTests.test_original_projection_methods_change_run_rate) ... ok\ntest_report_period_does_not_change_total_adjustment_allocation (test_wiring.WiringTests.test_report_period_does_not_change_total_adjustment_allocation) ... ok\ntest_selected_centre_receives_full_adjustment (test_wiring.WiringTests.test_selected_centre_receives_full_adjustment) ... ok\n\n----------------------------------------------------------------------\nRan 20 tests in 14.079s\n\nOK\n",
+  "sourceHashes": [
+    {
+      "path": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/data.py",
+      "sha256": "2baaf58c0fc08733e6d544a9e7965a0d4bcccd19a676ee254eaccf0d43e76855"
+    },
+    {
+      "path": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/calculations.py",
+      "sha256": "2ad3acf2d22988529073167adc13c2eff591142b62c7bd08599c0249d74dce1a"
+    },
+    {
+      "path": "Management-Reporting-Agent-main/artifacts/api-server/finance/data.py",
+      "sha256": "cdd06c425f02be7b94eb5d91b1ae7f4d99bb2c048121f1016b9cb07deb26c35a"
+    },
+    {
+      "path": "Management-Reporting-Agent-main/artifacts/api-server/finance/reporting.py",
+      "sha256": "a198dd51a8a378360f9837d75435718a1526680cdb897104b54ef6e07400e077"
+    }
+  ],
+  "knownChange": {
+    "adjustment": 360,
+    "currency": "USD",
+    "period": "Q4 2026",
+    "lines": [
+      {
+        "id": "0",
+        "name": "Revenue",
+        "baseline": "90000.09",
+        "current": "90000.09",
+        "difference": "0.00"
+      },
+      {
+        "id": "1",
+        "name": "COGS",
+        "baseline": "18000.00",
+        "current": "18000.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "opex",
+        "name": "Operating Expenses",
+        "baseline": "36000.09",
+        "current": "36360.09",
+        "difference": "360.00"
+      },
+      {
+        "id": "profit",
+        "name": "Operating Profit",
+        "baseline": "36000.00",
+        "current": "35640.00",
+        "difference": "-360.00"
+      }
+    ],
+    "months": [
+      {
+        "period": "2026-10",
+        "lines": [
+          {
+            "id": "0",
+            "name": "Revenue",
+            "baseline": "30000.03",
+            "current": "30000.03",
+            "difference": "0.00"
+          },
+          {
+            "id": "1",
+            "name": "COGS",
+            "baseline": "6000.00",
+            "current": "6000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "opex",
+            "name": "Operating Expenses",
+            "baseline": "12000.03",
+            "current": "12120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "profit",
+            "name": "Operating Profit",
+            "baseline": "12000.00",
+            "current": "11880.00",
+            "difference": "-120.00"
+          }
+        ]
+      },
+      {
+        "period": "2026-11",
+        "lines": [
+          {
+            "id": "0",
+            "name": "Revenue",
+            "baseline": "30000.03",
+            "current": "30000.03",
+            "difference": "0.00"
+          },
+          {
+            "id": "1",
+            "name": "COGS",
+            "baseline": "6000.00",
+            "current": "6000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "opex",
+            "name": "Operating Expenses",
+            "baseline": "12000.03",
+            "current": "12120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "profit",
+            "name": "Operating Profit",
+            "baseline": "12000.00",
+            "current": "11880.00",
+            "difference": "-120.00"
+          }
+        ]
+      },
+      {
+        "period": "2026-12",
+        "lines": [
+          {
+            "id": "0",
+            "name": "Revenue",
+            "baseline": "30000.03",
+            "current": "30000.03",
+            "difference": "0.00"
+          },
+          {
+            "id": "1",
+            "name": "COGS",
+            "baseline": "6000.00",
+            "current": "6000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "opex",
+            "name": "Operating Expenses",
+            "baseline": "12000.03",
+            "current": "12120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "profit",
+            "name": "Operating Profit",
+            "baseline": "12000.00",
+            "current": "11880.00",
+            "difference": "-120.00"
+          }
+        ]
+      }
+    ],
+    "note": "Synthetic Operations / Service Delivery + Supply Chain. Q3 Forecast baseline; Q4 projection, not actuals. Integer-cent bridge; original engines unchanged.",
+    "sourceHashes": [
+      {
+        "path": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/data.py",
+        "sha256": "2baaf58c0fc08733e6d544a9e7965a0d4bcccd19a676ee254eaccf0d43e76855"
+      },
+      {
+        "path": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/calculations.py",
+        "sha256": "2ad3acf2d22988529073167adc13c2eff591142b62c7bd08599c0249d74dce1a"
+      },
+      {
+        "path": "Management-Reporting-Agent-main/artifacts/api-server/finance/data.py",
+        "sha256": "cdd06c425f02be7b94eb5d91b1ae7f4d99bb2c048121f1016b9cb07deb26c35a"
+      },
+      {
+        "path": "Management-Reporting-Agent-main/artifacts/api-server/finance/reporting.py",
+        "sha256": "a198dd51a8a378360f9837d75435718a1526680cdb897104b54ef6e07400e077"
+      }
+    ]
+  },
+  "invalidInputEvidence": [
+    {
+      "input": null,
+      "rejected": true,
+      "error": "Adjustment must be a finite number."
+    },
+    {
+      "input": 1,
+      "rejected": true,
+      "error": "Enter a whole-dollar multiple of 6 between -600 and 6000."
+    },
+    {
+      "input": -606,
+      "rejected": true,
+      "error": "Enter a whole-dollar multiple of 6 between -600 and 6000."
+    },
+    {
+      "input": 6006,
+      "rejected": true,
+      "error": "Enter a whole-dollar multiple of 6 between -600 and 6000."
+    },
+    {
+      "input": "360",
+      "rejected": true,
+      "error": "Adjustment must be a finite number."
+    }
+  ],
+  "editableWiringExample": {
+    "config": {
+      "schemaVersion": 1,
+      "method": "forecast",
+      "account": "Contractors",
+      "adjustment": 360,
+      "centres": [
+        "Service Delivery",
+        "Supply Chain"
+      ],
+      "period": "q4",
+      "accountMapping": {
+        "Revenue": 0,
+        "COGS": 1,
+        "Salaries & Benefits": 2,
+        "Contractors": 3,
+        "Travel": 4,
+        "Software & Licences": 5,
+        "Facilities": 6,
+        "Marketing": 7,
+        "Professional Fees": 8,
+        "Depreciation": 9
+      }
+    },
+    "fingerprint": "ac4ee2c0a7e4d29ec459b24b496290c91da8c9a233a3748fafb54134f55bc4bb",
+    "adjustment": 360,
+    "currency": "USD",
+    "period": "Q4 2026",
+    "lines": [
+      {
+        "id": "0",
+        "name": "Revenue",
+        "baseline": "90000.09",
+        "current": "90000.09",
+        "difference": "0.00"
+      },
+      {
+        "id": "1",
+        "name": "COGS",
+        "baseline": "18000.00",
+        "current": "18000.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "2",
+        "name": "Salaries & Benefits",
+        "baseline": "27000.00",
+        "current": "27000.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "3",
+        "name": "Contractors",
+        "baseline": "9000.09",
+        "current": "9360.09",
+        "difference": "360.00"
+      },
+      {
+        "id": "4",
+        "name": "Travel",
+        "baseline": "0.00",
+        "current": "0.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "5",
+        "name": "Software & Licences",
+        "baseline": "0.00",
+        "current": "0.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "6",
+        "name": "Facilities",
+        "baseline": "0.00",
+        "current": "0.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "7",
+        "name": "Marketing",
+        "baseline": "0.00",
+        "current": "0.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "8",
+        "name": "Professional Fees",
+        "baseline": "0.00",
+        "current": "0.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "9",
+        "name": "Depreciation",
+        "baseline": "0.00",
+        "current": "0.00",
+        "difference": "0.00"
+      },
+      {
+        "id": "opex",
+        "name": "Operating Expenses",
+        "baseline": "36000.09",
+        "current": "36360.09",
+        "difference": "360.00"
+      },
+      {
+        "id": "profit",
+        "name": "Operating Profit",
+        "baseline": "36000.00",
+        "current": "35640.00",
+        "difference": "-360.00"
+      }
+    ],
+    "months": [
+      {
+        "period": "2026-10",
+        "lines": [
+          {
+            "id": "0",
+            "name": "Revenue",
+            "baseline": "30000.03",
+            "current": "30000.03",
+            "difference": "0.00"
+          },
+          {
+            "id": "1",
+            "name": "COGS",
+            "baseline": "6000.00",
+            "current": "6000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "2",
+            "name": "Salaries & Benefits",
+            "baseline": "9000.00",
+            "current": "9000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "3",
+            "name": "Contractors",
+            "baseline": "3000.03",
+            "current": "3120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "4",
+            "name": "Travel",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "5",
+            "name": "Software & Licences",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "6",
+            "name": "Facilities",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "7",
+            "name": "Marketing",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "8",
+            "name": "Professional Fees",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "9",
+            "name": "Depreciation",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "opex",
+            "name": "Operating Expenses",
+            "baseline": "12000.03",
+            "current": "12120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "profit",
+            "name": "Operating Profit",
+            "baseline": "12000.00",
+            "current": "11880.00",
+            "difference": "-120.00"
+          }
+        ]
+      },
+      {
+        "period": "2026-11",
+        "lines": [
+          {
+            "id": "0",
+            "name": "Revenue",
+            "baseline": "30000.03",
+            "current": "30000.03",
+            "difference": "0.00"
+          },
+          {
+            "id": "1",
+            "name": "COGS",
+            "baseline": "6000.00",
+            "current": "6000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "2",
+            "name": "Salaries & Benefits",
+            "baseline": "9000.00",
+            "current": "9000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "3",
+            "name": "Contractors",
+            "baseline": "3000.03",
+            "current": "3120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "4",
+            "name": "Travel",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "5",
+            "name": "Software & Licences",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "6",
+            "name": "Facilities",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "7",
+            "name": "Marketing",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "8",
+            "name": "Professional Fees",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "9",
+            "name": "Depreciation",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "opex",
+            "name": "Operating Expenses",
+            "baseline": "12000.03",
+            "current": "12120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "profit",
+            "name": "Operating Profit",
+            "baseline": "12000.00",
+            "current": "11880.00",
+            "difference": "-120.00"
+          }
+        ]
+      },
+      {
+        "period": "2026-12",
+        "lines": [
+          {
+            "id": "0",
+            "name": "Revenue",
+            "baseline": "30000.03",
+            "current": "30000.03",
+            "difference": "0.00"
+          },
+          {
+            "id": "1",
+            "name": "COGS",
+            "baseline": "6000.00",
+            "current": "6000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "2",
+            "name": "Salaries & Benefits",
+            "baseline": "9000.00",
+            "current": "9000.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "3",
+            "name": "Contractors",
+            "baseline": "3000.03",
+            "current": "3120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "4",
+            "name": "Travel",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "5",
+            "name": "Software & Licences",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "6",
+            "name": "Facilities",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "7",
+            "name": "Marketing",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "8",
+            "name": "Professional Fees",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "9",
+            "name": "Depreciation",
+            "baseline": "0.00",
+            "current": "0.00",
+            "difference": "0.00"
+          },
+          {
+            "id": "opex",
+            "name": "Operating Expenses",
+            "baseline": "12000.03",
+            "current": "12120.03",
+            "difference": "120.00"
+          },
+          {
+            "id": "profit",
+            "name": "Operating Profit",
+            "baseline": "12000.00",
+            "current": "11880.00",
+            "difference": "-120.00"
+          }
+        ]
+      }
+    ],
+    "note": "Synthetic FY2026 forecast. Baseline: Q3 Forecast, zero adjustment, same selected centres and mappings. July\u2013September contractor actuals are $30 higher per centre to demonstrate run-rate methods. Adjustment is total Q4 even when one report month is selected.",
+    "sourceHashes": [
+      {
+        "path": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/data.py",
+        "sha256": "2baaf58c0fc08733e6d544a9e7965a0d4bcccd19a676ee254eaccf0d43e76855"
+      },
+      {
+        "path": "Budget-and-Forecast-Agent-main/artifacts/api-server/finance/calculations.py",
+        "sha256": "2ad3acf2d22988529073167adc13c2eff591142b62c7bd08599c0249d74dce1a"
+      },
+      {
+        "path": "Management-Reporting-Agent-main/artifacts/api-server/finance/data.py",
+        "sha256": "cdd06c425f02be7b94eb5d91b1ae7f4d99bb2c048121f1016b9cb07deb26c35a"
+      },
+      {
+        "path": "Management-Reporting-Agent-main/artifacts/api-server/finance/reporting.py",
+        "sha256": "a198dd51a8a378360f9837d75435718a1526680cdb897104b54ef6e07400e077"
+      }
+    ]
+  },
+  "scope": "Reviewed local modules and synthetic fixtures only; not full product certification."
+}

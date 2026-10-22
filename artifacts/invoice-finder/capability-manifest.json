@@ -1,0 +1,70 @@
+{
+  "app": "invoice-finder",
+  "scenario": "SCENARIO.md (Synthetic invoice scenario v1)",
+  "persistence": "browser localStorage, single browser, key invoice-finder:v1:state",
+  "capabilities": {
+    "fixture-seed": [
+      "src/domain/fixture.ts"
+    ],
+    "reference-validation": [
+      "src/domain/validate.ts"
+    ],
+    "combined-predicate-search": [
+      "src/domain/search.ts",
+      "src/ui/FilterPanel.tsx",
+      "src/ui/ResultsTable.tsx",
+      "src/ui/criteriaUrl.ts"
+    ],
+    "predicate-exclusion-explainer": [
+      "src/domain/search.ts",
+      "src/ui/ResultsTable.tsx"
+    ],
+    "normalized-duplicate-warnings-all-invoices": [
+      "src/domain/duplicates.ts",
+      "src/ui/InvoiceDetail.tsx"
+    ],
+    "append-only-decision-record": [
+      "src/domain/workflow.ts",
+      "src/ui/InvoiceDetail.tsx"
+    ],
+    "storage-errors-and-refresh-persistence": [
+      "src/domain/storage.ts",
+      "src/ui/useStore.ts"
+    ],
+    "multi-tab-freshness": [
+      "src/ui/useStore.ts"
+    ],
+    "confirmed-reset": [
+      "src/ui/ResetDialog.tsx",
+      "src/App.tsx"
+    ],
+    "demo-role-control-not-auth": [
+      "src/App.tsx",
+      "src/domain/workflow.ts"
+    ],
+    "money-cents": [
+      "src/domain/money.ts"
+    ],
+    "typo-tolerant-explainable-fuzzy-search": [
+      "src/domain/fuzzy.ts",
+      "src/domain/search.ts",
+      "src/ui/SearchHero.tsx",
+      "src/ui/ResultsTable.tsx",
+      "src/ui/criteriaUrl.ts"
+    ],
+    "spend-summary-collapsed-secondary": [
+      "src/domain/spend.ts",
+      "src/ui/SpendSummary.tsx"
+    ],
+    "approve-reject-pay-simulation-single-record": [
+      "src/domain/workflow.ts",
+      "src/ui/InvoiceDetail.tsx"
+    ]
+  },
+  "tests": [
+    "tests/domain.test.ts",
+    "tests/fuzzy.test.ts"
+  ],
+  "source": "Source A",
+  "standoutCapability": "typo-tolerant-explainable-fuzzy-search"
+}

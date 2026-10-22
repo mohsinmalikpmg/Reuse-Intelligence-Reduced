@@ -8,6 +8,1349 @@
 import * as zod from 'zod';
 
 
+export const OpenIntakeCombinationParams = zod.object({
+  "briefId": zod.coerce.string()
+})
+
+export const OpenIntakeCombinationBody = zod.object({
+  "recipeId": zod.enum(['invoice', 'finance'])
+})
+
+export const openIntakeCombinationResponseWiringEdgeIdsMax = 5;
+
+
+
+export const OpenIntakeCombinationResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(openIntakeCombinationResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
+export const ListConsolidationRecipesResponseItem = zod.object({
+  "id": zod.enum(['invoice', 'finance']),
+  "name": zod.string(),
+  "sourceIds": zod.array(zod.string()),
+  "baseSolutionIds": zod.array(zod.string()),
+  "runPath": zod.string(),
+  "defaultConfig": zod.record(zod.string(), zod.unknown()),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "sourceId": zod.string(),
+  "edgeId": zod.string()
+})),
+  "edges": zod.array(zod.object({
+  "id": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "contract": zod.string()
+}))
+})
+export const ListConsolidationRecipesResponse = zod.array(ListConsolidationRecipesResponseItem)
+
+
+export const ListConsolidationSourcesResponseItem = zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+}).and(zod.object({
+  "name": zod.string(),
+  "recipeId": zod.string(),
+  "kind": zod.string(),
+  "filename": zod.string(),
+  "size": zod.number().int(),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string(),
+  "size": zod.number().int()
+})),
+  "registeredBy": zod.string(),
+  "registeredAt": zod.string(),
+  "downloadUrl": zod.string(),
+  "provenance": zod.string(),
+  "limitations": zod.array(zod.string())
+}))
+export const ListConsolidationSourcesResponse = zod.array(ListConsolidationSourcesResponseItem)
+
+
+/**
+ * Requires an existing IT package-management grant. Ingests only server-owned allowlisted sources; never executes uploaded code.
+ */
+export const RegisterConsolidationSourcesResponseItem = zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+}).and(zod.object({
+  "name": zod.string(),
+  "recipeId": zod.string(),
+  "kind": zod.string(),
+  "filename": zod.string(),
+  "size": zod.number().int(),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string(),
+  "size": zod.number().int()
+})),
+  "registeredBy": zod.string(),
+  "registeredAt": zod.string(),
+  "downloadUrl": zod.string(),
+  "provenance": zod.string(),
+  "limitations": zod.array(zod.string())
+}))
+export const RegisterConsolidationSourcesResponse = zod.array(RegisterConsolidationSourcesResponseItem)
+
+
+export const DownloadConsolidationSourceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadConsolidationSourceResponse = zod.unknown()
+
+
+export const listConsolidationCasesResponseWiringEdgeIdsMax = 5;
+
+
+
+export const ListConsolidationCasesResponseItem = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(listConsolidationCasesResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+export const ListConsolidationCasesResponse = zod.array(ListConsolidationCasesResponseItem)
+
+
+export const createConsolidationCaseBodyTitleMax = 200;
+
+export const createConsolidationCaseBodyNeedMax = 4000;
+
+export const createConsolidationCaseBodySelectedSourceIdsMin = 2;
+export const createConsolidationCaseBodySelectedSourceIdsMax = 5;
+
+export const createConsolidationCaseBodyCapabilityIdsMax = 5;
+
+export const createConsolidationCaseBodyWiringEdgeIdsMax = 5;
+
+
+
+export const CreateConsolidationCaseBody = zod.object({
+  "briefId": zod.string().optional().describe('Confirmed intake brief to snapshot; omitted for source-first combinations.'),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string().min(1).max(createConsolidationCaseBodyTitleMax),
+  "need": zod.string().min(1).max(createConsolidationCaseBodyNeedMax),
+  "baseSolutionId": zod.string(),
+  "selectedSourceIds": zod.array(zod.string()).min(createConsolidationCaseBodySelectedSourceIdsMin).max(createConsolidationCaseBodySelectedSourceIdsMax),
+  "capabilityIds": zod.array(zod.string()).min(1).max(createConsolidationCaseBodyCapabilityIdsMax),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(createConsolidationCaseBodyWiringEdgeIdsMax)
+}),
+  "config": zod.record(zod.string(), zod.unknown())
+})
+
+export const createConsolidationCaseResponseWiringEdgeIdsMax = 5;
+
+
+
+export const CreateConsolidationCaseResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(createConsolidationCaseResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
+export const GetConsolidationCaseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getConsolidationCaseResponseWiringEdgeIdsMax = 5;
+
+
+
+export const GetConsolidationCaseResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(getConsolidationCaseResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
+/**
+ * Full validated replacement with optimistic revision check. Undo submits the previous selection using the current expectedRevision. Recipe identity is immutable.
+ */
+export const UpdateConsolidationCaseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateConsolidationCaseBodyOneTitleMax = 200;
+
+export const updateConsolidationCaseBodyOneNeedMax = 4000;
+
+export const updateConsolidationCaseBodyOneSelectedSourceIdsMin = 2;
+export const updateConsolidationCaseBodyOneSelectedSourceIdsMax = 5;
+
+export const updateConsolidationCaseBodyOneCapabilityIdsMax = 5;
+
+export const updateConsolidationCaseBodyOneWiringEdgeIdsMax = 5;
+
+
+
+
+export const UpdateConsolidationCaseBody = zod.object({
+  "briefId": zod.string().optional().describe('Confirmed intake brief to snapshot; omitted for source-first combinations.'),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string().min(1).max(updateConsolidationCaseBodyOneTitleMax),
+  "need": zod.string().min(1).max(updateConsolidationCaseBodyOneNeedMax),
+  "baseSolutionId": zod.string(),
+  "selectedSourceIds": zod.array(zod.string()).min(updateConsolidationCaseBodyOneSelectedSourceIdsMin).max(updateConsolidationCaseBodyOneSelectedSourceIdsMax),
+  "capabilityIds": zod.array(zod.string()).min(1).max(updateConsolidationCaseBodyOneCapabilityIdsMax),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(updateConsolidationCaseBodyOneWiringEdgeIdsMax)
+}),
+  "config": zod.record(zod.string(), zod.unknown())
+}).and(zod.object({
+  "expectedRevision": zod.number().int().min(1)
+}))
+
+export const updateConsolidationCaseResponseWiringEdgeIdsMax = 5;
+
+
+
+export const UpdateConsolidationCaseResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(updateConsolidationCaseResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
+export const RunConsolidationCaseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RunConsolidationCaseResponse = zod.object({
+  "runUrl": zod.string(),
+  "fingerprint": zod.string()
+})
+
+
+export const getFinanceWiringCatalogResponseDefaultConfigAdjustmentMin = -600;
+export const getFinanceWiringCatalogResponseDefaultConfigAdjustmentMax = 6000;
+export const getFinanceWiringCatalogResponseDefaultConfigAdjustmentMultipleOf = 6;
+
+export const getFinanceWiringCatalogResponseDefaultConfigCentresMax = 2;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingSalariesBenefitsMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingContractorsMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingContractorsMax = 9;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingTravelMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingTravelMax = 9;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingSoftwareLicencesMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingFacilitiesMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingFacilitiesMax = 9;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingMarketingMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingMarketingMax = 9;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingProfessionalFeesMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingProfessionalFeesMax = 9;
+
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingDepreciationMin = 2;
+export const getFinanceWiringCatalogResponseDefaultConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const GetFinanceWiringCatalogResponse = zod.object({
+  "defaultConfig": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAdjustmentMin).max(getFinanceWiringCatalogResponseDefaultConfigAdjustmentMax).multipleOf(getFinanceWiringCatalogResponseDefaultConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(getFinanceWiringCatalogResponseDefaultConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingSalariesBenefitsMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingContractorsMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingTravelMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingSoftwareLicencesMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingFacilitiesMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingMarketingMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingProfessionalFeesMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(getFinanceWiringCatalogResponseDefaultConfigAccountMappingDepreciationMin).max(getFinanceWiringCatalogResponseDefaultConfigAccountMappingDepreciationMax)
+})
+}),
+  "accounts": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string()
+})),
+  "centres": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string()
+})),
+  "methods": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string()
+})),
+  "periods": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string()
+})),
+  "sources": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "connections": zod.array(zod.object({
+  "from": zod.string(),
+  "to": zod.string(),
+  "contract": zod.string()
+})),
+  "limitations": zod.array(zod.string())
+})
+
+
+export const validateFinanceWiringBodyConfigAdjustmentMin = -600;
+export const validateFinanceWiringBodyConfigAdjustmentMax = 6000;
+export const validateFinanceWiringBodyConfigAdjustmentMultipleOf = 6;
+
+export const validateFinanceWiringBodyConfigCentresMax = 2;
+
+export const validateFinanceWiringBodyConfigAccountMappingSalariesBenefitsMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const validateFinanceWiringBodyConfigAccountMappingContractorsMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingContractorsMax = 9;
+
+export const validateFinanceWiringBodyConfigAccountMappingTravelMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingTravelMax = 9;
+
+export const validateFinanceWiringBodyConfigAccountMappingSoftwareLicencesMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const validateFinanceWiringBodyConfigAccountMappingFacilitiesMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingFacilitiesMax = 9;
+
+export const validateFinanceWiringBodyConfigAccountMappingMarketingMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingMarketingMax = 9;
+
+export const validateFinanceWiringBodyConfigAccountMappingProfessionalFeesMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingProfessionalFeesMax = 9;
+
+export const validateFinanceWiringBodyConfigAccountMappingDepreciationMin = 2;
+export const validateFinanceWiringBodyConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const ValidateFinanceWiringBody = zod.object({
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(validateFinanceWiringBodyConfigAdjustmentMin).max(validateFinanceWiringBodyConfigAdjustmentMax).multipleOf(validateFinanceWiringBodyConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(validateFinanceWiringBodyConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingSalariesBenefitsMin).max(validateFinanceWiringBodyConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingContractorsMin).max(validateFinanceWiringBodyConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingTravelMin).max(validateFinanceWiringBodyConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingSoftwareLicencesMin).max(validateFinanceWiringBodyConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingFacilitiesMin).max(validateFinanceWiringBodyConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingMarketingMin).max(validateFinanceWiringBodyConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingProfessionalFeesMin).max(validateFinanceWiringBodyConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(validateFinanceWiringBodyConfigAccountMappingDepreciationMin).max(validateFinanceWiringBodyConfigAccountMappingDepreciationMax)
+})
+})
+})
+
+export const validateFinanceWiringResponseConfigAdjustmentMin = -600;
+export const validateFinanceWiringResponseConfigAdjustmentMax = 6000;
+export const validateFinanceWiringResponseConfigAdjustmentMultipleOf = 6;
+
+export const validateFinanceWiringResponseConfigCentresMax = 2;
+
+export const validateFinanceWiringResponseConfigAccountMappingSalariesBenefitsMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const validateFinanceWiringResponseConfigAccountMappingContractorsMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingContractorsMax = 9;
+
+export const validateFinanceWiringResponseConfigAccountMappingTravelMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingTravelMax = 9;
+
+export const validateFinanceWiringResponseConfigAccountMappingSoftwareLicencesMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const validateFinanceWiringResponseConfigAccountMappingFacilitiesMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingFacilitiesMax = 9;
+
+export const validateFinanceWiringResponseConfigAccountMappingMarketingMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingMarketingMax = 9;
+
+export const validateFinanceWiringResponseConfigAccountMappingProfessionalFeesMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingProfessionalFeesMax = 9;
+
+export const validateFinanceWiringResponseConfigAccountMappingDepreciationMin = 2;
+export const validateFinanceWiringResponseConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const ValidateFinanceWiringResponse = zod.object({
+  "valid": zod.boolean(),
+  "errors": zod.array(zod.string()),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(validateFinanceWiringResponseConfigAdjustmentMin).max(validateFinanceWiringResponseConfigAdjustmentMax).multipleOf(validateFinanceWiringResponseConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(validateFinanceWiringResponseConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingSalariesBenefitsMin).max(validateFinanceWiringResponseConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingContractorsMin).max(validateFinanceWiringResponseConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingTravelMin).max(validateFinanceWiringResponseConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingSoftwareLicencesMin).max(validateFinanceWiringResponseConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingFacilitiesMin).max(validateFinanceWiringResponseConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingMarketingMin).max(validateFinanceWiringResponseConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingProfessionalFeesMin).max(validateFinanceWiringResponseConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(validateFinanceWiringResponseConfigAccountMappingDepreciationMin).max(validateFinanceWiringResponseConfigAccountMappingDepreciationMax)
+})
+}).optional(),
+  "fingerprint": zod.string().optional()
+})
+
+
+export const runFinanceWiringBodyConfigAdjustmentMin = -600;
+export const runFinanceWiringBodyConfigAdjustmentMax = 6000;
+export const runFinanceWiringBodyConfigAdjustmentMultipleOf = 6;
+
+export const runFinanceWiringBodyConfigCentresMax = 2;
+
+export const runFinanceWiringBodyConfigAccountMappingSalariesBenefitsMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const runFinanceWiringBodyConfigAccountMappingContractorsMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingContractorsMax = 9;
+
+export const runFinanceWiringBodyConfigAccountMappingTravelMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingTravelMax = 9;
+
+export const runFinanceWiringBodyConfigAccountMappingSoftwareLicencesMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const runFinanceWiringBodyConfigAccountMappingFacilitiesMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingFacilitiesMax = 9;
+
+export const runFinanceWiringBodyConfigAccountMappingMarketingMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingMarketingMax = 9;
+
+export const runFinanceWiringBodyConfigAccountMappingProfessionalFeesMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingProfessionalFeesMax = 9;
+
+export const runFinanceWiringBodyConfigAccountMappingDepreciationMin = 2;
+export const runFinanceWiringBodyConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const RunFinanceWiringBody = zod.object({
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(runFinanceWiringBodyConfigAdjustmentMin).max(runFinanceWiringBodyConfigAdjustmentMax).multipleOf(runFinanceWiringBodyConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(runFinanceWiringBodyConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingSalariesBenefitsMin).max(runFinanceWiringBodyConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingContractorsMin).max(runFinanceWiringBodyConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingTravelMin).max(runFinanceWiringBodyConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingSoftwareLicencesMin).max(runFinanceWiringBodyConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingFacilitiesMin).max(runFinanceWiringBodyConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingMarketingMin).max(runFinanceWiringBodyConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingProfessionalFeesMin).max(runFinanceWiringBodyConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(runFinanceWiringBodyConfigAccountMappingDepreciationMin).max(runFinanceWiringBodyConfigAccountMappingDepreciationMax)
+})
+})
+})
+
+export const runFinanceWiringResponseConfigAdjustmentMin = -600;
+export const runFinanceWiringResponseConfigAdjustmentMax = 6000;
+export const runFinanceWiringResponseConfigAdjustmentMultipleOf = 6;
+
+export const runFinanceWiringResponseConfigCentresMax = 2;
+
+export const runFinanceWiringResponseConfigAccountMappingSalariesBenefitsMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const runFinanceWiringResponseConfigAccountMappingContractorsMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingContractorsMax = 9;
+
+export const runFinanceWiringResponseConfigAccountMappingTravelMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingTravelMax = 9;
+
+export const runFinanceWiringResponseConfigAccountMappingSoftwareLicencesMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const runFinanceWiringResponseConfigAccountMappingFacilitiesMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingFacilitiesMax = 9;
+
+export const runFinanceWiringResponseConfigAccountMappingMarketingMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingMarketingMax = 9;
+
+export const runFinanceWiringResponseConfigAccountMappingProfessionalFeesMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingProfessionalFeesMax = 9;
+
+export const runFinanceWiringResponseConfigAccountMappingDepreciationMin = 2;
+export const runFinanceWiringResponseConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const RunFinanceWiringResponse = zod.object({
+  "adjustment": zod.number(),
+  "currency": zod.string(),
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+})),
+  "months": zod.array(zod.object({
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+}))
+})),
+  "note": zod.string(),
+  "sourceHashes": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(runFinanceWiringResponseConfigAdjustmentMin).max(runFinanceWiringResponseConfigAdjustmentMax).multipleOf(runFinanceWiringResponseConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(runFinanceWiringResponseConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingSalariesBenefitsMin).max(runFinanceWiringResponseConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingContractorsMin).max(runFinanceWiringResponseConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingTravelMin).max(runFinanceWiringResponseConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingSoftwareLicencesMin).max(runFinanceWiringResponseConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingFacilitiesMin).max(runFinanceWiringResponseConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingMarketingMin).max(runFinanceWiringResponseConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingProfessionalFeesMin).max(runFinanceWiringResponseConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(runFinanceWiringResponseConfigAccountMappingDepreciationMin).max(runFinanceWiringResponseConfigAccountMappingDepreciationMax)
+})
+}),
+  "fingerprint": zod.string()
+})
+
+
+export const getFinanceWiringVersionsResponseRevisionMin = 0;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAdjustmentMin = -600;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAdjustmentMax = 6000;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAdjustmentMultipleOf = 6;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigCentresMax = 2;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSalariesBenefitsMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingContractorsMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingContractorsMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingTravelMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingTravelMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSoftwareLicencesMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingFacilitiesMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingFacilitiesMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingMarketingMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingMarketingMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingProfessionalFeesMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingProfessionalFeesMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingDepreciationMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingDepreciationMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAdjustmentMin = -600;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAdjustmentMax = 6000;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAdjustmentMultipleOf = 6;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigCentresMax = 2;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingContractorsMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingContractorsMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingTravelMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingTravelMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingFacilitiesMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingFacilitiesMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingMarketingMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingMarketingMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingProfessionalFeesMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingProfessionalFeesMax = 9;
+
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingDepreciationMin = 2;
+export const getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const GetFinanceWiringVersionsResponse = zod.object({
+  "revision": zod.number().int().min(getFinanceWiringVersionsResponseRevisionMin),
+  "activeVersionId": zod.string().nullable(),
+  "versions": zod.array(zod.object({
+  "id": zod.string(),
+  "number": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAdjustmentMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAdjustmentMax).multipleOf(getFinanceWiringVersionsResponseVersionsItemConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(getFinanceWiringVersionsResponseVersionsItemConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSalariesBenefitsMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingContractorsMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingTravelMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSoftwareLicencesMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingFacilitiesMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingMarketingMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingProfessionalFeesMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingDepreciationMin).max(getFinanceWiringVersionsResponseVersionsItemConfigAccountMappingDepreciationMax)
+})
+}),
+  "fingerprint": zod.string(),
+  "result": zod.object({
+  "adjustment": zod.number(),
+  "currency": zod.string(),
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+})),
+  "months": zod.array(zod.object({
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+}))
+})),
+  "note": zod.string(),
+  "sourceHashes": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAdjustmentMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAdjustmentMax).multipleOf(getFinanceWiringVersionsResponseVersionsItemResultConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(getFinanceWiringVersionsResponseVersionsItemResultConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingContractorsMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingTravelMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingFacilitiesMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingMarketingMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingProfessionalFeesMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingDepreciationMin).max(getFinanceWiringVersionsResponseVersionsItemResultConfigAccountMappingDepreciationMax)
+})
+}),
+  "fingerprint": zod.string()
+})
+}))
+})
+
+
+export const saveFinanceWiringVersionBodyConfigAdjustmentMin = -600;
+export const saveFinanceWiringVersionBodyConfigAdjustmentMax = 6000;
+export const saveFinanceWiringVersionBodyConfigAdjustmentMultipleOf = 6;
+
+export const saveFinanceWiringVersionBodyConfigCentresMax = 2;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingSalariesBenefitsMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingContractorsMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingContractorsMax = 9;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingTravelMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingTravelMax = 9;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingSoftwareLicencesMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingFacilitiesMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingFacilitiesMax = 9;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingMarketingMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingMarketingMax = 9;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingProfessionalFeesMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingProfessionalFeesMax = 9;
+
+export const saveFinanceWiringVersionBodyConfigAccountMappingDepreciationMin = 2;
+export const saveFinanceWiringVersionBodyConfigAccountMappingDepreciationMax = 9;
+
+export const saveFinanceWiringVersionBodyExpectedRevisionMin = 0;
+
+
+
+export const SaveFinanceWiringVersionBody = zod.object({
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(saveFinanceWiringVersionBodyConfigAdjustmentMin).max(saveFinanceWiringVersionBodyConfigAdjustmentMax).multipleOf(saveFinanceWiringVersionBodyConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(saveFinanceWiringVersionBodyConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingSalariesBenefitsMin).max(saveFinanceWiringVersionBodyConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingContractorsMin).max(saveFinanceWiringVersionBodyConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingTravelMin).max(saveFinanceWiringVersionBodyConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingSoftwareLicencesMin).max(saveFinanceWiringVersionBodyConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingFacilitiesMin).max(saveFinanceWiringVersionBodyConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingMarketingMin).max(saveFinanceWiringVersionBodyConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingProfessionalFeesMin).max(saveFinanceWiringVersionBodyConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(saveFinanceWiringVersionBodyConfigAccountMappingDepreciationMin).max(saveFinanceWiringVersionBodyConfigAccountMappingDepreciationMax)
+})
+}),
+  "expectedRevision": zod.number().int().min(saveFinanceWiringVersionBodyExpectedRevisionMin)
+})
+
+export const saveFinanceWiringVersionResponseRevisionMin = 0;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAdjustmentMin = -600;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAdjustmentMax = 6000;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAdjustmentMultipleOf = 6;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigCentresMax = 2;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMin = -600;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMax = 6000;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMultipleOf = 6;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigCentresMax = 2;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMax = 9;
+
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMin = 2;
+export const saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const SaveFinanceWiringVersionResponse = zod.object({
+  "revision": zod.number().int().min(saveFinanceWiringVersionResponseRevisionMin),
+  "activeVersionId": zod.string().nullable(),
+  "versions": zod.array(zod.object({
+  "id": zod.string(),
+  "number": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAdjustmentMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAdjustmentMax).multipleOf(saveFinanceWiringVersionResponseVersionsItemConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(saveFinanceWiringVersionResponseVersionsItemConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMin).max(saveFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMax)
+})
+}),
+  "fingerprint": zod.string(),
+  "result": zod.object({
+  "adjustment": zod.number(),
+  "currency": zod.string(),
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+})),
+  "months": zod.array(zod.object({
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+}))
+})),
+  "note": zod.string(),
+  "sourceHashes": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMax).multipleOf(saveFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(saveFinanceWiringVersionResponseVersionsItemResultConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMin).max(saveFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMax)
+})
+}),
+  "fingerprint": zod.string()
+})
+}))
+})
+
+
+export const restoreFinanceWiringVersionBodyVersionIdMax = 100;
+
+export const restoreFinanceWiringVersionBodyExpectedRevisionMin = 0;
+
+
+
+export const RestoreFinanceWiringVersionBody = zod.object({
+  "versionId": zod.string().min(1).max(restoreFinanceWiringVersionBodyVersionIdMax),
+  "expectedRevision": zod.number().int().min(restoreFinanceWiringVersionBodyExpectedRevisionMin)
+})
+
+export const restoreFinanceWiringVersionResponseRevisionMin = 0;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAdjustmentMin = -600;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAdjustmentMax = 6000;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAdjustmentMultipleOf = 6;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigCentresMax = 2;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMin = -600;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMax = 6000;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMultipleOf = 6;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigCentresMax = 2;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMax = 9;
+
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMin = 2;
+export const restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMax = 9;
+
+
+
+export const RestoreFinanceWiringVersionResponse = zod.object({
+  "revision": zod.number().int().min(restoreFinanceWiringVersionResponseRevisionMin),
+  "activeVersionId": zod.string().nullable(),
+  "versions": zod.array(zod.object({
+  "id": zod.string(),
+  "number": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAdjustmentMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAdjustmentMax).multipleOf(restoreFinanceWiringVersionResponseVersionsItemConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(restoreFinanceWiringVersionResponseVersionsItemConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMin).max(restoreFinanceWiringVersionResponseVersionsItemConfigAccountMappingDepreciationMax)
+})
+}),
+  "fingerprint": zod.string(),
+  "result": zod.object({
+  "adjustment": zod.number(),
+  "currency": zod.string(),
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+})),
+  "months": zod.array(zod.object({
+  "period": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "baseline": zod.string(),
+  "current": zod.string(),
+  "difference": zod.string()
+}))
+})),
+  "note": zod.string(),
+  "sourceHashes": zod.array(zod.object({
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "config": zod.object({
+  "schemaVersion": zod.literal(1),
+  "method": zod.enum(['forecast', 'ytd', 'last3']),
+  "account": zod.enum(['Contractors', 'Software & Licences', 'Professional Fees']),
+  "adjustment": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMax).multipleOf(restoreFinanceWiringVersionResponseVersionsItemResultConfigAdjustmentMultipleOf),
+  "centres": zod.array(zod.enum(['Service Delivery', 'Supply Chain'])).min(1).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigCentresMax),
+  "period": zod.enum(['q4', 'october', 'november', 'december']),
+  "accountMapping": zod.object({
+  "Revenue": zod.literal(0),
+  "COGS": zod.literal(1),
+  "Salaries & Benefits": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSalariesBenefitsMax),
+  "Contractors": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingContractorsMax),
+  "Travel": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingTravelMax),
+  "Software & Licences": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingSoftwareLicencesMax),
+  "Facilities": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingFacilitiesMax),
+  "Marketing": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingMarketingMax),
+  "Professional Fees": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingProfessionalFeesMax),
+  "Depreciation": zod.number().int().min(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMin).max(restoreFinanceWiringVersionResponseVersionsItemResultConfigAccountMappingDepreciationMax)
+})
+}),
+  "fingerprint": zod.string()
+})
+}))
+})
+
+
+export const ExportFinanceWiringVersionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ExportFinanceWiringVersionResponse = zod.unknown()
+
+
+export const ListSolutionExportsQueryParams = zod.object({
+  "caseId": zod.coerce.string().optional(),
+  "solutionId": zod.coerce.string().optional()
+})
+
+export const ListSolutionExportsResponseItem = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "title": zod.string(),
+  "sourceVersion": zod.string(),
+  "fingerprint": zod.string(),
+  "status": zod.enum(['building', 'ready', 'incomplete', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string(),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean(),
+  "detail": zod.string()
+})),
+  "gaps": zod.array(zod.string()),
+  "workspaceUrl": zod.string(),
+  "publishedUrl": zod.string(),
+  "verificationState": zod.enum(['awaiting_import', 'link_recorded_unverified']),
+  "linkRevision": zod.number().int(),
+  "canEdit": zod.boolean(),
+  "error": zod.string()
+})
+export const ListSolutionExportsResponse = zod.array(ListSolutionExportsResponseItem)
+
+
+
+
+
+export const CreateSolutionExportBody = zod.object({
+  "caseId": zod.string().min(1),
+  "expectedUpdatedAt": zod.string()
+})
+
+export const CreateSolutionExportResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "title": zod.string(),
+  "sourceVersion": zod.string(),
+  "fingerprint": zod.string(),
+  "status": zod.enum(['building', 'ready', 'incomplete', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string(),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean(),
+  "detail": zod.string()
+})),
+  "gaps": zod.array(zod.string()),
+  "workspaceUrl": zod.string(),
+  "publishedUrl": zod.string(),
+  "verificationState": zod.enum(['awaiting_import', 'link_recorded_unverified']),
+  "linkRevision": zod.number().int(),
+  "canEdit": zod.boolean(),
+  "error": zod.string()
+})
+
+
+export const SaveSolutionExportLinkParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const saveSolutionExportLinkBodyWorkspaceUrlMax = 2048;
+
+export const saveSolutionExportLinkBodyPublishedUrlMax = 2048;
+
+export const saveSolutionExportLinkBodyExpectedRevisionMin = 0;
+
+
+
+export const SaveSolutionExportLinkBody = zod.object({
+  "workspaceUrl": zod.string().max(saveSolutionExportLinkBodyWorkspaceUrlMax),
+  "publishedUrl": zod.string().max(saveSolutionExportLinkBodyPublishedUrlMax),
+  "expectedRevision": zod.number().int().min(saveSolutionExportLinkBodyExpectedRevisionMin)
+})
+
+export const SaveSolutionExportLinkResponse = zod.object({
+  "id": zod.string(),
+  "caseId": zod.string(),
+  "solutionId": zod.string(),
+  "title": zod.string(),
+  "sourceVersion": zod.string(),
+  "fingerprint": zod.string(),
+  "status": zod.enum(['building', 'ready', 'incomplete', 'failed']),
+  "sha256": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string(),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "passed": zod.boolean(),
+  "detail": zod.string()
+})),
+  "gaps": zod.array(zod.string()),
+  "workspaceUrl": zod.string(),
+  "publishedUrl": zod.string(),
+  "verificationState": zod.enum(['awaiting_import', 'link_recorded_unverified']),
+  "linkRevision": zod.number().int(),
+  "canEdit": zod.boolean(),
+  "error": zod.string()
+})
+
+
+export const DownloadSolutionExportParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadSolutionExportResponse = zod.unknown()
+
+
 export const ListSolutionPackagesResponse = zod.object({
   "canManage": zod.boolean(),
   "packages": zod.array(zod.object({

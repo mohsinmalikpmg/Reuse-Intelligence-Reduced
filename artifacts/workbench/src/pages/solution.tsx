@@ -15,6 +15,7 @@ import { PrototypePanel, ComparedPrototypes } from "@/components/prototype-panel
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/persona";
 import { SolutionCodePackageToggle } from "@/components/code-assessment";
+import { SolutionExportsPanel } from "@/components/solution-exports";
 
 export default function SolutionPage() {
   const isOwner = useRole() === "it";
@@ -92,7 +93,7 @@ export default function SolutionPage() {
       </div>
 
       {prototype && <PrototypePanel prototype={prototype} />}
-      <SolutionCodePackageToggle solutionId={s.id} open={isOwner} />
+      <SolutionCodePackageToggle solutionId={s.id} open />
 
       {!prototype && <section className="mt-10">
         <div className="mb-3 flex items-center gap-2">
@@ -182,6 +183,8 @@ export default function SolutionPage() {
           </ul>
         </div>
       </section>
+
+      <SolutionExportsPanel solutionId={s.id} />
 
       {comparedPrototypes.length > 0 && <ComparedPrototypes items={comparedPrototypes} solutionName={s.name} />}
 

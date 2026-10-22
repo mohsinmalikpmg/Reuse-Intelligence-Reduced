@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/persona";
 import { ITLibrary, SeekerLibrary } from "@/components/library-simple";
 import { SolutionPackagesPanel } from "@/components/solution-packages";
+import { WiringEntry } from "@/components/wiring-entry";
+import { ConsolidationSourceSetup, InvoiceDemoLauncher } from "@/components/invoice-demo-launcher";
 
 type Filters = { fn: string; problem: string; step: string; status: string; owner: string; capability: string; data: string };
 const NONE: Filters = { fn: "", problem: "", step: "", status: "", owner: "", capability: "", data: "" };
@@ -55,9 +57,18 @@ function familyText(f: SolutionFamily): string {
 export default function Library() {
   const isIT = useRole() === "it";
   const [full, setFull] = useState(false);
-  if (!isIT) return <SeekerLibrary />;
-  if (!full) return <ITLibrary onBrowse={() => setFull(true)} />;
-  return <FullLibrary onBack={() => setFull(false)} />;
+  return (
+    <>
+      <div className="mx-auto flex w-full max-w-[1200px] justify-end px-5 pt-5 md:px-8">
+        <WiringEntry testid="link-library-wiring" />
+      </div>
+      <div className="mx-auto w-full max-w-[1200px] px-5 pt-8 md:px-8">
+        {isIT && <ConsolidationSourceSetup />}
+        <InvoiceDemoLauncher />
+      </div>
+      {!isIT ? <SeekerLibrary /> : !full ? <ITLibrary onBrowse={() => setFull(true)} /> : <FullLibrary onBack={() => setFull(false)} />}
+    </>
+  );
 }
 
 function FullLibrary({ onBack }: { onBack: () => void }) {

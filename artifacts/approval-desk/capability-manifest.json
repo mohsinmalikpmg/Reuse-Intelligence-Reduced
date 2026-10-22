@@ -1,0 +1,72 @@
+{
+  "app": "approval-desk",
+  "scenario": "SCENARIO.md (synthetic invoice scenario v1, variant B)",
+  "capabilities": {
+    "seed-fixture-and-reference-validation": [
+      "src/domain/seed.ts"
+    ],
+    "duplicate-warning": [
+      "src/domain/seed.ts",
+      "src/pages.tsx"
+    ],
+    "staged-approval-threshold": [
+      "src/domain/ledger.ts",
+      "src/ui.tsx"
+    ],
+    "role-stage-transition-rules": [
+      "src/domain/ledger.ts"
+    ],
+    "event-sourced-append-only-ledger": [
+      "src/domain/ledger.ts",
+      "src/domain/storage.ts"
+    ],
+    "replay-validation-on-load": [
+      "src/domain/ledger.ts",
+      "src/domain/storage.ts"
+    ],
+    "spend-totals-no-double-count": [
+      "src/domain/ledger.ts",
+      "src/pages.tsx"
+    ],
+    "browser-persistence-and-multi-tab-freshness": [
+      "src/store.ts"
+    ],
+    "explicit-storage-errors-and-confirmed-reset": [
+      "src/store.ts",
+      "src/App.tsx",
+      "src/pages.tsx"
+    ],
+    "role-simulation-not-authentication": [
+      "src/App.tsx",
+      "src/pages.tsx"
+    ],
+    "queue-search-and-stage-filter": [
+      "src/pages.tsx"
+    ],
+    "decision-history": [
+      "src/pages.tsx"
+    ],
+    "tests": [
+      "src/domain/domain.test.ts",
+      "src/domain/bulk.test.ts"
+    ],
+    "bulk-multi-select-and-select-all-visible": [
+      "src/bulk.tsx",
+      "src/pages.tsx"
+    ],
+    "bulk-preview-eligible-and-skipped-reasons": [
+      "src/domain/bulk.ts",
+      "src/bulk.tsx"
+    ],
+    "bulk-apply-single-write-stale-preview-refusal": [
+      "src/domain/bulk.ts",
+      "src/store.ts"
+    ],
+    "bulk-batch-id-on-individual-events": [
+      "src/domain/bulk.ts",
+      "src/domain/ledger.ts",
+      "src/pages.tsx"
+    ]
+  },
+  "standout": "multi-select bulk approve/reject with eligibility preview"
+}

@@ -5,6 +5,466 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export type IntakeCombinationInputRecipeId = typeof IntakeCombinationInputRecipeId[keyof typeof IntakeCombinationInputRecipeId];
+
+
+export const IntakeCombinationInputRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export interface IntakeCombinationInput {
+  recipeId: IntakeCombinationInputRecipeId;
+}
+
+export interface ConsolidationWiring {
+  /** @maxItems 5 */
+  edgeIds: string[];
+}
+
+export type ConsolidationCaseInputRecipeId = typeof ConsolidationCaseInputRecipeId[keyof typeof ConsolidationCaseInputRecipeId];
+
+
+export const ConsolidationCaseInputRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export type ConsolidationCaseInputConfig = { [key: string]: unknown };
+
+export interface ConsolidationCaseInput {
+  /** Confirmed intake brief to snapshot; omitted for source-first combinations. */
+  briefId?: string;
+  recipeId: ConsolidationCaseInputRecipeId;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  need: string;
+  baseSolutionId: string;
+  /**
+     * @minItems 2
+     * @maxItems 5
+     */
+  selectedSourceIds: string[];
+  /**
+     * @minItems 1
+     * @maxItems 5
+     */
+  capabilityIds: string[];
+  wiring: ConsolidationWiring;
+  config: ConsolidationCaseInputConfig;
+}
+
+export type ConsolidationCaseUpdateInput = ConsolidationCaseInput & {
+  /** @minimum 1 */
+  expectedRevision: number;
+};
+
+export interface ConsolidationSelectedSource {
+  id: string;
+  solutionId: string;
+  version: string;
+  sha256: string;
+}
+
+export type ConsolidationCaseRecipeId = typeof ConsolidationCaseRecipeId[keyof typeof ConsolidationCaseRecipeId];
+
+
+export const ConsolidationCaseRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export type ConsolidationCaseConfig = { [key: string]: unknown };
+
+export interface CombinationRequirement {
+  id: string;
+  text: string;
+  priority: number;
+}
+
+export type CombinationRequirementAssessmentStatus = typeof CombinationRequirementAssessmentStatus[keyof typeof CombinationRequirementAssessmentStatus];
+
+
+export const CombinationRequirementAssessmentStatus = {
+  covered: 'covered',
+  partial: 'partial',
+  missing: 'missing',
+  constraint: 'constraint',
+} as const;
+
+export interface CombinationRequirementAssessment {
+  id: string;
+  text: string;
+  priority: number;
+  status: CombinationRequirementAssessmentStatus;
+  capabilityIds: string[];
+  note: string;
+}
+
+export interface ConsolidationCase {
+  briefId?: string;
+  requirements?: CombinationRequirement[];
+  assessment?: CombinationRequirementAssessment[];
+  id: string;
+  recipeId: ConsolidationCaseRecipeId;
+  title: string;
+  need: string;
+  baseSolutionId: string;
+  selectedSources: ConsolidationSelectedSource[];
+  capabilityIds: string[];
+  config: ConsolidationCaseConfig;
+  wiring: ConsolidationWiring;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+  fingerprint: string;
+  runUrl: string;
+}
+
+export type ConsolidationRecipeId = typeof ConsolidationRecipeId[keyof typeof ConsolidationRecipeId];
+
+
+export const ConsolidationRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export type ConsolidationRecipeDefaultConfig = { [key: string]: unknown };
+
+export type ConsolidationRecipeCapabilitiesItem = {
+  id: string;
+  name: string;
+  sourceId: string;
+  edgeId: string;
+};
+
+export type ConsolidationRecipeEdgesItem = {
+  id: string;
+  from: string;
+  to: string;
+  contract: string;
+};
+
+export interface ConsolidationRecipe {
+  id: ConsolidationRecipeId;
+  name: string;
+  sourceIds: string[];
+  baseSolutionIds: string[];
+  runPath: string;
+  defaultConfig: ConsolidationRecipeDefaultConfig;
+  capabilities: ConsolidationRecipeCapabilitiesItem[];
+  edges: ConsolidationRecipeEdgesItem[];
+}
+
+export type ConsolidationSourceFilesItem = {
+  path: string;
+  sha256: string;
+  size: number;
+};
+
+export type ConsolidationSource = ConsolidationSelectedSource & {
+  name: string;
+  recipeId: string;
+  kind: string;
+  filename: string;
+  size: number;
+  files: ConsolidationSourceFilesItem[];
+  registeredBy: string;
+  registeredAt: string;
+  downloadUrl: string;
+  provenance: string;
+  limitations: string[];
+};
+
+export type FinanceWiringConfigSchemaVersion = typeof FinanceWiringConfigSchemaVersion[keyof typeof FinanceWiringConfigSchemaVersion];
+
+
+export const FinanceWiringConfigSchemaVersion = {
+  NUMBER_1: 1,
+} as const;
+
+export type FinanceWiringConfigMethod = typeof FinanceWiringConfigMethod[keyof typeof FinanceWiringConfigMethod];
+
+
+export const FinanceWiringConfigMethod = {
+  forecast: 'forecast',
+  ytd: 'ytd',
+  last3: 'last3',
+} as const;
+
+export type FinanceWiringConfigAccount = typeof FinanceWiringConfigAccount[keyof typeof FinanceWiringConfigAccount];
+
+
+export const FinanceWiringConfigAccount = {
+  Contractors: 'Contractors',
+  'Software_&_Licences': 'Software & Licences',
+  Professional_Fees: 'Professional Fees',
+} as const;
+
+export type FinanceWiringConfigCentresItem = typeof FinanceWiringConfigCentresItem[keyof typeof FinanceWiringConfigCentresItem];
+
+
+export const FinanceWiringConfigCentresItem = {
+  Service_Delivery: 'Service Delivery',
+  Supply_Chain: 'Supply Chain',
+} as const;
+
+export type FinanceWiringConfigPeriod = typeof FinanceWiringConfigPeriod[keyof typeof FinanceWiringConfigPeriod];
+
+
+export const FinanceWiringConfigPeriod = {
+  q4: 'q4',
+  october: 'october',
+  november: 'november',
+  december: 'december',
+} as const;
+
+export type FinanceWiringConfigAccountMappingRevenue = typeof FinanceWiringConfigAccountMappingRevenue[keyof typeof FinanceWiringConfigAccountMappingRevenue];
+
+
+export const FinanceWiringConfigAccountMappingRevenue = {
+  NUMBER_0: 0,
+} as const;
+
+export type FinanceWiringConfigAccountMappingCOGS = typeof FinanceWiringConfigAccountMappingCOGS[keyof typeof FinanceWiringConfigAccountMappingCOGS];
+
+
+export const FinanceWiringConfigAccountMappingCOGS = {
+  NUMBER_1: 1,
+} as const;
+
+export type FinanceWiringConfigAccountMapping = {
+  Revenue: FinanceWiringConfigAccountMappingRevenue;
+  COGS: FinanceWiringConfigAccountMappingCOGS;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  'Salaries & Benefits': number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Contractors: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Travel: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  'Software & Licences': number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Facilities: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Marketing: number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  'Professional Fees': number;
+  /**
+     * @minimum 2
+     * @maximum 9
+     */
+  Depreciation: number;
+};
+
+export interface FinanceWiringConfig {
+  schemaVersion: FinanceWiringConfigSchemaVersion;
+  method: FinanceWiringConfigMethod;
+  account: FinanceWiringConfigAccount;
+  /**
+     * @minimum -600
+     * @maximum 6000
+     */
+  adjustment: number;
+  /**
+     * @minItems 1
+     * @maxItems 2
+     */
+  centres: FinanceWiringConfigCentresItem[];
+  period: FinanceWiringConfigPeriod;
+  accountMapping: FinanceWiringConfigAccountMapping;
+}
+
+export interface FinanceWiringInput {
+  config: FinanceWiringConfig;
+}
+
+export interface FinanceWiringSnapshotInput {
+  config: FinanceWiringConfig;
+  /** @minimum 0 */
+  expectedRevision: number;
+}
+
+export interface FinanceWiringActivationInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  versionId: string;
+  /** @minimum 0 */
+  expectedRevision: number;
+}
+
+export interface FinanceWiringValidation {
+  valid: boolean;
+  errors: string[];
+  config?: FinanceWiringConfig;
+  fingerprint?: string;
+}
+
+export interface FinanceWiringLine {
+  id: string;
+  name: string;
+  baseline: string;
+  current: string;
+  difference: string;
+}
+
+export interface FinanceWiringMonth {
+  period: string;
+  lines: FinanceWiringLine[];
+}
+
+export interface FinanceWiringSource {
+  path: string;
+  sha256: string;
+}
+
+export interface FinanceWiringResult {
+  adjustment: number;
+  currency: string;
+  period: string;
+  lines: FinanceWiringLine[];
+  months: FinanceWiringMonth[];
+  note: string;
+  sourceHashes: FinanceWiringSource[];
+  config: FinanceWiringConfig;
+  fingerprint: string;
+}
+
+export interface FinanceWiringAccount {
+  id: number;
+  name: string;
+}
+
+export interface FinanceWiringChoice {
+  id: string;
+  label: string;
+}
+
+export interface FinanceWiringConnection {
+  from: string;
+  to: string;
+  contract: string;
+}
+
+export interface FinanceWiringCatalog {
+  defaultConfig: FinanceWiringConfig;
+  accounts: FinanceWiringAccount[];
+  centres: FinanceWiringAccount[];
+  methods: FinanceWiringChoice[];
+  periods: FinanceWiringChoice[];
+  sources: FinanceWiringSource[];
+  connections: FinanceWiringConnection[];
+  limitations: string[];
+}
+
+export interface FinanceWiringVersion {
+  id: string;
+  number: number;
+  createdAt: string;
+  config: FinanceWiringConfig;
+  fingerprint: string;
+  result: FinanceWiringResult;
+}
+
+export interface FinanceWiringState {
+  /** @minimum 0 */
+  revision: number;
+  /** @nullable */
+  activeVersionId: string | null;
+  versions: FinanceWiringVersion[];
+}
+
+export interface SolutionExportInput {
+  /** @minLength 1 */
+  caseId: string;
+  expectedUpdatedAt: string;
+}
+
+export interface SolutionExportLinkInput {
+  /** @maxLength 2048 */
+  workspaceUrl: string;
+  /** @maxLength 2048 */
+  publishedUrl: string;
+  /** @minimum 0 */
+  expectedRevision: number;
+}
+
+export type SolutionExportStatus = typeof SolutionExportStatus[keyof typeof SolutionExportStatus];
+
+
+export const SolutionExportStatus = {
+  building: 'building',
+  ready: 'ready',
+  incomplete: 'incomplete',
+  failed: 'failed',
+} as const;
+
+export type SolutionExportChecksItem = {
+  name: string;
+  passed: boolean;
+  detail: string;
+};
+
+export type SolutionExportVerificationState = typeof SolutionExportVerificationState[keyof typeof SolutionExportVerificationState];
+
+
+export const SolutionExportVerificationState = {
+  awaiting_import: 'awaiting_import',
+  link_recorded_unverified: 'link_recorded_unverified',
+} as const;
+
+export interface SolutionExport {
+  id: string;
+  caseId: string;
+  solutionId: string;
+  title: string;
+  sourceVersion: string;
+  fingerprint: string;
+  status: SolutionExportStatus;
+  /** @nullable */
+  sha256: string | null;
+  createdAt: string;
+  createdBy: string;
+  checks: SolutionExportChecksItem[];
+  gaps: string[];
+  workspaceUrl: string;
+  publishedUrl: string;
+  verificationState: SolutionExportVerificationState;
+  linkRevision: number;
+  canEdit: boolean;
+  error: string;
+}
+
 export interface SolutionPackageUploadInput {
   solutionId: string;
   /**
@@ -2824,6 +3284,16 @@ export interface PrototypeDetail {
  * Opaque session token, Bearer sid.
  */
 export type AuthorizationSessionHeaderParameter = string;
+
+export type RunConsolidationCase200 = {
+  runUrl: string;
+  fingerprint: string;
+};
+
+export type ListSolutionExportsParams = {
+caseId?: string;
+solutionId?: string;
+};
 
 export type ListSolutionPackages200SolutionsItemCapabilitiesItem = {
   id: string;

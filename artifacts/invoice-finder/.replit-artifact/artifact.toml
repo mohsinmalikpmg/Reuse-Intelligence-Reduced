@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/invoice-finder/"
+title = "Invoice Finder"
+description = "Synthetic Cenovus scenario source A: combined invoice search and duplicate warnings. Independently implemented local demo."
+version = "1.0.0"
+id = "artifacts/invoice-finder"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/invoice-finder/" ]
+localPort = 23481
+
+[services.development]
+run = "pnpm --filter @workspace/invoice-finder run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/invoice-finder", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/invoice-finder/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23481"
+BASE_PATH = "/invoice-finder/"

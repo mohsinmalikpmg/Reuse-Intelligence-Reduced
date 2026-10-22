@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inspectSolutionArchive, validateEntry, MAX_ARCHIVE } from "./solution-package-archive";
+import { digest, inspectSolutionArchive, isRedistributionExcludedPath, validateEntry, MAX_ARCHIVE } from "./solution-package-archive";
 
 // Minimal stored ZIP fixtures, built in memory; no fixture code is executed.
 function zip(entries: {name:string;body?:string;mode?:number;flags?:number}[]) {
@@ -58,4 +58,62 @@ test("rejects high-ratio expansion metadata before opening a stream",async()=>{
   data.writeUInt16LE(8,8);data.writeUInt32LE(3000,22);
   data.writeUInt16LE(8,central+10);data.writeUInt32LE(3000,central+24);
   await assert.rejects(inspectSolutionArchive(data),/expansion/);
+});
+test("private artifact paths never become source evidence or dependencies",async()=>{
+  const excluded = [
+    "project/.agents/memory/MEMORY.md", "project/.conversation/attached_assets/prompt.txt",
+    "project/.env", "project/.env.production", "project/credentials.json",
+    "project/secrets/key.json", "project/private.pem", "project/.npmrc",
+    "project/AGENTS.md", "project/replit.md", "project/.claude/settings.json",
+    "project/memory/package.json", "project/.conversation/requirements.txt",
+    "project/finance/budget.sqlite3",
+  ];
+  for (const path of excluded) assert.equal(isRedistributionExcludedPath(path), true, path);
+  assert.equal(isRedistributionExcludedPath("project/src/component.ts"), false);
+  assert.equal(isRedistributionExcludedPath("project/uv.lock"), false);
+  const data = zip([
+    ...excluded.map(name => ({name, body:'{"dependencies":{"private-only":"sensitive-marker"}}'})),
+    {name:"project/src/main.py",body:"from fastapi import FastAPI"},
+  ]);
+  const result = await inspectSolutionArchive(data);
+  assert.deepEqual(result.files.map(f=>f.path),["project/src/main.py"]);
+  assert.deepEqual(result.dependencies,[]);
+  assert.ok(!JSON.stringify(result).includes("sensitive-marker"));
+  assert.ok(result.warnings.some(w=>w.includes("unmodified original") && w.includes("No sanitized source export")));
+  const metadata=result.warnings.find(w=>w.startsWith("Archive metadata"));
+  assert.ok(metadata?.includes(`${excluded.length} sensitive/private artifact files omitted`));
+  assert.ok(metadata?.includes(digest(data)));
+});
+test("source with only private artifacts can be retained without making evidence claims",async()=>{
+  const result=await inspectSolutionArchive(zip([{name:"project/.conversation/prompt.txt",body:"private-marker"}]));
+  assert.deepEqual(result.files,[]);
+  assert.deepEqual(result.dependencies,[]);
+  assert.ok(!JSON.stringify(result).includes("private-marker"));
+  assert.ok(result.warnings.some(w=>w.includes("0 eligible files")));
+});
+test("readiness is a static inventory with unresolved finance mapping, never execution",async()=>{
+  const result=await inspectSolutionArchive(zip([
+    {name:"project/pyproject.toml",body:'requires-python = ">=3.11"\ndependencies = ["fastapi"]'},
+    {name:"project/finance/main.py",body:'import sqlite3\nfrom fastapi import FastAPI\n# initialize/seed requires review\nPORT = "not executed"'},
+    {name:"project/package.json",body:'{"dependencies":{"react":"19","vite":"7"}}'},
+    {name:"project/vite.config.ts",body:'// BASE_PATH /api'},
+    {name:"project/pnpm-lock.yaml"},
+    {name:"project/uv.lock"},
+  ]));
+  const warnings=result.warnings.join("\n");
+  for (const marker of ["Python", "FastAPI", "React", "Vite", "pnpm-lock.yaml", "uv.lock",
+    "SQLite", "startup initialization/seeding", "integer-cent", "schema mapping unresolved", "BASE_PATH", "Original SHA-256"]) {
+    assert.ok(warnings.includes(marker),marker);
+  }
+  assert.ok(warnings.includes("No data migration or integration is claimed"));
+  assert.ok(warnings.includes("not been executed"));
+  assert.equal(result.files.length,6);
+});
+test("private text cannot create readiness claims",async()=>{
+  const result=await inspectSolutionArchive(zip([
+    {name:"project/.conversation/package.json",body:'{"dependencies":{"fastapi":"private","react":"private"}}'},
+    {name:"project/src/plain.txt",body:"source"},
+  ]));
+  assert.ok(!result.warnings.some(w=>w.includes("FastAPI declarations") || w.includes("React source")));
+  assert.deepEqual(result.dependencies,[]);
 });

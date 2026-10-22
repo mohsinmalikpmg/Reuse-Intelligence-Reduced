@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* "Stamped ledger": warm docket paper, ink navy, ochre controller seal, verdigris and oxblood outcomes. */
+@theme {
+  --color-paper: hsl(42 33% 94%);
+  --color-card: hsl(40 40% 97.5%);
+  --color-rule: hsl(36 18% 80%);
+  --color-ink: hsl(222 38% 18%);
+  --color-muted: hsl(222 12% 42%);
+  --color-ochre: hsl(38 68% 48%);
+  --color-ochre-soft: hsl(40 75% 88%);
+  --color-verdigris: hsl(170 45% 30%);
+  --color-verdigris-soft: hsl(165 35% 88%);
+  --color-oxblood: hsl(355 55% 36%);
+  --color-oxblood-soft: hsl(355 50% 92%);
+  --color-slate: hsl(215 35% 38%);
+  --color-slate-soft: hsl(215 35% 90%);
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+html, body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-sans); }
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+  background-image: repeating-linear-gradient(0deg, transparent 0 31px, hsl(36 18% 80% / .35) 31px 32px);
+}
+#root { position: relative; z-index: 1; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.display { font-family: var(--font-display); }
+.stamp { transform: rotate(-4deg); border: 2px solid currentColor; border-radius: 4px; letter-spacing: .14em; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .35s ease-out both; }
+:focus-visible { outline: 2px solid var(--color-ochre); outline-offset: 2px; }

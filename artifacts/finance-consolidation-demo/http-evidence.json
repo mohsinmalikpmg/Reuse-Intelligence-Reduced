@@ -1,0 +1,1 @@
+{"passed": true, "checks": ["baseline", "apply", "repeat", "reset", "invalid", "extra fields", "missing", "null", "concurrent isolation", "oversized multi-chunk request", "healthy after oversized rejection"]}

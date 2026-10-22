@@ -51,6 +51,7 @@ function crumbsFor(location: string): { stage: Stage; page: string } {
   if (location.startsWith("/library")) return { stage: "trace", page: "Library" };
   if (location.startsWith("/solutions/")) return { stage: "trace", page: "Solution" };
   if (location.startsWith("/search")) return { stage: "trace", page: "Search" };
+  if (location.startsWith("/workbench/wiring")) return { stage: "connect", page: "Finance wiring" };
   if (location.startsWith("/workbench")) return { stage: "connect", page: "Workbench" };
   if (location.startsWith("/test/")) return { stage: "connect", page: "Blind test" };
   if (location.startsWith("/cases/")) return { stage: "converge", page: "Decision view" };
@@ -89,7 +90,8 @@ export function Frame({ children }: { children: ReactNode }) {
   const desktop = useMediaQuery("(min-width: 768px)"); // sidebar (rail or full) + top-bar controls; below it the phone menu
   const wide = useMediaQuery("(min-width: 1024px)"); // full sidebar; between md and lg the icon rail
 
-  const routeCase = location.match(/^\/workbench\/([^/?]+)/)?.[1];
+  const rc = location.match(/^\/workbench\/([^/?]+)/)?.[1];
+  const routeCase = rc && rc !== "wiring" ? rc : undefined;
   useEffect(() => {
     if (routeCase && routeCase !== caseId) setCaseId(routeCase);
   }, [routeCase, caseId, setCaseId]);

@@ -4,18 +4,22 @@ import { pipeline } from "node:stream/promises";
 import { pool } from "@workspace/db";
 import { CreateSolutionPackageUploadUrlBody, ReviewSolutionPackageBody } from "@workspace/api-zod";
 import { solutions, solutionCapabilities } from "../data/catalog";
-import { digest, inspectSolutionArchive } from "../lib/solution-package-archive";
+import { digest, inspectSolutionArchive, isRedistributionExcludedPath } from "../lib/solution-package-archive";
 import { packageObject, packageUploadUrl, readStagedPackage, savePackageOriginal } from "../lib/solution-package-storage";
 
 const router: IRouter = Router();
 const base = "/library/solution-packages";
-const available = () => solutions.filter(s=>s.execution==="live").map(s=>({
+// A library target need not be live to retain source; upload/review never changes execution readiness.
+const available = () => solutions.map(s=>({
   id:s.id,name:s.name,capabilities:solutionCapabilities(s).map(c=>({id:c.id,name:c.name})),
 }));
 function present(r: Record<string, any>) {
   return {id:r.id,solutionId:r.solution_id,solutionName:r.solution_name,version:r.version,filename:r.filename,
-    status:r.status,sha256:r.sha256,createdAt:r.created_at.toISOString(),claims:r.claims,files:r.files,
-    dependencies:r.dependencies,mappings:r.mappings,warnings:r.warnings,reviewNote:r.review_note,sandboxTested:false};
+    status:r.status,sha256:r.sha256,createdAt:r.created_at.toISOString(),claims:r.claims,
+    files:r.files.filter((f:{path:string})=>!isRedistributionExcludedPath(f.path)),
+    dependencies:r.dependencies.filter((d:{source:string})=>!isRedistributionExcludedPath(d.source)),
+    mappings:r.mappings.filter((m:{file:string})=>!isRedistributionExcludedPath(m.file)),
+    warnings:r.warnings,reviewNote:r.review_note,sandboxTested:false};
 }
 const rates = new Map<string,{start:number;count:number}>();
 router.use(base, async (req,res,next)=>{
@@ -40,7 +44,7 @@ router.use(base, async (req,res,next)=>{
   } catch(e) {req.log.error({err:e},"Package authorization failed");res.status(503).json({error:"Package authorization is unavailable."});}
 });
 router.get(base,async (_req,res)=>{
-  const {rows}=await pool.query("SELECT * FROM solution_packages ORDER BY created_at DESC LIMIT 200");
+  const {rows}=await pool.query("SELECT * FROM solution_packages ORDER BY created_at DESC");
   res.json({canManage:res.locals.canManage,packages:rows.map(present),solutions:available()});
 });
 router.post(`${base}/upload-url`,async(req,res)=>{
@@ -49,7 +53,7 @@ router.post(`${base}/upload-url`,async(req,res)=>{
   const input=parsed.data;
   const solution=available().find(s=>s.id===input.solutionId);
   if(!solution || !/^[^/\\:\x00-\x1f]{1,196}\.zip$/i.test(input.filename) || !input.version.trim()){
-    res.status(400).json({error:"Choose a LIVE solution, a version and a plain .zip filename."});return;
+    res.status(400).json({error:"Choose a library solution, a version and a plain .zip filename."});return;
   }
   const client=await pool.connect();
   try {
@@ -78,7 +82,7 @@ router.post(`${base}/:id/inspect`,async(req,res)=>{
     if(!row){await client.query("ROLLBACK");res.status(404).json({error:"Package not found."});return;}
     if(row.status!=="awaiting_upload"){await client.query("ROLLBACK");res.status(409).json({error:"Package has already been inspected or rejected. Start a new upload."});return;}
     const solution=available().find(s=>s.id===row!.solution_id);
-    if(!solution)throw new Error("Package target is not a LIVE solution.");
+    if(!solution)throw new Error("Package target is not a library solution.");
     const data=await readStagedPackage(row.staging_path);
     const result=await inspectSolutionArchive(data);
     const sha256=digest(data);
@@ -115,7 +119,7 @@ router.patch(`${base}/:id/review`,async(req,res)=>{
     const mappings=parsed.data.mappings.map(m=>{
       const cap=solution?.capabilities.find(c=>c.id===m.capabilityId);
       const key=JSON.stringify([m.capabilityId,m.file]);
-      if(!cap || !row.files.some((f:{path:string})=>f.path===m.file) || seen.has(key)) throw new Error("Each mapping must reference a unique, exact inspected file and a capability of this LIVE solution.");
+      if(!cap || isRedistributionExcludedPath(m.file) || !row.files.some((f:{path:string})=>f.path===m.file) || seen.has(key)) throw new Error("Each mapping must reference a unique, eligible inspected file and a capability of this library solution.");
       seen.add(key);return {...m,capabilityName:cap.name};
     });
     const {rows:updated}=await client.query("UPDATE solution_packages SET mappings=$2,review_note=$3,reviewed_by=$4,status='reviewed' WHERE id=$1 RETURNING *",
@@ -132,6 +136,7 @@ router.get(`${base}/:id/download`,async(req,res)=>{
     res.type("application/zip");
     res.setHeader("Content-Disposition",`attachment; filename="solution-${row.id}.zip"`);
     res.setHeader("X-Content-Type-Options","nosniff");
+    res.setHeader("X-Source-Archive-Warning","Private unmodified original; may contain sensitive artifacts. Not a sanitized export.");
     await pipeline(packageObject(row.object_path).createReadStream(),res);
   }catch(e){req.log.error({err:e},"Package download failed");if(!res.headersSent)res.status(503).json({error:"Stored original is unavailable."});else res.destroy();}
 });

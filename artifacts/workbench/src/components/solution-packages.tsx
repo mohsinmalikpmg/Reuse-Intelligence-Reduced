@@ -21,6 +21,7 @@ const errStatus = (e: unknown) => (e && typeof e === "object" && "status" in e ?
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong.");
 const loginHref = () => `/api/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
 const inputCls = "h-11 w-full rounded-xl border border-input bg-card px-3 text-[15px]";
+const ORIGINAL_WARNING = "Private original ZIPs may contain sensitive memory, conversations or secrets. Downloads are unmodified originals, not sanitized exports. No sanitized source export is available; do not redistribute originals.";
 
 export function usePackagesQuery() {
   return useListSolutionPackages({ query: { queryKey: getListSolutionPackagesQueryKey(), staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: true, retry: (n, e) => errStatus(e) !== 401 && errStatus(e) !== 403 && n < 2 }, request: REQ });
@@ -64,6 +65,7 @@ export function SolutionPackagesPanel() {
       <div className="card-soft border-l-4 border-l-sienna p-5">
         <div className="eyebrow mb-1 !text-siennaink">Solution ZIP intake</div>
         <p className="text-[14px]">Upload source files for IT to review and map to capabilities. Uploaded code is not executed.</p>
+        <p className="mt-2 text-[12.5px] text-muted-foreground">{ORIGINAL_WARNING}</p>
       </div>
       {data.canManage ? <UploadForm solutions={data.solutions} /> : (
         <div className="card-soft flex gap-3 p-5" data-testid="packages-readonly">
@@ -129,7 +131,7 @@ function UploadForm({ solutions }: { solutions: ListSolutionPackages200Solutions
     <div className="card-soft space-y-3 p-5" data-testid="form-package-upload">
       <h3 className="flex items-center gap-2 text-[17px] font-semibold"><Upload className="h-4 w-4" /> Upload a solution ZIP</h3>
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="block"><span className="eyebrow mb-1 block">Live solution</span>
+        <label className="block"><span className="eyebrow mb-1 block">Library solution · live or non-live</span>
           <select value={solutionId} onChange={(e) => setSolutionId(e.target.value)} className={inputCls} data-testid="select-upload-solution" disabled={busy}>
             <option value="">Choose…</option>{solutions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select></label>
@@ -140,6 +142,7 @@ function UploadForm({ solutions }: { solutions: ListSolutionPackages200Solutions
         <textarea value={claims} onChange={(e) => setClaims(e.target.value)} rows={3} placeholder="Summarizes maintenance work orders" className="w-full rounded-xl border border-input bg-card p-3 text-[14px]" data-testid="input-upload-claims" disabled={busy} /></label>
       <input type="file" accept=".zip,application/zip" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block text-[14px]" data-testid="input-upload-file" disabled={busy} />
       <p className="text-[12.5px] text-muted-foreground">Maximum 20 MiB ZIP. Rejected archives require a new upload; they cannot be retried.</p>
+      <p className="text-[12.5px] text-muted-foreground">Retaining source does not make a library solution live or integrated. Inspection inventories readiness only; review and sanitization are still required.</p>
       {phase === "uploading" && <div role="status" data-testid="status-upload-progress"><div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary transition-transform" style={{ width: "100%", transform: `translateX(${progress - 100}%)` }} /></div><p className="mt-1 text-[13px] text-muted-foreground">Sending to storage… {progress}%</p></div>}
       {phase === "inspecting" && <p role="status" className="text-[13px] text-muted-foreground">Inspecting files, hashes and dependencies…</p>}
       {phase === "done" && <p role="status" className="text-[13px] text-ok" data-testid="status-upload-done">Inspected. Review the proposed mappings below.</p>}
@@ -173,13 +176,14 @@ function PackageCard({ pkg, open, onToggle, canManage, solution }: { pkg: Soluti
         <div className="mt-4 space-y-4 border-t border-border pt-4 text-[14px]">
           <div className="flex flex-wrap items-center gap-3">
             <span className="break-all font-mono text-[12px]" data-testid={`text-package-sha-${pkg.id}`}>SHA-256: {pkg.sha256 ?? "not computed yet"}</span>
-            {pkg.sha256 && <a className={btn.secondary} href={`/api/library/solution-packages/${encodeURIComponent(pkg.id)}/download`} data-testid={`link-download-package-${pkg.id}`}>Download ZIP</a>}
+            {pkg.sha256 && <a className={btn.secondary} href={`/api/library/solution-packages/${encodeURIComponent(pkg.id)}/download`} data-testid={`link-download-package-${pkg.id}`}>Download private original ZIP</a>}
             {canManage && pkg.status === "awaiting_upload" && (
               <button className={btn.secondary} disabled={inspect.isPending} onClick={() => inspect.mutate({ id: pkg.id }, { onSettled: () => qc.invalidateQueries({ queryKey: getListSolutionPackagesQueryKey() }) })} data-testid={`button-reinspect-${pkg.id}`}><RefreshCw className="h-4 w-4" /> {inspect.isPending ? "Inspecting…" : "Retry inspection"}</button>
             )}
           </div>
+          <p className="text-[12.5px] text-muted-foreground">{ORIGINAL_WARNING}</p>
           {inspect.isError && <p role="alert" className="text-bad">{errMsg(inspect.error)}</p>}
-          {pkg.warnings.length > 0 && <div className="rounded-xl bg-accent p-3 text-accent-foreground"><div className="font-semibold">Inspection warnings</div><ul className="list-disc pl-5">{pkg.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
+          {pkg.warnings.length > 0 && <div className="rounded-xl bg-accent p-3 text-accent-foreground"><div className="font-semibold">Static readiness inventory & warnings</div><ul className="list-disc pl-5">{pkg.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
           <div className="grid gap-4 md:grid-cols-3">
             <Col title="Uploader claims">
               {pkg.claims.length ? <ul className="list-disc pl-5">{pkg.claims.map((c, i) => <li key={i}>{c}</li>)}</ul> : <p className="text-muted-foreground">No claims made.</p>}
@@ -195,7 +199,8 @@ function PackageCard({ pkg, open, onToggle, canManage, solution }: { pkg: Soluti
              <p className="mt-2 text-muted-foreground">Reads package.json and requirements*.txt. Review other manifests, indirect dependencies, licenses and vulnerabilities separately.</p>
              {pkg.dependencies.length ? <ul className="mt-2 space-y-1">{pkg.dependencies.map((d, i) => <li key={i} className="break-all font-mono text-[12px]">{d.name}@{d.version} <span className="text-muted-foreground">· {d.source}</span></li>)}</ul> : <p className="mt-2 text-muted-foreground">No supported dependency declarations found.</p>}
           </details>
-          <details><summary className="cursor-pointer font-semibold text-primary">File manifest ({pkg.files.length})</summary>
+          <details><summary className="cursor-pointer font-semibold text-primary">Eligible source evidence manifest ({pkg.files.length})</summary>
+            <p className="mt-2 text-muted-foreground">Known private artifact paths are omitted. This is not a sanitized archive or a guarantee that remaining files are secret-free.</p>
             <ul className="mt-2 max-h-72 space-y-1 overflow-auto">{pkg.files.map((f) => <li key={f.path} className="break-all font-mono text-[12px]">{f.path} <span className="text-muted-foreground">· {f.size.toLocaleString()} B · {f.sha256.slice(0, 16)}…</span></li>)}</ul>
           </details>
           {pkg.reviewNote && <p><span className="font-semibold">Review note: </span>{pkg.reviewNote}</p>}
@@ -264,24 +269,27 @@ function ReviewEditor({ pkg, solution }: { pkg: SolutionPackage; solution?: List
   );
 }
 
-/** Approved, human-reviewed mappings from uploaded ZIPs for one solution. Static evidence only, never executed. */
+/** All uploaded ZIPs for one solution, including pending/failed/unreviewed source. Never executed. */
 export function UploadedSourceEvidence({ solutionId }: { solutionId: string }) {
   const q = usePackagesQuery();
-  if (q.isLoading) return <Skel className="mt-3 h-16" />;
+  if (q.isLoading) return <div role="status" aria-label="Loading uploaded source ZIPs"><Skel className="mt-3 h-16" /></div>;
   if (q.isError) {
-    if (errStatus(q.error) === 401) return <p className="mt-3 text-[13px] text-muted-foreground" data-testid="uploaded-evidence-signin"><a href={loginHref()} className="font-semibold text-primary underline">Sign in</a> to see human-approved evidence from uploaded source ZIPs.</p>;
-    return <p role="alert" className="mt-3 text-[13px] text-bad">Uploaded source evidence could not load. <button className="underline" onClick={() => q.refetch()}>Retry</button></p>;
+    if (errStatus(q.error) === 401) return <p className="mt-3 text-[13px] text-muted-foreground" data-testid="uploaded-evidence-signin"><a href={loginHref()} className="font-semibold text-primary underline">Sign in</a> to access private uploaded source ZIPs and review status.</p>;
+    return <p role="alert" className="mt-3 text-[13px] text-bad">Uploaded source ZIPs could not load. {errMsg(q.error)} <button className="underline" onClick={() => q.refetch()}>Retry</button></p>;
   }
-  const pkgs = (q.data?.packages ?? []).filter((p) => p.solutionId === solutionId && p.mappings.some((m) => m.decision === "approved"));
+  const pkgs = (q.data?.packages ?? []).filter((p) => p.solutionId === solutionId);
   return (
     <div className="card-soft mt-3 p-5 text-[14px]" data-testid="uploaded-source-evidence">
-       <h3 className="font-semibold">Uploaded source ZIPs · source reviewed</h3>
-       <p className="text-[12.5px] text-muted-foreground">IT-approved mappings. Assessment uses the indexed library package.</p>
-      {pkgs.length === 0 ? <p className="mt-2 text-muted-foreground">No approved mappings from uploaded packages.</p> : pkgs.map((p) => (
+       <h3 className="font-semibold">Uploaded source ZIPs · private source access</h3>
+       <p className="text-[12.5px] text-muted-foreground">All source uploads, not just approved mappings. Static source review is not runtime testing or integration. Assessment uses the indexed library package.</p>
+       <p className="mt-2 text-[12.5px] text-muted-foreground">{ORIGINAL_WARNING}</p>
+      {pkgs.length === 0 ? <p className="mt-2 text-muted-foreground">No source ZIPs have been uploaded for this solution. Authorized IT can retain an original through Library → Solution ZIP intake.</p> : pkgs.map((p) => (
         <div key={p.id} className="mt-3 border-t border-border pt-3">
-          <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">v{p.version}</span><Tag tone="muted">Not sandbox tested</Tag><a className="text-primary underline" href={`/api/library/solution-packages/${encodeURIComponent(p.id)}/download`}>Download</a></div>
+          <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">v{p.version}</span><span className="break-all">{p.filename}</span><Tag tone={STATUS[p.status].tone}>{STATUS[p.status].label}</Tag><Tag tone="muted">Not sandbox tested</Tag>{p.sha256 ? <a className="text-primary underline" href={`/api/library/solution-packages/${encodeURIComponent(p.id)}/download`}>Download private original ZIP</a> : <span className="text-muted-foreground">Original download unavailable until inspection succeeds.</span>}</div>
           <p className="break-all font-mono text-[11.5px] text-muted-foreground">SHA-256: {p.sha256 ?? "—"}</p>
+          {!p.mappings.some(m => m.decision === "approved") && <p className="mt-1 text-[12.5px] text-muted-foreground">No IT-approved source mappings yet.</p>}
           <ul className="mt-1 space-y-1">{p.mappings.filter((m) => m.decision === "approved").map((m, i) => <li key={i}><span className="font-semibold">{m.capabilityName}</span> · <span className="break-all font-mono text-[12px]">{m.file}</span>{m.note && <span className="text-muted-foreground"> · {m.note}</span>}</li>)}</ul>
+          {p.warnings.length > 0 && <details className="mt-2"><summary className="cursor-pointer text-primary">Static readiness & inspection warnings</summary><ul className="mt-1 list-disc pl-5 text-[12.5px]">{p.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></details>}
         </div>
       ))}
     </div>
