@@ -212,6 +212,45 @@
 .dark .lift { box-shadow: 0 2px 4px hsl(199 70% 3% / .45), 0 14px 28px -12px hsl(199 70% 2% / .75); }
 .dark .schem { border-color: #1E4A58; }
 
+/* Invoice wiring is a surface, not a primary action: the dark theme's pale
+   primary color washes out translucent cards. Keep these rules invoice-only. */
+.dark .invoice-workflow {
+  background: #0d2632;
+  color: #edf7f8;
+  border: 1px solid #3f6572;
+}
+.dark .invoice-workflow .workflow-capability {
+  background: #234653;
+  border: 1px solid #638c99;
+  border-left: 3px solid #9ed9e3;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 18%);
+}
+.dark .invoice-workflow .workflow-endpoint {
+  background: #102f3b;
+  border-color: #638c99;
+}
+.dark .invoice-workflow .workflow-connection {
+  background: #081e28;
+  border-color: #547d8a;
+  color: #bcebf0;
+}
+.dark .invoice-workflow .opacity-75 {
+  color: #c6dce2;
+  opacity: 1;
+}
+.dark .invoice-workflow button:not(:disabled):hover {
+  background: #345d6b;
+}
+.dark .invoice-workflow button:focus-visible {
+  outline: 2px solid #bcebf0;
+  outline-offset: 3px;
+}
+.dark .invoice-workflow .workflow-capability button {
+  background: #122f3b;
+  border: 1px solid #638c99;
+  color: #edf7f8;
+}
+
 @layer base {
   * {
     @apply border-border;

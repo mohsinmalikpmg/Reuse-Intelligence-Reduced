@@ -5,6 +5,7 @@ import { Cable, Check, ExternalLink, Info, Minus, Play, RotateCcw, Save, Undo2, 
 import { useGetCurrentAuthUser, useGetFinanceWiringCatalog, type FinanceWiringConfig } from "@workspace/api-client-react";
 import { Controls } from "@/pages/finance-wiring";
 import { ErrorView, LoadingView, Page, Skel, StageEyebrow, Tag, btn, useUndoToast } from "@/components/bits";
+import { InvoiceOverlap } from "@/components/invoice-overlap";
 import { CaseExportHistory } from "@/components/solution-exports";
 import { cn } from "@/lib/utils";
 import Workbench from "@/pages/workbench";
@@ -91,7 +92,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
       <blockquote className="mt-2 max-w-3xl border-l-4 border-sienna pl-3 text-[15px] text-muted-foreground" data-testid="text-need">{c.need}</blockquote>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <section id="wiring" className="scroll-mt-24 rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6" data-testid="panel-map" aria-label="Proposed map">
+        <section id="wiring" className={cn("scroll-mt-24 rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6", !finance && "invoice-workflow")} data-testid="panel-map" aria-label="Proposed map">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-semibold">Included capabilities</h2>
             <span className="text-[12.5px] opacity-75">Starts from {name(c.baseSolutionId)}. Click a connection for its adapter.</span>
@@ -104,8 +105,8 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
               const e = recipe.edges.find((x) => x.id === cap.edgeId);
               return (
                 <li key={cap.id}>
-                  {e && <button onClick={() => setEdge(e)} className="mx-auto my-1 flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-[12px] hover:bg-white/10" data-testid={`button-edge-${cap.id}`}><Cable className="h-3.5 w-3.5" /> adapter: {nodeName(e.from)} to {nodeName(e.to)}</button>}
-                  <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3" data-testid={`node-cap-${cap.id}`}>
+                  {e && <button onClick={() => setEdge(e)} className="workflow-connection mx-auto my-1 flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-[12px] hover:bg-white/10" data-testid={`button-edge-${cap.id}`}><Cable className="h-3.5 w-3.5" /> adapter: {nodeName(e.from)} to {nodeName(e.to)}</button>}
+                  <div className="workflow-capability flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3" data-testid={`node-cap-${cap.id}`}>
                     <Check className="h-4 w-4 shrink-0 text-[#9ED9E3]" />
                     <div className="min-w-0 flex-1"><div className="font-semibold">{cap.name}</div><div className="text-[12.5px] opacity-75">from {name(cap.sourceId)} · {SOURCE_COPY[cap.sourceId]?.label}</div></div>
                     {finance ? <span className="text-[11.5px] opacity-70" title="Forecast to Report needs both engines and their adapter.">required</span>
@@ -154,6 +155,8 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
 
       {finance && <div className="mt-6" id="finance-settings"><FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Finance settings saved")} /></div>}
 
+      {c.recipeId === "invoice" && <div className="mt-6" id="invoice-overlap"><InvoiceOverlap c={c} /></div>}
+
       <div className="mt-6">
         <CaseExportHistory caseId={c.id} updatedAt={c.updatedAt} pending={upd.isPending} onConflict={() => void qc.invalidateQueries({ queryKey: ccKeys.case(c.id) })} />
       </div>
@@ -196,7 +199,7 @@ function RequirementCoverage({ c, recipe }: { c: CombinedCase; recipe: Recipe })
 }
 
 function Node({ title, sub }: { title: string; sub: string }) {
-  return <li className="rounded-xl border border-dashed border-white/30 px-4 py-3"><div className="font-semibold">{title}</div><div className="text-[12.5px] opacity-75">{sub}</div></li>;
+  return <li className="workflow-endpoint rounded-xl border border-dashed border-white/30 px-4 py-3"><div className="font-semibold">{title}</div><div className="text-[12.5px] opacity-75">{sub}</div></li>;
 }
 
 function FinanceAdjust({ c, busy, onSave }: { c: CombinedCase; busy: boolean; onSave: (config: Record<string, unknown>) => void }) {

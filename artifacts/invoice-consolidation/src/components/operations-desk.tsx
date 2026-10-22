@@ -118,13 +118,20 @@ function Workspace({ recipe }: { recipe: Recipe }) {
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
           {new URLSearchParams(window.location.search).get("consolidationCaseId") && (
-            <a data-testid="link-workbench-wiring" href={`/workbench/${encodeURIComponent(new URLSearchParams(window.location.search).get("consolidationCaseId")!)}#wiring`} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40">View wiring in Workbench</a>
+            <>
+              <a data-testid="link-workbench-wiring" href={`/workbench/${encodeURIComponent(new URLSearchParams(window.location.search).get("consolidationCaseId")!)}#wiring`} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40">View wiring in Workbench</a>
+              <a data-testid="link-workbench-overlap" href={`/workbench/${encodeURIComponent(new URLSearchParams(window.location.search).get("consolidationCaseId")!)}#invoice-overlap`} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40">Compare source overlap</a>
+            </>
           )}
           <button onClick={() => setShowProv(v => !v)} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40">{showProv ? "Hide" : "Show"} provenance</button>
           <button onClick={undo} disabled={!ledger.length || !has("bulk-decisions")} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40 disabled:opacity-40">Undo last</button>
           <button onClick={reset} className="border border-destructive/40 bg-card px-3 py-1.5 text-destructive hover:bg-destructive/5">Reset snapshot</button>
         </div>
       </header>
+      <p className="mb-6 border-l-2 border-accent pl-3 text-sm text-muted-foreground">
+        This combined configuration is a proposal, not proof that any original app can be retired.
+        Original implementations remain independent. Development and maintenance effort: not measured.
+      </p>
 
       {showProv && (
         <div className="rise mb-8 grid gap-px border border-border bg-border text-sm md:grid-cols-3">

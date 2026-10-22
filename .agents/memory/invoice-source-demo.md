@@ -33,3 +33,9 @@ The invoice value demonstration must also show redundant features across the thr
 **Why:** The user explicitly identified redundancy reduction as part of the product's value demonstration.
 
 **How to apply:** Expose source-backed overlaps and meaningful differences, then show proposed retain/replace/combine decisions. Keep proposed redundancy reduction distinct from verified replacement, retirement and measured maintenance savings.
+
+Do not change original package scripts just to accommodate the host's test runtime.
+
+**Why:** The host can run Node 20 while the reviewed originals use Node's newer TypeScript-stripping option. Editing a package script would change the registered source hash merely to resolve a tooling mismatch.
+
+**How to apply:** Run original tests through a host-side TypeScript bundler when necessary, keeping generated test bundles outside the originals. A host test run establishes only its stated test scope, not full replacement equivalence.
