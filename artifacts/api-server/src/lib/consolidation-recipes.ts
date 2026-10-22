@@ -8,10 +8,26 @@ import { savePackageOriginal, packageObject } from "./solution-package-storage";
 import { isRedistributionExcludedPath } from "./solution-package-archive";
 import { getBrief } from "./store";
 import { assessCombination } from "./combination-assessment";
-import type { CombinationRequirement, CombinationRequirementAssessment } from "@workspace/api-zod";
+import { resolveInvoiceFeatures, validateInvoiceExperience, type CombinationRequirement, type CombinationRequirementAssessment } from "@workspace/api-zod";
 
 export class ConsolidationError extends Error {
   constructor(public status: number, message: string) { super(message); }
+}
+export const invoiceConfigSchema = z.object({
+  schemaVersion: z.literal(1),
+  featureIds: z.array(z.string()).optional(),
+  experience: z.enum(["invoice-led", "review-led", "budget-led"]).optional(),
+}).strict();
+export function validateInvoiceConfig(config: unknown, capabilityIds: string[]) {
+  const parsed = invoiceConfigSchema.safeParse(config);
+  if (!parsed.success) throw new ConsolidationError(422, "Invoice configuration contains unsupported fields or values.");
+  try {
+    const features = resolveInvoiceFeatures(capabilityIds, parsed.data.featureIds);
+    validateInvoiceExperience(parsed.data.experience, features);
+  } catch (error) {
+    throw new ConsolidationError(422, error instanceof Error ? error.message : "Invalid invoice feature selection.");
+  }
+  return parsed.data;
 }
 const sources = [
   { id: "invoice-finder", name: "Invoice Finder", recipeId: "invoice", kind: "reviewed-source" },
@@ -83,6 +99,7 @@ export async function validateConsolidationCase(c: ConsolidationCase): Promise<v
   if (!c.capabilityIds.length || new Set(c.capabilityIds).size !== c.capabilityIds.length || c.capabilityIds.some(id => !recipe.capabilities.some(cap => cap.id === id && ids.includes(cap.sourceId)))) throw new ConsolidationError(422, "Every capability must have its selected registered source.");
   const requiredEdges = [...new Set(recipe.capabilities.filter(cap => c.capabilityIds.includes(cap.id)).map(cap => cap.edgeId))].sort();
   if (canonical([...c.wiring.edgeIds].sort()) !== canonical(requiredEdges)) throw new ConsolidationError(422, "Wiring must connect exactly the enabled capabilities using the supported edges.");
+  if (c.recipeId === "invoice") validateInvoiceConfig(c.config, c.capabilityIds);
   const registered = await registeredConsolidationSources();
   for (const source of c.selectedSources) {
     if (!registered.some(r => r.id === source.id && r.version === source.version && r.sha256 === source.sha256 && r.solutionId === source.solutionId)) throw new ConsolidationError(409, "A selected source version is not registered or its hash changed.");
@@ -96,8 +113,6 @@ export async function validateConsolidationCase(c: ConsolidationCase): Promise<v
     if (!parsed.success) throw new ConsolidationError(422, "Finance configuration contains unsupported fields or values.");
     const result = await validateFinanceConfig(parsed.data);
     if (!result.valid) throw new ConsolidationError(422, result.errors.join("; "));
-  } else if (!z.object({ schemaVersion: z.literal(1) }).strict().safeParse(c.config).success) {
-    throw new ConsolidationError(422, "Invoice config must be {schemaVersion:1}; capability and wiring choices are explicit.");
   }
   if (c.fingerprint && c.fingerprint !== consolidationFingerprint(c)) throw new ConsolidationError(409, "The persisted recipe fingerprint does not match its contents.");
 }

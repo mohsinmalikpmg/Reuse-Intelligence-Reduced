@@ -51,6 +51,12 @@ Existing native capabilities with real executors may be exercised in their own p
 
 **How to apply:** Retain risk labels, real dependency checks and external-donor restrictions; explain genuinely blocked steps visibly rather than presenting unexplained disabled controls.
 
+Feature deconstruction must be selectable in the FUSEBOX Workbench, with a recommended feature set and starting experience. The combined app must integrate navigation and task journeys, not stack feature tiles.
+
+**Why:** The user rejected expanding only the runnable invoice app and explicitly found the originals' UX more thoughtful than the combined vertical feature assembly.
+
+**How to apply:** Treat Workbench selections and the resulting application's interaction design as connected deliverables. Preserve source interaction patterns where useful; explain recommendations and dependencies, and ensure saved choices control real behavior.
+
 Accepted suggestions must remain discoverable in the workbench's reuse section and workflow, including proposed-only features.
 
 **Why:** The user could not find referenced plan inclusions in “Add from other apps” or the workflow after acceptance. Hiding them inside plan details made acceptance appear ineffective.

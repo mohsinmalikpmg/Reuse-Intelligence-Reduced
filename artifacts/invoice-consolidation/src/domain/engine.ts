@@ -7,7 +7,7 @@ import { replay, type DecisionEvent, type Role } from "../../../approval-desk/sr
 import { previewBulk, applyBulk, type BulkAction, type BulkPreview } from "../../../approval-desk/src/domain/bulk.ts";
 import { buildState } from "../../../spend-tracker/src/domain/model.ts";
 import { groupTrace, tracedLines, type Scope, type LineCategory } from "../../../spend-tracker/src/domain/lines.ts";
-import { storageKey, validateRecipe, type Recipe, type CapabilityId } from "./recipe";
+import { storageKey, validateRecipe, featureEnabled, type Recipe, type CapabilityId, type InvoiceFeatureId } from "./recipe";
 
 export { EMPTY_CRITERIA };
 export type { SearchCriteria, DecisionEvent, Role, BulkAction, BulkPreview, Scope, LineCategory };
@@ -17,6 +17,10 @@ export const pars = createSeedState().pars;
 export function requireCapability(recipe: Recipe, capability: CapabilityId) {
   validateRecipe(recipe);
   if (!recipe.capabilities.includes(capability)) throw new Error(`${capability} was removed from this recipe.`);
+}
+export function requireFeature(recipe: Recipe, feature: InvoiceFeatureId) {
+  validateRecipe(recipe);
+  if (!featureEnabled(recipe, feature)) throw new Error(`${feature} was removed from this recipe.`);
 }
 export function states(ledger: readonly DecisionEvent[]) {
   const result = replay(SEED, ledger);
@@ -35,17 +39,21 @@ export function invoiceRows(ledger: readonly DecisionEvent[]): Invoice[] {
   });
 }
 export function search(recipe: Recipe, ledger: readonly DecisionEvent[], criteria: SearchCriteria) {
-  requireCapability(recipe, "fuzzy-search");
+  validateRecipe(recipe);
+  if (criteria.text.trim() && criteria.mode === "fuzzy") requireFeature(recipe, "fuzzy-matching");
+  if (criteria.supplierId || criteria.afeId || criteria.parId || criteria.dateFrom || criteria.dateTo ||
+    criteria.minCents !== null || criteria.maxCents !== null || criteria.statuses.length)
+    requireFeature(recipe, "structured-filters");
   const errors = compileCriteria(criteria).errors;
   if (errors.length) throw new Error(errors.join(" "));
   return rankedSearch(invoiceRows(ledger), suppliers, criteria);
 }
 export function preview(recipe: Recipe, ledger: readonly DecisionEvent[], ids: string[], action: BulkAction, role: Role, reason: string) {
-  requireCapability(recipe, "bulk-decisions");
+  requireFeature(recipe, "bulk-actions");
   return previewBulk(states(ledger), ids, action, role, reason);
 }
 export function apply(recipe: Recipe, ledger: readonly DecisionEvent[], batch: BulkPreview, id: string, at: string) {
-  requireCapability(recipe, "bulk-decisions");
+  requireFeature(recipe, "bulk-actions");
   const result = applyBulk(SEED, ledger, batch, { batchId: id, at, newId: i => `${id}-${i}` });
   if (!result.ok) throw new Error(result.error);
   return result.value;
@@ -54,7 +62,7 @@ export function spendState(ledger: readonly DecisionEvent[]) {
   return buildState(suppliers, afes, pars, invoiceRows(ledger).map(({ invoiceNumber, ...i }) => ({ ...i, number: invoiceNumber })));
 }
 export function trace(recipe: Recipe, ledger: readonly DecisionEvent[], scope: Scope, category?: LineCategory) {
-  requireCapability(recipe, "spend-tracing");
+  requireFeature(recipe, "spend-tracing");
   const s = spendState(ledger);
   return { summary: groupTrace(s, scope), lines: tracedLines(s, scope, category) };
 }

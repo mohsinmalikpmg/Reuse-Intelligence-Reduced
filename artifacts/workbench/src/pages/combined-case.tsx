@@ -13,6 +13,8 @@ import { LinkedComposition } from "@/components/composition-panel";
 import { useCaseComposition, useRefreshCaseComposition } from "@/lib/composition";
 import { ProposalWorkbenchPage } from "@/pages/proposal-workbench";
 import { InputUpload } from "@/components/input-upload";
+import { InvoiceFeatureSelection } from "@/components/invoice-features";
+import { pruneInvoiceConfig } from "@/lib/invoice-features";
 import { FeatureRedundancy } from "@/components/feature-redundancy";
 import { planInclusions } from "@/lib/plan-inclusions";
 import { inclusionNodeId, PlanInclusions, PlanStepAttribution, UnmappedPlanSteps } from "@/components/plan-inclusions";
@@ -83,7 +85,8 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
   const undo = () => { const prev = history[history.length - 1]; if (!prev) return; setHistory((h) => h.slice(0, -1)); save(prev, "Undone", false); };
   const removeCap = (capId: string) => {
     const caps = c.capabilityIds.filter((x) => x !== capId);
-    save({ capabilityIds: caps, wiring: { edgeIds: edgesFor(recipe, caps) } }, `${recipe.capabilities.find((x) => x.id === capId)?.name} removed`);
+    const extra = recipe.id === "invoice" ? { config: pruneInvoiceConfig(c.config as Record<string, unknown>, caps) } : {};
+    save({ capabilityIds: caps, wiring: { edgeIds: edgesFor(recipe, caps) }, ...extra }, `${recipe.capabilities.find((x) => x.id === capId)?.name} removed`);
   };
   const addCap = (capId: string) => {
     const caps = [...c.capabilityIds, capId];
@@ -179,6 +182,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
 
       {finance && <div className="mt-6" id="finance-settings"><FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Finance settings saved")} /></div>}
 
+      {c.recipeId === "invoice" && <div className="mt-6" id="invoice-features"><InvoiceFeatureSelection c={c} recipe={recipe} busy={upd.isPending} onSave={(config) => save({ config }, "Function selection saved")} onEnableCap={addCap} onSetBase={(b) => save({ baseSolutionId: b }, `Base set to ${name(b)}`)} /></div>}
       {c.recipeId === "invoice" && <div className="mt-6" id="invoice-overlap"><InvoiceOverlap c={c} /></div>}
       {c.recipeId !== "invoice" && <div className="mt-6" id="feature-redundancy"><FeatureRedundancy target={{ caseId: c.id }} scope={`rev:${c.revision}`} names={name} inPlan={new Set(c.capabilityIds)} /></div>}
 

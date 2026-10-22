@@ -14,7 +14,9 @@
       "sources": "case.selectedSources.map(source => source.id)",
       "capabilities": "case.capabilityIds",
       "baseSourceId": "case.baseSolutionId",
-      "wiring": "case.wiring"
+      "wiring": "case.wiring",
+      "featureIds": "case.config.featureIds (omit when absent)",
+      "experience": "case.config.experience (omit when absent)"
     },
     "instruction": "Write validated mapped recipe into copied output recipe.json; never mutate shared public/recipe.json during concurrent exports. Serve extracted export at root with no consolidationCaseId query."
   },
@@ -32,12 +34,15 @@
     "runtimeDependencies": ["node:test", "node:assert/strict", "node:fs"]
   },
   "sourceFingerprintPaths": [
+    "lib/api-zod/src/invoice-features.ts",
     "artifacts/invoice-consolidation/src",
     "artifacts/invoice-consolidation/index.html",
     "artifacts/invoice-consolidation/vite.config.ts",
     "artifacts/invoice-consolidation/package.json",
     "artifacts/invoice-consolidation/public/recipe.json",
     "artifacts/invoice-finder/src/domain/fixture.ts",
+    "artifacts/invoice-finder/src/domain/duplicates.ts",
+    "artifacts/invoice-finder/src/domain/money.ts",
     "artifacts/invoice-finder/src/domain/fuzzy.ts",
     "artifacts/invoice-finder/src/domain/search.ts",
     "artifacts/invoice-finder/src/domain/types.ts",

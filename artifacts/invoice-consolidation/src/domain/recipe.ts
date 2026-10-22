@@ -1,3 +1,6 @@
+import { resolveInvoiceFeatures, validateInvoiceExperience, type InvoiceFeatureId, type InvoiceExperience } from "../../../../lib/api-zod/src/invoice-features";
+export { resolveInvoiceFeatures, validateInvoiceExperience };
+export type { InvoiceFeatureId, InvoiceExperience };
 export const SOURCE_IDS = ["invoice-finder", "approval-desk", "spend-tracker"] as const;
 export const CAPABILITY_IDS = ["fuzzy-search", "bulk-decisions", "spend-tracing"] as const;
 export type SourceId = typeof SOURCE_IDS[number];
@@ -10,6 +13,8 @@ export interface Recipe {
   capabilities: CapabilityId[];
   baseSourceId: SourceId;
   wiring: { edgeIds: string[] };
+  featureIds?: InvoiceFeatureId[];
+  experience?: InvoiceExperience;
 }
 export const DEFAULT_RECIPE: Recipe = {
   schemaVersion: 1, snapshotId: "synthetic-invoice-demo-v1",
@@ -32,12 +37,21 @@ export function validateRecipe(input: unknown): Recipe {
   const required = r.capabilities.map(c => CAPABILITY_EDGES[c]).sort();
   if (!Array.isArray(r.wiring?.edgeIds) || JSON.stringify([...r.wiring.edgeIds].sort()) !== JSON.stringify(required))
     throw new Error("Wiring must connect exactly the enabled capabilities.");
-  return { schemaVersion: 1, snapshotId: r.snapshotId, sources: [...r.sources], capabilities: [...r.capabilities], baseSourceId: r.baseSourceId, wiring: { edgeIds: [...r.wiring.edgeIds] } };
+  const features = resolveInvoiceFeatures(r.capabilities, r.featureIds);
+  validateInvoiceExperience(r.experience, features);
+  return { schemaVersion: 1, snapshotId: r.snapshotId, sources: [...r.sources], capabilities: [...r.capabilities], baseSourceId: r.baseSourceId, wiring: { edgeIds: [...r.wiring.edgeIds] },
+    ...(r.featureIds !== undefined ? { featureIds: [...r.featureIds] } : {}),
+    ...(r.experience !== undefined ? { experience: r.experience } : {}) };
+}
+export function featureEnabled(recipe: Recipe, id: InvoiceFeatureId): boolean {
+  return resolveInvoiceFeatures(recipe.capabilities, recipe.featureIds).includes(id);
 }
 export function recipeFromCase(value: unknown): Recipe {
-  const c = value as { fingerprint: string; selectedSources: { id: SourceId }[]; capabilityIds: CapabilityId[]; baseSolutionId: SourceId; config: { schemaVersion: number }; wiring?: unknown };
+  const c = value as { fingerprint: string; selectedSources: { id: SourceId }[]; capabilityIds: CapabilityId[]; baseSolutionId: SourceId; config: { schemaVersion: number; featureIds?: string[]; experience?: string }; wiring?: unknown };
   if (c?.config?.schemaVersion !== 1) throw new Error("Unsupported saved case configuration.");
-  return validateRecipe({ schemaVersion: 1, snapshotId: c.fingerprint, sources: c.selectedSources?.map(s => s.id), capabilities: c.capabilityIds, baseSourceId: c.baseSolutionId, wiring: c.wiring });
+  return validateRecipe({ schemaVersion: 1, snapshotId: c.fingerprint, sources: c.selectedSources?.map(s => s.id), capabilities: c.capabilityIds, baseSourceId: c.baseSolutionId, wiring: c.wiring,
+    ...(c.config.featureIds !== undefined ? { featureIds: c.config.featureIds } : {}),
+    ...(c.config.experience !== undefined ? { experience: c.config.experience } : {}) });
 }
 export async function loadRecipe(search: string, base: string): Promise<Recipe> {
   const q = new URLSearchParams(search);
@@ -54,5 +68,6 @@ export async function loadRecipe(search: string, base: string): Promise<Recipe> 
 }
 export function storageKey(recipe: Recipe): string {
   // Include normalized recipe as well as fingerprint so different saved choices cannot share a ledger.
-  return `invoice-consolidation:v1:${encodeURIComponent(JSON.stringify({ ...recipe, sources: [...recipe.sources].sort(), capabilities: [...recipe.capabilities].sort() }))}`;
+  return `invoice-consolidation:v1:${encodeURIComponent(JSON.stringify({ ...recipe, sources: [...recipe.sources].sort(), capabilities: [...recipe.capabilities].sort(),
+    ...(recipe.featureIds !== undefined ? { featureIds: [...recipe.featureIds].sort() } : {}) }))}`;
 }
