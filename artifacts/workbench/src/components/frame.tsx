@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePersona } from "@/lib/persona";
 import { useMotion } from "@/lib/motion";
-import { landingFor, useCurrentCase, useInvalidateAll, useMe } from "@/lib/case";
+import { landingFor, useCurrentCase, useInvalidateAll } from "@/lib/case";
 import { useUndoToast } from "@/components/bits";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +83,6 @@ export function Frame({ children }: { children: ReactNode }) {
   const reset = useResetDemo();
   const invalidate = useInvalidateAll();
   const say = useUndoToast();
-  const me = useMe();
   const { motion, setMotion } = useMotion();
   const [q, setQ] = useState("");
   const [menu, setMenu] = useState(false);
@@ -112,7 +111,7 @@ export function Frame({ children }: { children: ReactNode }) {
   const isOn = (n: NavItem) => location.startsWith(n.match) || (n.match === "/library" && (location.startsWith("/solutions") || location.startsWith("/search")));
   const crumbs = crumbsFor(location);
   const roleLabel = ROLE_TABS.find((t) => t.role === persona.role)?.label ?? "";
-  const initials = (me?.name ?? "?").split(" ").map((s) => s[0]).join("").slice(0, 2);
+  const initials = persona.role === "it" ? "IT" : "SS";
 
   const doReset = () =>
     reset.mutate(undefined, {
@@ -202,11 +201,10 @@ export function Frame({ children }: { children: ReactNode }) {
   const demoCard = (rail: boolean) => (
     <div className={cn("rounded-xl border border-sidebar-border bg-sidebar-accent", rail ? "p-1.5" : "p-3")} data-testid="panel-demo-state">
       <div className={cn("flex items-center gap-2.5", rail && "justify-center")}>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-[12px] font-semibold text-white" title={me?.name}>{initials}</span>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-[12px] font-semibold text-white" title={roleLabel}>{initials}</span>
         {!rail && (
           <span className="min-w-0">
-            <span className="block truncate text-[13.5px] font-semibold text-white">{me?.name ?? "Signed in"}</span>
-            <span className="block truncate text-[11.5px] text-white/55">{roleLabel}{me?.team ? ` · ${me.team}` : ""}</span>
+            <span className="block truncate text-[13.5px] font-semibold text-white">{roleLabel}</span>
           </span>
         )}
       </div>
@@ -264,11 +262,11 @@ export function Frame({ children }: { children: ReactNode }) {
             <DropdownMenu>
               <DropdownMenuTrigger data-testid="button-persona-menu" className="flex min-h-9 items-center gap-2 rounded-lg px-1.5 text-[13px] text-primary hover:bg-secondary">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[12px] font-semibold text-white">{initials}</span>
-                <span data-testid="text-persona-name" className="hidden max-w-[140px] truncate xl:block">{me?.name ?? "Signed in"}</span>
+                <span data-testid="text-persona-role" className="hidden max-w-[140px] truncate xl:block">{roleLabel}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
-                {me && <div className="px-2 py-1.5 text-xs text-muted-foreground">{me.title} · {me.team}</div>}
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">{roleLabel}</div>
                 <DropdownMenuItem data-testid="menu-reset-demo" onClick={doReset} disabled={reset.isPending}><RotateCcw className="mr-2 h-4 w-4" /> Reset demo</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem data-testid="button-sign-out" onClick={() => { setPersona(null); setLocation("/"); }}><LogOut className="mr-2 h-4 w-4" /> Sign out</DropdownMenuItem>

@@ -5,7 +5,6 @@ import { useListPersonas, type Role } from "@workspace/api-client-react";
 import { usePersona } from "@/lib/persona";
 import { landingFor } from "@/lib/case";
 import { CenovusEndorsement, Logo, ROLE_TABS } from "@/components/frame";
-import { Skel } from "@/components/bits";
 
 const LINE: Record<Role, { text: string; icon: typeof Compass }> = {
   seeker: { text: "Describe a problem. Find what already exists. Try it on real data.", icon: Compass },
@@ -42,7 +41,6 @@ export default function SignIn() {
         <p className="mt-4 text-[17px] text-skyink">Sign in as one of the demo accounts.</p>
         <div className="mt-10 grid gap-4 md:grid-cols-2">
           {ROLE_TABS.map((t) => {
-            const p = personas.data?.find((x) => x.role === t.role);
             const Icon = LINE[t.role].icon;
             return (
               <button key={t.role} onClick={() => go(t.role)} data-testid={`button-signin-${t.role}`}
@@ -51,9 +49,7 @@ export default function SignIn() {
                 <span className="mt-4 font-display text-[26px] text-primary">{t.label}</span>
                 <span className="mt-2 text-[15px] leading-snug text-muted-foreground">{LINE[t.role].text}</span>
                 <span className="mt-auto flex items-end justify-between pt-6">
-                  <span className="text-[14px]" data-testid={`text-persona-${t.role}`}>
-                    {personas.isLoading ? <Skel className="h-4 w-36" /> : p ? <><span className="font-semibold">{p.name}</span><br /><span className="text-muted-foreground">{p.title}</span></> : null}
-                  </span>
+                  <span className="text-[14px] font-semibold" data-testid={`text-persona-${t.role}`}>Continue as {t.label}</span>
                   <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-white transition-transform group-hover:translate-x-0.5"><ArrowRight className="h-5 w-5" /></span>
                 </span>
               </button>
