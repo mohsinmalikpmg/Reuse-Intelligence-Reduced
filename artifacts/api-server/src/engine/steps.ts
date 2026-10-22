@@ -83,24 +83,31 @@ function actionTemplate(issue: string, tag: string): string {
 
 // ---------- maintenance work-order steps ----------
 
-const readNotes: StepExecutor = (ctx) => {
-  ctx.notes = parseWorkOrders(ctx.input);
-  const s = section(ctx, "input", "Work orders read", "cap-wo-ingest");
-  s.items.push(item("cap-wo-ingest", "count", "notes", `${plural(ctx.notes.length, "work order")} read${ctx.notes.length ? ` (${equipmentNotes(ctx).length} with an equipment tag)` : ""}.`, ctx.notes.map((n) => n.id)));
-  return result(`${ctx.input.length} characters of text`, "Parsed each line into work order id, date, site, equipment tag and note using the enterprise data definitions.", `${plural(ctx.notes.length, "work order")}`, ctx.notes.length);
-};
+function noteReader(stepId:string,description:string):StepExecutor {
+  return ctx=>{
+    ctx.notes = parseWorkOrders(ctx.input);
+    const s = section(ctx, "input", "Work orders read", stepId);
+    s.items.push(item(stepId, "count", "notes", `${plural(ctx.notes.length, "work order")} read${ctx.notes.length ? ` (${equipmentNotes(ctx).length} with an equipment tag)` : ""}.`, ctx.notes.map((n) => n.id)));
+    return result(`${ctx.input.length} characters of text`,description,`${plural(ctx.notes.length, "work order")}`,ctx.notes.length);
+  };
+}
+const readNotes=noteReader("cap-wo-ingest","Parsed supplied work-order records using the existing note schema. No external maintenance-system connection is executed in this test.");
+const readCsvNotes=noteReader("cap-csv-ingest","Read supplied normalized work-order records through Pattern Finder's existing CSV test reader. This does not establish enterprise ingestion approval.");
+export const readWorkbenchNotes=noteReader("input","Parsed supplied workbench note input with the existing work-order parser. Disabled product ingestion modules remain disabled; no CSV capability or external connector was executed.");
 
-const summarize: StepExecutor = (ctx) => {
-  const compact = /compact/i.test(ctx.config["cap-summarize"] ?? "");
-  const s = section(ctx, "summary", "Issue summaries", "cap-summarize");
+function summarizer(stepId:string):StepExecutor { return (ctx) => {
+  const compact = /compact/i.test(ctx.config[stepId] ?? "");
+  const s = section(ctx, "summary", "Issue summaries", stepId);
   for (const n of ctx.notes) {
     const { label } = classifyIssue(n.note);
     const text = compact ? `${equipmentLabel(n)}: ${label}.` : `${equipmentLabel(n)}, ${n.site}: ${label} — ${firstSentence(n.note)}`;
     ctx.summaries.set(n.id, text);
-    s.items.push(item("cap-summarize", "summary", n.id, text, [n.id]));
+    s.items.push(item(stepId, "summary", n.id, text, [n.id]));
   }
-  return result(plural(ctx.notes.length, "free-text note"), compact ? "Compact model: one issue label per note." : "Enterprise model: issue label plus the leading sentence of each note.", `${s.items.length} summaries`, s.items.length);
-};
+  return result(plural(ctx.notes.length, "free-text note"), compact ? "Local compact summarization: one issue label per note." : `${stepId==="cap-b-summarize"?"Pattern Finder":"Work Order Insight"} local test summarization: issue label plus the leading sentence of each note.`, `${s.items.length} summaries`, s.items.length);
+}; }
+const summarize=summarizer("cap-summarize");
+const patternSummarize=summarizer("cap-b-summarize");
 
 const identifyConcerns: StepExecutor = (ctx) => {
   const groups = new Map<string, Finding>();
@@ -143,15 +150,17 @@ const clusterIssues: StepExecutor = (ctx) => {
   ctx.clusters = [...groups.values()].filter((c) => c.refs.length >= 2);
   const s = section(ctx, "patterns", "Recurring patterns", "cap-clustering");
   writeClusters(ctx, s);
+  if(!ctx.clusters.length)s.items.push(item("cap-clustering","note","no-patterns",`No recurring patterns matched the supplied input. ${equipmentNotes(ctx).length} of ${ctx.notes.length} notes have equipment tags. This existing classifier needs at least two tagged reports of the same equipment class and recognized issue (for example vibration, leak or fouling); it does not infer arbitrary process opportunities.`,ctx.notes.map(n=>n.id)));
   return result(plural(equipmentNotes(ctx).length, "tagged work order"), "Grouped notes by equipment class and issue type across all sites; kept groups with two or more reports.", plural(ctx.clusters.length, "cross-site pattern"), ctx.clusters.length);
 };
 
-function writeClusters(ctx: RunContext, s: OutputSection): void {
+function writeClusters(ctx: RunContext, s: OutputSection, writer="cap-clustering"): void {
   s.items = [];
+  s.stepId=writer;
   for (const c of ctx.clusters) {
     const prefix = c.rank ? `#${c.rank} ` : "";
     const text = `${prefix}${capitalize(c.equipmentType)} ${c.issue}: ${plural(c.refs.length, "report")} across ${plural(c.sites.length, "site")} (${c.tags.join(", ")}).`;
-    s.items.push(item("cap-clustering", "pattern", `${c.equipmentType}|${c.issue}`, text, c.refs, `Sites: ${c.sites.join(", ")} · latest ${c.latest || "n/a"}`));
+    s.items.push({...item(writer, "pattern", `${c.equipmentType}|${c.issue}`, text, c.refs, `Sites: ${c.sites.join(", ")} · latest ${c.latest || "n/a"}`),originStepId:"cap-clustering",...(c.rank?{ranking:{position:c.rank,basis:"Report count descending, then latest report date descending"}}:{})});
   }
 }
 
@@ -161,7 +170,7 @@ const rankPatterns: StepExecutor = (ctx) => {
   ctx.clusters.forEach((c, i) => (c.rank = i + 1));
   ctx.ranked = true;
   const s = section(ctx, "patterns", "Recurring patterns", "cap-clustering");
-  writeClusters(ctx, s);
+  writeClusters(ctx, s,"cap-similarity");
   return result(plural(ctx.clusters.length, "pattern"), "Ordered patterns by report count, then by most recent report.", `Top: ${ctx.clusters[0]!.equipmentType} ${ctx.clusters[0]!.issue}`, ctx.clusters.length);
 };
 
@@ -399,9 +408,9 @@ function capitalize(s: string): string {
  */
 export const EXECUTORS: { capabilityId: string; run: StepExecutor }[] = [
   { capabilityId: "cap-wo-ingest", run: readNotes },
-  { capabilityId: "cap-csv-ingest", run: readNotes },
+  { capabilityId: "cap-csv-ingest", run: readCsvNotes },
   { capabilityId: "cap-summarize", run: summarize },
-  { capabilityId: "cap-b-summarize", run: summarize },
+  { capabilityId: "cap-b-summarize", run: patternSummarize },
   { capabilityId: "cap-recurring", run: identifyConcerns },
   { capabilityId: "cap-clustering", run: clusterIssues },
   { capabilityId: "cap-similarity", run: rankPatterns },

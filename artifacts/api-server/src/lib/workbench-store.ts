@@ -1,3 +1,4 @@
+import { caseVisible, visibleCaseRows } from "./case-access";
 import { createHash } from "node:crypto";
 import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import { db, runsTable, evaluationsTable, testSessionsTable, searchEventsTable } from "@workspace/db";
@@ -23,7 +24,11 @@ export function toRun(row: RunRow): Run {
     configValues: row.configValues,
     configFingerprint: row.configFingerprint,
     output: row.output as RunOutput,
-    trace: row.trace as StepTrace[],
+    trace: (row.trace as StepTrace[]).map(step=>{
+      if(step.outputSnapshotStatus==="available"&&Array.isArray(step.outputSections))return step;
+      const {outputSections:_,...rest}=step;
+      return {...rest,outputSnapshotStatus:"unavailable" as const};
+    }),
     stats: row.stats as RunStats,
     durationMs: row.durationMs,
     errors: row.errors,
@@ -63,17 +68,17 @@ export async function insertRun(run: Omit<Run, "id" | "createdAt">): Promise<Run
 
 export async function getRun(id: string): Promise<Run | null> {
   const [row] = await db.select().from(runsTable).where(eq(runsTable.id, id));
-  return row ? toRun(row) : null;
+  return row && caseVisible(row.caseId) ? toRun(row) : null;
 }
 
 export async function listRunsForCase(caseId: string): Promise<Run[]> {
   const rows = await db.select().from(runsTable).where(eq(runsTable.caseId, caseId)).orderBy(desc(runsTable.createdAt));
-  return rows.map(toRun);
+  return visibleCaseRows(rows).map(toRun);
 }
 
 export async function listRunsForSolution(solutionId: string): Promise<Run[]> {
   const rows = await db.select().from(runsTable).where(eq(runsTable.solutionId, solutionId)).orderBy(desc(runsTable.createdAt));
-  return rows.map(toRun);
+  return visibleCaseRows(rows).map(toRun);
 }
 
 export async function countRunsSince(solutionId: string, since: Date): Promise<number> {
@@ -83,7 +88,7 @@ export async function countRunsSince(solutionId: string, since: Date): Promise<n
 
 export async function listAllRuns(): Promise<Run[]> {
   const rows = await db.select().from(runsTable).orderBy(desc(runsTable.createdAt));
-  return rows.map(toRun);
+  return visibleCaseRows(rows).map(toRun);
 }
 
 // ---------- Evaluations ----------
@@ -98,18 +103,18 @@ export async function insertEvaluation(e: Omit<Evaluation, "id" | "createdAt">):
 
 export async function listEvaluations(caseId: string): Promise<Evaluation[]> {
   const rows = await db.select().from(evaluationsTable).where(eq(evaluationsTable.caseId, caseId)).orderBy(desc(evaluationsTable.createdAt));
-  return rows.map(toEvaluation);
+  return visibleCaseRows(rows).map(toEvaluation);
 }
 
 export async function listAllEvaluations(): Promise<Evaluation[]> {
   const rows = await db.select().from(evaluationsTable).orderBy(desc(evaluationsTable.createdAt));
-  return rows.map(toEvaluation);
+  return visibleCaseRows(rows).map(toEvaluation);
 }
 
 export async function listEvaluationsForCases(caseIds: string[]): Promise<Evaluation[]> {
   if (caseIds.length === 0) return [];
   const rows = await db.select().from(evaluationsTable).where(inArray(evaluationsTable.caseId, caseIds));
-  return rows.map(toEvaluation);
+  return visibleCaseRows(rows).map(toEvaluation);
 }
 
 /** Split votes into those recorded against the given Version B fingerprint (current) and everything earlier (set aside). */
@@ -163,10 +168,11 @@ export async function insertTestSession(input: { caseId: string; createdBy: stri
 
 export async function getTestSessionRow(id: string): Promise<TestSessionRow | null> {
   const [row] = await db.select().from(testSessionsTable).where(eq(testSessionsTable.id, id));
-  return row ?? null;
+  return row && caseVisible(row.caseId) ? row : null;
 }
 
 export async function listTestSessionRows(caseId: string): Promise<TestSessionRow[]> {
+  if (!caseVisible(caseId)) return [];
   return db.select().from(testSessionsTable).where(eq(testSessionsTable.caseId, caseId)).orderBy(desc(testSessionsTable.createdAt));
 }
 

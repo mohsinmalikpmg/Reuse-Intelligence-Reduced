@@ -37,3 +37,17 @@ The user reversed the earlier "keep the top nav" rule: the shell moves to the Po
 Any input whose purpose is a reuse check ("What should happen here?", "It must also...") submits explicitly (Enter/button). A covered requirement shows a one-line note, not options.
 **Why:** every check is a logged reuse event feeding the IT metrics; per-keystroke checks would flood them, and offering options for something Version A already does is noise.
 **How to apply:** new reuse-check entry points in any surface follow the same submit-then-options shape; keep scores behind "Why?".
+
+## Role labels without personal names
+Show only Solution Seeker and IT Owner in role selection, shell profile labels and role menus; use role initials rather than personal initials.
+
+**Why:** The user asked to drop the names from user roles.
+
+**How to apply:** Keep internal persona identifiers and permissions intact. This is a presentation rule, not a request to erase record ownership or attribution.
+
+## Seeker Library browsing density
+Use business functions (Finance, Supply Chain, Operations, Investor Relations, etc.) rather than individual business problems as visible browsing categories. Keep capability chips and the evidence/provenance summary inside Details, not on collapsed cards.
+
+**Why:** The user explicitly requested simpler categories and less detail on individual cards.
+
+**How to apply:** Preserve detailed capability discovery and comparison, but do not restore those dense summaries to the default card view.

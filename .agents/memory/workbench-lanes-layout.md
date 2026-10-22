@@ -2,6 +2,9 @@
 name: Workbench mapped-lanes layout
 description: Non-obvious constraints of the A/B lanes workbench page (sticky offsets, Version A gaps, scripted drag checks)
 ---
+- Proposed maps must compare A and B and visibly connect the last step of each wrapped row to the first step of the next. Plus-node insertion is acceptable instead of free dragging.
+  **Why:** The user explicitly identified disconnected rows as misleading and requested comparison of workflow/capability steps.
+  **How to apply:** Preserve real sequence and baseline provenance when changing map layouts; inactive steps must not look runnable.
 - Every `sticky` offset on the page (pinned input bar, workflow map, row `scroll-margin`, schematic inspectors) must be expressed from the shell's top-bar height variable (`--shell-top`), e.g. `calc(var(--shell-top) + Nrem)`, never a literal pixel/rem value.
   **Why:** two shells in a row broke this: a literal `top-14` slid the input bar under the old nav, and the old header's literal `101px` had to be hunted down across five files when the shell changed.
   **How to apply:** if the top bar height changes, change the variable only; when adding a pinned element, derive from it.

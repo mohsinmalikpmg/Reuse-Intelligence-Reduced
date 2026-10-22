@@ -6,6 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tag } from "@/components/bits";
 import type { FlowBlock } from "@/components/flow";
 import { cn } from "@/lib/utils";
+import { StepResult, snapshotFor } from "@/components/step-result";
+import { stepDiffSummary } from "@/lib/step-output";
 import { useRole } from "@/lib/persona";
 
 /* ---------- Row model ---------- */
@@ -85,8 +87,8 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
             return (
               <li key={e.id} className={horizontal ? "shrink-0" : ""}>
                 <button data-testid={`map-${e.id}`} aria-current={isCurrent ? "location" : undefined} onClick={() => onJump(e.id)}
-                  className={cn("relative flex w-full items-center gap-2.5 rounded-lg text-left transition-colors", horizontal ? "min-h-9 px-2.5 py-1" : "min-h-9 px-2 py-1", isCurrent ? "bg-primary text-white" : "text-primary hover:bg-secondary")}>
-                  <span className={cn("relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-dashed text-[11px] font-semibold", isCurrent ? "border-white/60 bg-primary text-white" : "border-sienna/60 bg-card text-siennaink")}>?</span>
+                  className={cn("relative flex w-full items-center gap-2.5 rounded-lg text-left transition-colors", horizontal ? "min-h-9 px-2.5 py-1" : "min-h-9 px-2 py-1", isCurrent ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary")}>
+                  <span className={cn("relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-dashed text-[11px] font-semibold", isCurrent ? "border-white/60 bg-primary text-primary-foreground" : "border-sienna/60 bg-card text-siennaink")}>?</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium italic leading-tight">Requested: {e.request.need}</span>
                     <span className={cn("block text-[11px] leading-tight", isCurrent ? "text-white/80" : "text-siennaink")}>Not built yet</span>
@@ -104,12 +106,12 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
                 className={cn(
                   "relative flex w-full items-center gap-2.5 rounded-lg text-left transition-colors",
                   horizontal ? "min-h-9 px-2.5 py-1" : "min-h-9 px-2 py-1",
-                  isCurrent ? "bg-primary text-white" : "text-primary hover:bg-secondary",
+                  isCurrent ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary",
                 )}
               >
                 <span data-lit={lit?.has(e.id) ? "true" : undefined} className={cn(
                   "relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[11px] font-semibold transition-shadow",
-                  isCurrent ? "border-white/40 bg-primary text-white" : r?.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : "border-border bg-card text-muted-foreground",
+                  isCurrent ? "border-white/40 bg-primary text-primary-foreground" : r?.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : "border-border bg-card text-muted-foreground",
                   lit?.has(e.id) && "ring-2 ring-cyan shadow-[0_0_10px_hsl(187_70%_65%/.7)]",
                 )}>
                   {e.id === "input" ? <ChevronDown className="h-3.5 w-3.5" /> : e.id === "output" ? "=" : e.id === "verdict" ? <Check className="h-3.5 w-3.5" /> : r?.deviation === "added" ? "+" : stepNo ?? i}
@@ -192,8 +194,6 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
 }) {
   const K = KIND[r.kind];
   const offB = !r.b.active;
-  const removed = r.entries.filter((e) => e.change === "removed");
-  const addedOrChanged = r.entries.filter((e) => e.change !== "removed");
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   const Chevron = open ? ChevronDown : ChevronRight;
   const headerCls = "flex min-h-[52px] w-full items-center gap-2 px-3.5 py-2.5 text-left";
@@ -250,22 +250,21 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
     <div className={cn("card-soft rounded-t-none border-primary/40 px-3.5 pb-4 pt-3", !r.a && "border-dashed border-input bg-card/60")}>
       {r.a ? <>
         <p className="mb-3 text-[13px] text-muted-foreground">{r.description}</p>
-        <TraceBody t={r.traceA} label={labelA} />
-        <DiffLines entries={removed} picked={picked} onPick={onPick} title={`Lines only A produced (${removed.length})`} />
+        <StepResult t={r.traceA} active={!!r.a?.active} other={r.traceB} otherActive={!offB} side="A" label={labelA} entries={r.entries} picked={picked} onPick={onPick} />
       </> : <p className="text-[13px] text-muted-foreground">This step only runs in Version B. The next shared step stays aligned below.</p>}
     </div>
   );
   const bodyB = (
     <div className={cn("card-soft rounded-t-none px-3.5 pb-4 pt-3", r.deviation ? "border-sienna" : "border-primary/40")}>
       {!r.a && <p className="mb-3 text-[13px] text-muted-foreground">{r.description}</p>}
-      {offB ? <p className="text-[13px] text-muted-foreground">Switched off in Version B, so it does not run.</p> : <TraceBody t={r.traceB} label={labelB} />}
-      <DiffLines entries={addedOrChanged} picked={picked} onPick={onPick} title={`Lines this step ${r.entries.some((e) => e.change === "changed") && !r.entries.some((e) => e.change === "added") ? "changed" : "added"} in B (${addedOrChanged.length})`} />
+      {(() => { const sum = stepDiffSummary(snapshotFor(r.traceA, !!r.a?.active), snapshotFor(r.traceB, !offB), r.entries); return sum ? <p className="mb-2 text-[13px] font-medium" data-testid={`step-summary-${r.id}`}>{sum}</p> : null; })()}
+      <StepResult t={r.traceB} active={!offB} other={r.traceA} otherActive={!!r.a?.active} side="B" label={labelB} entries={r.entries} picked={picked} onPick={onPick} />
     </div>
   );
   const spine = (hasLine: boolean, label?: ReactNode) => (
     <div className="relative flex justify-center">
       {hasLine && <span aria-hidden className="absolute inset-y-0 w-px bg-border" />}
-      {label !== undefined && <span className={cn("relative z-10 mt-[15px] grid h-6 w-6 place-items-center rounded-full border text-[11px] font-semibold", r.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : open ? "border-primary bg-primary text-white" : "border-border bg-background text-muted-foreground")}>{label}</span>}
+      {label !== undefined && <span className={cn("relative z-10 mt-[15px] grid h-6 w-6 place-items-center rounded-full border text-[11px] font-semibold", r.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : open ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground")}>{label}</span>}
     </div>
   );
   if (narrow) {
@@ -404,7 +403,7 @@ export function LaneHeaders({ editTools, narrow, showA, setShowA, controls, aLab
     <div className="mb-3">
       <div className={laneGrid}>
         <div data-testid="workflow-a" className="flex min-h-10 flex-wrap items-center gap-2 px-1">
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[13px] font-bold text-white">A</span>
+          <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[13px] font-bold text-primary-foreground">A</span>
           <span className="font-semibold" data-testid="text-lane-a-label">{aLabel}</span>
           <span className="inline-flex items-center gap-1 text-[12.5px] text-muted-foreground"><Lock className="h-3.5 w-3.5" /> Locked baseline</span>
         </div>

@@ -1,0 +1,3 @@
+/* Hand-tuned dark overrides for Approval Desk literals the generator cannot see (arbitrary Tailwind values). */
+html.dark [class~="shadow-[0_1px_0_hsl(36_18%_80%)]"] { box-shadow: 0 1px 0 hsl(36 9% 26%); }
+html.dark [class~="shadow-[4px_4px_0_0_var(--color-ink)]"] { box-shadow: 4px 4px 0 0 hsl(38 60% 45%); }

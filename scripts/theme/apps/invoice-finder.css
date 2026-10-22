@@ -1,0 +1,3 @@
+/* Hand-tuned dark overrides for Invoice Finder. */
+html.dark .dialog { background: var(--panel); color: var(--ink); border-color: var(--line); }
+html.dark ::placeholder { color: hsl(42 8% 55%); }

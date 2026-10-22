@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validateRecipe } from "../src/domain/recipe";
+import { validateRecipe, featureEnabled } from "../src/domain/recipe";
 import { search, preview, apply, trace, invoiceRows, EMPTY_CRITERIA } from "../src/domain/engine";
 
 const recipe = validateRecipe(JSON.parse(readFileSync("recipe.json", "utf8")));
@@ -18,14 +18,14 @@ test("exported saved recipe has a valid source and exact wiring selection", () =
 });
 test("saved fuzzy-search selection is enforced by the actual original engine", () => {
   const run = () => search(recipe, [], { ...EMPTY_CRITERIA, text: "Boreel", mode: "fuzzy" });
-  if (recipe.capabilities.includes("fuzzy-search")) {
+  if (featureEnabled(recipe, "fuzzy-matching")) {
     assert.ok(run().some(r => r.invoice.id === "I1"));
     assert.ok(search(recipe, [], { ...EMPTY_CRITERIA, text: "BP-100", mode: "exact" }).some(r => r.invoice.id === "I2"));
   } else assert.throws(run, /removed/);
 });
 test("saved bulk-decisions selection controls writes and staged approval", () => {
   const run = () => preview(recipe, [], ["I1", "I6", "I4"], "approve", "reviewer", "Export verification");
-  if (!recipe.capabilities.includes("bulk-decisions")) {
+  if (!featureEnabled(recipe, "bulk-actions")) {
     assert.throws(run, /removed/);
     // apply gates capabilities before consuming even a forged preview.
     assert.throws(() => apply(recipe, [], {} as ReturnType<typeof preview>, "disabled", at), /removed/);
@@ -39,7 +39,7 @@ test("saved bulk-decisions selection controls writes and staged approval", () =>
   assert.equal(invoiceRows(result.ledger).find(i => i.id === "I1")?.status, "approved");
   assert.equal(invoiceRows(result.ledger).find(i => i.id === "I6")?.status, "pending");
   assert.throws(() => apply(recipe, result.ledger, batch, "stale", at), /stale/);
-  if (recipe.capabilities.includes("spend-tracing")) {
+  if (featureEnabled(recipe, "spend-tracing")) {
     const traced = trace(recipe, result.ledger, { level: "portfolio" });
     assert.ok(traced.summary.reconciles);
     assert.ok(traced.lines.filter(l => l.invoice.id === "I1").every(l => l.bucket === "approvedUnpaid"));
@@ -47,7 +47,7 @@ test("saved bulk-decisions selection controls writes and staged approval", () =>
 });
 test("saved spend-tracing selection controls source-line reconciliation", () => {
   const run = () => trace(recipe, [], { level: "portfolio" });
-  if (!recipe.capabilities.includes("spend-tracing")) {
+  if (!featureEnabled(recipe, "spend-tracing")) {
     assert.throws(run, /removed/);
     return;
   }

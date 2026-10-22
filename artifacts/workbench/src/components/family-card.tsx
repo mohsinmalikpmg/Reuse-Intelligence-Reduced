@@ -209,7 +209,7 @@ function PreviewPane({ cfg, solution, onTry, busy }: { cfg: ApprovedConfiguratio
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div className="card-soft p-4" data-testid="preview-panel-a">
-          <div className="mb-3 flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[13px] font-bold text-white">A</span><span className="text-[14px] font-semibold">Standard · v{cfg.baseVersion}</span></div>
+          <div className="mb-3 flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[13px] font-bold text-primary-foreground">A</span><span className="text-[14px] font-semibold">Standard · v{cfg.baseVersion}</span></div>
           <OutputView output={p.standard.output} marks={marks} testid="preview-output-a" />
         </div>
         <div className="card-soft border-t-4 border-t-sienna p-4" data-testid="preview-panel-b">

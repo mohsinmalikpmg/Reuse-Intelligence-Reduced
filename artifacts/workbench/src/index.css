@@ -156,6 +156,143 @@
   --sidebar-accent-border: hsl(191 30% 18%);
 }
 
+/* DARK MODE: Electric Ink extended to the page. Same hues as light; the sidebar and the
+   live schematic were already dark and stay exactly as designed. Set by the shared
+   FUSEBOX theme runtime (localStorage "fusebox.theme") on <html>. */
+.dark {
+  --button-outline: rgba(232, 247, 248, 0.12);
+  --badge-outline: rgba(232, 247, 248, 0.07);
+  --opaque-button-border-intensity: 8;
+  --elevate-1: rgba(232, 247, 248, 0.04);
+  --elevate-2: rgba(232, 247, 248, 0.08);
+  --background: 199 45% 7%;
+  --foreground: 190 20% 88%;
+  --border: 197 30% 17%;
+  --card: 198 42% 10%;
+  --card-foreground: 190 20% 88%;
+  --card-border: 197 30% 17%;
+  --sidebar: 199 72% 6%;
+  --sidebar-border: 197 40% 15%;
+  --popover: 198 42% 11%;
+  --popover-foreground: 190 20% 88%;
+  --popover-border: 197 30% 20%;
+  --primary: 187 45% 70%;
+  --primary-foreground: 199 70% 9%;
+  --secondary: 197 35% 15%;
+  --secondary-foreground: 187 40% 82%;
+  --muted: 197 30% 14%;
+  --muted-foreground: 192 12% 64%;
+  --accent: 20 35% 17%;
+  --accent-foreground: 22 70% 72%;
+  --destructive: 2 62% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --input: 197 25% 25%;
+  --ring: 187 50% 60%;
+  --chart-1: 187 45% 66%;
+  --chart-2: 20 65% 62%;
+  --chart-3: 70 45% 55%;
+  --chart-4: 196 35% 62%;
+  --chart-5: 191 10% 55%;
+  --ok: 70 45% 62%;
+  --okbg: 70 25% 15%;
+  --siennaink: 22 65% 66%;
+  --skyink: 196 40% 70%;
+  --warn: 22 65% 66%;
+  --bad: 2 70% 66%;
+  --ink: 190 20% 88%;
+  --primary-border: hsl(187 45% 62%);
+  --secondary-border: hsl(197 35% 22%);
+  --muted-border: hsl(197 30% 20%);
+  --accent-border: hsl(20 35% 26%);
+  --destructive-border: hsl(2 62% 48%);
+}
+/* Filled sienna actions keep white type: the fill stays deep while siennaink text lightens. */
+.dark .bg-siennaink { background-color: hsl(20 56% 42%); }
+.dark .card-soft { box-shadow: 0 1px 2px hsl(199 70% 3% / .4), 0 10px 26px -18px hsl(199 70% 2% / .7); }
+.dark .lift { box-shadow: 0 2px 4px hsl(199 70% 3% / .45), 0 14px 28px -12px hsl(199 70% 2% / .75); }
+.dark .schem { border-color: #1E4A58; }
+
+/* Invoice wiring is a surface, not a primary action: the dark theme's pale
+   primary color washes out translucent cards. Keep these rules invoice-only. */
+.dark .invoice-workflow {
+  background: #0d2632;
+  color: #edf7f8;
+  border: 1px solid #3f6572;
+}
+.dark .invoice-workflow .workflow-capability {
+  background: #234653;
+  border: 1px solid #638c99;
+  border-left: 3px solid #9ed9e3;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 18%);
+}
+.dark .invoice-workflow .workflow-endpoint {
+  background: #102f3b;
+  border-color: #638c99;
+}
+.dark .invoice-workflow .workflow-connection {
+  background: #081e28;
+  border-color: #547d8a;
+  color: #bcebf0;
+}
+.dark .invoice-workflow .opacity-75 {
+  color: #c6dce2;
+  opacity: 1;
+}
+.dark .invoice-workflow button:not(:disabled):hover {
+  background: #345d6b;
+}
+.dark .invoice-workflow button:focus-visible {
+  outline: 2px solid #bcebf0;
+  outline-offset: 3px;
+}
+.dark .invoice-workflow .workflow-capability button {
+  background: #122f3b;
+  border: 1px solid #638c99;
+  color: #edf7f8;
+}
+
+/* Every workflow map uses a neutral dark surface, including ordinary linked cases.
+   (the aqua dark primary must never be a workflow background). Light mode is untouched. */
+.dark section[data-testid="panel-map"]:not(.invoice-workflow) {
+  background: #0d2632;
+  color: #edf7f8;
+  border: 1px solid #3f6572;
+}
+.dark section[data-testid="panel-map"] h2 { color: #edf7f8; }
+.dark section[data-testid="panel-map"] :is(.opacity-75, .opacity-70, .opacity-80, .opacity-90) { color: #c6dce2; opacity: 1; }
+.dark section[data-testid="panel-map"] [data-testid^="node-step-"],
+.dark section[data-testid="panel-map"] [data-testid^="node-cap-"],
+.dark [data-testid="view-combined"] section[data-testid="panel-map"]:not(.invoice-workflow) .workflow-capability {
+  background: #234653;
+  border: 1px solid #638c99;
+  border-left: 3px solid #9ed9e3;
+}
+.dark section[data-testid="panel-map"] :is([data-testid="node-baseline-a"], [data-testid="node-not-runnable"], .workflow-endpoint) {
+  background: #102f3b;
+  border-color: #638c99;
+}
+.dark section[data-testid="panel-map"] :is([data-testid^="handoff-"], .workflow-connection) {
+  background: #081e28;
+  border-color: #547d8a;
+  color: #bcebf0;
+}
+.dark section[data-testid="panel-map"] [data-testid^="handoff-"][class*="F2B8A0"] { color: #f7d4c4; border-color: #b7836d; }
+.dark section[data-testid="panel-map"] button { color: #edf7f8; }
+.dark section[data-testid="panel-map"] button:not(:disabled):hover { background: #345d6b; }
+.dark section[data-testid="panel-map"] button:disabled { color: #9fb8bf; opacity: .7; }
+.dark section[data-testid="panel-map"] button:focus-visible { outline: 2px solid #bcebf0; outline-offset: 3px; }
+.dark section[data-testid="panel-map"] [data-testid="panel-adapter"] button { color: inherit; }
+.dark section[data-testid="panel-map"] select {
+  background: #102f3b;
+  color: #edf7f8;
+  border-color: #638c99;
+}
+.dark section[data-testid="panel-map"] [data-testid^="proposed-plan-step-"] {
+  background: #102f3b;
+  color: #edf7f8;
+  border-color: #b7836d;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -348,7 +485,7 @@
 @keyframes cube-spark { 0% { opacity: 0; transform: scale(.6); } 40% { opacity: 1; transform: scale(1.08); } 100% { opacity: .85; transform: scale(1); } }
 .cube-spark { animation: cube-spark .6s ease-out .55s both; }
 .press:active { transform: scale(.985); }
-/* Tactile motion off: the persisted preference (defaults to the OS reduced-motion setting) sets data-motion on <html>.
+/* Reduced motion: the device accessibility setting sets data-motion on <html>.
    Every effect is removed; the state it confirmed stays visible. */
 :root[data-motion="off"] .seat, :root[data-motion="off"] .weld, :root[data-motion="off"] .socket-over, :root[data-motion="off"] .current-on,
 :root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out, :root[data-motion="off"] .cube-spark,
@@ -361,7 +498,7 @@
 :root[data-motion="off"] .weld { display: none; }
 :root[data-motion="off"] .cube-spark { opacity: .85; }
 :root[data-motion="off"] .press:active { transform: none; }
-/* OS reduced-motion applies unless the person explicitly turned tactile motion on. */
+/* OS reduced-motion also applies before the accessibility effect initializes. */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion="on"]) :is(.seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, .drop-pop, .reveal, .blk.charged, .wire.flow, [style*="running-bar"]) { animation: none !important; }
   :root:not([data-motion="on"]) :is(.trace-in, .converge-in, .converge-out) { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
@@ -369,3 +506,5 @@
   :root:not([data-motion="on"]) .weld { display: none; }
   :root:not([data-motion="on"]) .cube-spark { opacity: .85; }
 }
+/* Arbitrary light sky tint used for explanations and the Pilot badge */
+.dark [class~="bg-[hsl(196_30%_93%)]"] { background-color: hsl(196 32% 15%); }

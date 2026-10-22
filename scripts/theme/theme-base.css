@@ -1,0 +1,27 @@
+/* FUSEBOX shared theme base: injected into every app <head> ahead of app CSS. */
+html.dark { color-scheme: dark; }
+html:not(.dark) { color-scheme: light; }
+
+/* Floating toggle (apps without their own header control). Electric Ink pill; cyan conductive icon. */
+.fbx-theme-toggle {
+  position: fixed; z-index: 2147483000;
+  left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 40px; padding: 0 14px 0 12px; border-radius: 9999px;
+  border: 1px solid #173D4A; background: #071D27; color: #64D8E8;
+  font: 600 12.5px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .02em;
+  box-shadow: 0 6px 18px -8px rgba(7, 29, 39, .55); cursor: pointer;
+  transition: transform .12s ease-out, border-color .15s;
+}
+.fbx-theme-toggle:hover { border-color: #64D8E8; }
+.fbx-theme-toggle:active { transform: scale(.96); }
+.fbx-theme-toggle:focus-visible { outline: 2px solid #FF963D; outline-offset: 3px; }
+.fbx-theme-toggle__label { color: #E8F7F8; }
+html.dark .fbx-theme-toggle { background: #0D2C38; border-color: #2A5A6A; color: #FFC58F; }
+@media (max-width: 480px) { .fbx-theme-toggle__label { display: none; } .fbx-theme-toggle { padding: 0; width: 40px; justify-content: center; } }
+@media print { .fbx-theme-toggle { display: none; } }
+
+/* Tailwind gray utilities used by scaffold error boundaries: never leave a light page in dark. */
+html.dark .bg-gray-50, html.dark .bg-gray-100 { background-color: hsl(200 18% 12%); }
+html.dark .text-gray-900, html.dark .text-gray-800 { color: hsl(200 15% 90%); }
+html.dark .text-gray-600 { color: hsl(200 10% 70%); }

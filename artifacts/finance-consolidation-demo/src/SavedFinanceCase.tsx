@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { AlertTriangle, Loader2, Play } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Loader2, Play } from 'lucide-react';
 import { getConsolidationCase, runFinanceWiring } from '../../../lib/api-client-react/src/generated/api';
 import { ApiError } from '../../../lib/api-client-react/src/custom-fetch';
 import type {
@@ -73,14 +73,14 @@ export function SavedFinanceCase({ caseId, renderLines }: Props) {
     <div className="min-h-[100dvh] w-full">
       <header className="border-b bg-card/60">
         <div className="max-w-5xl mx-auto px-5 py-8 md:py-12">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-primary font-semibold">Saved consolidation case · synthetic data</p>
-          <h1 className="font-serif text-4xl md:text-5xl mt-2">Forecast to Report</h1>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-accent font-semibold">Saved combination · synthetic data</p>
+          <h1 className="font-serif text-4xl md:text-5xl mt-2 text-primary">Forecast to Report</h1>
           <p className="mt-4 max-w-2xl text-muted-foreground leading-relaxed">
             Execute the saved finance wiring through the reviewed Budget &amp; Forecast and Management Reporting engines.
             This uses the same source adapter and configuration contract as the standalone finance export.
             Figures are forecasts, not actuals.
           </p>
-          <a href="/" className="inline-block mt-4 text-sm text-primary underline" data-testid="link-workbench">Back to Reuse Workbench</a>
+          <a href={/^cc_[A-Za-z0-9_-]+$/.test(caseId) ? `/workbench/${caseId}` : '/library?recipe=finance#combine'} className="inline-flex items-center gap-1.5 mt-5 rounded-md border bg-card px-3.5 py-2 text-sm font-medium text-primary hover:bg-muted" data-testid="link-workbench"><ArrowLeft className="h-4 w-4" />Back to this saved combination</a>
         </div>
       </header>
 
@@ -116,24 +116,39 @@ export function SavedFinanceCase({ caseId, renderLines }: Props) {
         )}
 
         {savedCase && (
-          <section className="rounded-lg border bg-card p-5 space-y-4">
+          <section className="rise rounded-xl border bg-card p-5 space-y-4">
             <div>
               <h2 className="font-serif text-2xl" data-testid="text-saved-finance-title">{savedCase.title}</h2>
               <p className="text-sm text-muted-foreground mt-1" data-testid="text-saved-finance-need">{savedCase.need}</p>
               <p className="text-xs text-muted-foreground mt-2" data-testid="text-saved-finance-revision">Saved revision {savedCase.revision} · recipe {savedCase.recipeId}</p>
             </div>
             <div>
-              <h3 className="font-medium text-sm mb-2">Saved configuration (read-only)</h3>
-              <pre className="rounded-md border bg-background p-3 text-xs num overflow-x-auto" data-testid="text-saved-finance-config">{JSON.stringify(savedCase.config, null, 2)}</pre>
+              <h3 className="font-medium text-sm mb-2">Saved settings executed</h3>
+              <dl className="grid gap-2 sm:grid-cols-2 text-sm" data-testid="list-saved-finance-settings">
+                {([
+                  ['Method', String(savedCase.config.method ?? '')],
+                  ['Period', String(savedCase.config.period ?? '')],
+                  ['Centres', Array.isArray(savedCase.config.centres) ? (savedCase.config.centres as string[]).join(', ') : ''],
+                  ['Adjusted account', String(savedCase.config.account ?? '')],
+                  ['Total Q4 adjustment', `${savedCase.config.adjustment ?? ''} USD`],
+                  ['Account mapping', `${Object.keys((savedCase.config.accountMapping as object) ?? {}).length} sources mapped`],
+                ] as const).map(([k, v]) => (
+                  <div key={k} className="rounded-md border bg-background px-3 py-2"><dt className="text-[11px] uppercase tracking-wider text-muted-foreground">{k}</dt><dd className="num mt-0.5 break-words">{v}</dd></div>
+                ))}
+              </dl>
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs text-muted-foreground">Exact saved configuration (read-only)</summary>
+                <pre className="mt-2 rounded-md border bg-background p-3 text-xs num overflow-x-auto" data-testid="text-saved-finance-config">{JSON.stringify(savedCase.config, null, 2)}</pre>
+              </details>
             </div>
             <p className="text-xs text-muted-foreground break-all num" data-testid="text-saved-case-fingerprint">Case fingerprint: {savedCase.fingerprint}</p>
-            <p className="text-xs text-muted-foreground">To change this configuration, edit and save the case in Reuse Workbench, then run it again here.</p>
+            <p className="text-xs text-muted-foreground">To change these settings, edit and save them in the saved combination, then run it again here.</p>
           </section>
         )}
 
         {result && (
           <>
-            <section className="rounded-lg border bg-card p-5">
+            <section className="rise rounded-xl border bg-card p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
                 <h2 className="font-serif text-2xl">Report lines</h2>
                 <p className="text-xs text-muted-foreground" data-testid="text-result-label">
@@ -143,7 +158,7 @@ export function SavedFinanceCase({ caseId, renderLines }: Props) {
               {renderLines(result.lines, 'total')}
               <p className="mt-4 text-xs text-muted-foreground leading-relaxed" data-testid="text-note">{result.note}</p>
             </section>
-            <section className="rounded-lg border bg-card p-5">
+            <section className="rise rounded-xl border bg-card p-5">
               <h2 className="font-serif text-2xl mb-4">Monthly breakdown</h2>
               <div className="space-y-6">
                 {result.months.map((month) => (
@@ -154,7 +169,7 @@ export function SavedFinanceCase({ caseId, renderLines }: Props) {
                 ))}
               </div>
             </section>
-            <section className="rounded-lg border bg-card p-5 space-y-3">
+            <section className="rise rounded-xl border bg-card p-5 space-y-3">
               <h2 className="font-serif text-2xl">Executed source receipt</h2>
               <p className="text-xs text-muted-foreground break-all num" data-testid="text-finance-wiring-fingerprint">Source/configuration fingerprint: {result.fingerprint}</p>
               <ul className="divide-y border rounded-md">

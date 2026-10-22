@@ -30,7 +30,7 @@ router.post("/reuse-check", async (req, res) => {
     res.status(400).json({ error: "Unknown brief" });
     return;
   }
-  res.json(await performReuseCheck({ need, trigger, base: base ?? null, caseId: c?.id ?? null, briefId: briefId ?? null, workflowStep: workflowStep ?? null }));
+  res.json(await performReuseCheck({ need, trigger, base: base ?? null, caseId: c?.id ?? null, briefId: briefId ?? null, workflowStep: workflowStep ?? null, force: true }));
 });
 
 router.get("/reuse-events", async (_req, res) => {

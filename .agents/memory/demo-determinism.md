@@ -4,5 +4,6 @@ description: Constraints that keep the Reuse Workbench demo repeatable — seede
 ---
 - Simulation seeds are stored in a Postgres `integer` column; a 32-bit unsigned hash (`>>> 0`) overflows int4 and the insert fails with a 500. Mask seeds to 31 bits (`& 0x7fffffff`).
   **Why:** the first experiment insert failed silently from the UI's point of view (HTML 500 page) because of this.
-- The LLM is only used to interpret the pain point into the brief; every number shown (fit scores, impact, simulation metrics) comes from deterministic code. Keep it that way so demo runs match.
-- User confirmed direction: the demo must work with AI unavailable (cached interpretation for the demo prompt + rule-based fallback), so never import an OpenAI client that throws at module load when env vars are missing — create the client lazily.
+- Interpretation, matching and consolidation rationale now require active, evidence-grounded AI, per the user's later explicit instruction. The former demo fallback rule is superseded: fail visibly when AI is unavailable, never substitute canned analysis. Unchanged saved analyses may be reused with provenance.
+  **Why:** The user rejected deterministic output where active interpretation is expected.
+  **How to apply:** Keep arithmetic, permissions, hashes, evidence checks and measured results deterministic; model conclusions are judgments, not metrics or execution proof. Initialize providers lazily so missing configuration produces an actionable request error rather than a startup crash.

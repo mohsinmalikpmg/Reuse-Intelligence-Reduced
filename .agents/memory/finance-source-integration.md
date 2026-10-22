@@ -33,3 +33,13 @@ approved inspect/change/validate/run/save/undo controls driving the actual adapt
 **How to apply:** In-product controls must affect execution, and runnable downloads
 must use the saved configuration. Explain unsupported connections as blockers;
 never treat a configurable diagram as an executable integration.
+
+Forecast to Report must use the same Library → saved combination Workbench → run
+flow as Invoice Operations, not a separate global configuration experience.
+
+**Why:** The user explicitly rejected finance as a different solution and configuration
+from the rest of the workflow.
+
+**How to apply:** Keep finance settings on the saved combination, run that exact
+configuration, and return to that case for edits. Do not introduce independent
+demo defaults or a second finance settings store into the primary journey.

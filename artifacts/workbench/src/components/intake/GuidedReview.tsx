@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Reorder, useDragControls, useReducedMotion } from 'framer-motion';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, CheckCheck, Clock, Download, Eye, GripVertical, List, Pencil, Plus, Sparkles } from 'lucide-react';
 import type { IntakeAttachment } from '@workspace/api-client-react';
+import { newRequirement, removeRequirement } from './structure';
+const cleanupAfter = (m: Model, id: string) => { const n = removeRequirement(m, id); return { capabilities: n.capabilities, coverage: n.coverage, overlaps: n.overlaps, questions: n.questions, removedItemIds: n.removedItemIds }; };
 import { formatSize, labels, PROFILE_KEYS, readiness, sourceLabels, type Capability, type Model, type ProfileKey, type Question, type Requirement, type SourceId } from './model';
 
 export type GuideStep = 'profile' | 'needs' | 'capabilities' | 'questions' | 'order' | 'agree';
@@ -88,11 +90,11 @@ export default function GuidedReview(p: GuidedProps) {
     if (kind === 'p') { const k = id as ProfileKey; return <FieldItem key={current.key} {...shared} title={labels[k]} value={model.profile[k].value} reviewed={current.done} changed={model.profile[k].changed} note={model.profile[k].provenance} sources={['problem']}
       onSave={v => { p.onEditProfile(k, v); setDraftDirty(false); }} onAccurate={() => { commit({ ...model, profile: { ...model.profile, [k]: { ...model.profile[k], reviewed: true, changed: false } } }, `${labels[k]} confirmed as accurate.`); advance(current.key); }} />; }
     if (kind === 'r') { const r = model.requirements.find(x => x.id === id)!; return <FieldItem key={current.key} {...shared} title="A need" value={r.text} reviewed={r.reviewed} changed={r.changed} note={r.provenance} sources={r.sources} userAdded={!r.sources.length}
-      onSave={text => { commit({ ...model, requirements: model.requirements.map(x => x.id === r.id ? { ...x, text, reviewed: false, changed: true } : x), orderReviewed: false }, 'Need corrected. Read it back, then confirm.'); setDraftDirty(false); }}
-      onRemove={() => { commit({ ...model, requirements: model.requirements.filter(x => x.id !== r.id), orderReviewed: false }, 'Need removed. Undo restores it with its priority and review state.'); advance(current.key); }}
+      onSave={text => { commit({ ...model, requirements: model.requirements.map(x => x.id === r.id ? { ...x, text, reviewed: false, changed: true, edited: true } : x), orderReviewed: false }, 'Need corrected. Read it back, then confirm.'); setDraftDirty(false); }}
+      onRemove={() => { commit({ ...model, requirements: model.requirements.filter(x => x.id !== r.id), orderReviewed: false, ...cleanupAfter(model, r.id) }, 'Need removed. Undo restores it with its priority and review state.'); advance(current.key); }}
       onAccurate={() => { commit({ ...model, requirements: model.requirements.map(x => x.id === r.id ? { ...x, reviewed: true, changed: false } : x) }, 'Need confirmed as accurately worded.'); advance(current.key); }} />; }
     if (kind === 'c') { const c = model.capabilities.find(x => x.id === id)!; return <CapItem key={current.key} {...shared} item={c}
-      onSave={next => { commit({ ...model, capabilities: model.capabilities.map(x => x.id === c.id ? { ...next, status: 'Needs clarification', changed: true, carry: false } : x) }, 'Capability corrected. Read it back before confirming.'); setDraftDirty(false); }}
+      onSave={next => { commit({ ...model, capabilities: model.capabilities.map(x => x.id === c.id ? { ...next, status: 'Needs clarification', changed: true, carry: false, edited: true } : x) }, 'Capability corrected. Read it back before confirming.'); setDraftDirty(false); }}
       onCarry={carry => commit({ ...model, capabilities: model.capabilities.map(x => x.id === c.id ? { ...x, carry } : x) }, carry ? 'Gap acknowledged and carried forward. It is not resolved.' : 'Gap acknowledgement removed.')}
       onAccurate={() => { commit({ ...model, capabilities: model.capabilities.map(x => x.id === c.id ? { ...x, status: 'Confirmed', changed: false } : x) }, 'Description confirmed.'); if (!c.gap.trim() || c.carry) advance(current.key); }} />; }
     const q = model.questions.find(x => x.id === id)!;
@@ -219,7 +221,7 @@ function AddNeed({ model, locked, onCommit, onNotice, onAdded }: GuidedProps & {
   const [open, setOpen] = useState(!model.requirements.length);
   const [text, setText] = useState('');
   if (!open) return <button className="fi-link" data-testid="button-open-add-need" onClick={() => setOpen(true)}>Something missing? Add a need</button>;
-  return <form className="fi-add fg-add" onSubmit={e => { e.preventDefault(); const t = text.trim(); if (!t) return; if (model.requirements.some(r => r.text.toLowerCase() === t.toLowerCase())) { onNotice('That need already exists. Edit it instead.'); return; } const id = `need-${crypto.randomUUID()}`; onCommit({ ...model, requirements: [...model.requirements, { id, text: t, sources: [], reviewed: false, changed: true }], orderReviewed: false }, 'Need added. Read it back, then confirm.'); setText(''); onAdded(`r:${id}`); }}>
+  return <form className="fi-add fg-add" onSubmit={e => { e.preventDefault(); const t = text.trim(); if (!t) return; if (model.requirements.some(r => r.text.toLowerCase() === t.toLowerCase())) { onNotice('That need already exists. Edit it instead.'); return; } const nr = newRequirement(t); const id = nr.id; onCommit({ ...model, requirements: [...model.requirements, nr], orderReviewed: false }, 'Need added. Read it back, then confirm.'); setText(''); onAdded(`r:${id}`); }}>
     <input className="fi-input" data-testid="input-add-need" aria-label="Add a missing need" placeholder="Something we missed?" readOnly={locked} value={text} onChange={e => setText(e.target.value)} /><button className="fi-btn" disabled={locked || !text.trim()}><Plus />Add</button></form>;
 }
 
@@ -250,7 +252,7 @@ function AgreeStep(p: GuidedProps & { onGo: (s: GuideStep) => void }) {
   const { model, locked, serverConfirmed } = p;
   const r = readiness(model);
   const gaps = model.capabilities.filter(c => c.gap.trim());
-  const blockers: [string, GuideStep][] = ([[!r.profileReady, 'Confirm the problem and context', 'profile'], [!stepDone(model, 'needs'), 'Read every need', 'needs'], [!r.capsReady, 'Confirm what you built and its gaps', 'capabilities'], [!r.questionsReady, 'Answer or leave open each question', 'questions'], [stepDone(model, 'needs') && !model.orderReviewed, 'Agree the priority order', 'order']] as [boolean, string, GuideStep][]).filter(b => b[0]).map(b => [b[1], b[2]]);
+  const blockers: [string, GuideStep][] = ([[!r.profileReady, 'Confirm the problem and context', 'profile'], [!stepDone(model, 'needs'), 'Read every need', 'needs'], [!r.capsReady, 'Confirm what you built and its gaps', 'capabilities'], [!r.questionsReady, 'Answer or leave open each question', 'questions'], [stepDone(model, 'needs') && !model.orderReviewed, 'Agree the priority order', 'order'], [!r.structureReady, 'Acknowledge input coverage and resolve overlaps in the full structured output', 'needs'], [!r.groupsReady, 'Give every group a title and boundary, and every need and capability a valid primary group (full structured output)', 'needs']] as [boolean, string, GuideStep][]).filter(b => b[0]).map(b => [b[1], b[2]]);
   return <div data-testid="guide-agree">
     {serverConfirmed ? <div className="fi-success"><CheckCheck /><h2>Understanding agreed.</h2><p>Saved and ready to compare.</p><div className="fi-actions" style={{ justifyContent: 'flex-start' }}><button className="fi-btn" data-testid="button-download-json" onClick={p.onDownload}><Download />Download confirmed JSON</button></div></div>
       : <h3 className="fg-title">One last read, together.</h3>}
@@ -265,10 +267,10 @@ function AgreeStep(p: GuidedProps & { onGo: (s: GuideStep) => void }) {
       {model.capabilities.map(c => <p key={c.id} className="fi-hint"><b>{c.title}</b> · {c.status === 'Confirmed' ? 'Description confirmed' : c.status}{c.gap.trim() ? ` · gap: ${c.gap}` : ''}</p>)}
       {model.questions.map(q => <p key={q.id} className="fi-hint"><b>{q.text}</b> {q.answer.trim() || (q.acknowledged ? 'Left open' : 'Not answered')}</p>)}
     </details>
-    {!serverConfirmed && (blockers.length ? <div className="fi-warning" data-testid="agree-blockers"><strong>Not ready yet.</strong>{blockers.slice(0, 3).map(([t, s]) => <p key={s}><button className="fi-link" onClick={() => p.onGo(s)}>{t}</button></p>)}</div>
+    {!serverConfirmed && (blockers.length ? <div className="fi-warning" data-testid="agree-blockers"><strong>Not ready yet.</strong>{blockers.slice(0, 3).map(([t, s]) => <p key={t}><button className="fi-link" onClick={() => p.onGo(s)}>{t}</button></p>)}</div>
       : <><label className="fi-check"><input type="checkbox" data-testid="check-agree" checked={model.agreed} disabled={locked} onChange={e => p.onAgreed(e.target.checked)} />This accurately describes our need and what we supplied. I acknowledge the open gaps.</label>
         <div className="fg-choices"><button className="fi-btn sienna" data-testid="button-confirm" disabled={!model.agreed || locked || p.conflict} onClick={p.onConfirm}><CheckCheck />{p.busy === 'confirm' ? 'Confirming…' : 'Confirm shared understanding'}</button></div></>)}
-    {serverConfirmed && !p.compareHidden && <div className="fi-card fi-compare"><h3>Compare with the library</h3><p className="fi-hint">Only your confirmed profile and ordered needs are copied to the SHARED DEMO workspace. Source files, source text and capability claims stay private.</p><div className="fi-actions"><button className="fi-btn primary" data-testid="button-compare-library" disabled={locked || p.conflict} onClick={p.onCompare}><ArrowRight />{p.busy === 'compare' ? 'Opening comparison…' : 'Compare with library'}</button></div></div>}
+    {serverConfirmed && !p.compareHidden && <div className="fi-card fi-compare"><h3>Compare with the library</h3><p className="fi-hint">This intake’s name, your confirmed profile and your ordered needs are copied to the SHARED DEMO workspace, where others using it can see them. Source files, source text and capability claims stay private.</p><div className="fi-actions"><button className="fi-btn primary" data-testid="button-compare-library" disabled={locked || p.conflict} onClick={p.onCompare}><ArrowRight />{p.busy === 'compare' ? 'Opening comparison…' : 'Compare with library'}</button></div></div>}
     {serverConfirmed && <p className="fi-hint">To change anything, go back to a step. Any edit reopens agreement.</p>}
   </div>;
 }

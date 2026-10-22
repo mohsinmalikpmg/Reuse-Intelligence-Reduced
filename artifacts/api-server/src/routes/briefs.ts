@@ -4,8 +4,6 @@ import { CreateBriefBody, UpdateBriefBody, type Brief, type MatchResult } from "
 import { briefsTable, db, findCaseForBrief, getBrief, listBriefs, newId, toBrief } from "../lib/store";
 import { deriveRequirements, deriveTodayBetter, parseBrief, toRequirements } from "../lib/brief-parser";
 import { matchBrief } from "../lib/matching";
-import { coverageFor } from "../lib/reuse-check";
-import { getSolution } from "../data/catalog";
 
 const router: IRouter = Router();
 
@@ -20,7 +18,14 @@ router.post("/briefs", async (req, res) => {
     return;
   }
   const text = parsed.data.text.trim();
-  const interpretation = await parseBrief(text);
+  let interpretation;
+  try {
+    interpretation = await parseBrief(text);
+  } catch (err) {
+    req.log.warn({ errorType: err instanceof Error ? err.name : "Unknown" }, "Brief AI analysis failed");
+    res.status(422).json({ error: "AI analysis did not complete. No brief was created or changed. Your text is preserved; try again." });
+    return;
+  }
   const id = newId("brief");
   const { today, better } = deriveTodayBetter(interpretation.fields);
   const requirements = toRequirements(interpretation.requirements);
@@ -38,7 +43,7 @@ router.post("/briefs", async (req, res) => {
     confirmed: false,
     createdAt: new Date().toISOString(),
   };
-  const outcome = matchBrief(provisional);
+  const outcome = await matchBrief(provisional);
   const [row] = await db
     .insert(briefsTable)
     .values({
@@ -110,7 +115,7 @@ router.patch("/briefs/:briefId", async (req, res) => {
     clarification: parsed.data.clarification ?? brief.clarification,
     confirmed: parsed.data.confirmed ?? brief.confirmed,
   };
-  const outcome = matchBrief(updated);
+  const outcome = await matchBrief(updated);
   const [row] = await db
     .update(briefsTable)
     .set({ fields, today, better, requirements, clarification: updated.clarification, confirmed: updated.confirmed, valueStatement: outcome.valueStatement })
@@ -125,16 +130,15 @@ router.get("/briefs/:briefId/matches", async (req, res) => {
     res.status(404).json({ error: "Brief not found" });
     return;
   }
-  const outcome = matchBrief(brief);
+  const outcome = await matchBrief(brief);
   const existing = await findCaseForBrief(brief.id);
-  const recommended = outcome.matches.find((m) => m.recommended)?.solution ?? outcome.matches[0]?.solution ?? null;
   const result: MatchResult = {
     briefId: brief.id,
     headline: outcome.headline,
     matches: outcome.matches,
     capabilityMatches: outcome.capabilityMatches,
     missingRequirements: outcome.missingRequirements,
-    coverage: coverageFor(brief.requirements, recommended ? (getSolution(recommended.id) ?? null) : null),
+    coverage: outcome.coverage ?? [],
     existingCaseId: existing?.id ?? null,
   };
   res.json(result);

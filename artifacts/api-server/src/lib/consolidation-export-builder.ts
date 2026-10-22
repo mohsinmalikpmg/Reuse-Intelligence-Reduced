@@ -4,7 +4,7 @@ import { mkdtemp, readFile, readdir, lstat, mkdir, writeFile, rm } from "node:fs
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { financeRepositoryRoot } from "./finance-wiring";
-import type { ConsolidationCase } from "./consolidation-recipes";
+import { validateInvoiceConfig, type ConsolidationCase } from "./consolidation-recipes";
 import { deterministicZip, extract, subprocess, SolutionExportBuildError, type SolutionExportResult, type SolutionExportCheck } from "./solution-export-builder";
 
 const hash = (v: Buffer | string) => createHash("sha256").update(v).digest("hex");
@@ -17,6 +17,7 @@ async function inputs(recipe: "invoice" | "finance") {
     "artifacts/invoice-consolidation/src", "artifacts/invoice-consolidation/tests",
     "artifacts/invoice-consolidation/index.html", "artifacts/invoice-consolidation/vite.config.ts",
     "artifacts/invoice-consolidation/package.json", "artifacts/invoice-consolidation/public",
+    "lib/api-zod/src/invoice-features.ts",
     ...["invoice-finder", "approval-desk", "spend-tracker"].map(id => `artifacts/${id}/src/domain`),
   ] : [
     "artifacts/finance-consolidation-demo/finance", "artifacts/finance-consolidation-demo/vendor",
@@ -39,6 +40,13 @@ async function inputs(recipe: "invoice" | "finance") {
 }
 export async function getConsolidationExportFingerprint(recipe: "invoice" | "finance") {
   return (await inputs(recipe)).fingerprint;
+}
+export function invoiceExportRecipe(c: ConsolidationCase) {
+  const config = validateInvoiceConfig(c.config, c.capabilityIds);
+  return { schemaVersion: 1, snapshotId: c.fingerprint, sources: c.selectedSources.map(s => s.id), capabilities: c.capabilityIds,
+    baseSourceId: c.baseSolutionId, wiring: c.wiring,
+    ...(config.featureIds !== undefined ? { featureIds: [...config.featureIds] } : {}),
+    ...(config.experience !== undefined ? { experience: config.experience } : {}) };
 }
 
 const staticServer = `
@@ -128,7 +136,7 @@ export async function buildConsolidationExport(c: ConsolidationCase, expectedSou
         }
       }
       await collect(join(temp,"built"),"public/");
-      const recipe = {schemaVersion:1,snapshotId:c.fingerprint,sources:c.selectedSources.map(s=>s.id),capabilities:c.capabilityIds,baseSourceId:c.baseSolutionId,wiring:c.wiring};
+      const recipe = invoiceExportRecipe(c);
       add("public/recipe.json",json(recipe)); add("recipe.json",json(recipe)); add("server.mjs",staticServer);
       const esbuild = join(dirname(require.resolve("esbuild/package.json")),"bin/esbuild");
       for (const [entry,output] of [["src/domain/integration.test.ts","integration.test.mjs"],["tests/export-snapshot.test.ts","snapshot.test.mjs"]]) {

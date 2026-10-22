@@ -279,17 +279,17 @@ export function RequirementAdder({ actions, briefRequirements, caseRequirements,
           <div className="flex flex-wrap items-center gap-2 text-[14px]">
             <span className="font-semibold">"{last.requirement.text}"</span>
             {cov.covered ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-okbg px-2 py-0.5 text-[12.5px] font-semibold text-ok" data-testid="text-covered-by-a"><Check className="h-3.5 w-3.5" /> Version A already covers this: {cov.capabilityName}</span>
+              <span className="inline-flex items-center gap-1 rounded-md bg-okbg px-2 py-0.5 text-[12.5px] font-semibold text-ok" data-testid="text-covered-by-a"><Check className="h-3.5 w-3.5" /> AI-inferred fit in Version A: {cov.capabilityName}</span>
             ) : (
-              <Tag tone="sienna" testid="text-not-covered-by-a">Not covered by the current product</Tag>
+              <Tag tone="sienna" testid="text-not-covered-by-a">Coverage not established from available evidence</Tag>
             )}
           </div>
           {cov.covered ? (
-            <p className="mt-2 text-[13.5px] text-muted-foreground" data-testid="text-covered-note">Nothing to add: the current product already does this, so Version B does too.</p>
+            <p className="mt-2 text-[13.5px] text-muted-foreground" data-testid="text-covered-note">AI found documented capability fit. This is not execution proof; verify the current configuration before relying on it.</p>
           ) : state === "added" ? (
             <div className="mt-3 flex flex-wrap items-center gap-3" data-testid="panel-run-both-prompt">
-              <span className="text-[14px]">Added to Version B. Energize A/B to see what it changes.</span>
-              <button data-testid="button-run-both-prompt" onClick={onRunBoth} disabled={runBothBusy || !needsBoth} className={cn(btn.accent, "min-h-11 px-5 text-[15px]")}><Zap className="h-4 w-4" /> {runBothBusy ? "Energizing..." : "Energize A/B"}</button>
+              <span className="text-[14px]">Added to Version B. Fuse A/B to see what it changes.</span>
+              <button data-testid="button-run-both-prompt" onClick={onRunBoth} disabled={runBothBusy || !needsBoth} className={cn(btn.accent, "min-h-11 px-5 text-[15px]")}><Zap className="h-4 w-4" /> {runBothBusy ? "Fusing..." : "Fuse A/B"}</button>
             </div>
           ) : (
             <div className="mt-3">

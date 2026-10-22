@@ -1,16 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronDown, Compass, Layers, LogOut, Menu, Network, RotateCcw, Search, ShieldCheck, Zap, type LucideIcon } from "lucide-react";
+import { BarChart3, Blocks, ChevronDown, ClipboardCheck, Compass, Layers, LogOut, Menu, Network, RotateCcw, Search, Zap, type LucideIcon } from "lucide-react";
 import { useGetDemoState, useListPersonas, useResetDemo, type Role } from "@workspace/api-client-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePersona } from "@/lib/persona";
-import { useMotion } from "@/lib/motion";
-import { landingFor, useCurrentCase, useInvalidateAll, useMe } from "@/lib/case";
+import { landingFor, useCurrentCase, useInvalidateAll } from "@/lib/case";
 import { useUndoToast } from "@/components/bits";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const ROLE_TABS: { role: Role; label: string; id: string }[] = [
   { role: "seeker", label: "Solution Seeker", id: "persona-seeker" },
@@ -21,6 +21,8 @@ const BRAND = `${import.meta.env.BASE_URL}brand/`;
 
 /** FUSEBOX wordmark with the Power Cube mark. `light` = the version for dark surfaces. Vector artwork, never retyped. */
 export function Logo({ light, className, plain }: { light?: boolean; className?: string; plain?: boolean }) {
+  const dark = useTheme().theme === "dark";
+  if (dark) light = true; // dark theme surfaces always take the dark-surface wordmark
   return (
     <img data-testid={plain ? undefined : "img-logo"} src={`${BRAND}${light ? "fusebox-logo-dark" : "fusebox-logo-light"}.svg`} alt="FUSEBOX" className={cn("h-7 w-auto select-none", className)} draggable={false} />
   );
@@ -38,7 +40,7 @@ export function CenovusEndorsement({ className }: { className?: string }) {
 /** The three circuit stages of the kit. Every destination and every page belongs to exactly one. */
 export const STAGES = {
   trace: { n: "01", label: "Trace" },
-  connect: { n: "02", label: "Connect + Energize" },
+  connect: { n: "02", label: "Connect + Fuse" },
   converge: { n: "03", label: "Converge" },
 } as const;
 export type Stage = keyof typeof STAGES;
@@ -53,11 +55,14 @@ function crumbsFor(location: string): { stage: Stage; page: string } {
   if (location.startsWith("/search")) return { stage: "trace", page: "Search" };
   if (location.startsWith("/workbench/wiring")) return { stage: "connect", page: "Finance wiring" };
   if (location.startsWith("/workbench")) return { stage: "connect", page: "Workbench" };
+  if (location.startsWith("/compositions/")) return { stage: "connect", page: "Proposed combination" };
   if (location.startsWith("/test/")) return { stage: "connect", page: "Blind test" };
   if (location.startsWith("/cases/")) return { stage: "converge", page: "Decision view" };
   if (/^\/my-solutions\/.+\/improvements\//.test(location)) return { stage: "converge", page: "Shared improvement" };
   if (location.startsWith("/my-solutions")) return { stage: "converge", page: "My Solutions" };
-  if (location.startsWith("/portfolio")) return { stage: "converge", page: "Portfolio" };
+  if (location.startsWith("/portfolio/analytics")) return { stage: "converge", page: "Analytics" };
+  if (location.startsWith("/portfolio/capabilities")) return { stage: "converge", page: "Capabilities" };
+  if (location.startsWith("/portfolio")) return { stage: "converge", page: "Review" };
   return { stage: "trace", page: "Not found" };
 }
 
@@ -83,8 +88,6 @@ export function Frame({ children }: { children: ReactNode }) {
   const reset = useResetDemo();
   const invalidate = useInvalidateAll();
   const say = useUndoToast();
-  const me = useMe();
-  const { motion, setMotion } = useMotion();
   const [q, setQ] = useState("");
   const [menu, setMenu] = useState(false);
   const desktop = useMediaQuery("(min-width: 768px)"); // sidebar (rail or full) + top-bar controls; below it the phone menu
@@ -107,12 +110,14 @@ export function Frame({ children }: { children: ReactNode }) {
     { href: "/library", label: "Library", match: "/library", icon: Network, stage: "trace" },
     { href: wbCase ? `/workbench/${wbCase}` : "/library", label: "Workbench", match: "/workbench", icon: Zap, stage: "connect" },
     { href: "/my-solutions", label: "My Solutions", match: "/my-solutions", icon: Layers, stage: "converge" },
-    { href: "/portfolio", label: "Portfolio", match: "/portfolio", icon: ShieldCheck, stage: "converge" },
-  ] satisfies NavItem[]).filter((n) => persona.role === "it" || !["/portfolio", "/my-solutions"].includes(n.href));
+    { href: "/portfolio/analytics", label: "Analytics", match: "/portfolio/analytics", icon: BarChart3, stage: "converge" },
+    { href: "/portfolio/capabilities", label: "Capabilities", match: "/portfolio/capabilities", icon: Blocks, stage: "converge" },
+    { href: "/portfolio/review", label: "Review", match: "/portfolio/review", icon: ClipboardCheck, stage: "converge" },
+  ] satisfies NavItem[]).filter((n) => persona.role === "it" || !(n.href.startsWith("/portfolio") || n.href === "/my-solutions"));
   const isOn = (n: NavItem) => location.startsWith(n.match) || (n.match === "/library" && (location.startsWith("/solutions") || location.startsWith("/search")));
   const crumbs = crumbsFor(location);
   const roleLabel = ROLE_TABS.find((t) => t.role === persona.role)?.label ?? "";
-  const initials = (me?.name ?? "?").split(" ").map((s) => s[0]).join("").slice(0, 2);
+  const initials = persona.role === "it" ? "IT" : "SS";
 
   const doReset = () =>
     reset.mutate(undefined, {
@@ -147,7 +152,7 @@ export function Frame({ children }: { children: ReactNode }) {
           aria-checked={persona.role === t.role}
           data-testid={`button-role-${t.role}`}
           onClick={() => setPersona({ id: personas.data?.find((p) => p.role === t.role)?.id ?? t.id, role: t.role })}
-          className={cn("min-h-8 rounded-md px-3 text-[13.5px] font-semibold transition-colors", persona.role === t.role ? "bg-primary text-white shadow-sm" : "text-primary/80 hover:text-primary")}
+          className={cn("min-h-8 rounded-md px-3 text-[13.5px] font-semibold transition-colors", persona.role === t.role ? "bg-primary text-primary-foreground shadow-sm" : "text-primary/80 hover:text-primary")}
         >
           {t.label}
         </button>
@@ -169,7 +174,7 @@ export function Frame({ children }: { children: ReactNode }) {
               const on = isOn(n);
               const Icon = n.icon;
               const link = (
-                <Link href={n.href} data-testid={`link-nav-${n.match.slice(1)}`} aria-current={on ? "page" : undefined} aria-label={rail ? n.label : undefined}
+                <Link href={n.href} data-testid={`link-nav-${n.match.slice(1).replace("portfolio/", "")}`} aria-current={on ? "page" : undefined} aria-label={rail ? n.label : undefined}
                   className={cn("relative flex min-h-11 items-center gap-3 rounded-xl text-[14.5px] font-medium transition-colors", rail ? "justify-center px-0" : "px-3",
                     on ? "bg-sidebar-accent text-white shadow-[inset_0_0_0_1px_hsl(var(--sidebar-border))]" : "text-white/70 hover:bg-white/5 hover:text-white")}>
                   {on && <span aria-hidden className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r bg-sienna" />}
@@ -191,22 +196,13 @@ export function Frame({ children }: { children: ReactNode }) {
     </nav>
   );
 
-  const motionSwitch = (rail: boolean) => (
-    <label className={cn("flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-white/80 hover:bg-white/5", rail && "justify-center px-0")} title={rail ? "Tactile motion" : undefined}>
-      <Switch data-testid="switch-motion" checked={motion} onCheckedChange={setMotion} aria-label="Tactile motion"
-        className="data-[state=checked]:bg-sienna data-[state=unchecked]:bg-white/25 focus-visible:ring-orange focus-visible:ring-offset-navy" />
-      {!rail && <span className="min-w-0"><span className="block text-[13.5px] font-medium text-white">Tactile motion</span><span className="block text-[11.5px] leading-snug text-white/55">Visual feedback is optional; the facts stay.</span></span>}
-    </label>
-  );
-
   const demoCard = (rail: boolean) => (
     <div className={cn("rounded-xl border border-sidebar-border bg-sidebar-accent", rail ? "p-1.5" : "p-3")} data-testid="panel-demo-state">
       <div className={cn("flex items-center gap-2.5", rail && "justify-center")}>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-[12px] font-semibold text-white" title={me?.name}>{initials}</span>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-[12px] font-semibold text-white" title={roleLabel}>{initials}</span>
         {!rail && (
           <span className="min-w-0">
-            <span className="block truncate text-[13.5px] font-semibold text-white">{me?.name ?? "Signed in"}</span>
-            <span className="block truncate text-[11.5px] text-white/55">{roleLabel}{me?.team ? ` · ${me.team}` : ""}</span>
+            <span className="block truncate text-[13.5px] font-semibold text-white">{roleLabel}</span>
           </span>
         )}
       </div>
@@ -231,7 +227,6 @@ export function Frame({ children }: { children: ReactNode }) {
       <div className="flex-1" />
       <div className={cn("flex flex-col gap-2 pb-4", rail ? "px-2" : "px-3")}>
         {demoCard(rail)}
-        {motionSwitch(rail)}
       </div>
     </>
   );
@@ -242,7 +237,7 @@ export function Frame({ children }: { children: ReactNode }) {
       {desktop && <aside className="sticky top-0 flex h-[100dvh] flex-col overflow-y-auto bg-sidebar text-sidebar-foreground" data-testid={wide ? "sidebar" : "sidebar-rail"}>{sidebarBody(!wide)}</aside>}
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-40 h-[var(--shell-top)] border-b border-border bg-white/95 backdrop-blur-sm">
+        <header className="sticky top-0 z-40 h-[var(--shell-top)] border-b border-border bg-background/95 backdrop-blur-sm">
           <div className="flex h-full items-center gap-3 px-4 md:px-6">
             {/* Phone: menu + wordmark */}
             {!desktop && <button type="button" onClick={() => setMenu(true)} aria-label="Open menu" data-testid="button-menu" className="grid h-9 w-9 place-items-center rounded-lg text-primary hover:bg-secondary"><Menu className="h-5 w-5" /></button>}
@@ -261,14 +256,15 @@ export function Frame({ children }: { children: ReactNode }) {
             {/* Global search is always reachable: in the top bar from 768px up, in the phone menu below */}
             {desktop && search("w-[200px] lg:w-[240px] xl:w-[300px]")}
             {desktop && roleSwitch}
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger data-testid="button-persona-menu" className="flex min-h-9 items-center gap-2 rounded-lg px-1.5 text-[13px] text-primary hover:bg-secondary">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[12px] font-semibold text-white">{initials}</span>
-                <span data-testid="text-persona-name" className="hidden max-w-[140px] truncate xl:block">{me?.name ?? "Signed in"}</span>
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">{initials}</span>
+                <span data-testid="text-persona-role" className="hidden max-w-[140px] truncate xl:block">{roleLabel}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
-                {me && <div className="px-2 py-1.5 text-xs text-muted-foreground">{me.title} · {me.team}</div>}
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">{roleLabel}</div>
                 <DropdownMenuItem data-testid="menu-reset-demo" onClick={doReset} disabled={reset.isPending}><RotateCcw className="mr-2 h-4 w-4" /> Reset demo</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem data-testid="button-sign-out" onClick={() => { setPersona(null); setLocation("/"); }}><LogOut className="mr-2 h-4 w-4" /> Sign out</DropdownMenuItem>
@@ -297,7 +293,6 @@ export function Frame({ children }: { children: ReactNode }) {
           </div>
           <div className="eyebrow px-5 pb-2 pt-6 text-white/45">Explore the system</div>
           {navList(false)}
-          <div className="px-3 pb-6 pt-6">{motionSwitch(false)}</div>
         </SheetContent>
       </Sheet>}
     </div>

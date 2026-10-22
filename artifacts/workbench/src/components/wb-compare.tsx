@@ -8,6 +8,9 @@ import { SummaryCounts } from "@/components/wb-parts";
 import { useUndoToast } from "@/components/bits";
 import { errMsg, useInvalidateCase, useMe } from "@/lib/case";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { caseCompositionOptions } from "@/lib/composition";
+import { RequirementLedger } from "@/components/requirement-ledger";
 
 export function Measures({ cmp }: { cmp: ABComparison }) {
   const rows: [string, string | number, string | number][] = [
@@ -36,6 +39,7 @@ export function Measures({ cmp }: { cmp: ABComparison }) {
           <><div className="font-semibold">Against labelled expected findings</div><div>A: {score(cmp.scoreA)}</div><div>B: {score(cmp.scoreB)}</div></>
         ) : <span className="text-muted-foreground">No labelled expected findings for this input, so no accuracy is claimed.</span>}
       </div>
+      <ABLedger caseId={cmp.caseId} />
     </details>
   );
 }
@@ -58,7 +62,7 @@ export function Vote({ cmp, role }: { cmp: ABComparison; role: Role }) {
   return (
     <section className="card-soft p-6" data-testid="panel-vote">
       <h3 className="text-[20px] font-semibold">Which result better solves the problem?</h3>
-      {cmp.staleB && <p className="mt-1 text-[13.5px] text-siennaink">Version B has changed since this run. Energize A/B again before voting.</p>}
+      {cmp.staleB && <p className="mt-1 text-[13.5px] text-siennaink">Version B has changed since this run. Fuse A/B again before voting.</p>}
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         {opts.map((o) => (
           <button key={o.c} data-testid={o.id} disabled={rec.isPending || cmp.staleB} onClick={() => cast(o.c)}
@@ -85,7 +89,14 @@ export function StaleHint({ onRun, busy }: { onRun: () => void; busy: boolean })
   return (
     <div data-testid="hint-stale" className="reveal flex items-center gap-3 rounded-lg bg-accent/70 px-3 py-2 text-[13.5px] text-accent-foreground">
       Version B changed since the last run.
-      <button data-testid="button-rerun" onClick={onRun} disabled={busy} className="font-semibold underline underline-offset-2">Energize A/B again</button>
+      <button data-testid="button-rerun" onClick={onRun} disabled={busy} className="font-semibold underline underline-offset-2">Fuse A/B again</button>
     </div>
   );
+}
+
+/** A/B results read against the complete original need, including what these runs cannot check. */
+function ABLedger({ caseId }: { caseId: string }) {
+  const q = useQuery(caseCompositionOptions(caseId));
+  if (!q.data) return null;
+  return <div className="mt-4" data-testid="ab-requirement-ledger"><p className="mb-2 text-[12.5px] text-muted-foreground">These runs do not test requirements or constraints outside the executable demo.</p><RequirementLedger c={q.data} /></div>;
 }

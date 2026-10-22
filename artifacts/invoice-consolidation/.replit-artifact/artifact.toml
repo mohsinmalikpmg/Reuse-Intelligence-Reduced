@@ -12,10 +12,10 @@ paths = [ "/invoice-consolidation/" ]
 localPort = 18904
 
 [services.development]
-run = "pnpm --filter @workspace/invoice-consolidation run dev"
+run = "pnpm --filter @workspace/invoice-consolidation exec vite --config host-theme.vite.config.ts --host 0.0.0.0"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/invoice-consolidation", "run", "build" ]
+build = [ "pnpm", "--filter", "@workspace/invoice-consolidation", "exec", "vite", "build", "--config", "host-theme.vite.config.ts" ]
 serve = "static"
 publicDir = "artifacts/invoice-consolidation/dist/public"
 

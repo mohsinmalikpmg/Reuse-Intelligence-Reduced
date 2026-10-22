@@ -206,7 +206,9 @@ export function buildComponents(c: Case, ctx: CaseContext): ComponentConfig[] {
       if (conflict) {
         state = "incompatible";
         blockedReason = `Conflicts with ${conflict.name} in ${ctx.base.name}. The base product's version is retained.`;
-      } else if (isUnsupported(cap) && !isRecommendedModule(cap, ctx)) {
+      // Existing native executors may be exercised in their own product's sandbox.
+      // Their unsupported/weak-evidence risk remains; this is not donor or production approval.
+      } else if (isUnsupported(cap) && !(isBase && isExecutable(cap.id)) && !isRecommendedModule(cap, ctx)) {
         state = "incompatible";
         blockedReason = `${cap.supportStatus}. Cannot be added without an owner and evidence.`;
       } else {
@@ -215,7 +217,7 @@ export function buildComponents(c: Case, ctx: CaseContext): ComponentConfig[] {
         const missing = cap.dependsOn
           .map((id) => getCapability(id))
           .filter((d): d is Capability => !!d)
-          .filter((d) => !isActive(d, ctx, c.moduleStates));
+          .filter((d) => !all.some(candidate=>canonicalCapabilityId(candidate.id)===canonicalCapabilityId(d.id)&&isActive(candidate,ctx,c.moduleStates)));
         if (missing.length > 0 && !active) {
           blockedReason = `Requires ${missing.map((m) => m.name).join(", ")} to be active.`;
         }
@@ -397,18 +399,24 @@ export function applyConfigurationUpdate(
         .map((d) => getCapability(d))
         .filter((d): d is Capability => !!d)
         .filter((d) => {
-          const dep = byId.get(d.id);
-          if (!dep) return true;
-          if (dep.state === "required" || dep.state === "configurable") return false;
-          return !(moduleStates[d.id] === true);
+          return !components.some(dep=>canonicalCapabilityId(dep.capability.id)===canonicalCapabilityId(d.id)&&dep.state!=="incompatible"&&(dep.state==="required"||dep.state==="configurable"||moduleStates[dep.capability.id]===true));
         });
       if (missing.length > 0) throw new ConfigurationError(`${comp.capability.name} requires ${missing.map((m) => m.name).join(", ")} to be active.`);
       moduleStates[id] = true;
     } else {
       moduleStates[id] = false;
-      // Cascade: dependents cannot stay active without this module.
-      for (const other of components) {
-        if (other.capability.dependsOn.includes(id) && moduleStates[other.capability.id]) moduleStates[other.capability.id] = false;
+      // Respect equivalent native IDs and all downstream dependents, but retain
+      // a dependency if another active, compatible implementation still supplies it.
+      const removed=[id];
+      while(removed.length){
+        const removedId=removed.shift()!;
+        for(const other of components){
+          if(!moduleStates[other.capability.id])continue;
+          const lost=other.capability.dependsOn.some(dep=>
+            canonicalCapabilityId(dep)===canonicalCapabilityId(removedId)&&
+            !components.some(provider=>provider.state!=="incompatible"&&canonicalCapabilityId(provider.capability.id)===canonicalCapabilityId(dep)&&(provider.state==="required"||provider.state==="configurable"||moduleStates[provider.capability.id]===true)));
+          if(lost){moduleStates[other.capability.id]=false;removed.push(other.capability.id);}
+        }
       }
     }
   }

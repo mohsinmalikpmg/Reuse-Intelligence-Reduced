@@ -7,13 +7,13 @@ export type FlowBlock = {
   stage: string;
 };
 
-export function blocksFromConfig(cfg: Configuration, baseId: string): FlowBlock[] {
+export function blocksFromConfig(cfg: Configuration, baseId: string, planIds: ReadonlySet<string> = new Set()): FlowBlock[] {
   const out: FlowBlock[] = [];
   for (const st of cfg.steps)
     for (const c of st.components) {
       if (!c.executable) continue;
       const fromBase = c.capability.sourceSolutionId === baseId;
-      if (c.controlType === "optional" && !c.active && !fromBase) continue;
+      if (c.controlType === "optional" && !c.active && !fromBase && !planIds.has(c.capability.id)) continue;
       out.push(fromComp(c, fromBase));
     }
   return out;

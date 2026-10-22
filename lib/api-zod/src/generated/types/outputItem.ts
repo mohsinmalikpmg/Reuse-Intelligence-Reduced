@@ -5,6 +5,7 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { OutputItemRanking } from './outputItemRanking';
 
 export interface OutputItem {
   id: string;
@@ -16,5 +17,8 @@ export interface OutputItem {
   detail: string | null;
   /** Capability id of the step that produced this line */
   stepId: string;
+  /** Original producer before a later step rewrote presentation */
+  originStepId?: string;
+  ranking?: OutputItemRanking;
   refs: string[];
 }

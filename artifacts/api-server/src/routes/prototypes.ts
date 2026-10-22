@@ -2,14 +2,14 @@ import { Router, type IRouter } from "express";
 import { AnalyzePrototypeBody, ListPrototypesQueryParams, RegisterPrototypeBody, type PrototypeDetail, type PrototypeIntake, type RegisteredPrototype } from "@workspace/api-zod";
 import type { RegisteredPrototypeRow } from "@workspace/db";
 import { getSolution, personas } from "../data/catalog";
-import { analyzePrototype } from "../lib/prototype-intake";
+import { analyzePrototype, registeredPrototypeAnalysis } from "../lib/prototype-intake";
 import { getPrototypeRow, listPrototypeRows, registerPrototype, removePrototype, restorePrototype, toRegisteredPrototype } from "../lib/prototypes";
 import { insertReuseEvent } from "../lib/reuse-store";
 
 const router: IRouter = Router();
 
-/** The analysis is recomputed from the stored examples and confirmed components; it is deterministic, so nothing is cached. */
-export function prototypeDetail(row: RegisteredPrototypeRow): PrototypeDetail | null {
+/** Exact unchanged evidence reuses the persisted, validated model analysis. */
+export async function prototypeDetail(row: RegisteredPrototypeRow): Promise<PrototypeDetail | null> {
   const solution = getSolution(row.id);
   if (!solution) return null;
   const intake: PrototypeIntake = {
@@ -21,7 +21,7 @@ export function prototypeDetail(row: RegisteredPrototypeRow): PrototypeDetail | 
     examples: row.examples.map((e) => ({ input: e.input, output: e.output, ...(e.sampleInputId ? { sampleInputId: e.sampleInputId } : {}) })),
     components: row.components.map((c) => ({ id: c.id, name: c.name, description: c.description, sectionTitles: c.sectionTitles })),
   };
-  return { prototype: toRegisteredPrototype(row), solution, analysis: analyzePrototype(intake) };
+  return { prototype: toRegisteredPrototype(row), solution, analysis: registeredPrototypeAnalysis(intake, row) };
 }
 
 router.get("/prototypes", (req, res) => {
@@ -34,13 +34,13 @@ router.get("/prototypes", (req, res) => {
   res.json(list);
 });
 
-router.post("/prototypes/analyze", (req, res) => {
+router.post("/prototypes/analyze", async (req, res) => {
   const parsed = AnalyzePrototypeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  res.json(analyzePrototype(parsed.data));
+  res.json(await analyzePrototype(parsed.data, { force: true }));
 });
 
 router.post("/prototypes", async (req, res) => {
@@ -54,7 +54,7 @@ router.post("/prototypes", async (req, res) => {
     res.status(400).json({ error: "Confirm that the examples contain no restricted data before registering." });
     return;
   }
-  const analysis = analyzePrototype(intake);
+  const analysis = await analyzePrototype(intake);
   if (analysis.components.length === 0) {
     res.status(400).json({ error: "Keep at least one component so the library knows what the prototype does." });
     return;
@@ -80,13 +80,13 @@ router.post("/prototypes", async (req, res) => {
     demo: false,
   });
   const row = await registerPrototype(intake, analysis, role, event.id);
-  const detail = prototypeDetail(row);
+  const detail = { prototype: toRegisteredPrototype(row), solution: getSolution(row.id)!, analysis };
   res.status(201).json(detail);
 });
 
-router.get("/prototypes/:prototypeId", (req, res) => {
+router.get("/prototypes/:prototypeId", async (req, res) => {
   const row = getPrototypeRow(String(req.params["prototypeId"]));
-  const detail = row && row.removedAt === null ? prototypeDetail(row) : null;
+  const detail = row && row.removedAt === null ? await prototypeDetail(row) : null;
   if (!detail) {
     res.status(404).json({ error: "Prototype not found" });
     return;

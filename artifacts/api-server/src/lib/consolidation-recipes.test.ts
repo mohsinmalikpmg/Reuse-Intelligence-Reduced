@@ -4,7 +4,9 @@ import { pool } from "@workspace/db";
 import {
   consolidationCaseInput, consolidationFingerprint, validateConsolidationCase,
   currentConsolidationSourceHash, registerConsolidationSources, type ConsolidationCase,
+  validateInvoiceConfig,
 } from "./consolidation-recipes";
+import { invoiceExportRecipe } from "./consolidation-export-builder";
 
 const base: ConsolidationCase = {
   id: "cc_test", recipeId: "invoice", title: "Test only", need: "Test invoice composition",
@@ -26,6 +28,41 @@ test("fingerprint pins selected hashes, config, base, capabilities and wires ind
   assert.notEqual(first,consolidationFingerprint({...base,baseSolutionId:"approval-desk"}));
   assert.notEqual(first,consolidationFingerprint({...base,config:{schemaVersion:2}}));
   assert.notEqual(first,consolidationFingerprint({...base,selectedSources:base.selectedSources.map(s=>({...s,sha256:"changed"}))}));
+});
+test("invoice config remains schema version 1 and validates granular selections without expanding legacy defaults", () => {
+  assert.deepEqual(validateInvoiceConfig(base.config, base.capabilityIds), { schemaVersion: 1 });
+  const config = { schemaVersion: 1, featureIds: ["invoice-details", "bulk-actions", "review-queue"], experience: "review-led" };
+  assert.deepEqual(validateInvoiceConfig(config, base.capabilityIds), config);
+  for (const [config, error] of [
+    [{ schemaVersion: 2 }, /unsupported fields or values/],
+    [{ schemaVersion: 1, arbitrary: true }, /unsupported fields or values/],
+    [{ schemaVersion: 1, featureIds: "invoice-details" }, /unsupported fields or values/],
+    [{ schemaVersion: 1, featureIds: ["invoice-details", "unknown"] }, /Unknown invoice feature/],
+    [{ schemaVersion: 1, featureIds: ["invoice-details", "invoice-details"] }, /Duplicate/],
+    [{ schemaVersion: 1, featureIds: [] }, /invoice-details is required/],
+    [{ schemaVersion: 1, featureIds: ["invoice-details", "review-queue"] }, /requires bulk-actions/],
+    [{ schemaVersion: 1, featureIds: ["invoice-details", "budget-positions"] }, /requires capability/],
+    [{ schemaVersion: 1, featureIds: ["invoice-details"], experience: "review-led" }, /requires review-queue/],
+    [{ schemaVersion: 1, experience: "budget-led" }, /requires budget-positions/],
+    [{ schemaVersion: 1, experience: "other" }, /unsupported fields or values/],
+  ] as const) assert.throws(() => validateInvoiceConfig(config, base.capabilityIds), error);
+});
+test("invoice feature and experience config is pinned and embedded in exports only when explicit", () => {
+  const legacy = invoiceExportRecipe(base);
+  assert.deepEqual(legacy, { schemaVersion: 1, snapshotId: base.fingerprint, sources: base.selectedSources.map(s => s.id),
+    capabilities: base.capabilityIds, baseSourceId: base.baseSolutionId, wiring: base.wiring });
+  assert.equal("featureIds" in legacy, false);
+  assert.equal("experience" in legacy, false);
+  const explicit = { ...base, config: { schemaVersion: 1, featureIds: ["invoice-details", "bulk-actions", "review-queue"], experience: "review-led" } };
+  assert.notEqual(consolidationFingerprint(base), consolidationFingerprint(explicit));
+  assert.notEqual(consolidationFingerprint(explicit), consolidationFingerprint({ ...explicit, config: { ...explicit.config, experience: "invoice-led" } }));
+  const embedded = JSON.parse(JSON.stringify(invoiceExportRecipe(explicit)));
+  assert.deepEqual(embedded.featureIds, explicit.config.featureIds);
+  assert.equal(embedded.experience, "review-led");
+  assert.throws(() => invoiceExportRecipe({ ...base, config: { schemaVersion: 1, featureIds: [] } }), /invoice-details/);
+});
+test("invoice config errors are surfaced before source registration or export reads", async () => {
+  await assert.rejects(validateConsolidationCase({ ...base, config: { schemaVersion: 1, featureIds: ["invoice-details", "review-queue"] } }), /requires bulk-actions/);
 });
 test("real allowlisted source archives hash deterministically; arbitrary source paths fail", async () => {
   for (const id of ["invoice-finder","approval-desk","spend-tracker","budget-and-forecast","management-reporting"]) {

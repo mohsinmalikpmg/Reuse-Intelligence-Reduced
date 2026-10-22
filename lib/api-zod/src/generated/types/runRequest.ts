@@ -14,6 +14,6 @@ export interface RunRequest {
   caseId?: string;
   version: RunRequestVersion;
   sampleInputId?: string;
-  /** Overrides the sample text; used as-is when no sample is given */
+  /** Custom work-order notes or normalized file input; maximum 256 KiB. Server validates against the selected version and normalizes supported CSV/JSON note records. Explicit empty input is rejected, never replaced with a sample. */
   inputText?: string;
 }

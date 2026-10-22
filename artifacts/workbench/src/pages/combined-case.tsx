@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Cable, Check, ExternalLink, Info, Minus, Play, RotateCcw, Save, Undo2, X } from "lucide-react";
-import { useGetCurrentAuthUser } from "@workspace/api-client-react";
-import { ErrorView, LoadingView, Page, StageEyebrow, Tag, btn, useUndoToast } from "@/components/bits";
+import { Cable, Check, ExternalLink, Info, Minus, Play, RotateCcw, Save, Undo2, X } from "lucide-react";
+import { useGetCurrentAuthUser, useGetFinanceWiringCatalog, type FinanceWiringConfig } from "@workspace/api-client-react";
+import { Controls } from "@/pages/finance-wiring";
+import { ErrorView, LoadingView, Page, Skel, StageEyebrow, Tag, btn, useUndoToast } from "@/components/bits";
+import { InvoiceOverlap } from "@/components/invoice-overlap";
 import { CaseExportHistory } from "@/components/solution-exports";
 import { cn } from "@/lib/utils";
 import Workbench from "@/pages/workbench";
+import { LinkedComposition } from "@/components/composition-panel";
+import { useCaseComposition, useRefreshCaseComposition } from "@/lib/composition";
+import { ProposalWorkbenchPage } from "@/pages/proposal-workbench";
+import { InputUpload } from "@/components/input-upload";
+import { InvoiceFeatureSelection } from "@/components/invoice-features";
+import { pruneInvoiceConfig } from "@/lib/invoice-features";
+import { FeatureRedundancy } from "@/components/feature-redundancy";
+import { planInclusions } from "@/lib/plan-inclusions";
+import { inclusionNodeId, PlanInclusions, PlanStepAttribution, UnmappedPlanSteps } from "@/components/plan-inclusions";
 import {
   SOURCE_COPY, SOURCE_NAMES, ccKeys, edgesFor, inputFrom, msgOf, statusOf, useCombinedCase, useRecipes, useRunCombinedCase, useUpdateCombinedCase,
   type CombinedCase, type CombinedCaseInput, type Recipe, type RecipeEdge,
@@ -15,6 +26,8 @@ import {
 /** cc_ ids are combined proposals; everything else keeps the existing maintenance workbench. */
 export function WorkbenchRoute() {
   const { caseId } = useParams<{ caseId: string }>();
+  // cmp_ ids are proposal-only plans: same workbench place, never the legacy case queries.
+  if (caseId?.startsWith("cmp_")) return <ProposalWorkbenchPage id={caseId} />;
   return caseId?.startsWith("cc_") ? <CombinedCasePage id={caseId} /> : <Workbench />;
 }
 
@@ -52,12 +65,17 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
   const enabled = recipe.capabilities.filter((x) => c.capabilityIds.includes(x.id));
   const excluded = recipe.capabilities.filter((x) => !c.capabilityIds.includes(x.id));
   const edges = recipe.edges.filter((e) => c.wiring.edgeIds.includes(e.id));
+  const compQ = useCaseComposition(c.id);
+  const refreshComp = useRefreshCaseComposition();
+  const inclusions = compQ.data ? planInclusions(compQ.data, recipe.capabilities.map((x) => ({
+    id: x.id, sourceId: x.sourceId, active: c.capabilityIds.includes(x.id), visible: c.capabilityIds.includes(x.id), executable: true,
+  }))) : [];
 
   const save = (patch: Partial<CombinedCaseInput>, label: string, undoable = true) => {
     const before = inputFrom(c);
     setErr(null);
     upd.mutate({ id: c.id, data: { ...inputFrom(c, patch), expectedRevision: c.revision } }, {
-      onSuccess: () => { setRunUrl(null); if (patch.briefId && patch.briefId !== c.briefId) setHistory([]); else if (undoable) setHistory((h) => [...h, before]); say(label); },
+      onSuccess: () => { refreshComp(c.id); setRunUrl(null); if (patch.briefId && patch.briefId !== c.briefId) setHistory([]); else if (undoable) setHistory((h) => [...h, before]); say(label); },
       onError: (e) => {
         if (statusOf(e) === 409) { void qc.invalidateQueries({ queryKey: ccKeys.case(c.id) }); setErr("This combination changed elsewhere. The latest version is loaded; try again."); }
         else setErr(msgOf(e));
@@ -67,7 +85,8 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
   const undo = () => { const prev = history[history.length - 1]; if (!prev) return; setHistory((h) => h.slice(0, -1)); save(prev, "Undone", false); };
   const removeCap = (capId: string) => {
     const caps = c.capabilityIds.filter((x) => x !== capId);
-    save({ capabilityIds: caps, wiring: { edgeIds: edgesFor(recipe, caps) } }, `${recipe.capabilities.find((x) => x.id === capId)?.name} removed`);
+    const extra = recipe.id === "invoice" ? { config: pruneInvoiceConfig(c.config as Record<string, unknown>, caps) } : {};
+    save({ capabilityIds: caps, wiring: { edgeIds: edgesFor(recipe, caps) }, ...extra }, `${recipe.capabilities.find((x) => x.id === capId)?.name} removed`);
   };
   const addCap = (capId: string) => {
     const caps = [...c.capabilityIds, capId];
@@ -90,7 +109,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
       <blockquote className="mt-2 max-w-3xl border-l-4 border-sienna pl-3 text-[15px] text-muted-foreground" data-testid="text-need">{c.need}</blockquote>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <section id="wiring" className="scroll-mt-24 rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6" data-testid="panel-map" aria-label="Proposed map">
+        <section id="wiring" className={cn("scroll-mt-24 rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6", !finance && "invoice-workflow")} data-testid="panel-map" aria-label="Proposed map">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-semibold">Included capabilities</h2>
             <span className="text-[12.5px] opacity-75">Starts from {name(c.baseSolutionId)}. Click a connection for its adapter.</span>
@@ -103,10 +122,10 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
               const e = recipe.edges.find((x) => x.id === cap.edgeId);
               return (
                 <li key={cap.id}>
-                  {e && <button onClick={() => setEdge(e)} className="mx-auto my-1 flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-[12px] hover:bg-white/10" data-testid={`button-edge-${cap.id}`}><Cable className="h-3.5 w-3.5" /> adapter: {nodeName(e.from)} to {nodeName(e.to)}</button>}
-                  <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3" data-testid={`node-cap-${cap.id}`}>
+                  {e && <button onClick={() => setEdge(e)} className="workflow-connection mx-auto my-1 flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-[12px] hover:bg-white/10" data-testid={`button-edge-${cap.id}`}><Cable className="h-3.5 w-3.5" /> adapter: {nodeName(e.from)} to {nodeName(e.to)}</button>}
+                  <div id={`row-${cap.id}`} className="workflow-capability scroll-mt-28 flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3" data-testid={`node-cap-${cap.id}`}>
                     <Check className="h-4 w-4 shrink-0 text-[#9ED9E3]" />
-                    <div className="min-w-0 flex-1"><div className="font-semibold">{cap.name}</div><div className="text-[12.5px] opacity-75">from {name(cap.sourceId)} · {SOURCE_COPY[cap.sourceId]?.label}</div></div>
+                    <div className="min-w-0 flex-1"><div className="font-semibold">{cap.name}</div><div className="text-[12.5px] opacity-75">from {name(cap.sourceId)} · {SOURCE_COPY[cap.sourceId]?.label}</div><PlanStepAttribution items={inclusions.filter((x) => x.represented && x.capabilityId === cap.id && x.sourceId === cap.sourceId)} /></div>
                     {finance ? <span className="text-[11.5px] opacity-70" title="Forecast to Report needs both engines and their adapter.">required</span>
                       : <button onClick={() => removeCap(cap.id)} disabled={upd.isPending || enabled.length <= 1} title={enabled.length <= 1 ? "Keep at least one capability" : "Remove from the combination"} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-remove-${cap.id}`}><Minus className="h-3.5 w-3.5" /> Remove</button>}
                   </div>
@@ -115,8 +134,9 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
             })}
             <Node title={finance ? "Monthly management report" : "One combined invoice app"} sub={`Opens at ${recipe.runPath}`} />
           </ol>
+          <UnmappedPlanSteps items={inclusions} />
           {edge && (
-            <div className="mt-4 rounded-xl bg-white p-4 text-foreground" role="dialog" aria-label="Adapter detail" data-testid="panel-adapter">
+            <div className="mt-4 rounded-xl bg-card p-4 text-foreground" role="dialog" aria-label="Adapter detail" data-testid="panel-adapter">
               <div className="flex items-start gap-2"><Cable className="mt-0.5 h-4 w-4 text-primary" /><div className="min-w-0 flex-1"><div className="font-semibold">{nodeName(edge.from)} to {nodeName(edge.to)}</div><p className="mt-1 text-[13.5px]">{edge.contract}</p><p className="mt-1 font-mono text-[11.5px] text-muted-foreground">{edge.id}</p></div>
                 <button onClick={() => setEdge(null)} className={btn.quiet} aria-label="Close adapter detail"><X className="h-4 w-4" /></button></div>
             </div>
@@ -124,6 +144,12 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
         </section>
 
         <aside className="space-y-4">
+          {inclusions.some((x) => x.sourceId !== c.baseSolutionId) && <section className="card-soft p-5">
+            <h2 className="text-[16px] font-semibold">From other apps</h2>
+            <PlanInclusions items={inclusions.filter((x) => x.sourceId !== c.baseSolutionId)} locate={(item) => {
+              document.getElementById(item.represented ? `row-${item.capabilityId}` : inclusionNodeId(item))?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }} />
+          </section>}
           {excluded.length > 0 && <section className="card-soft p-5" data-testid="panel-excluded">
             <h2 className="text-[16px] font-semibold">Not selected</h2>
               <ul className="mt-2 space-y-2">{excluded.map((m) => {
@@ -139,18 +165,26 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
           <section className="card-soft p-5" data-testid="panel-requirement-gaps">
             <RequirementCoverage c={c} recipe={recipe} />
           </section>
-          {finance && <FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Adjustment saved")} />}
           <section className="card-soft p-5">
             <h2 className="text-[16px] font-semibold">Try the real combination</h2>
             <p className="mt-1 text-[13.5px] text-muted-foreground">Checks the saved version, then opens the actual app with it.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={tryIt} disabled={run.isPending || upd.isPending} className={cn(btn.accent, "min-h-12 px-6")} data-testid="button-run-combined"><Play className="h-4 w-4" /> {run.isPending ? "Checking…" : "Try it"}</button>
+              <InputUpload targetId={c.id} fixedNote="Runs on the source apps' fixed demo inputs; your own files are not supported here yet." />
               {runUrl && <a href={runUrl} target="_blank" rel="noopener noreferrer" className={cn(btn.primary, "min-h-12")} data-testid="link-open-combined-app">Open combined app <ExternalLink className="h-4 w-4" /></a>}
             </div>
           </section>
           {err && <p role="alert" className="rounded-lg bg-accent px-3 py-2 text-[13px] text-siennaink" data-testid="text-combined-error">{err}</p>}
         </aside>
       </div>
+
+      {compQ.data && <div className="mt-6" id="recommendation"><LinkedComposition c={compQ.data} names={name} savedAt={c.updatedAt} /></div>}
+
+      {finance && <div className="mt-6" id="finance-settings"><FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Finance settings saved")} /></div>}
+
+      {c.recipeId === "invoice" && <div className="mt-6" id="invoice-features"><InvoiceFeatureSelection c={c} recipe={recipe} busy={upd.isPending} onSave={(config) => save({ config }, "Function selection saved")} onEnableCap={addCap} onSetBase={(b) => save({ baseSolutionId: b }, `Base set to ${name(b)}`)} /></div>}
+      {c.recipeId === "invoice" && <div className="mt-6" id="invoice-overlap"><InvoiceOverlap c={c} /></div>}
+      {c.recipeId !== "invoice" && <div className="mt-6" id="feature-redundancy"><FeatureRedundancy target={{ caseId: c.id }} scope={`rev:${c.revision}`} names={name} inPlan={new Set(c.capabilityIds)} /></div>}
 
       <div className="mt-6">
         <CaseExportHistory caseId={c.id} updatedAt={c.updatedAt} pending={upd.isPending} onConflict={() => void qc.invalidateQueries({ queryKey: ccKeys.case(c.id) })} />
@@ -194,30 +228,30 @@ function RequirementCoverage({ c, recipe }: { c: CombinedCase; recipe: Recipe })
 }
 
 function Node({ title, sub }: { title: string; sub: string }) {
-  return <li className="rounded-xl border border-dashed border-white/30 px-4 py-3"><div className="font-semibold">{title}</div><div className="text-[12.5px] opacity-75">{sub}</div></li>;
+  return <li className="workflow-endpoint rounded-xl border border-dashed border-white/30 px-4 py-3"><div className="font-semibold">{title}</div><div className="text-[12.5px] opacity-75">{sub}</div></li>;
 }
 
 function FinanceAdjust({ c, busy, onSave }: { c: CombinedCase; busy: boolean; onSave: (config: Record<string, unknown>) => void }) {
-  const saved = Number(c.config.adjustment ?? 0);
-  const [draft, setDraft] = useState<string>(String(saved));
+  const catQ = useGetFinanceWiringCatalog();
+  const saved = c.config as unknown as FinanceWiringConfig;
+  const [draft, setDraft] = useState<FinanceWiringConfig>(() => structuredClone(saved));
   const forRev = useRef(c.revision);
-  useEffect(() => { if (forRev.current !== c.revision) { forRev.current = c.revision; setDraft(String(saved)); } }, [c.revision, saved]);
-  const n = draft === "" ? Number.NaN : Number(draft);
-  const ok = validAdj(n);
-  const dirty = n !== saved;
+  useEffect(() => { if (forRev.current !== c.revision) { forRev.current = c.revision; setDraft(structuredClone(c.config as unknown as FinanceWiringConfig)); } }, [c.revision, c.config]);
+  if (catQ.isLoading) return <Skel className="h-72 rounded-[20px]" />;
+  if (catQ.isError || !catQ.data) return <ErrorView onRetry={() => void catQ.refetch()} message="Finance options could not load." />;
+  const okAdj = validAdj(draft.adjustment);
+  const okCentres = draft.centres.length > 0;
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved) && (Object.keys(draft) as (keyof FinanceWiringConfig)[]).some((k) => JSON.stringify(draft[k]) !== JSON.stringify(saved[k]));
   return (
-    <section className="card-soft p-5" data-testid="panel-finance-adjust">
-      <h2 className="text-[16px] font-semibold">Q4 adjustment</h2>
-      <p className="mt-1 text-[13px] text-muted-foreground">Total in whole USD, a multiple of 6 from -600 to 6000. Spread across chosen centres and the three Q4 months.</p>
-      <div className="mt-3 flex items-center gap-2">
-        <input type="number" step={6} min={-600} max={6000} value={draft} onChange={(e) => setDraft(e.target.value)} aria-invalid={!ok} aria-label="Q4 adjustment in USD"
-          className="h-10 w-full rounded-xl border border-input bg-card px-3 text-center font-mono text-[15px] outline-none focus:border-primary" data-testid="input-adjustment" />
-        <button className={btn.primary} disabled={!ok || !dirty || busy} onClick={() => onSave({ ...c.config, adjustment: n })} data-testid="button-save-adjustment"><Save className="h-4 w-4" /> Save</button>
-        <button className={btn.quiet} disabled={!dirty || busy} onClick={() => setDraft(String(saved))} data-testid="button-revert-adjustment"><RotateCcw className="h-4 w-4" /> Revert</button>
+    <div data-testid="panel-finance-adjust">
+      <fieldset disabled={busy} className="min-w-0 disabled:opacity-70">
+        <Controls cat={catQ.data} draft={draft} edit={(p) => setDraft((d) => ({ ...d, ...p }))} savedConfig={saved} />
+      </fieldset>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button className={btn.primary} disabled={!okAdj || !okCentres || !dirty || busy} onClick={() => onSave(draft as unknown as Record<string, unknown>)} data-testid="button-save-finance-config"><Save className="h-4 w-4" /> Save to this combination</button>
+        <button className={btn.quiet} disabled={!dirty || busy} onClick={() => setDraft(structuredClone(saved))} data-testid="button-revert-finance-config"><RotateCcw className="h-4 w-4" /> Revert</button>
+        <span className="text-[12.5px] text-muted-foreground">{!okCentres ? "Choose at least one centre." : dirty ? "Unsaved settings. Try it runs the saved revision only." : `Saved in rev ${c.revision}. Undo above reverts it.`}</span>
       </div>
-      {!ok && <p className="mt-1 text-[12.5px] text-siennaink" role="alert">Use a whole-dollar multiple of 6 between -600 and 6000.</p>}
-      <p className="mt-2 text-[12px] text-muted-foreground">Saved: {saved >= 0 ? "+" : ""}{saved} USD. <Link href="/workbench/wiring" className="text-primary hover:underline">All finance settings <ArrowRight className="inline h-3 w-3" /></Link></p>
-    </section>
+    </div>
   );
 }
-

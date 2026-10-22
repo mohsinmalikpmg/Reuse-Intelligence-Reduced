@@ -7,9 +7,6 @@
  */
 
 export interface IntakeRecordInput {
-  /**
-     * @minLength 1
-     * @maxLength 200
-     */
-  title: string;
+  /** @maxLength 200 */
+  title?: string;
 }

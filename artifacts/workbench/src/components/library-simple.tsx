@@ -1,73 +1,128 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { loadDraft, saveDraft, useComposing } from "@/lib/composition";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
-import { useListSolutionFamilies, useListSolutions, type Solution } from "@workspace/api-client-react";
+import { useListCapabilities, useListSolutionFamilies, useListSolutions } from "@workspace/api-client-react";
 import { Empty, ErrorView, Headline, Page, Skel, btn } from "@/components/bits";
-import { isLive } from "@/components/enterprise";
+import { buildEntries, capabilityMatch, readinessOf, type Entry } from "./seeker-library-model";
+import { SeekerCard } from "./seeker-library-card";
+import { SeekerCompare } from "./seeker-library-compare";
 
 const PER_PAGE = 3;
+const SEEKER_PER_PAGE = 6;
+const MAX_PICK = 3;
+const selectCls = "h-11 min-w-0 rounded-xl border border-input bg-card px-3 text-[14.5px] outline-none focus:border-primary";
 
-/** Seeker library: start from the need, see a few concise options, open one for examples. */
+/** Seeker library: start from the need, filter by problem, capability and readiness, compare up to three. */
 export function SeekerLibrary() {
   const families = useListSolutionFamilies();
+  const sols = useListSolutions();
+  const caps = useListCapabilities();
   const [draft, setDraft] = useState("");
   const [q, setQ] = useState("");
+  const [problem, setProblem] = useState("");
+  const [cap, setCap] = useState("");
+  const [ready, setReady] = useState("");
   const [page, setPage] = useState(0);
+  const [pickedIds, setPickedIds] = useState<string[]>(() => loadDraft().pickedIds.slice(0, MAX_PICK));
+  // Each pick is pinned to the version seen when it was compared; later builds use the pin, never the live version.
+  const [pinned, setPinned] = useState<Record<string, string>>(() => loadDraft().pinned);
+  // The selection survives sign-in redirects, errors and reloads in this tab.
+  useEffect(() => {
+    const keep = Object.fromEntries(Object.entries(pinned).filter(([id]) => pickedIds.includes(id)));
+    saveDraft({ ...loadDraft(), pickedIds, pinned: keep });
+  }, [pickedIds, pinned]);
+
+  const all = useMemo(() => buildEntries(families.data ?? [], sols.data ?? [], caps.data ?? []), [families.data, sols.data, caps.data]);
+  const picked = useMemo(() => pickedIds.map((id) => all.find((e) => e.s.id === id)).filter((e): e is Entry => !!e), [pickedIds, all]);
+  const functions = useMemo(() => [...new Set(all.map((e) => e.s.businessFunction))].sort(), [all]);
+  const capOptions = useMemo(() => [...(caps.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [caps.data]);
   const items = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-    const list = (families.data ?? []).map((f) => ({ s: f.preferred, problem: f.businessProblem.title, text: [f.businessProblem.title, f.businessProblem.description, f.preferred.name, f.preferred.outcome, ...f.covers.map((c) => c.name)].join(" ").toLowerCase() }));
-    return words.length ? list.filter((x) => words.every((w) => x.text.includes(w))) : list;
-  }, [families.data, q]);
-  const pages = Math.max(1, Math.ceil(items.length / PER_PAGE));
-  const shown = items.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
+    return all.filter((e) =>
+      words.every((w) => e.text.includes(w)) &&
+      (!problem || e.s.businessFunction === problem) &&
+      (!cap || capabilityMatch(e, cap) !== null) &&
+      (!ready || readinessOf(e.s) === ready));
+  }, [all, q, problem, cap, ready]);
+  const pages = Math.max(1, Math.ceil(items.length / SEEKER_PER_PAGE));
+  const cur = Math.min(page, pages - 1);
+  const shown = items.slice(cur * SEEKER_PER_PAGE, cur * SEEKER_PER_PAGE + SEEKER_PER_PAGE);
+  const filtered = !!(q || problem || cap || ready);
+  const reset = () => { setQ(""); setDraft(""); setProblem(""); setCap(""); setReady(""); setPage(0); };
+  const composing = useComposing();
+  const pin = (id: string) => { const v = all.find((e) => e.s.id === id)?.s.currentVersion; if (v !== undefined) setPinned((m) => ({ ...m, [id]: String(v) })); };
+  const toggle = (id: string) => {
+    if (composing) return;
+    if (pickedIds.includes(id)) { setPickedIds((p) => p.filter((x) => x !== id)); return; }
+    if (pickedIds.length >= MAX_PICK) return;
+    pin(id); setPickedIds((p) => [...p, id]);
+  };
 
-  if (families.isError) return <ErrorView onRetry={() => families.refetch()} message="The library could not load." />;
+  const loading = families.isLoading || sols.isLoading || caps.isLoading;
+  if (families.isError || sols.isError || caps.isError)
+    return <ErrorView onRetry={() => { families.refetch(); sols.refetch(); caps.refetch(); }} message="The library could not load." />;
   return (
     <Page>
-      <Headline stage="trace" title="What do you" accent="need to get done?" sub="Describe it in your own words. We show the few existing solutions that fit." />
-      <form className="relative mt-6 flex max-w-3xl gap-2" onSubmit={(e) => { e.preventDefault(); setQ(draft.trim()); setPage(0); }}>
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-        <input data-testid="input-library-search" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="For example: spot repeat equipment failures in work orders"
+      <Headline stage="trace" title="What do you" accent="need to get done?" sub="Search by keywords, or narrow by business function, capability and readiness. Pick up to three to compare." />
+      <form role="search" className="relative mt-6 flex max-w-3xl gap-2" onSubmit={(e) => { e.preventDefault(); setQ(draft.trim()); setPage(0); }}>
+        <label htmlFor="library-search" className="sr-only">Keyword search: every word must appear in the problem, solution or capability text</label>
+        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <input id="library-search" data-testid="input-library-search" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Keywords, e.g. equipment failures work orders"
           className="h-14 min-w-0 flex-1 rounded-xl border border-input bg-card pl-12 pr-4 text-[16.5px] outline-none focus:border-primary" />
-        <button type="submit" className={btn.primary} data-testid="button-library-search">Find</button>
+        <button type="submit" className={btn.primary} data-testid="button-library-search">Search keywords</button>
       </form>
-      {q && <button className={`${btn.quiet} mt-2`} onClick={() => { setQ(""); setDraft(""); setPage(0); }}>Clear "{q}"</button>}
 
-      <div className="mt-8 max-w-4xl">
-        {families.isLoading ? <div className="grid gap-4 md:grid-cols-2">{[0, 1, 2, 3].map((i) => <Skel key={i} className="h-40" />)}</div>
+      <div className="mt-4 grid max-w-4xl gap-2 sm:grid-cols-3" aria-label="Filters">
+        <label className="grid gap-1 text-[12.5px] font-medium text-muted-foreground">Business function
+          <select className={selectCls} value={problem} onChange={(e) => { setProblem(e.target.value); setPage(0); }} data-testid="select-function">
+            <option value="">All functions</option>
+            {functions.map((fn) => <option key={fn} value={fn}>{fn}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1 text-[12.5px] font-medium text-muted-foreground">Capability · coverage or reuse
+          <select className={selectCls} value={cap} onChange={(e) => { setCap(e.target.value); setPage(0); }} data-testid="select-capability">
+            <option value="">Any capability</option>
+            {capOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1 text-[12.5px] font-medium text-muted-foreground">Readiness
+          <select className={selectCls} value={ready} onChange={(e) => { setReady(e.target.value); setPage(0); }} data-testid="select-readiness">
+            <option value="">Any</option>
+            <option value="live">Runs on your input</option>
+            <option value="preview">Preview only</option>
+          </select>
+        </label>
+      </div>
+      {filtered && <button className={`${btn.quiet} mt-2`} onClick={reset} data-testid="button-clear-filters">Clear search and filters{q ? ` ("${q}")` : ""}</button>}
+
+      <div className="mt-6 max-w-5xl">
+        {loading ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">{[0, 1, 2, 3, 4, 5].map((i) => <Skel key={i} className="h-56" />)}</div>
           : items.length === 0 ? (
-            <Empty title={q ? `Nothing in the library matches "${q}"` : "The library is empty"} sub="Describe the need instead and we will check what can be reused.">
+            <Empty title={filtered ? "Nothing in the library matches these choices" : "The library is empty"} sub="Try fewer filters, or describe the need and we will check what can be reused.">
+              {filtered && <button className={btn.secondary} onClick={reset}>Clear filters</button>}
               <Link href="/discover" className={btn.primary}>Describe my need <ArrowRight className="h-4 w-4" /></Link>
             </Empty>
           ) : <>
-            <ul className="grid gap-4 md:grid-cols-2" data-testid="library-cards">
-              {shown.map(({ s, problem }) => <SolutionCard key={s.id} s={s} problem={problem} />)}
+            <p className="mb-3 text-[13.5px] text-muted-foreground" aria-live="polite">{items.length} {items.length === 1 ? "option" : "options"} · {pickedIds.length} of {MAX_PICK} picked to compare</p>
+            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="library-cards">
+              {shown.map((e) => <SeekerCard key={e.key} e={e} matchedCapability={capOptions.find((c) => c.id === cap)?.name} matchLabel={cap ? capabilityMatch(e, cap) : null} selected={pickedIds.includes(e.s.id)} canSelect={!composing && pickedIds.length < MAX_PICK} onToggle={() => toggle(e.s.id)} />)}
             </ul>
             {pages > 1 && (
-              <div className="mt-6 flex items-center gap-3">
-                <button className={btn.secondary} disabled={page === 0} onClick={() => setPage(page - 1)} data-testid="button-page-prev"><ArrowLeft className="h-4 w-4" /> Previous</button>
-                <span className="text-[14px] text-muted-foreground">Page {page + 1} of {pages}</span>
-                <button className={btn.secondary} disabled={page + 1 >= pages} onClick={() => setPage(page + 1)} data-testid="button-page-next">Next <ArrowRight className="h-4 w-4" /></button>
-              </div>
+              <nav aria-label="Pagination" className="mt-6 flex items-center gap-3">
+                <button className={btn.secondary} disabled={cur === 0} onClick={() => setPage(cur - 1)} data-testid="button-page-prev"><ArrowLeft className="h-4 w-4" /> Previous</button>
+                <span className="text-[14px] text-muted-foreground">Page {cur + 1} of {pages}</span>
+                <button className={btn.secondary} disabled={cur + 1 >= pages} onClick={() => setPage(cur + 1)} data-testid="button-page-next">Next <ArrowRight className="h-4 w-4" /></button>
+              </nav>
             )}
-            <p className="mt-8 text-[14px] text-muted-foreground">Not quite it? <Link href="/discover" className="font-semibold text-primary underline-offset-2 hover:underline">Describe your need</Link> and we will compare what exists.</p>
           </>}
+        <SeekerCompare picked={picked} pinned={pinned} onRepin={(ids) => ids.forEach(pin)} onRemove={(id) => setPickedIds((p) => p.filter((x) => x !== id))} onClear={() => setPickedIds([])} />
+        {!loading && <p className="mt-8 text-[14px] text-muted-foreground">Not quite it? <Link href="/discover" className="font-semibold text-primary underline-offset-2 hover:underline">Describe your need</Link> and we will compare what exists.</p>}
       </div>
     </Page>
   );
 }
 
-function SolutionCard({ s, problem }: { s: Solution; problem: string }) {
-  return (
-    <li className="card-soft flex flex-col p-5" data-testid={`card-solution-${s.id}`}>
-      <span className="text-[12.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{problem}</span>
-      <h3 className="mt-1 text-[18px] font-semibold leading-snug text-primary">{s.name}</h3>
-      <p className="mt-1.5 line-clamp-2 text-[14.5px]">{s.outcome}</p>
-      {!isLive(s) && <p className="mt-2 text-[12.5px] text-siennaink">Preview</p>}
-      <Link href={`/solutions/${s.id}`} className={`${btn.secondary} mt-4 self-start`} data-testid={`link-open-${s.id}`}>See an example <ArrowRight className="h-4 w-4" /></Link>
-    </li>
-  );
-}
 
 /** IT Owner library entry: what needs attention first, the full catalog on request. */
 export function ITLibrary({ onBrowse }: { onBrowse: () => void }) {
@@ -102,7 +157,7 @@ export function ITLibrary({ onBrowse }: { onBrowse: () => void }) {
         {pages > 1 && <div className="mt-4 flex items-center gap-3"><button className={btn.quiet} disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button><span className="text-[14px] text-muted-foreground">Page {page + 1} of {pages}</span><button className={btn.quiet} disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</button></div>}
         <div className="mt-8 flex flex-wrap gap-2">
           <button className={btn.primary} onClick={onBrowse} data-testid="button-browse-catalog">Browse the full catalog <ArrowRight className="h-5 w-5" /></button>
-          <Link href="/portfolio" className={btn.quiet}>Open the decision queue</Link>
+          <Link href="/portfolio/review" className={btn.quiet}>Open the decision queue</Link>
         </div>
       </div>
     </Page>

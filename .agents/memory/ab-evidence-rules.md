@@ -15,6 +15,9 @@ Rule 2: a vote is evidence only for the exact configuration it was cast on. Runs
 **How to apply:** when adding any new vote-derived number, filter through the current fingerprints first and surface the set-aside count next to it. Any seed that inserts evaluations must copy the fingerprints from the runs it references, or the seeded votes count as set aside.
 
 Pitfalls hit:
+- Step results must represent the output at that step's execution time, not final output rewritten downstream. Attribute ranking/presentation changes to their writer and distinguish them from new findings.
+  **Why:** Ranking rewrote clustering's lines; the UI falsely blamed clustering/upstream input and showed blank A step results despite identical findings.
+  **How to apply:** Preserve immutable step evidence; never reconstruct missing historical step output from the final result. Do not infer causality from a text difference alone.
 - Orval: an operation with path + query params emits `XxxParams` in both generated outputs and `lib/api-zod/src/index.ts` re-export collides. Design such endpoints as list responses instead.
 - Postgres jsonb reorders object keys; compare stored config to live config by sorted entries, not JSON.stringify.
 - `performance.now()` deltas round to 0 ms for tiny steps; clamp durations to >= 1 so "0 ms measured" never appears.

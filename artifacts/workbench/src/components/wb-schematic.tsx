@@ -9,8 +9,10 @@ import { ArrowRight, HelpCircle, Lock, Plus, X } from "lucide-react";
 import type { CapabilityRequest, DiffEntry } from "@workspace/api-client-react";
 import { Switch } from "@/components/ui/switch";
 import { Tag } from "@/components/bits";
-import { DiffLines, TraceBody, deviationLabel, laneGrid, type LaneRow } from "@/components/wb-lanes";
+import { deviationLabel, laneGrid, type LaneRow } from "@/components/wb-lanes";
 import { cn } from "@/lib/utils";
+import { StepResult, snapshotFor } from "@/components/step-result";
+import { stepDiffSummary } from "@/lib/step-output";
 
 export type LaneEntry = { kind: "step"; row: LaneRow } | { kind: "request"; req: CapabilityRequest };
 
@@ -206,8 +208,6 @@ export function Schematic({ lane, rows, aLabel, editable, busy, open, onToggle, 
 export function StepDetail({ r, no, labelA, labelB, picked, onPick, explanation, onClose }: {
   r: LaneRow; no: number; labelA: string; labelB: string; picked: DiffEntry | null; onPick: (e: DiffEntry) => void; explanation: string[]; onClose: () => void;
 }) {
-  const removed = r.entries.filter((e) => e.change === "removed");
-  const addedOrChanged = r.entries.filter((e) => e.change !== "removed");
   const dev = deviationLabel(r);
   return (
     <section id={`row-${r.id}`} data-testid={`row-${r.id}`} className="card-soft reveal scroll-mt-[calc(var(--shell-top)+5.25rem)] p-4" aria-label={`${r.name} detail`}>
@@ -219,18 +219,18 @@ export function StepDetail({ r, no, labelA, labelB, picked, onPick, explanation,
         {r.inputChanged && <Tag tone="slate" testid={`mark-input-changed-${r.id}`}>input changed</Tag>}
         <button type="button" onClick={onClose} aria-label={`Close ${r.name}`} data-testid={`button-close-${r.id}`} className="ml-auto rounded-md p-1 text-muted-foreground hover:bg-muted"><X className="h-4 w-4" /></button>
       </div>
-      <p className="mb-3 text-[13px] text-muted-foreground">{r.description}</p>
+      <p className="mb-1 text-[13px] text-muted-foreground">{r.description}</p>
+      {(() => { const sum = stepDiffSummary(snapshotFor(r.traceA, !!r.a?.active), snapshotFor(r.traceB, r.b.active), r.entries); return sum ? <p className="mb-3 text-[13px] font-medium" data-testid={`step-summary-${r.id}`}>{sum}</p> : <div className="mb-2" />; })()}
       <div className={cn(laneGrid, "gap-y-3 max-lg:grid-cols-1")}>
         <div className="card-block p-3.5">
-          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold"><span className="grid h-5 w-5 place-items-center rounded bg-primary text-[11px] text-white">A</span>{r.a ? "Current product" : "Not in the current product"}</div>
-          {r.a ? <><TraceBody t={r.traceA} label={labelA} /><DiffLines entries={removed} picked={picked} onPick={onPick} title={`Lines only A produced (${removed.length})`} /></>
+          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold"><span className="grid h-5 w-5 place-items-center rounded bg-primary text-[11px] text-primary-foreground">A</span>{r.a ? "Current product" : "Not in the current product"}</div>
+          {r.a ? <StepResult t={r.traceA} active={r.a.active} other={r.traceB} otherActive={r.b.active} side="A" label={labelA} entries={r.entries} picked={picked} onPick={onPick} />
             : <p className="text-[13px] text-muted-foreground">This step only runs in Version B.</p>}
         </div>
         <div className="hidden lg:block" />
         <div className={cn("card-block p-3.5", r.deviation && "border-sienna/50")}>
           <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold"><span className="grid h-5 w-5 place-items-center rounded bg-siennaink text-[11px] text-white">B</span>Proposed version</div>
-          {!r.b.active ? <p className="text-[13px] text-muted-foreground">Switched off in Version B, so it does not run.</p> : <TraceBody t={r.traceB} label={labelB} />}
-          <DiffLines entries={addedOrChanged} picked={picked} onPick={onPick} title={`Lines this step ${r.entries.some((e) => e.change === "changed") && !r.entries.some((e) => e.change === "added") ? "changed" : "added"} in B (${addedOrChanged.length})`} />
+          <StepResult t={r.traceB} active={r.b.active} other={r.traceA} otherActive={!!r.a?.active} side="B" label={labelB} entries={r.entries} picked={picked} onPick={onPick} />
         </div>
       </div>
       {explanation.length > 0 && <div className="mt-3 rounded-lg bg-[hsl(196_30%_93%)] px-3 py-2 text-[13px] text-skyink" data-testid={`explanation-${r.id}`}>{explanation.map((x, i) => <div key={i}>{x}</div>)}</div>}

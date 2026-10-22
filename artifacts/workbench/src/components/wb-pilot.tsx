@@ -101,7 +101,7 @@ export function ProposeActions({ theCase, quiet }: { theCase: Case; quiet?: bool
                 <>
                   <div><div className="eyebrow mb-1">Pilot group</div><div data-testid="text-pilot-group">{plan.eligibleGroup}</div></div>
                   <div><div className="eyebrow mb-1.5">Percentage of that group</div>
-                    <div className="flex gap-2">{[5, 10, 20].map((p) => <button key={p} data-testid={`pilot-pct-${p}`} onClick={() => setPct(p)} className={cn("min-h-10 rounded-lg border px-4 font-semibold", pct === p ? "border-primary bg-primary text-white" : "border-input bg-card text-primary")}>{p}%</button>)}</div>
+                    <div className="flex gap-2">{[5, 10, 20].map((p) => <button key={p} data-testid={`pilot-pct-${p}`} onClick={() => setPct(p)} className={cn("min-h-10 rounded-lg border px-4 font-semibold", pct === p ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card text-primary")}>{p}%</button>)}</div>
                   </div>
                   <div><div className="eyebrow mb-1">Success criteria</div><ul className="list-disc space-y-0.5 pl-5">{plan.successThresholds.map((s) => <li key={s}>{s}</li>)}</ul></div>
                   <div><div className="eyebrow mb-1">Rollback trigger</div><div data-testid="text-rollback">{plan.rollbackTrigger}</div></div>

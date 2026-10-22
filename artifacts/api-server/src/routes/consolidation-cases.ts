@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { pool } from "@workspace/db";
 import { z } from "zod";
+import { fixedInputContract } from "../lib/workbench-input";
 import {
   ConsolidationError, consolidationCaseInput, consolidationCaseUpdate, recipeCatalog,
   registeredConsolidationSources, registerConsolidationSources, consolidationSourceDownload,
@@ -60,6 +61,10 @@ router.put("/consolidation/cases/:id", async (req,res) => {
 });
 router.post("/consolidation/cases/:id/run", async (req,res) => {
   const c = await ownedConsolidationCase(req.user!.id,String(req.params.id));
+  if(Object.keys(req.body??{}).length||Object.keys(req.query).length||(req.get("content-type")&&!req.is("application/json"))||(req.body!==undefined&&(req.body===null||typeof req.body!=="object"||Array.isArray(req.body)))){
+    const contract=fixedInputContract(c.recipeId);
+    res.status(422).json({error:contract.reason,issues:[{code:"fixed_demo_only",message:contract.reason}],contracts:[contract]});return;
+  }
   await validateConsolidationCase(c);
   res.json({runUrl:c.runUrl,fingerprint:c.fingerprint});
 });

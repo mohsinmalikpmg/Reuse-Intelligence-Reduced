@@ -5,7 +5,7 @@ import type { Brief, LibraryCodePackage } from "@workspace/api-zod";
 import { briefsTable, casesTable, db, pool } from "@workspace/db";
 import { capabilityById } from "../src/data/catalog";
 import manifest from "../src/data/solution-code-manifest.json";
-import { assessCode } from "../src/lib/code-assessment";
+import { fixtureAssessCode as assessCode } from "./assessment-fixture";
 import { createBriefWorkbench, deriveWorkbenchPlan } from "../src/lib/proposal-workbench";
 
 const { objectPath: _privatePath, ...metadata } = manifest;
@@ -22,13 +22,13 @@ const brief: Brief = {
     "Send email notifications", "Predictive machine learning for failures", "Do not perform automatic updates.",
   ].map((text, i) => ({ id: `r${i}`, text, source: "added" })),
 };
-const report = assessCode(brief, pkg);
+const report = await assessCode(brief, pkg);
 const plan = deriveWorkbenchPlan(brief, report);
 assert.equal(plan.baseSolutionId, "sol-workorder-insight");
 assert.deepEqual(plan.moduleIds, ["cap-clustering", "cap-safety-signals", "cap-similarity"]);
 assert.equal(new Set(plan.moduleIds).size, plan.moduleIds.length);
 assert.deepEqual(plan.gaps.map(g => g.requirementId), ["r5", "r6"]);
-assert.equal(deriveWorkbenchPlan(brief, assessCode(brief, pkg)).id, plan.id, "identical assessment has an idempotency key");
+assert.equal(deriveWorkbenchPlan(brief, await assessCode(brief, pkg)).id, plan.id, "identical assessment has an idempotency key");
 assert.notEqual(deriveWorkbenchPlan(brief, { ...report, package: { ...pkg, sha256: "new-package" } }).id, plan.id);
 assert.throws(() => deriveWorkbenchPlan({ ...brief, confirmed: false }, report), /Confirm/);
 assert.throws(() => deriveWorkbenchPlan(brief, { ...report, bestSolutionId: null }), /No valid live/);
@@ -46,7 +46,7 @@ try {
 }
 
 const patternBrief = { ...brief, requirements: ["Cluster similar equipment issues across sites", "Rank issues", "Summarize maintenance notes"].map((text, i) => ({ id: `p${i}`, text, source: "added" as const })) };
-const patternPlan = deriveWorkbenchPlan(patternBrief, assessCode(patternBrief, pkg));
+const patternPlan = deriveWorkbenchPlan(patternBrief, await assessCode(patternBrief, pkg));
 assert.equal(patternPlan.baseSolutionId, "sol-site-pattern-finder");
 assert(patternPlan.baseModuleIds.includes("cap-b-summarize"));
 assert(!patternPlan.moduleIds.includes("cap-summarize"), "base aliases satisfy dependencies without duplicate summarizers");
@@ -55,7 +55,7 @@ console.log("Plan checks passed: all matches, dependency closure, deduplication,
 // Exercise actual persistence, concurrent clicks, and user-edit preservation without starting the app.
 try {
   await db.insert(briefsTable).values({ ...brief, createdAt: new Date(brief.createdAt) });
-  const results = await Promise.all(Array.from({ length: 4 }, () => createBriefWorkbench(brief.id, pkg)));
+  const results = await Promise.all(Array.from({ length: 4 }, () => createBriefWorkbench(brief.id, pkg, assessCode)));
   assert(results.every(c => c.id === plan.id));
   const [persisted] = await db.select().from(casesTable).where(eq(casesTable.briefId, brief.id));
   assert(persisted);
@@ -64,7 +64,7 @@ try {
   assert.equal(persisted.capabilityRequests.length, plan.gaps.length);
   assert.equal(persisted.briefId, brief.id);
   await db.update(casesTable).set({ title: "User-edited proposal", moduleStates: { ...persisted.moduleStates, "cap-clustering": false } }).where(eq(casesTable.id, plan.id));
-  const repeated = await createBriefWorkbench(brief.id, pkg);
+  const repeated = await createBriefWorkbench(brief.id, pkg, assessCode);
   assert.equal(repeated.title, "User-edited proposal");
   assert.equal(repeated.moduleStates["cap-clustering"], false);
   await db.update(briefsTable).set({ confirmed: false }).where(eq(briefsTable.id, brief.id));

@@ -186,7 +186,7 @@ function FullLibrary({ onBack }: { onBack: () => void }) {
         <div className="mt-3 flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Business function" data-testid="function-chips">
           {["", ...functions].map((fn) => (
             <button key={fn || "all"} role="radio" aria-checked={fnChip === fn} data-testid={`chip-function-${fn || "all"}`} onClick={() => { setFnChip(fn); if (view === "schematic") setProblemId(""); }}
-              className={cn("min-h-9 rounded-full border px-3.5 text-[14px] font-medium transition-colors", fnChip === fn ? "border-primary bg-primary text-white" : "border-input bg-card text-foreground hover:border-primary/50")}>
+              className={cn("min-h-9 rounded-full border px-3.5 text-[14px] font-medium transition-colors", fnChip === fn ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card text-foreground hover:border-primary/50")}>
               {fn || "All functions"}
             </button>
           ))}
@@ -235,7 +235,7 @@ function FullLibrary({ onBack }: { onBack: () => void }) {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {CHIPS.map((c) => (
           <button key={c.k} data-testid={`chip-${c.k}`} onClick={() => setChip(c.k)} aria-pressed={chip === c.k}
-            className={cn("min-h-9 rounded-full border px-3.5 text-[14px] font-medium transition-colors", chip === c.k ? "border-primary bg-primary text-white" : "border-input bg-card text-foreground hover:border-primary/50")}>{c.label}</button>
+            className={cn("min-h-9 rounded-full border px-3.5 text-[14px] font-medium transition-colors", chip === c.k ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card text-foreground hover:border-primary/50")}>{c.label}</button>
         ))}
         <div className="flex-1" />
         <button data-testid="button-filters" onClick={() => setDrawer(true)} className={btn.secondary}><SlidersHorizontal className="h-4 w-4" /> Filters{active > 0 && <span className="rounded-full bg-siennaink px-1.5 text-[12px] text-white">{active}</span>}</button>

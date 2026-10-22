@@ -3,11 +3,41 @@ name: Intake as collaborative validation
 description: User intent for the intake redesign and the boundary between confirmation and proof.
 ---
 
+Keep Discover's proposed-workflow entry simple: do not recommend invoice workflows for unrelated intakes, and carry the intake context into Workbench when opening the proposed workflow. Keep capability editing in Workbench, not an extra selection-review step in Discover. Present one recommendation, with supporting evidence under its details; do not add separate maintenance-code or catalog-description recommendation sections.
+
+**Why:** The user called the expanded discovery experience a regression and clarified that relevant recommendations and intake-context continuity were the important changes.
+
+**How to apply:** Persist the originating intake context and all requirements in the experiment. Keep missing requirements visible whether there is no match, no compatible match, or the user excludes the suggested component. Never discard those gaps on plan edits or treat proposed coverage as proven satisfaction. The authorized requirement snapshot is revision-bound: reopening an experiment must not substitute a newer intake. Private raw intake material must not be copied into shared analysis storage.
+
+Keep the primary intake experience simple: describe → review → find matching solutions. Show an editable name, business problem, concise distinct requirements and supplied capabilities only when a solution is provided. Keep groups, boundaries, source evidence and coverage in collapsed Analysis details; do not require per-item confirmation checkboxes.
+
+**Why:** The user found the expanded MECE interface more complex and worse than the earlier intake. MECE is an analysis responsibility, not an administration task for the user.
+
+**How to apply:** Preserve substantive corrections and honest unresolved questions, but use a single explicit review acceptance and progressive disclosure instead of exposing every analysis control by default.
+
 Intake should be one of FUSEBOX's most critical steps: validate understanding of the user's needs and the components/capabilities of presented prototypes or solutions through a highly interactive, iterative experience.
 
 **Why:** The user wants smaller iterations and shared understanding before comparison or consolidation, not immediate recommendations from an unvalidated submission.
 
 **How to apply:** Support business needs, existing prototypes/solutions, and configured agents. Interpret by input type, normalize a shared profile and deduplicated requirements, then let users correct and confirm. Corrections revisit affected interpretation before approval. Include drag-and-drop ordering of requirements by priority, with accessible click alternatives. Keep supplied statements, inferences, and open gaps distinct; confirming an accurate description is not evidence that a capability works. The provided slide's sequence is collect → extract by input type → normalize → validate with users → confirm intake and open gaps.
+
+Intake outputs must visibly include a MECE requirements breakdown for business-problem inputs. Solution inputs must show both the understood business problem and the MECE supplied features/capabilities. Automatically suggest a representative descriptive name from the inputs, with user editing preserved.
+
+Interpretation and analytical conclusions must use active AI analysis, not canned deterministic outputs or silent rule-based fallbacks.
+
+**Why:** The user explicitly requested AI connections wherever required and rejected deterministic/automated outputs where active analysis and interpretation are expected.
+
+**How to apply:** Configure and verify the provider, ground analysis in input/source evidence, and expose errors rather than substituting canned conclusions. Preserve deterministic calculations, authorization, source integrity and measured evidence; those are not interpretive judgments.
+
+**Why:** The user reiterated that these breakdowns were still not visible and explicitly requested automatic descriptive naming.
+
+**How to apply:** Treat these as reviewable intake outputs before comparison, not hidden interpretation data. Completeness is relative to supplied scope; expose gaps and inferences rather than inventing requirements or proof.
+
+Saved group boundaries are user-owned scope decisions during reinterpretation, just like manually corrected statements. Preserve their meaning while invalidating affected reviews; regenerating only the name must not change the reviewed breakdown.
+
+**Why:** Replacing a boundary can change what several otherwise unchanged requirements mean. Naming is a separate action and must not silently undo review work.
+
+**How to apply:** Keep content preservation separate from confirmation validity: preserve corrections even before confirmation, but require re-review when their source, boundary, or linked clarification changes.
 
 The approved canvas intake has a standalone artifact; the user subsequently chose to replace Discover's initial intake screen in Reuse Workbench with this design, keeping comparison results and IT Owner pages.
 

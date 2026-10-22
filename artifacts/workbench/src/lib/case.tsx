@@ -57,5 +57,5 @@ export function errMsg(e: unknown): string {
 }
 
 export function landingFor(role: "seeker" | "owner" | "it") {
-  return role === "seeker" ? "/discover" : role === "owner" ? "/my-solutions" : "/portfolio";
+  return role === "seeker" ? "/discover" : role === "owner" ? "/my-solutions" : "/portfolio/analytics";
 }

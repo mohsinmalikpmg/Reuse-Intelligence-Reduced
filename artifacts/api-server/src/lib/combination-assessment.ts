@@ -1,49 +1,44 @@
 import type { CombinationRequirement, CombinationRequirementAssessment } from "@workspace/api-zod";
+import { analyze, AnalysisError } from "./ai-analysis";
+import { assessmentSource, groundingInstructions, mappingShape, provenanceLabel, requirementMappingSchema } from "./assessment-evidence";
 
 type Selection = {
-  recipeId: string;
-  capabilityIds: string[];
-  selectedSources: { id: string }[];
-  wiring: { edgeIds: string[] };
+  recipeId: string; capabilityIds: string[]; selectedSources: { id: string; version?: string; sha256?: string }[];
+  wiring: { edgeIds: string[] }; config?: Record<string, unknown>; userId?: string; id?: string;
 };
 
-// Recipe-specific mapping: never reuse the maintenance engine's capability evidence.
-// Broad language is a partial match, not a promise of complete implementation.
-const rules = [
-  { recipe: "invoice", id: "fuzzy-search", source: "invoice-finder", edge: "invoice-to-search", label: "Invoice search",
-    match: /\b(search|find|filter|fuzzy|typos?)\b/i,
-    exact: /^(?:search|find|filter) (?:for )?invoices(?: (?:with|despite) typos)?[.!]?$/i },
-  { recipe: "invoice", id: "bulk-decisions", source: "approval-desk", edge: "invoice-to-decisions", label: "Invoice approval",
-    match: /\b(approv\w*|reject\w*|bulk decisions|sign.off)\b/i,
-    exact: /^(?:(?:bulk |batch )?(?:approve|reject) (?:multiple |several |selected )?invoices(?: (?:in bulk|at once))?)[.!]?$/i },
-  { recipe: "invoice", id: "spend-tracing", source: "spend-tracker", edge: "invoice-to-spend", label: "Spend tracing",
-    match: /\b(spend|spending|trace|tracing|materials|labou?r)\b/i,
-    exact: /^(?:track|trace|view|see) (?:project |afe |par )?(?:spend|spending)(?: (?:by project|by afe|by par|to invoice lines))?[.!]?$/i },
-  { recipe: "finance", id: "forecast-projection", source: "budget-and-forecast", edge: "forecast-to-report", label: "Q4 forecast projection",
-    match: /\b(forecast\w*|project(?:ion|ing)?|budget\w*)\b/i,
-    exact: /^(?:create|calculate|project|generate) (?:a |the )?q4 forecast[.!]?$/i },
-  { recipe: "finance", id: "management-reporting", source: "management-reporting", edge: "forecast-to-report", label: "Monthly management report",
-    match: /\b(report\w*|management reporting)\b/i,
-    exact: /^(?:create|generate|produce) (?:a |the )?monthly management report[.!]?$/i },
+// These contracts bound the analysis; source/version hashes and actual implementation are fingerprinted too.
+export const combinationEvidence = [
+  { recipe: "invoice", id: "fuzzy-search", source: "invoice-finder", edge: "invoice-to-search", behavior: "Local invoice filtering and typo-tolerant fuzzy search. No external ERP query or performance SLA." },
+  { recipe: "invoice", id: "bulk-decisions", source: "approval-desk", edge: "invoice-to-decisions", behavior: "Simulated approve/reject decisions over selected invoice IDs, respecting deterministic permissions. Not supplier payment, ERP posting, SSO or production approval transactions." },
+  { recipe: "invoice", id: "spend-tracing", source: "spend-tracker", edge: "invoice-to-spend", behavior: "Integer-cent invoice totals traced through project/AFE/PAR to original invoice lines. Not a bank or external accounting integration." },
+  { recipe: "finance", id: "forecast-projection", source: "budget-and-forecast", edge: "forecast-to-report", behavior: "Q4 forecast from explicit actuals and configured method; forecast is never actual spend. Not arbitrary annual budgeting or predictive ML." },
+  { recipe: "finance", id: "management-reporting", source: "management-reporting", edge: "forecast-to-report", behavior: "Monthly management report with explicitly mapped accounts/cost centres and cents bridge. Not arbitrary custom reporting or live ERP integration." },
 ];
-const constraint = /\b(must not|do not|don't|never|no automatic|read.only|without (?:writing|updating|posting|changing))\b/i;
 
-export function assessCombination(requirements: CombinationRequirement[], selection: Selection): CombinationRequirementAssessment[] {
+export async function assessCombination(requirements: CombinationRequirement[], selection: Selection, options: { force?: boolean; analyzer?: typeof analyze } = {}): Promise<CombinationRequirementAssessment[]> {
+  if (selection.recipeId !== "invoice" && selection.recipeId !== "finance") throw new AnalysisError("Unknown combination recipe. No assessment was applied.", 400);
+  if (!requirements.length) return [];
+  const evidence = combinationEvidence.filter(e => e.recipe === selection.recipeId);
+  const files = selection.recipeId === "finance"
+    ? ["artifacts/finance-consolidation-demo/wiring-worker.py", "artifacts/finance-consolidation-demo/vendor/forecast/calculations.py", "artifacts/finance-consolidation-demo/vendor/reporting/reporting.py"]
+    : ["artifacts/invoice-consolidation/src/domain/engine.ts", "artifacts/invoice-finder/src/domain/search.ts",
+      "artifacts/approval-desk/src/domain/bulk.ts", "artifacts/approval-desk/src/domain/ledger.ts",
+      "artifacts/spend-tracker/src/domain/lines.ts"];
+  const source = await Promise.all(files.map(async file => ({ file, text: await assessmentSource(file) })));
+  const active = evidence.filter(e => selection.capabilityIds.includes(e.id) && selection.selectedSources.some(s => s.id === e.source) && selection.wiring.edgeIds.includes(e.edge));
+  const result = await (options.analyzer ?? analyze)({
+    purpose: "combination-assessment", promptVersion: "combination-evidence-v1", force: options.force,
+    instructions: `${groundingInstructions} Map requirements only to active supplied capabilities backed by the source/contract. complete means documented source alignment only, never a passed requirement test. A compound requirement with unsupported clauses is partial. Read-only and negative requests are constraints. No measured performance or external integrations inferred from local demos. Return JSON exactly: ${mappingShape}`,
+    input: { requirements, scope: { userId: selection.userId, caseId: selection.id },
+      selection: { recipeId: selection.recipeId, capabilityIds: selection.capabilityIds, selectedSources: selection.selectedSources,
+        wiring: selection.wiring, config: selection.config }, contracts: evidence, active, source },
+    schema: requirementMappingSchema(requirements.map(r => r.id), active.map(c => c.id)),
+  });
   return requirements.map(r => {
-    if (constraint.test(r.text)) return { ...r, status: "constraint", capabilityIds: [], note: "Constraint to check when trying the combination." };
-    const clauses = r.text.split(/\s+(?:and|also|plus)\s+|[;\n]+/i).map(s => s.trim()).filter(Boolean);
-    const matched = rules.filter(rule => rule.recipe === selection.recipeId && rule.match.test(r.text));
-    const active = matched.filter(rule => selection.capabilityIds.includes(rule.id)
-      && selection.selectedSources.some(s => s.id === rule.source) && selection.wiring.edgeIds.includes(rule.edge));
-    const covered = clauses.length > 0 && clauses.every(clause => active.some(rule => rule.exact.test(clause)));
-    const absent = matched.filter(rule => !active.includes(rule));
-    const status = covered ? "covered" : active.length ? "partial" : "missing";
-    return {
-      ...r, status, capabilityIds: active.map(rule => rule.id),
-      note: covered ? "Matched to the selected, wired capabilities."
-        : absent.length ? `${absent.map(rule => rule.label).join(", ")} is not included.`
-        : active.length ? "Related capabilities are included; the full requirement still needs review."
-        : "No matching capability in this combination.",
-    };
+    const m = result.data.requirements.find(m => m.id === r.id)!;
+    return { ...r, status: m.constraint ? "constraint" : !m.capabilityIds.length ? "missing" : m.complete ? "covered" : "partial",
+      capabilityIds: m.constraint ? [] : m.capabilityIds,
+      note: `${m.reason}${m.limitations.length ? ` Limitations: ${m.limitations.join(" ")}` : ""} ${provenanceLabel(result.provenance)}` };
   });
 }

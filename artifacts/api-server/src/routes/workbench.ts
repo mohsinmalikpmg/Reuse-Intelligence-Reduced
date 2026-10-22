@@ -12,6 +12,7 @@ import {
   type TestSession,
 } from "@workspace/api-zod";
 import type { TestSessionRow } from "@workspace/db";
+import { WorkbenchInputError } from "../lib/workbench-input";
 import { sampleInputById, sampleInputs, sampleInputsFor } from "../engine/workorders";
 import { getCase, updateCaseRow } from "../lib/store";
 import { WorkbenchError, buildComparison, buildSolutionWorkbench, currentFingerprints, latestPairs, pairRejection, runCaseVersion, runComparison, runSolution, solutionOr404, toSampleInput } from "../lib/workbench";
@@ -31,6 +32,7 @@ import {
 const router: IRouter = Router();
 
 function fail(res: Response, err: unknown): void {
+  if(err instanceof WorkbenchInputError){res.status(err.status).json({error:err.message,issues:err.issues,contracts:err.contracts});return;}
   if (err instanceof WorkbenchError) {
     res.status(err.status).json({ error: err.message });
     return;

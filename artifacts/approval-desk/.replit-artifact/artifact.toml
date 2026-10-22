@@ -12,10 +12,10 @@ paths = [ "/approval-desk/" ]
 localPort = 18992
 
 [services.development]
-run = "pnpm --filter @workspace/approval-desk run dev"
+run = "pnpm --filter @workspace/approval-desk exec vite --config host-theme.vite.config.ts --host 0.0.0.0"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/approval-desk", "run", "build" ]
+build = [ "pnpm", "--filter", "@workspace/approval-desk", "exec", "vite", "build", "--config", "host-theme.vite.config.ts" ]
 serve = "static"
 publicDir = "artifacts/approval-desk/dist/public"
 

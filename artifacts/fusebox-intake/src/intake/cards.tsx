@@ -55,31 +55,55 @@ export function CapabilityCard({ item, sourceName, onSave, onConfirm, onCarry }:
   </article>;
 }
 
-const EXT = ['txt', 'md', 'csv', 'json', 'pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'tsx', 'ts', 'js', 'jsx', 'py', 'html', 'css', 'xml', 'yaml', 'yml', 'sql'];
-const SAMPLES: Record<Source['id'], { name: string; text: string }> = {
+export const EXT = ['txt', 'md', 'csv', 'json', 'pdf', 'png', 'jpg', 'jpeg', 'webp', 'zip', 'tsx', 'ts', 'js', 'jsx', 'py', 'html', 'css', 'xml', 'yaml', 'yml', 'sql'];
+export const SAMPLES: Record<Source['id'], { name: string; text: string }> = {
   problem: { name: 'Sample · supervisor problem statement', text: 'Our team reviews a weekly export of maintenance work orders by hand before the planning meeting. Recurring equipment problems are easy to miss across shifts. We want recurring issues grouped by equipment, links back to the original work orders, and suggested next actions that a supervisor decides on. Nothing should change records in the maintenance system automatically.' },
   prototype: { name: 'Sample · spreadsheet prototype', text: 'README (sample): Upload a weekly CSV export. Rows are grouped by equipment and a keyword-based failure theme. Each group shows a short summary and the list of work-order IDs.\nSchema: order_id, equipment_id, description, completion_date.\nDepends on a manual export; no live connection.' },
   agent: { name: 'Sample · assistant instructions', text: 'SYSTEM PROMPT (sample): Use only the work orders supplied in the conversation. Identify recurring issues, suggest next actions for a supervisor, and do not create or modify any records.\nExample input: Pump P-104 seal leak in two work orders.\nExample output: Repeated seal leaks on P-104 — suggest supervisor review.' },
 };
 
-export function SourceCard({ source, recordId, attachments, onSave, onDirty, onUploaded, saving }: { source: Source; recordId: string; attachments: IntakeAttachment[]; onSave: (next: Source) => Promise<boolean>; onDirty: (dirty: boolean) => void; onUploaded: (a: IntakeAttachment) => void; saving: boolean }) {
+/** First few words of free text, used as a default name. */
+export function deriveName(text: string, fallback: string, words = 6) {
+  const all = text.trim().replace(/\s+/g, ' ').split(' ').filter(Boolean);
+  if (!all.length) return fallback;
+  let out = all.slice(0, words).join(' ').replace(/[.,;:!?\-–—]+$/, '');
+  if (out.length > 60) out = out.slice(0, 58).trim();
+  return all.length > words || out.length < all.join(' ').length ? `${out}…` : out;
+}
+
+const PROMPT: Record<Source['id'], { q: string; ph: string }> = {
+  problem: { q: 'What are you trying to change?', ph: 'Who is affected, what happens today, and what would better look like?' },
+  prototype: { q: 'What have you built?', ph: 'What it does step by step, what goes in and comes out, what it depends on. Paste a README or schema if you have one.' },
+  agent: { q: 'How is your agent set up?', ph: 'Paste its instructions, tools and knowledge sources, plus one example of a question and its answer.' },
+};
+
+export type SourceCardHandle = { next: () => Source | null };
+
+export function SourceCard({ source, recordId, attachments, privacyOk, onRegister, onDirty, onReading, onUploaded, autoFocus }: { source: Source; recordId: string; attachments: IntakeAttachment[]; privacyOk: boolean; onRegister: (h: SourceCardHandle | null) => void; onDirty: (dirty: boolean) => void; onReading: (reading: boolean) => void; onUploaded: (a: IntakeAttachment) => void; autoFocus?: boolean }) {
   const [draft, setDraft] = useState(source.text);
   const [files, setFiles] = useState(source.files);
   const [name, setName] = useState(source.name);
   const [over, setOver] = useState(false);
   const [error, setError] = useState('');
   const [reading, setReading] = useState(false);
-  const [permission, setPermission] = useState(false);
+  const [showFiles, setShowFiles] = useState(source.files.length > 0);
   const fileRef = useRef<HTMLInputElement>(null);
   const sig = `${source.text}\u0001${source.files.join('|')}\u0001${source.name}`;
   useEffect(() => { setDraft(source.text); setFiles(source.files); setName(source.name); }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
   const changed = draft !== source.text || files.join('|') !== source.files.join('|') || name !== source.name;
-  const dirtyCallback = useRef(onDirty);
-  dirtyCallback.current = onDirty;
-  useEffect(() => { dirtyCallback.current(changed); }, [changed]);
+  const cbs = useRef({ onDirty, onReading, onRegister });
+  cbs.current = { onDirty, onReading, onRegister };
+  useEffect(() => { cbs.current.onDirty(changed); }, [changed]);
+  useEffect(() => { cbs.current.onReading(reading); }, [reading]);
   const byId = new Map(attachments.map(a => [a.id, a]));
+  const autoName = !name.trim() || name === sourceLabels[source.id] || name === deriveName(source.text, sourceLabels[source.id]);
+  const effectiveName = autoName ? deriveName(draft, sourceLabels[source.id]) : name.trim();
+  const latest = useRef<Source | null>(null);
+  latest.current = changed ? { ...source, name: effectiveName, text: draft.trim(), files, supplied: !!(draft.trim() || files.length) } : null;
+  useEffect(() => { cbs.current.onRegister({ next: () => latest.current }); return () => cbs.current.onRegister(null); }, []);
   const accept = async (incoming: File[]) => {
-    if (!permission) { setError('Confirm the privacy check below before uploading files.'); return; }
+    if (!privacyOk) { setError('Tick the privacy check below before uploading files.'); return; }
+    if (!incoming.length) return;
     setError(''); setReading(true);
     const errors: string[] = [];
     for (const file of incoming) {
@@ -96,26 +120,30 @@ export function SourceCard({ source, recordId, attachments, onSave, onDirty, onU
     setError(errors.join(' '));
     setReading(false);
   };
-  const isProblem = source.id === 'problem';
-  const guidance = isProblem ? 'Who is affected? What happens today? What would better look like? What must not change?' : source.id === 'prototype' ? 'What does it do, step by step? Include its data schema, a worked example, and anything it depends on.' : 'Paste its instructions, tools and knowledge sources. Include one example of what you asked and what it returned.';
-  const empty = !source.text && !source.files.length && !draft && !files.length;
-  return <article className="fi-card fi-source fi-collection-card">
-    <div className="fi-source-top"><div><p className="fi-input-kicker">{isProblem ? '01 / THE NEED' : source.id === 'prototype' ? '02 / THE SOLUTION' : '03 / THE AGENT'}</p><h3>{isProblem ? 'Tell us what needs to change.' : source.id === 'prototype' ? 'Show us what you’ve built.' : 'Bring the instructions behind the agent.'}</h3></div><span className={`fi-label ${source.changed ? 'warm' : 'blue'}`}>{source.changed ? 'Changed source' : source.supplied ? 'Saved material' : 'Not supplied'}</span></div>
-    <p className="fi-input-guidance">{guidance}</p>
-    {empty && <p className="fi-hint" style={{ marginBottom: 8 }}><button className="fi-link" data-testid={`button-sample-${source.id}`} onClick={() => { setDraft(SAMPLES[source.id].text); setName(SAMPLES[source.id].name); }}>Fill with a sample input</button></p>}
-    <label className="fi-input-label" htmlFor={`name-${source.id}`}>Give this input a name</label>
-    <input id={`name-${source.id}`} data-testid={`input-name-${source.id}`} className="fi-input" placeholder={sourceLabels[source.id]} value={name} onChange={e => setName(e.target.value)} />
-    <div className="fi-editor-label"><label className="fi-input-label" htmlFor={`source-${source.id}`}>{isProblem ? 'Describe it in your own words' : source.id === 'prototype' ? 'Description, README or schema' : 'Instructions and example input / output'}</label><span>Paste or write</span></div>
-    <textarea id={`source-${source.id}`} data-testid={`input-text-${source.id}`} className="fi-input fi-source-text" rows={isProblem ? 6 : 8} value={draft} onChange={e => setDraft(e.target.value)} />
-    <div className="fi-source-prompts"><strong>Helpful to include</strong>{(isProblem ? ['People & context', 'Today’s process', 'Desired outcome', 'Constraints'] : source.id === 'prototype' ? ['Workflow', 'Input → output', 'Data model', 'Dependencies'] : ['System prompt', 'Tools & knowledge', 'Example conversation', 'Dependencies']).map(t => <span key={t}>{t}</span>)}</div>
-    <label className="fi-check fi-permission"><input type="checkbox" data-testid={`check-privacy-${source.id}`} checked={permission} onChange={e => setPermission(e.target.checked)} />I have removed credentials, personal information and restricted data from this material.</label>
-    <div className={`fi-dropzone ${over ? 'over' : ''}`} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={e => { e.preventDefault(); setOver(false); void accept(Array.from(e.dataTransfer.files)); }}>
-      <UploadCloud /><div><strong>{reading ? 'Uploading and reading…' : 'Drop supporting files here'}</strong><p>or <button className="fi-link" data-testid={`button-files-${source.id}`} disabled={reading || !permission} onClick={() => fileRef.current?.click()}>choose files</button> · up to 10 MB each</p></div>
-      <input ref={fileRef} className="fi-file-input" id={`files-${source.id}`} aria-label={`Choose files for ${sourceLabels[source.id]}`} type="file" multiple accept={EXT.map(x => `.${x}`).join(',')} disabled={reading || !permission} onChange={e => { void accept(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
+  const p = PROMPT[source.id];
+  const empty = !draft && !files.length;
+  return <article className="fi-src" data-testid={`card-source-${source.id}`}>
+    <div className="fi-src-head">
+      <label className="fi-src-q" htmlFor={`source-${source.id}`}>{p.q}</label>
+      {source.changed ? <span className="fi-label warm">Changed since interpretation</span> : changed ? <span className="fi-src-state dirty">Not saved yet</span> : source.supplied ? <span className="fi-src-state">Saved</span> : null}
     </div>
-    <p className="fi-hint">Files are stored with this intake on your account. Text, code, CSV, JSON, Markdown and readable PDFs are extracted for interpretation; images and ZIPs may be kept as references only. The file list below shows exactly what was read.</p>
-    {error && <p className="fi-file-error" role="alert">{error} You can retry using “choose files”.</p>}
-    {files.map(id => { const a = byId.get(id); return <div className="fi-attached" key={id}><Paperclip /><span>{a ? `${a.name} · ${formatSize(a.size)} · ${a.status === 'extracted' ? 'text extracted' : a.status === 'reference' ? 'reference only; contents not read' : `could not be read${a.error ? `: ${a.error}` : ''}`}` : 'Attachment unavailable'}</span>{a && <a className="fi-icon" href={`/api/intake/files/${a.id}`} aria-label={`Download ${a.name}`}><Download /></a>}<button className="fi-icon" aria-label="Remove file from this input" onClick={() => setFiles(files.filter(f => f !== id))}><X /></button></div>; })}
-    <div className="fi-source-save"><span>{saving ? 'Saving…' : changed ? 'Unsaved changes · keep this input to save it' : source.supplied ? 'Saved with this intake' : 'Nothing saved for this input yet'}</span><button className="fi-btn primary" data-testid={`button-keep-${source.id}`} disabled={!changed || !permission || (!draft.trim() && !files.length) || reading || saving} onClick={() => void onSave({ ...source, name: name.trim() || sourceLabels[source.id], text: draft.trim(), files, supplied: !!(draft.trim() || files.length) })}><Check />Keep this input</button></div>
+    <textarea id={`source-${source.id}`} data-testid={`input-text-${source.id}`} className="fi-src-text" rows={source.id === 'problem' ? 7 : 8} placeholder={p.ph} autoFocus={autoFocus} value={draft} onChange={e => setDraft(e.target.value)} />
+    <div className="fi-src-tools">
+      {!showFiles && <button type="button" className="fi-ghost" data-testid={`button-attach-${source.id}`} onClick={() => setShowFiles(true)}><Paperclip />Attach files</button>}
+      {empty && <button type="button" className="fi-ghost" data-testid={`button-sample-${source.id}`} onClick={() => { setDraft(SAMPLES[source.id].text); setName(SAMPLES[source.id].name); }}>Try an example</button>}
+      <details className="fi-src-details"><summary data-testid={`button-details-${source.id}`}>Name: {effectiveName}</summary>
+        <label className="fi-input-label" htmlFor={`name-${source.id}`}>Rename this input</label>
+        <input id={`name-${source.id}`} data-testid={`input-name-${source.id}`} className="fi-input" placeholder={deriveName(draft, sourceLabels[source.id])} value={autoName ? '' : name} onChange={e => setName(e.target.value)} />
+      </details>
+    </div>
+    {showFiles && <div className="fi-src-files">
+      <div className={`fi-dropzone ${over ? 'over' : ''}`} onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={e => { e.preventDefault(); setOver(false); void accept(Array.from(e.dataTransfer.files)); }}>
+        <UploadCloud /><div><strong>{reading ? 'Uploading and reading…' : 'Drop files here'}</strong><p>or <button type="button" className="fi-link" data-testid={`button-files-${source.id}`} disabled={reading || !privacyOk} onClick={() => fileRef.current?.click()}>choose files</button> · 10 MB each</p></div>
+        <input ref={fileRef} className="fi-file-input" id={`files-${source.id}`} aria-label={`Choose files for ${sourceLabels[source.id]}`} type="file" multiple accept={EXT.map(x => `.${x}`).join(',')} disabled={reading || !privacyOk} onChange={e => { void accept(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
+      </div>
+      <p className="fi-hint">{privacyOk ? 'Text, code, CSV, JSON, Markdown and readable PDFs are read. Images and ZIPs are kept as references only.' : 'Tick the privacy check below to enable uploads.'}</p>
+      {error && <p className="fi-file-error" role="alert">{error} You can retry using “choose files”.</p>}
+      {files.map(id => { const a = byId.get(id); return <div className="fi-attached" key={id}><Paperclip /><span>{a ? `${a.name} · ${formatSize(a.size)} · ${a.status === 'extracted' ? 'text read' : a.status === 'reference' ? 'reference only; not read' : `could not be read${a.error ? `: ${a.error}` : ''}`}` : 'Attachment unavailable'}</span>{a && <a className="fi-icon" href={`/api/intake/files/${a.id}`} aria-label={`Download ${a.name}`}><Download /></a>}<button type="button" className="fi-icon" aria-label="Remove file from this input" onClick={() => setFiles(files.filter(f => f !== id))}><X /></button></div>; })}
+    </div>}
   </article>;
 }

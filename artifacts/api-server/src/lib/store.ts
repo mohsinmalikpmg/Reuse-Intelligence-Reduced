@@ -10,6 +10,7 @@ import { SIMULATION_LABEL } from "./simulation";
 import { consolidationApproved, nextStep } from "./analysis";
 import { caseEvidence } from "./evidence";
 import { foldedIntoFor } from "./governance";
+import { caseVisible, visibleCaseRows } from "./case-access";
 
 import { newId } from "./ids";
 export { newId };
@@ -114,17 +115,18 @@ export async function getBrief(id: string): Promise<Brief | null> {
 
 export async function listCaseRows(): Promise<Case[]> {
   const rows = await db.select().from(casesTable).orderBy(desc(casesTable.updatedAt));
-  return rows.map(toCase);
+  return rows.filter(row => caseVisible(row.id)).map(toCase);
 }
 
 export async function getCase(id: string): Promise<Case | null> {
+  if (!caseVisible(id)) return null;
   const [row] = await db.select().from(casesTable).where(eq(casesTable.id, id));
   return row ? toCase(row) : null;
 }
 
 export async function findCaseForBrief(briefId: string): Promise<Case | null> {
   const [row] = await db.select().from(casesTable).where(eq(casesTable.briefId, briefId)).orderBy(desc(casesTable.updatedAt)).limit(1);
-  return row ? toCase(row) : null;
+  return row && caseVisible(row.id) ? toCase(row) : null;
 }
 
 /** Candidate solutions = every other solution addressing the same business problem(s) as the base. */
@@ -232,6 +234,7 @@ export async function createCase(input: {
 }
 
 export async function updateCaseRow(id: string, patch: Partial<Omit<CaseRow, "id" | "createdAt" | "updatedAt">>): Promise<Case> {
+  if (!caseVisible(id)) throw new Error("Case not found");
   const [row] = await db.update(casesTable).set(patch).where(eq(casesTable.id, id)).returning();
   if (!row) throw new Error(`Case ${id} not found`);
   return toCase(row);
@@ -241,12 +244,12 @@ export async function updateCaseRow(id: string, patch: Partial<Omit<CaseRow, "id
 
 export async function listExperiments(): Promise<Experiment[]> {
   const rows = await db.select().from(experimentsTable).orderBy(desc(experimentsTable.createdAt));
-  return rows.map(toExperiment);
+  return visibleCaseRows(rows).map(toExperiment);
 }
 
 export async function getExperiment(id: string): Promise<Experiment | null> {
   const [row] = await db.select().from(experimentsTable).where(eq(experimentsTable.id, id));
-  return row ? toExperiment(row) : null;
+  return row && caseVisible(row.caseId) ? toExperiment(row) : null;
 }
 
 export async function insertExperiment(exp: Omit<Experiment, "createdAt">): Promise<Experiment> {
@@ -272,12 +275,12 @@ export async function insertExperiment(exp: Omit<Experiment, "createdAt">): Prom
 
 export async function listDecisions(caseId: string): Promise<Decision[]> {
   const rows = await db.select().from(decisionsTable).where(eq(decisionsTable.caseId, caseId)).orderBy(desc(decisionsTable.createdAt));
-  return rows.map(toDecision);
+  return visibleCaseRows(rows).map(toDecision);
 }
 
 export async function listAllDecisions(): Promise<Decision[]> {
   const rows = await db.select().from(decisionsTable).orderBy(desc(decisionsTable.createdAt));
-  return rows.map(toDecision);
+  return visibleCaseRows(rows).map(toDecision);
 }
 
 export async function insertDecision(d: Omit<Decision, "createdAt">): Promise<Decision> {

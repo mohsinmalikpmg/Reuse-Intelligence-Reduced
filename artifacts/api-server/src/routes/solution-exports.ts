@@ -14,6 +14,10 @@ import { validateExportLinks } from "../lib/solution-export-links";
 const router: IRouter = Router();
 const base = "/solution-exports";
 const digest = (value: unknown): string => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+async function compositionExportVisible(caseId: string, userId: string): Promise<boolean> {
+  const { rows } = await pool.query("SELECT 1 FROM compositions WHERE case_id=$1 AND user_id<>$2 LIMIT 1",[caseId,userId]);
+  return rows.length === 0;
+}
 function present(row: Record<string, any>, userId: string, manager: boolean) {
   return {
     id: row.id, caseId: row.case_id, solutionId: row.solution_id, title: row.title,
@@ -40,7 +44,7 @@ router.use(base, async (req, res, next) => {
 });
 router.get(base, async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT * FROM solution_exports WHERE ($1::text IS NULL OR case_id=$1) AND ($2::text IS NULL OR solution_id=$2) AND (case_id NOT LIKE 'cc\\_%' ESCAPE '\\' OR created_by=$3 OR $4) ORDER BY created_at DESC",
+    "SELECT e.* FROM solution_exports e WHERE ($1::text IS NULL OR e.case_id=$1) AND ($2::text IS NULL OR e.solution_id=$2) AND (e.case_id NOT LIKE 'cc\\_%' ESCAPE '\\' OR e.created_by=$3 OR $4) AND NOT EXISTS (SELECT 1 FROM compositions c WHERE c.case_id=e.case_id AND c.user_id<>$3) ORDER BY e.created_at DESC",
     [typeof req.query.caseId === "string" ? req.query.caseId : null, typeof req.query.solutionId === "string" ? req.query.solutionId : null, req.user!.id, res.locals.manager],
   );
   res.json(rows.map(row => present(row, req.user!.id, res.locals.manager)));
@@ -48,6 +52,7 @@ router.get(base, async (req, res) => {
 router.post(base, async (req, res) => {
   const parsed = CreateSolutionExportBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "A case and its current update timestamp are required." }); return; }
+  if (!(await compositionExportVisible(parsed.data.caseId,req.user!.id))) { res.status(404).json({error:"Case not found."}); return; }
   // Read the whole case once. All build inputs below derive from this immutable snapshot.
   const combined = parsed.data.caseId.startsWith("cc_")
     ? await ownedConsolidationCase(req.user!.id, parsed.data.caseId) : null;
@@ -118,6 +123,10 @@ router.post(base, async (req, res) => {
   }
 });
 router.put(`${base}/:id/link`, async (req, res) => {
+  const existingExport = await pool.query("SELECT case_id FROM solution_exports WHERE id=$1",[String(req.params.id)]);
+  if (existingExport.rows[0] && !(await compositionExportVisible(existingExport.rows[0].case_id,req.user!.id))) {
+    res.status(404).json({error:"Export not found."}); return;
+  }
   const parsed = SaveSolutionExportLinkBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Provide workspace URL, optional published URL and current link revision." }); return; }
   let links;
@@ -135,6 +144,7 @@ router.put(`${base}/:id/link`, async (req, res) => {
 router.get(`${base}/:id/download`, async (req, res) => {
   const { rows } = await pool.query("SELECT * FROM solution_exports WHERE id=$1", [String(req.params.id)]);
   const row = rows[0];
+  if (row && !(await compositionExportVisible(row.case_id,req.user!.id))) { res.status(404).json({error:"Export not found."}); return; }
   if (row?.case_id?.startsWith("cc_") && row.created_by !== req.user!.id && !res.locals.manager) { res.status(404).json({ error: "Export not found." }); return; }
   if (!row?.object_path || !["ready","incomplete"].includes(row.status)) { res.status(404).json({ error: "No validated ZIP available for this export." }); return; }
   try {

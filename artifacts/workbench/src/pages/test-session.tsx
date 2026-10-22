@@ -52,7 +52,7 @@ export default function TestSessionPage() {
 
       {s.pairs.length > 1 && (
         <div className="mt-5 flex flex-wrap gap-2">{s.pairs.map((p, i) => (
-          <button key={p.sampleInputId} data-testid={`pair-${i}`} onClick={() => { setIdx(i); setPick(null); }} className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13.5px] font-medium", i === idx ? "border-primary bg-primary text-white" : "border-input bg-card")}>
+          <button key={p.sampleInputId} data-testid={`pair-${i}`} onClick={() => { setIdx(i); setPick(null); }} className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13.5px] font-medium", i === idx ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card")}>
             {answered.includes(p.sampleInputId) && <Check className="h-3.5 w-3.5" />}Pair {i + 1}: {p.inputName}{p.expired ? " (expired)" : ""}
           </button>
         ))}</div>
@@ -81,7 +81,7 @@ export default function TestSessionPage() {
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[14px]">
               <span className="text-muted-foreground">Usefulness (optional)</span>
-              {[1, 2, 3, 4, 5].map((n) => <button key={n} data-testid={`rating-${n}`} onClick={() => setRating(rating === n ? null : n)} className={cn("grid h-9 w-9 place-items-center rounded-lg border font-semibold", rating === n ? "border-primary bg-primary text-white" : "border-input bg-card")}>{n}</button>)}
+              {[1, 2, 3, 4, 5].map((n) => <button key={n} data-testid={`rating-${n}`} onClick={() => setRating(rating === n ? null : n)} className={cn("grid h-9 w-9 place-items-center rounded-lg border font-semibold", rating === n ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card")}>{n}</button>)}
             </div>
             <input data-testid="input-comment" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" className="mt-3 h-11 w-full rounded-xl border border-input px-3 outline-none focus:border-primary" />
             <div className="mt-3 flex flex-wrap items-center gap-4">

@@ -3,17 +3,17 @@ name: Solution package evidence boundaries
 description: Authorization and evidence rules for uploaded solution ZIPs
 ---
 
-Treat ZIP management as a privileged account action, not a demo-persona action. New accounts must not gain IT permissions automatically.
+Treat shared-library ZIP management and publication approval as privileged account actions, not demo-persona actions. New accounts must not gain IT permissions automatically.
 
 **Why:** the workbench persona switch is for exploring workflows, not an authenticated authorization boundary. Uploaded enterprise source needs a real server-side permission check.
 
 **How to apply:** preserve explicit administrative grants when adding management features; never derive upload/review permissions from a selected persona or request body.
 
-Source registration is IT setup, not a step for a solution seeker completing intake.
+Private solution registration is available to seekers in the approved product direction: Library ZIP upload and saving an existing solution intake should both create an owner-private draft usable in Compare and Workbench planning before IT approval. Shared publication remains IT-controlled.
 
-**Why:** the user approved separating these after intake exposed a registration action their account could not perform.
+**Why:** the user approved private exploration before IT approval, without repeating intake analysis or exposing the solution to everyone.
 
-**How to apply:** let seekers use the registered library; keep registration in the IT Owner view with a real account entitlement. Missing setup must be stated plainly, not bypassed by granting rights or relabeling every forbidden request as a permission failure.
+**How to apply:** separate owner-private upload rights from shared-library management grants. Reuse reviewed intake evidence, enforce privacy on downstream comparisons and plans, and require authorized IT approval of a specific revision for shared publication. Neither private registration nor approval establishes executable integration.
 
 For the supplied demo packages, the user explicitly requested “just use the demo persona” rather than another account setup.
 
@@ -62,6 +62,12 @@ evidence; leave external launch awaiting import or link recorded/unverified
 until actual user-participating launch verification is available.
 
 ## Exported UI evidence
+
+The indexed demo package must be refreshed through its verified packaging process after engine evolution; never silence a source-hash mismatch by merely editing the manifest hash.
+
+**Why:** Intake matching can successfully confirm a draft yet fail at its destination because the source-evidence index is stale. Factory-based executors and changed output attribution can also invalidate old package proof assumptions.
+
+**How to apply:** Keep the package's executable checks, source ranges, limitations and archive hashes aligned with actual engine behavior before replacing the index. Preserve immutable older archives.
 
 Check the mounted exported application, not just a successful HTTP response and
 engine tests.

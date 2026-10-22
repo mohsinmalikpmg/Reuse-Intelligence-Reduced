@@ -4,13 +4,16 @@ import { pool } from "@workspace/db";
 import { z } from "zod";
 import { blankModel, intakeModelSchema, confirmationIssues } from "../lib/intake-model";
 import { interpretIntake } from "../lib/intake-interpret";
+import { AnalysisError } from "../lib/ai-analysis";
+import { withLegacyName, trackIntakeEdits } from "../lib/intake-reconcile";
 import { privateObjectFile } from "../lib/intake-files";
 import { matchBrief } from "../lib/matching";
 import type { Brief } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 const revisionSchema = z.object({ revision: z.number().int().positive() });
-const inputSchema = z.object({ title: z.string().trim().min(1).max(200) });
+const inputSchema = z.object({ title: z.string().trim().max(200).optional().default("") });
+const interpretSchema = revisionSchema.extend({ regenerateName: z.boolean().optional() });
 const updateSchema = inputSchema.extend({ model: intakeModelSchema, revision: z.number().int().positive() });
 router.use("/intake/records", (req, res, next) => {
   if (!req.isAuthenticated()) { res.status(401).json({ error: "Sign in to access your intakes." }); return; }
@@ -31,7 +34,8 @@ async function record(id: string, userId: string) {
 }
 async function present(row: Record<string, any>) {
   const { rows: files } = await pool.query("SELECT id,name,source_id,size,status,text_content,error FROM intake_attachments WHERE record_id=$1 AND user_id=$2", [row.id, row.user_id]);
-  return { id: row.id, title: row.title, model: row.model, revision: row.revision, status: row.status, updatedAt: row.updated_at.toISOString(),
+  const model = withLegacyName(intakeModelSchema.parse(row.model), row.title);
+  return { id: row.id, title: model.name?.value ?? row.title, model, revision: row.revision, status: row.status, updatedAt: row.updated_at.toISOString(),
     attachments: files.map(a => ({ id: a.id, name: a.name, sourceId: a.source_id, size: a.size, status: a.status, text: a.text_content, error: a.error })) };
 }
 router.get("/intake/records", async (req, res) => {
@@ -40,8 +44,8 @@ router.get("/intake/records", async (req, res) => {
 });
 router.post("/intake/records", async (req, res) => {
   const parsed = inputSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: "Give the intake a title (1–200 characters)." }); return; }
-  const { rows } = await pool.query("INSERT INTO intake_records(id,user_id,title,model) VALUES($1,$2,$3,$4) RETURNING *", [randomUUID(), req.user!.id, parsed.data.title, JSON.stringify(blankModel())]);
+  if (!parsed.success) { res.status(400).json({ error: "The optional intake title must be at most 200 characters." }); return; }
+  const { rows } = await pool.query("INSERT INTO intake_records(id,user_id,title,model) VALUES($1,$2,$3,$4) RETURNING *", [randomUUID(), req.user!.id, parsed.data.title, JSON.stringify(withLegacyName(blankModel(), parsed.data.title))]);
   res.status(201).json(await present(rows[0]));
 });
 router.get("/intake/records/:id", async (req, res) => {
@@ -54,9 +58,27 @@ router.put("/intake/records/:id", async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: "Invalid intake data. Check fields and unique item identifiers." }); return; }
   const old = await record(String(req.params.id), req.user!.id);
   if (!old) { res.status(404).json({ error: "Intake not found." }); return; }
-  const { model, revision, title } = parsed.data;
+  const { model, revision } = parsed.data;
+  if (old.revision !== revision) { res.status(409).json({ error: "This intake changed in another session. Reload before saving; your draft has not been applied." }); return; }
+  const beforeModel = withLegacyName(intakeModelSchema.parse(old.model), old.title);
+  const titleEdited = Object.hasOwn(req.body, "title") && parsed.data.title !== old.title;
+  const nameEdited = model.name?.value !== undefined && model.name.value !== beforeModel.name?.value;
+  if (titleEdited && nameEdited && parsed.data.title !== model.name?.value) {
+    res.status(400).json({ error: "The intake title and name conflict. Save one consistent name." }); return;
+  }
+  const requestedName = titleEdited ? parsed.data.title : nameEdited ? model.name!.value : beforeModel.name?.value;
+  if ((titleEdited || nameEdited) && !requestedName?.trim()) {
+    res.status(400).json({ error: "An existing intake name cannot be cleared; edit it or regenerate it." }); return;
+  }
+  model.name = titleEdited || nameEdited
+    ? { value: requestedName!, origin: "manual", provenance: "User-edited intake name." }
+    : beforeModel.name;
+  const title = model.name?.value ?? "";
+  trackIntakeEdits(model, beforeModel);
   // Clients cannot forge an interpretation fingerprint or final confirmation.
   model.interpretedHash = old.model.interpretedHash;
+  model.analysis = old.model.analysis;
+  model.nameAnalysis = old.model.nameAnalysis;
   model.confirmed = false;
   const { rows: owned } = await pool.query("SELECT id,source_id FROM intake_attachments WHERE record_id=$1 AND user_id=$2", [old.id, req.user!.id]);
   if (model.sources.some(s => s.files.some(id => !owned.some(a => a.id === id && a.source_id === s.id)))) {
@@ -70,9 +92,18 @@ router.put("/intake/records/:id", async (req, res) => {
       model.orderReviewed = false;
       if (s.id === "problem") for (const f of Object.values(model.profile)) { f.reviewed = false; f.changed = true; }
       for (const r of model.requirements) if (r.sources.includes(s.id)) { r.reviewed = false; r.changed = true; }
-      for (const c of model.capabilities) if ((c.sourceId ?? c.id) === s.id) { c.status = "Needs clarification"; c.changed = true; c.carry = false; }
+      const affected = new Set(model.requirements.filter(r => r.sources.includes(s.id)).map(r => r.id));
+      for (const c of model.capabilities) if ((c.sourceId ?? c.id) === s.id || c.requirementIds?.some(id => affected.has(id))) { c.status = "Needs clarification"; c.changed = true; c.carry = false; affected.add(c.id); }
+      for (const c of model.coverage ?? []) if (c.sourceId === s.id) c.reviewed = false;
+      for (const o of model.overlaps ?? []) if (o.itemIds.some(id => affected.has(id))) o.resolved = false;
     }
   }
+  if (beforeModel.sources.some(s => !model.sources.some(x => x.id === s.id))) {
+    model.agreed = false;
+    for (const f of Object.values(model.profile)) { f.reviewed = false; f.changed = true; }
+  }
+  const checked = intakeModelSchema.safeParse(model);
+  if (!checked.success) { res.status(400).json({ error: "Invalid item references or removed items. Remove stale mappings before saving." }); return; }
   const { rows } = await pool.query("UPDATE intake_records SET title=$1,model=$2,revision=revision+1,status=$3,updated_at=now() WHERE id=$4 AND user_id=$5 AND revision=$6 RETURNING *",
     [title, JSON.stringify(model), model.interpretedHash ? "review" : "draft", old.id, req.user!.id, revision]);
   if (!rows.length) { res.status(409).json({ error: "This intake changed in another session. Reload before saving; your draft has not been applied." }); return; }
@@ -104,13 +135,13 @@ router.post("/intake/records/:id/compare", async (req, res) => {
       data: field(""), requiredControls: field(""), successMeasures: field(""),
     };
     const brief: Brief = {
-      id, rawText: Object.values(model.profile).map(f => f.value).join("\n\n"),
+      id, rawText: [`Intake: ${model.name?.value ?? row.title}`, ...Object.values(model.profile).map(f => f.value)].join("\n\n"),
       fields, today: model.profile.problem.value, better: model.profile.outcome.value,
       requirements: model.requirements.map(r => ({ id: r.id, text: r.text, source: "added" })),
       clarifyingQuestion: null, clarification: null, source: "ai", valueStatement: "",
       confirmed: true, createdAt: new Date().toISOString(),
     };
-    brief.valueStatement = matchBrief(brief).valueStatement;
+    brief.valueStatement = (await matchBrief(brief)).valueStatement;
     await client.query(`INSERT INTO briefs(id,raw_text,fields,today,better,requirements,source,value_statement,confirmed)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,true) ON CONFLICT(id) DO NOTHING`,
     [id, brief.rawText, JSON.stringify(fields), brief.today, brief.better, JSON.stringify(brief.requirements), brief.source, brief.valueStatement]);
@@ -123,7 +154,7 @@ router.post("/intake/records/:id/compare", async (req, res) => {
   } finally { client.release(); }
 });
 router.post("/intake/records/:id/interpret", async (req, res) => {
-  const parsed = revisionSchema.safeParse(req.body);
+  const parsed = interpretSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "A valid revision is required." }); return; }
   const old = await record(String(req.params.id), req.user!.id);
   if (!old) { res.status(404).json({ error: "Intake not found." }); return; }
@@ -132,13 +163,14 @@ router.post("/intake/records/:id/interpret", async (req, res) => {
   interpreting.add(req.user!.id);
   try {
     const { rows: attachments } = await pool.query("SELECT * FROM intake_attachments WHERE record_id=$1 AND user_id=$2", [old.id, req.user!.id]);
-    const model = await interpretIntake(intakeModelSchema.parse(old.model), attachments);
-    const { rows } = await pool.query("UPDATE intake_records SET model=$1,revision=revision+1,status='review',updated_at=now() WHERE id=$2 AND user_id=$3 AND revision=$4 RETURNING *", [JSON.stringify(model), old.id, req.user!.id, old.revision]);
+    const model = await interpretIntake(withLegacyName(intakeModelSchema.parse(old.model), old.title), attachments, parsed.data.regenerateName, true, `${req.user!.id}:${old.id}`);
+    const { rows } = await pool.query("UPDATE intake_records SET model=$1,title=$5,revision=revision+1,status=$6,updated_at=now() WHERE id=$2 AND user_id=$3 AND revision=$4 RETURNING *", [JSON.stringify(model), old.id, req.user!.id, old.revision, model.name!.value, model.confirmed ? "confirmed" : "review"]);
     if (!rows.length) { res.status(409).json({ error: "Inputs changed while interpreting. Your newer edits were preserved. Run interpretation again." }); return; }
     res.json(await present(rows[0]));
   } catch (err) {
     req.log.warn({ errorType: err instanceof Error ? err.name : "Unknown" }, "Intake interpretation failed");
-    res.status(422).json({ error: "We could not interpret these inputs. Check that you supplied readable content and try again. Your saved inputs are unchanged." });
+    const safeMessage = err instanceof AnalysisError || (err instanceof Error && /^(Interpretation |Add at least|AI interpretation|This packet)/.test(err.message)) ? err.message : "We could not interpret these inputs. Check that you supplied readable content and try again.";
+    res.status(422).json({ error: `${safeMessage} Your saved inputs are unchanged.` });
   } finally { interpreting.delete(req.user!.id); }
 });
 router.post("/intake/records/:id/confirm", async (req, res) => {

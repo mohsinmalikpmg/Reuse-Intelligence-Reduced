@@ -238,7 +238,7 @@ export default function SolutionPage() {
               {v.caseId && (
                 <div className="mt-2 flex flex-wrap gap-4">
                   <Link href={`/workbench/${v.caseId}?mode=compare`} data-testid={`link-evidence-${v.version}`} className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">See the evidence <ArrowRight className="h-3.5 w-3.5" /></Link>
-                  {v.state !== "released" && <Link href={`/portfolio?case=${v.caseId}`} data-testid={`link-record-${v.version}`} className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">Consolidation record <ArrowRight className="h-3.5 w-3.5" /></Link>}
+                  {v.state !== "released" && <Link href={`/portfolio/review?case=${v.caseId}`} data-testid={`link-record-${v.version}`} className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-primary underline-offset-2 hover:underline">Consolidation record <ArrowRight className="h-3.5 w-3.5" /></Link>}
                 </div>
               )}
             </div>

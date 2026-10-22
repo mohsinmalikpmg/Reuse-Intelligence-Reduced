@@ -36,7 +36,9 @@ async function bundle(entry, output) {
 // Capability-specific statements describe actual code, not seeded marketing claims.
 const limitations = {
   readNotes: "Parses local pipe-delimited or free-text lines; no CMMS connection and not a general CSV parser.",
-  summarize: "First matching regex issue label plus leading sentence; no LLM. Both summarizer IDs share this executor and cap-summarize config key.",
+  readCsvNotes: "Reads normalized local work-order records with the shared note parser; not a general CSV parser or enterprise connector.",
+  summarize: "First matching regex issue label plus leading sentence; no LLM. Uses its own capability configuration key.",
+  patternSummarize: "Shared local summarizer factory using Pattern Finder's capability identity and configuration; no LLM.",
   identifyConcerns: "Counts exact site/tag/regex-issue groups; ignores untagged notes; not predictive detection.",
   clusterIssues: "Groups exact equipment class and regex issue with two reports, even within one site; skips general, wear and facility categories.",
   rankPatterns: "Sorts existing clusters by count then latest date; no semantic similarity or historical retrieval.",
@@ -124,7 +126,9 @@ check("base plus borrowed clustering, ranking, safety and follow-up actions", ()
   prove(borrowed,"cap-action-tracking",xs=>xs.filter(x=>x.kind==="action").length===4 && xs.some(x=>x.text.includes("due 2026-10-16") && x.text.includes("Open")));
   assert.ok(items(borrowed).some(x=>x.kind==="review" && x.text.startsWith("Safety:")));
   const delta = diffOutputs(base.output, borrowed.output);
-  assert.ok(delta.added > 0 && delta.stepsResponsible.includes("cap-clustering"));
+  // Ranking rewrites pattern output; clustering remains its recorded origin.
+  assert.ok(delta.added > 0 && delta.stepsResponsible.includes("cap-similarity"));
+  assert.ok(items(borrowed).filter(x=>x.kind==="pattern").every(x=>x.originStepId==="cap-clustering"));
   const repeat = run([...baseConfig.capabilityIds,"cap-clustering","cap-similarity","cap-safety-signals","cap-action-tracking"], sample.text, baseConfig.configValues);
   assert.deepEqual(repeat.output, borrowed.output);
 });
@@ -201,8 +205,11 @@ SOURCE_DATE_EPOCH optionally fixes createdAt (default 2026-10-01T00:00:00Z).
   const evidence = selected.map((cap) => {
     const mapped = registry.find((r) => r.capabilityId === cap.id);
     const lines = stepsText.split("\n");
-    const start = lines.findIndex((line) => line.startsWith(`const ${mapped.symbol}: StepExecutor = `));
-    const end = lines.findIndex((line, i) => i > start && line === "};");
+    const factory = { readNotes: "noteReader", readCsvNotes: "noteReader", summarize: "summarizer", patternSummarize: "summarizer" }[mapped.symbol];
+    const start = lines.findIndex((line) => line.startsWith(factory ? `function ${factory}(` : `const ${mapped.symbol}: StepExecutor = `));
+    const end = factory
+      ? lines.findIndex((line, i) => i > start && line.startsWith(`const ${mapped.symbol}=`))
+      : lines.findIndex((line, i) => i > start && line === "};");
     if (start < 0 || end < start || !limitations[mapped.symbol]) throw new Error(`Unproven executor: ${cap.id}`);
     return { capabilityId: cap.id, solutionId: cap.sourceSolutionId, file: "engine/steps.ts",
       symbol: mapped.symbol, lines: [start + 1, end + 1],

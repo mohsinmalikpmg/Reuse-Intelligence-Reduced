@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 /**
  * Convergence circuit between the current products and the successor. Three truthful states:
  * preview (nothing approved: dim, labelled illustrative), draft (owner approved, IT pending: traces live, cube unlit)
- * and converged (IT approval persisted and the successor version is current: traces draw in, the cube energizes once).
+ * and converged (IT approval persisted and the successor version is current: traces draw in, the cube fuses once).
  */
 function ConvergeCircuit({ sources, successor }: { sources: { id: string; kind: DispositionKind }[]; successor: SolutionVersion | null }) {
   const state: "preview" | "draft" | "converged" = !successor ? "preview" : successor.state === "current" ? "converged" : "draft";
@@ -149,7 +149,7 @@ export function Consolidation({ caseId, initialSelection = null }: { caseId: str
             {DISPOSITIONS.map((d) => {
               const on = kindOf(chosen) === d.kind;
               return <button key={d.kind} role="radio" aria-checked={on} disabled={role !== "it" || locked || setDisp.isPending} data-testid={`set-disposition-${d.kind.replace(/_/g, "-")}`} onClick={() => { if (!on) choose(chosen.solution.id, d.kind, reason); }}
-                className={cn("min-h-9 rounded-lg border px-3 text-[13.5px] font-medium disabled:opacity-60", on ? "border-primary bg-primary text-white" : "border-input bg-card")}>{d.label}{d.kind === DEFAULT[chosen.fate] && " (recommended)"}</button>;
+                className={cn("min-h-9 rounded-lg border px-3 text-[13.5px] font-medium disabled:opacity-60", on ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card")}>{d.label}{d.kind === DEFAULT[chosen.fate] && " (recommended)"}</button>;
             })}
           </div>
           {role === "it" && !locked && kindOf(chosen) === "retain" && chosen.fate !== "base" && (

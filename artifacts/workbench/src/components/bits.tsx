@@ -23,7 +23,7 @@ export function Page({ children, className }: { children: ReactNode; className?:
 
 /** Circuit stages (Power Cube kit). The eyebrow reads `01 / TRACE`, `02 / CONNECT + ENERGIZE`, `03 / GOVERN + CONVERGE`. */
 export type Stage = "trace" | "connect" | "converge";
-const STAGE_EYEBROW: Record<Stage, string> = { trace: "01 / Trace", connect: "02 / Connect + Energize", converge: "03 / Govern + Converge" };
+const STAGE_EYEBROW: Record<Stage, string> = { trace: "01 / Trace", connect: "02 / Connect + Fuse", converge: "03 / Govern + Converge" };
 
 export function StageEyebrow({ stage, note, className }: { stage: Stage; note?: ReactNode; className?: string }) {
   return (
