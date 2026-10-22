@@ -12,6 +12,7 @@ import { allCapabilities, businessProblems, getSolution, isRegisteredPrototype, 
 import { listAllDecisions, listCaseRows } from "../lib/store";
 import { pool } from "@workspace/db";
 import { consolidationRecipes } from "../lib/consolidation-recipes";
+import { capabilityUsage, isRecentRegistration } from "../lib/portfolio-analytics-counts";
 
 type SourceMeta = { id: string; name: string; recipeId?: string; provenance?: string; registeredAt?: string; registeredBy?: string; kind?: string };
 async function consolidationSources(): Promise<SourceMeta[]> {
@@ -34,7 +35,7 @@ async function savedCombinedCases(userId?: string): Promise<SavedCombined[]> {
 /**
  * Read-only IT analytics. Every count is derived from records returned alongside it; nothing here records a decision.
  * Catalog products are seeded demonstration data and carry no registration timestamp, so "new" only ever counts
- * apps registered through the prototype entrance, whose registration time is persisted.
+ * source/prototype registrations whose registration time is persisted.
  */
 const router: IRouter = Router();
 const NEW_WINDOW_DAYS = 30;
@@ -70,13 +71,12 @@ router.get("/portfolio/analytics", async (_req, res) => {
     };
   })];
   const registered = records.filter((r) => r.source !== "catalog");
-  const newRegistered = registered.filter((r) => r.registeredAt && now - new Date(r.registeredAt).getTime() <= NEW_WINDOW_DAYS * 86_400_000).length;
+  const newRegistered = registered.filter((r) => isRecentRegistration(r.registeredAt, now, NEW_WINDOW_DAYS)).length;
 
   // 2. Capabilities: unique ids and the distinct apps that declare them.
-  const caps = allCapabilities();
+  const caps = [...new Map(allCapabilities().map((c) => [c.id, c])).values()];
   const recipeCaps = recipeCapabilities(sources);
-  const usage = new Map<string, number>();
-  for (const s of all) for (const id of s.capabilityIds) usage.set(id, (usage.get(id) ?? 0) + 1);
+  const usage = capabilityUsage(all);
   const sourceApps = new Set([...caps.map((c) => c.sourceSolutionId).filter((id) => !!getSolution(id)), ...recipeCaps.map((c) => c.sourceId)]);
   const capRecords = [...recipeCaps.map((c) => ({ id: c.id, name: c.name, sourceSolutionId: c.sourceId, sourceSolutionName: c.sourceName, usedBy: 1, demo: false })), ...caps.map((c) => ({
     id: c.id,
@@ -145,7 +145,7 @@ router.get("/portfolio/analytics", async (_req, res) => {
       unique: capRecords.length,
       sourceApps: sourceApps.size,
       shared: capRecords.filter((c) => c.usedBy > 1).length,
-      definition: "Distinct capabilities in the demo catalog, components declared by registered prototypes, and capabilities named by the registered consolidation recipes. Source apps: distinct apps a capability was first built in. Shared: declared by more than one app.",
+      definition: "Distinct capability IDs from the seeded demo catalog, registered prototype declarations, and registered source recipes. Shared means declared by two or more distinct apps; single-app means one declared app; zero declarations means not assessed. Recipe capabilities name one registered source. Provenance follows the capability's source, not its consumers. Declarations are not adoption or executed reuse evidence.",
       records: capRecords,
     },
     combinations: {
@@ -153,7 +153,7 @@ router.get("/portfolio/analytics", async (_req, res) => {
       proposed: combos.filter((c) => c.stage !== "saved").length,
       approved: approvedCount,
       published: published.length,
-      definition: "Saved: combined cases saved in the consolidation workbench; saving or running one is not a proposal. Proposed: experiments with a recorded proposal to the parent product. Approved: IT's latest decision is approve. Published: approved and folded into a successor version. Opening or running a combination is neither approval nor adoption.",
+      definition: "Saved records are only your private consolidation drafts; portfolio decision records are shared. Each record has exactly one current stage: saved, proposed, approved, published, or withdrawn. Latest IT withdrawal takes precedence; published requires current approval and a folded case. The legacy proposed total covers all portfolio decision records and approved includes published, so these overlapping totals are not a funnel. Opening, saving or running a combination is neither approval nor adoption.",
       records: combos,
     },
     adoption: {
@@ -171,9 +171,10 @@ const val = (v: string | null | undefined) => (v && v.trim() ? v : null);
 /** Capabilities the registered consolidation recipes name, from sources actually registered. Only facts in the recipe. */
 function recipeCapabilities(sources: SourceMeta[]) {
   const catalogIds = new Set(allCapabilities().map((c) => c.id));
-  return consolidationRecipes.flatMap((r) => r.capabilities
+  const named = consolidationRecipes.flatMap((r) => r.capabilities
     .filter((c) => sources.some((s) => s.id === c.sourceId) && !catalogIds.has(c.id))
     .map((c) => ({ id: c.id, name: c.name, recipe: r.name, sourceId: c.sourceId, sourceName: sources.find((s) => s.id === c.sourceId)!.name, contract: r.edges.find((e) => e.id === c.edgeId)?.contract ?? null })));
+  return [...new Map(named.map((c) => [c.id, c])).values()];
 }
 
 router.get("/portfolio/capabilities", async (_req, res) => {
