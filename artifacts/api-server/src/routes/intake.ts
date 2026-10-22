@@ -4,6 +4,7 @@ import { pool } from "@workspace/db";
 import { z } from "zod";
 import { blankModel, intakeModelSchema, confirmationIssues } from "../lib/intake-model";
 import { interpretIntake } from "../lib/intake-interpret";
+import { AnalysisError } from "../lib/ai-analysis";
 import { withLegacyName, trackIntakeEdits } from "../lib/intake-reconcile";
 import { privateObjectFile } from "../lib/intake-files";
 import { matchBrief } from "../lib/matching";
@@ -76,6 +77,8 @@ router.put("/intake/records/:id", async (req, res) => {
   trackIntakeEdits(model, beforeModel);
   // Clients cannot forge an interpretation fingerprint or final confirmation.
   model.interpretedHash = old.model.interpretedHash;
+  model.analysis = old.model.analysis;
+  model.nameAnalysis = old.model.nameAnalysis;
   model.confirmed = false;
   const { rows: owned } = await pool.query("SELECT id,source_id FROM intake_attachments WHERE record_id=$1 AND user_id=$2", [old.id, req.user!.id]);
   if (model.sources.some(s => s.files.some(id => !owned.some(a => a.id === id && a.source_id === s.id)))) {
@@ -138,7 +141,7 @@ router.post("/intake/records/:id/compare", async (req, res) => {
       clarifyingQuestion: null, clarification: null, source: "ai", valueStatement: "",
       confirmed: true, createdAt: new Date().toISOString(),
     };
-    brief.valueStatement = matchBrief(brief).valueStatement;
+    brief.valueStatement = (await matchBrief(brief)).valueStatement;
     await client.query(`INSERT INTO briefs(id,raw_text,fields,today,better,requirements,source,value_statement,confirmed)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,true) ON CONFLICT(id) DO NOTHING`,
     [id, brief.rawText, JSON.stringify(fields), brief.today, brief.better, JSON.stringify(brief.requirements), brief.source, brief.valueStatement]);
@@ -160,13 +163,13 @@ router.post("/intake/records/:id/interpret", async (req, res) => {
   interpreting.add(req.user!.id);
   try {
     const { rows: attachments } = await pool.query("SELECT * FROM intake_attachments WHERE record_id=$1 AND user_id=$2", [old.id, req.user!.id]);
-    const model = await interpretIntake(withLegacyName(intakeModelSchema.parse(old.model), old.title), attachments, parsed.data.regenerateName);
+    const model = await interpretIntake(withLegacyName(intakeModelSchema.parse(old.model), old.title), attachments, parsed.data.regenerateName, true, `${req.user!.id}:${old.id}`);
     const { rows } = await pool.query("UPDATE intake_records SET model=$1,title=$5,revision=revision+1,status=$6,updated_at=now() WHERE id=$2 AND user_id=$3 AND revision=$4 RETURNING *", [JSON.stringify(model), old.id, req.user!.id, old.revision, model.name!.value, model.confirmed ? "confirmed" : "review"]);
     if (!rows.length) { res.status(409).json({ error: "Inputs changed while interpreting. Your newer edits were preserved. Run interpretation again." }); return; }
     res.json(await present(rows[0]));
   } catch (err) {
     req.log.warn({ errorType: err instanceof Error ? err.name : "Unknown" }, "Intake interpretation failed");
-    const safeMessage = err instanceof Error && /^(Interpretation |Add at least|AI interpretation|This packet)/.test(err.message) ? err.message : "We could not interpret these inputs. Check that you supplied readable content and try again.";
+    const safeMessage = err instanceof AnalysisError || (err instanceof Error && /^(Interpretation |Add at least|AI interpretation|This packet)/.test(err.message)) ? err.message : "We could not interpret these inputs. Check that you supplied readable content and try again.";
     res.status(422).json({ error: `${safeMessage} Your saved inputs are unchanged.` });
   } finally { interpreting.delete(req.user!.id); }
 });

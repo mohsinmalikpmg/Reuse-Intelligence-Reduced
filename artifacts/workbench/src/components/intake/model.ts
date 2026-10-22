@@ -13,7 +13,8 @@ export type CapStatus = 'Described' | 'Inferred' | 'Needs clarification' | 'Conf
 export type Capability = { id: string; sourceId?: SourceId; title: string; description: string; workflow: string; input: string; output: string; dependency: string; status: CapStatus; changed: boolean; gap: string; carry: boolean; provenance?: string; group: string; requirementIds: string[]; edited: boolean };
 export type Source = { id: SourceId; name: string; text: string; files: string[]; changed: boolean; supplied: boolean };
 export type Question = { id: string; text: string; answer: string; acknowledged: boolean; provenance?: string; itemIds: string[] };
-export type Model = { profile: Record<ProfileKey, Field>; requirements: Requirement[]; capabilities: Capability[]; sources: Source[]; orderReviewed: boolean; safety: string; agreed: boolean; confirmed: boolean; questions: Question[]; name?: Name; groups: Group[]; /** Local-only: the saved record predates grouping (no `groups` key). Never sent to the API. */ legacyGroups?: boolean; coverage: Coverage[]; overlaps: Overlap[]; removedItemIds: string[] };
+export type Analysis = { id: string; model: string; promptVersion: string; inputFingerprint: string; createdAt: string; cached: boolean };
+export type Model = { analysis?: Analysis; nameAnalysis?: Analysis; profile: Record<ProfileKey, Field>; requirements: Requirement[]; capabilities: Capability[]; sources: Source[]; orderReviewed: boolean; safety: string; agreed: boolean; confirmed: boolean; questions: Question[]; name?: Name; groups: Group[]; /** Local-only: the saved record predates grouping (no `groups` key). Never sent to the API. */ legacyGroups?: boolean; coverage: Coverage[]; overlaps: Overlap[]; removedItemIds: string[] };
 
 export const SOURCE_IDS: SourceId[] = ['problem', 'prototype', 'agent'];
 export const PROFILE_KEYS: ProfileKey[] = ['problem', 'user', 'scope', 'outcome'];
@@ -42,6 +43,7 @@ export function normalizeModel(raw: unknown): Model {
   });
   return {
     profile, sources,
+    ...analysisMetadata(m),
     requirements: arr(m.requirements).map(obj).map((r, i) => ({ id: str(r.id) || `req-${i}`, text: str(r.text), sources: arr(r.sources).filter(isSource), reviewed: bool(r.reviewed), changed: bool(r.changed), ...prov(r), group: str(r.group), kind: r.kind === 'constraint' ? 'constraint' as const : 'functional' as const, acceptance: str(r.acceptance), edited: bool(r.edited) })),
     capabilities: arr(m.capabilities).map(obj).map((c, i) => ({ id: str(c.id) || `cap-${i}`, ...(isSource(c.sourceId) ? { sourceId: c.sourceId } : {}), title: str(c.title), description: str(c.description), workflow: str(c.workflow), input: str(c.input), output: str(c.output), dependency: str(c.dependency), status: STATUSES.includes(c.status as CapStatus) ? (c.status as CapStatus) : 'Inferred', changed: bool(c.changed), gap: str(c.gap), carry: bool(c.carry), ...prov(c), group: str(c.group), requirementIds: strs(c.requirementIds), edited: bool(c.edited) })),
     questions: arr(m.questions).map(obj).map((q, i) => ({ id: str(q.id) || `q-${i}`, text: str(q.text), answer: str(q.answer), acknowledged: bool(q.acknowledged), ...prov(q), itemIds: strs(q.itemIds) })),
@@ -53,6 +55,17 @@ export function normalizeModel(raw: unknown): Model {
     removedItemIds: strs(m.removedItemIds),
     ...(Array.isArray(m.groups) ? {} : { legacyGroups: true }),
   };
+}
+
+function analysisMetadata(m: Record<string, unknown>): { analysis?: Analysis; nameAnalysis?: Analysis } {
+  const result: { analysis?: Analysis; nameAnalysis?: Analysis } = {};
+  for (const key of ['analysis', 'nameAnalysis'] as const) {
+    const value = obj(m[key]);
+    if (['id', 'model', 'promptVersion', 'inputFingerprint', 'createdAt'].every(k => typeof value[k] === 'string') && typeof value.cached === 'boolean') {
+      result[key] = value as Analysis;
+    }
+  }
+  return result;
 }
 
 export const hasInterpretation = (m: Model) => m.requirements.length > 0 || m.capabilities.length > 0 || PROFILE_KEYS.some(k => m.profile[k].value.trim());

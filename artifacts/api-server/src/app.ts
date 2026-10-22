@@ -5,6 +5,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { authMiddleware } from "./middlewares/authMiddleware";
+import { AnalysisError } from "./lib/ai-analysis";
 
 const app: Express = express();
 
@@ -34,5 +35,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(authMiddleware);
 
 app.use("/api", router);
+
+app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (error instanceof AnalysisError) { res.status(error.status).json({ error: error.message }); return; }
+  next(error);
+});
 
 export default app;

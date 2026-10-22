@@ -119,7 +119,7 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
     if (!hasSourceMaterial(model)) { setNotice('Add at least one input before asking for an interpretation.'); return; }
     let rev = record.revision;
     if (dirty) { const rec = await save(model, 'Saved before interpretation.'); if (!rec) return; rev = rec.revision; }
-    setBusy('interpret'); setFailure(null); setNotice('Interpreting your saved inputs. This can take a little while.');
+    setBusy('interpret'); setFailure(null); setNotice('Requesting a fresh AI analysis of your saved inputs. Your existing review stays unchanged if this fails.');
     try {
       const rec = await interpretIntakeRecord(id, { revision: rev });
       applyServer(rec); history.current = []; setHistoryCount(0); setStageState('review'); setGuideStep(firstPendingStep(normalizeModel(rec.model)));
@@ -238,7 +238,14 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
     <nav className="fi-steps" aria-label="Intake stages">{([['inputs', '01', 'Bring your inputs'], ['review', '02', 'Review & refine'], ['confirm', '03', 'Agree on the profile']] as const).map(([key, n, text]) => <button key={key} data-testid={`step-${key}`} aria-current={curStage === key ? 'step' : undefined} disabled={key !== 'inputs' && !interpreted} className={curStage === key ? 'active' : ''} onClick={() => setStage(key)}><b>{n}</b>{text}{(key === 'inputs' && interpreted && sourcesReady || key === 'confirm' && serverConfirmed) && <Check />}</button>)}</nav>
 
     {conflict && <div className="fi-warning" role="alert"><strong>This intake was changed somewhere else.</strong><p>A newer saved revision exists, so your changes were not saved. Your draft is still on screen. Download it if you want to keep a copy, then load the latest version.</p><div className="fi-actions" style={{ justifyContent: 'flex-start' }}><button className="fi-btn" onClick={() => download(`intake-draft-${id}.json`, { title: shownName, model })}><Download />Download my draft</button><button className="fi-btn primary" data-testid="button-reload-latest" onClick={() => void reloadLatest()}><RefreshCw />Load latest saved version</button></div></div>}
-    {failure && !conflict && <div className="fi-warning" role="alert"><strong>Something did not complete.</strong><p>{failure.message}</p><div className="fi-actions" style={{ justifyContent: 'flex-start' }}><button className="fi-link" onClick={() => setFailure(null)}>Dismiss</button><button className="fi-btn" onClick={failure.retry}><RefreshCw />Try again</button></div></div>}
+    <div className="fi-hint" role="status" data-testid="intake-analysis-status">
+      {busy === 'interpret' || busy === 'name' ? 'AI provider request in progress… Existing saved analysis is preserved until this succeeds.' : model.analysis ? <>
+        Saved AI analysis · {model.analysis.model} · {new Date(model.analysis.createdAt).toLocaleString()} · input {model.analysis.inputFingerprint.slice(0, 12)} · {model.analysis.cached ? 'reused saved result' : 'provider-generated result'}. Your corrections remain authoritative.
+        {model.sources.some(s => s.changed) && ' Inputs have changed; re-interpret to refresh this analysis.'}
+      </> : interpreted ? 'Saved interpretation has no provider provenance. Re-interpret to obtain a new AI analysis.' : 'No AI analysis yet. Interpret sends your saved inputs to the AI provider; failures never replace your review.'}
+      {model.name?.origin === 'generated' && model.nameAnalysis && model.nameAnalysis.id !== model.analysis?.id && <p>Name suggested by {model.nameAnalysis.model} · {new Date(model.nameAnalysis.createdAt).toLocaleString()} · input {model.nameAnalysis.inputFingerprint.slice(0, 12)}.</p>}
+    </div>
+    {failure && !conflict && <div className="fi-warning" role="alert"><strong>Something did not complete.</strong><p>{failure.message}</p><div className="fi-actions" style={{ justifyContent: 'flex-start' }}><button className="fi-link" onClick={() => setFailure(null)}>Dismiss</button><button className="fi-btn" disabled={locked} onClick={failure.retry}><RefreshCw />Try again</button></div></div>}
 
     <div className={`fi-layout ${stage === 'inputs' ? 'solo' : ''}`}><div className="fi-main">
       {stage === 'inputs' ? phase === 'collect' ? <section className="fi-collect">

@@ -8,6 +8,88 @@
 import * as zod from 'zod';
 
 
+/**
+ * Read saved evidence-matched AI analysis for an owned invoice case. Never calls the model.
+ */
+export const GetInvoiceAnalysisParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetInvoiceAnalysisResponse = zod.object({
+  "caseId": zod.string(),
+  "revision": zod.number().int(),
+  "evidenceHash": zod.string(),
+  "evidence": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "analysis": zod.union([zod.object({
+  "summary": zod.string(),
+  "limitations": zod.array(zod.string()),
+  "proposals": zod.array(zod.object({
+  "rowId": zod.string(),
+  "action": zod.enum(['retain', 'replace', 'combine', 'keep separate']),
+  "reasoning": zod.string(),
+  "limitations": zod.array(zod.string()),
+  "citations": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "sha256": zod.string()
+}))
+}))
+}),zod.null()]),
+  "provenance": zod.union([zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}),zod.null()])
+})
+
+
+/**
+ * Explicitly generate and persist evidence-grounded invoice reasoning. Requires ownership and same-origin CSRF validation. Does not change configuration.
+ */
+export const AnalyzeInvoiceFeaturesParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AnalyzeInvoiceFeaturesResponse = zod.object({
+  "caseId": zod.string(),
+  "revision": zod.number().int(),
+  "evidenceHash": zod.string(),
+  "evidence": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "path": zod.string(),
+  "sha256": zod.string()
+})),
+  "analysis": zod.union([zod.object({
+  "summary": zod.string(),
+  "limitations": zod.array(zod.string()),
+  "proposals": zod.array(zod.object({
+  "rowId": zod.string(),
+  "action": zod.enum(['retain', 'replace', 'combine', 'keep separate']),
+  "reasoning": zod.string(),
+  "limitations": zod.array(zod.string()),
+  "citations": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "sha256": zod.string()
+}))
+}))
+}),zod.null()]),
+  "provenance": zod.union([zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}),zod.null()])
+})
+
+
 export const OpenIntakeCombinationParams = zod.object({
   "briefId": zod.coerce.string()
 })
@@ -1993,6 +2075,22 @@ export const ListIntakeRecordsResponseItem = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "model": zod.object({
+  "analysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
+  "nameAnalysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
   "name": zod.object({
   "value": zod.string().min(1).max(listIntakeRecordsResponseModelNameValueMax),
   "origin": zod.enum(['generated', 'manual']),
@@ -2133,6 +2231,22 @@ export const CreateIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "model": zod.object({
+  "analysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
+  "nameAnalysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
   "name": zod.object({
   "value": zod.string().min(1).max(createIntakeRecordResponseModelNameValueMax),
   "origin": zod.enum(['generated', 'manual']),
@@ -2268,6 +2382,22 @@ export const GetIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "model": zod.object({
+  "analysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
+  "nameAnalysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
   "name": zod.object({
   "value": zod.string().min(1).max(getIntakeRecordResponseModelNameValueMax),
   "origin": zod.enum(['generated', 'manual']),
@@ -2405,6 +2535,22 @@ export const saveIntakeRecordBodyModelNameValueMax = 200;
 export const SaveIntakeRecordBody = zod.object({
   "title": zod.string().max(saveIntakeRecordBodyTitleMax).optional(),
   "model": zod.object({
+  "analysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
+  "nameAnalysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
   "name": zod.object({
   "value": zod.string().min(1).max(saveIntakeRecordBodyModelNameValueMax),
   "origin": zod.enum(['generated', 'manual']),
@@ -2524,6 +2670,22 @@ export const SaveIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "model": zod.object({
+  "analysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
+  "nameAnalysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
   "name": zod.object({
   "value": zod.string().min(1).max(saveIntakeRecordResponseModelNameValueMax),
   "origin": zod.enum(['generated', 'manual']),
@@ -2674,6 +2836,22 @@ export const InterpretIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "model": zod.object({
+  "analysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
+  "nameAnalysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
   "name": zod.object({
   "value": zod.string().min(1).max(interpretIntakeRecordResponseModelNameValueMax),
   "origin": zod.enum(['generated', 'manual']),
@@ -2816,6 +2994,22 @@ export const ConfirmIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "model": zod.object({
+  "analysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
+  "nameAnalysis": zod.object({
+  "id": zod.string(),
+  "model": zod.string(),
+  "promptVersion": zod.string(),
+  "inputFingerprint": zod.string(),
+  "createdAt": zod.string(),
+  "cached": zod.boolean()
+}).optional(),
   "name": zod.object({
   "value": zod.string().min(1).max(confirmIntakeRecordResponseModelNameValueMax),
   "origin": zod.enum(['generated', 'manual']),

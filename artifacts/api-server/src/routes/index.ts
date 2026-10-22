@@ -17,12 +17,14 @@ import solutionExportsRouter from "./solution-exports";
 import financeWiringRouter from "./finance-wiring";
 import consolidationCasesRouter from "./consolidation-cases";
 import portfolioAnalyticsRouter from "./portfolio-analytics";
+import invoiceAnalysisRouter from "./invoice-analysis";
 
 const router: IRouter = Router();
 router.use(authRouter);
 router.use(solutionExportsRouter);
 router.use(financeWiringRouter);
 router.use(consolidationCasesRouter);
+router.use(invoiceAnalysisRouter);
 router.use(solutionPackagesRouter);
 router.use(solutionCodeRouter);
 router.use(codeAssessmentRouter);

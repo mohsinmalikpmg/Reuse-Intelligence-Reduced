@@ -36,6 +36,7 @@ export default function Discover() {
   const say = useUndoToast();
 
   const submit = () => {
+    if (create.isPending) return;
     if (text.trim().length < 10) { say("Add a little more detail, at least a sentence."); return; }
     create.mutate({ data: { text: text.trim() } }, { onSuccess: (b) => setLocation(`/discover?brief=${b.id}`), onError: (e) => say(errMsg(e)) });
   };
@@ -88,10 +89,12 @@ export default function Discover() {
           )}
           <span className="ml-auto hidden items-center gap-1 text-[12.5px] text-muted-foreground sm:inline-flex"><CornerDownLeft className="h-3.5 w-3.5" /> Enter</span>
           <button type="submit" data-testid="button-submit-problem" disabled={create.isPending} className={btn.primary}>
-            {create.isPending ? "Reading..." : "Find solutions"} <ArrowRight className="h-5 w-5" />
+            {create.isPending ? "Requesting AI analysis..." : create.isError ? "Retry AI analysis" : "Find solutions"} <ArrowRight className="h-5 w-5" />
           </button>
         </div>
       </form>
+      <p className="mt-3 text-sm text-muted-foreground" role="status">Your description is sent to the AI provider to extract an evidence-grounded brief. No brief is saved if analysis fails.</p>
+      {create.isError && <p className="mt-3 text-sm text-destructive" role="alert">{errMsg(create.error)} Your description is still here. Retry when ready.</p>}
       {!briefId && (
         <p className="mt-4 text-[14px] text-muted-foreground" data-testid="text-prototype-entrance">
           Already built something? <Link href="/discover?mode=prototype" className="font-semibold text-primary underline-offset-2 hover:underline" data-testid="link-have-prototype">I have a prototype</Link>. We check it against the library before anyone builds it again.
@@ -150,8 +153,9 @@ function Understanding({ briefId, showResults, onFind }: { briefId: string; show
     <div className="reveal mt-10">
       <div className="mb-3 flex items-center gap-2">
         <h2 className="text-[20px] font-semibold">Here is what we understood</h2>
-        {b.source !== "ai" && <Tag testid="tag-brief-source">{b.source === "cached" ? "Cached demo reading" : "Rule-based reading"}</Tag>}
+        <Tag testid="tag-brief-source">{b.source === "ai" ? "Saved AI reading" : b.source === "cached" ? "Saved prior reading" : "Legacy rule-based reading"}</Tag>
       </div>
+      <p className="mb-4 text-sm text-muted-foreground" data-testid="brief-analysis-status">Saved {new Date(b.createdAt).toLocaleString()}. Loading this brief does not make a new provider request; your corrections are preserved.</p>
       <DndContext sensors={sensors} collisionDetection={dropUnderPointer} onDragStart={(e) => setDragging(String(e.active.id).replace("chip:", "") as keyof BriefFieldValues)} onDragCancel={() => setDragging(null)} onDragEnd={onDragEnd}>
         <div className="grid gap-4 md:grid-cols-2">
           <EditCard id="today" label="Today" hint="What is happening now" value={b.today} picked={picked} dragging={!!dragging} busy={upd.isPending}

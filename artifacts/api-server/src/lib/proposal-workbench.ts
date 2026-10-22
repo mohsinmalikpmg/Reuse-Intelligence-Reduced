@@ -101,14 +101,14 @@ export function deriveWorkbenchPlan(brief: Brief, report: CodeAssessment) {
 }
 
 /** Brief row lock serializes concurrent clicks and confirmation edits; all setup lives in one insert/transaction. */
-export async function createBriefWorkbench(briefId: string, pkg: LibraryCodePackage): Promise<Case> {
+export async function createBriefWorkbench(briefId: string, pkg: LibraryCodePackage, assessor: typeof assessCode = assessCode): Promise<Case> {
   return db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`brief-workbench:${briefId}`}, 0))`);
     const [row] = await tx.select().from(briefsTable).where(eq(briefsTable.id, briefId)).for("update");
     if (!row) throw new ProposalWorkbenchError("Brief not found.", 404);
     const brief = toBrief(row);
     if (!brief.confirmed) throw new ProposalWorkbenchError("Confirm the requirements before opening Workbench.", 400);
-    const plan = deriveWorkbenchPlan(brief, assessCode(brief, pkg));
+    const plan = deriveWorkbenchPlan(brief, await assessor(brief, pkg));
     const [existing] = await tx.select().from(casesTable).where(eq(casesTable.id, plan.id));
     if (existing) return toCase(existing);
     const createdAt = new Date().toISOString();

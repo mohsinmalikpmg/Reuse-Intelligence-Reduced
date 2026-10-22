@@ -83,6 +83,7 @@ import type {
   IntakeRecordUpdate,
   IntakeRevisionInput,
   IntakeSession,
+  InvoiceAnalysisResponse,
   LibraryCodePackage,
   ListCasesParams,
   ListPrototypesParams,
@@ -159,6 +160,151 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetInvoiceAnalysisUrl = (id: string,) => {
+
+
+
+
+  return `/api/consolidation/cases/${id}/invoice-analysis`
+}
+
+/**
+ * Read saved evidence-matched AI analysis for an owned invoice case. Never calls the model.
+ */
+export const getInvoiceAnalysis = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<InvoiceAnalysisResponse> => {
+
+  return customFetch<InvoiceAnalysisResponse>(getGetInvoiceAnalysisUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInvoiceAnalysisQueryKey = (id: string,) => {
+    return [
+    `/api/consolidation/cases/${id}/invoice-analysis`
+    ] as const;
+    }
+
+
+export const getGetInvoiceAnalysisQueryOptions = <TData = Awaited<ReturnType<typeof getInvoiceAnalysis>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvoiceAnalysis>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInvoiceAnalysisQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvoiceAnalysis>>> = ({ signal }) => getInvoiceAnalysis(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvoiceAnalysis>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInvoiceAnalysisQueryResult = NonNullable<Awaited<ReturnType<typeof getInvoiceAnalysis>>>
+export type GetInvoiceAnalysisQueryError = ErrorType<unknown>
+
+
+
+export function useGetInvoiceAnalysis<TData = Awaited<ReturnType<typeof getInvoiceAnalysis>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvoiceAnalysis>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInvoiceAnalysisQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAnalyzeInvoiceFeaturesUrl = (id: string,) => {
+
+
+
+
+  return `/api/consolidation/cases/${id}/invoice-analysis`
+}
+
+/**
+ * Explicitly generate and persist evidence-grounded invoice reasoning. Requires ownership and same-origin CSRF validation. Does not change configuration.
+ */
+export const analyzeInvoiceFeatures = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<InvoiceAnalysisResponse> => {
+
+  return customFetch<InvoiceAnalysisResponse>(getAnalyzeInvoiceFeaturesUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAnalyzeInvoiceFeaturesMutationKey = () => ['analyzeInvoiceFeatures'] as const;
+
+export const getAnalyzeInvoiceFeaturesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeInvoiceFeatures>>, TError,AnalyzeInvoiceFeaturesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeInvoiceFeatures>>, TError,AnalyzeInvoiceFeaturesMutationVariables, TContext> => {
+
+const mutationKey = getAnalyzeInvoiceFeaturesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeInvoiceFeatures>>, AnalyzeInvoiceFeaturesMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  analyzeInvoiceFeatures(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeInvoiceFeaturesMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeInvoiceFeatures>>>
+
+    export type AnalyzeInvoiceFeaturesMutationError = ErrorType<unknown>
+    export type AnalyzeInvoiceFeaturesMutationVariables = {id: string}
+
+    export const useAnalyzeInvoiceFeatures = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeInvoiceFeatures>>, TError,AnalyzeInvoiceFeaturesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeInvoiceFeatures>>,
+        TError,
+        AnalyzeInvoiceFeaturesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalyzeInvoiceFeaturesMutationOptions(options));
+    }
 
 export const getOpenIntakeCombinationUrl = (briefId: string,) => {
 

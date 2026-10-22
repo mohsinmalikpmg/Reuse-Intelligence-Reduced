@@ -73,6 +73,59 @@ export interface ConsolidationSelectedSource {
   sha256: string;
 }
 
+export type InvoiceAnalysisResponseEvidenceItem = {
+  sourceId: string;
+  path: string;
+  sha256: string;
+};
+
+export type InvoiceFeatureAnalysisProposalsItemAction = typeof InvoiceFeatureAnalysisProposalsItemAction[keyof typeof InvoiceFeatureAnalysisProposalsItemAction];
+
+
+export const InvoiceFeatureAnalysisProposalsItemAction = {
+  retain: 'retain',
+  replace: 'replace',
+  combine: 'combine',
+  keep_separate: 'keep separate',
+} as const;
+
+export type InvoiceFeatureAnalysisProposalsItemCitationsItem = {
+  sourceId: string;
+  sha256: string;
+};
+
+export type InvoiceFeatureAnalysisProposalsItem = {
+  rowId: string;
+  action: InvoiceFeatureAnalysisProposalsItemAction;
+  reasoning: string;
+  limitations: string[];
+  citations: InvoiceFeatureAnalysisProposalsItemCitationsItem[];
+};
+
+export interface InvoiceFeatureAnalysis {
+  summary: string;
+  limitations: string[];
+  proposals: InvoiceFeatureAnalysisProposalsItem[];
+}
+
+export interface InvoiceAnalysisProvenance {
+  id: string;
+  model: string;
+  promptVersion: string;
+  inputFingerprint: string;
+  createdAt: string;
+  cached: boolean;
+}
+
+export interface InvoiceAnalysisResponse {
+  caseId: string;
+  revision: number;
+  evidenceHash: string;
+  evidence: InvoiceAnalysisResponseEvidenceItem[];
+  analysis: InvoiceFeatureAnalysis | null;
+  provenance: InvoiceAnalysisProvenance | null;
+}
+
 export type ConsolidationCaseRecipeId = typeof ConsolidationCaseRecipeId[keyof typeof ConsolidationCaseRecipeId];
 
 
@@ -1031,6 +1084,8 @@ export type IntakeModelOverlapsItem = {
 };
 
 export interface IntakeModel {
+  analysis?: InvoiceAnalysisProvenance;
+  nameAnalysis?: InvoiceAnalysisProvenance;
   name?: IntakeModelName;
   profile: IntakeModelProfile;
   requirements: IntakeRequirement[];

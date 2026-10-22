@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { blankModel, confirmationIssues, intakeModelSchema, sourceHash, type IntakeModel } from "./intake-model";
 import { reconcileInterpretation, trackIntakeEdits, withLegacyName } from "./intake-reconcile";
-import { normalizeInterpretation } from "./intake-interpret";
+import { interpretIntake, normalizeInterpretation } from "./intake-interpret";
 
 function fixture(): IntakeModel {
   const m = blankModel();
@@ -37,9 +37,48 @@ test("duplicate ids and dangling group, requirement and question references are 
     (m: IntakeModel) => { m.questions = [{ id: "q", text: "?", answer: "", acknowledged: false, itemIds: ["missing"] }]; },
     (m: IntakeModel) => { m.removedItemIds = ["r1"]; },
     (m: IntakeModel) => { m.removedItemIds = ["gone", "gone"]; },
+    (m: IntakeModel) => { m.requirements[0].sources = ["agent"]; },
+    (m: IntakeModel) => { m.capabilities[0].sourceId = "prototype"; },
   ]) {
     const m = fixture(); mutate(m);
     assert.equal(intakeModelSchema.safeParse(m).success, false);
+  }
+});
+test("failed interpretation does not mutate a corrected review or its name", async () => {
+  const m = fixture();
+  m.requirements[0].text = "Route ONLY to the controller";
+  m.requirements[0].edited = true;
+  m.name = { value: "My corrected routing", origin: "manual", provenance: "Named by you" };
+  m.sources[0].files = ["unavailable"];
+  const before = structuredClone(m);
+  await assert.rejects(interpretIntake(m, []), /unavailable attachment/);
+  assert.deepEqual(m, before);
+});
+test("invalid AI evidence fails atomically without changing the previous corrections", () => {
+  const m = fixture();
+  m.requirements[0].edited = true;
+  const before = structuredClone(m);
+  const invalid = structuredClone(m);
+  invalid.coverage![0].requirementIds = ["invented-id"];
+  assert.throws(() => normalizeInterpretation(invalid, m), /invalid structure/);
+  assert.deepEqual(m, before);
+});
+test("only known explicit profile-path reference aliases are normalized", () => {
+  const m = fixture();
+  m.questions = [{ id: "q", text: "Who uses this?", answer: "", acknowledged: false, itemIds: ["profile.user"] }];
+  assert.deepEqual(normalizeInterpretation(m, fixture()).questions[0].itemIds, ["user"]);
+  m.questions[0].itemIds = ["profile.invented"];
+  assert.throws(() => normalizeInterpretation(m, fixture()), /invalid structure/);
+});
+test("provider failure never silently substitutes a deterministic intake", async () => {
+  const m = fixture(), before = structuredClone(m);
+  const key = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  delete process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  try {
+    await assert.rejects(interpretIntake(m, []), /not configured/);
+    assert.deepEqual(m, before);
+  } finally {
+    if (key !== undefined) process.env.AI_INTEGRATIONS_OPENAI_API_KEY = key;
   }
 });
 test("AI output must contain a meaningful name and evidence-rich structure", () => {

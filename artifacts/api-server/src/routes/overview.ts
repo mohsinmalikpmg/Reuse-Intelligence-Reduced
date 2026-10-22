@@ -19,7 +19,7 @@ import { consolidationApproved } from "../lib/analysis";
 import { versionForCase } from "../lib/governance";
 import { listReuseEvents } from "../lib/reuse-store";
 import { duplicatesCertified, listPrototypeRows } from "../lib/prototypes";
-import { matchBrief } from "../lib/matching";
+import { savedBriefMatch } from "../lib/matching";
 import { demoState, resetDemo } from "../lib/seed";
 import { getExperiment, listAllDecisions, listBriefs, listCaseRows, listExperiments, summarizeAll } from "../lib/store";
 import { currentFingerprints } from "../lib/workbench";
@@ -40,12 +40,12 @@ router.get("/home/seeker", async (_req, res) => {
   const recent = briefs.slice(0, 5);
   const recommendedIds = new Set<string>();
   for (const brief of recent) {
-    const rec = matchBrief(brief).matches.find((m) => m.recommended);
+    const rec = (await savedBriefMatch(brief))?.matches.find((m) => m.recommended);
     if (rec) recommendedIds.add(rec.solution.id);
   }
-  const recommendedSolutions = sortByMaturity(solutions.filter((s) => recommendedIds.has(s.id) || (recommendedIds.size === 0 && s.status === "certified"))).slice(0, 4);
+  const recommendedSolutions = sortByMaturity(solutions.filter((s) => recommendedIds.has(s.id))).slice(0, 4);
   const overview: SeekerOverview = {
-    headline: personas.find((p) => p.role === "seeker")?.headline ?? "",
+    headline: recommendedIds.size ? personas.find((p) => p.role === "seeker")?.headline ?? "" : "No saved AI recommendations yet. Describe a need to request analysis.",
     recentBriefs: recent,
     recommendedSolutions,
     savedCases: await summarizeAll(cases.filter((c) => c.saved || c.status !== "draft" || c.briefId !== null)),

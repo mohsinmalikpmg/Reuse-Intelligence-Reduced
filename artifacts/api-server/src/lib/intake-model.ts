@@ -5,7 +5,13 @@ export const sourceId = z.enum(["problem", "prototype", "agent"]);
 const text = z.string().max(80000);
 const id = z.string().min(1).max(100);
 const field = z.object({ value: text, reviewed: z.boolean(), changed: z.boolean(), basis: z.enum(["explicit", "inferred", "unknown"]).optional(), provenance: text.optional() });
+export const analysisProvenanceSchema = z.object({
+  id: z.string(), model: z.string(), promptVersion: z.string(), inputFingerprint: z.string(),
+  createdAt: z.string(), cached: z.boolean(),
+});
 export const intakeModelSchema = z.object({
+  analysis: analysisProvenanceSchema.optional(),
+  nameAnalysis: analysisProvenanceSchema.optional(),
   name: z.object({ value: z.string().trim().min(1).max(200), origin: z.enum(["generated", "manual"]), provenance: text }).optional(),
   groups: z.array(z.object({ id, title: z.string().min(1).max(500), boundary: text })).max(100).optional(),
   coverage: z.array(z.object({ id, sourceId, excerpt: text, disposition: z.enum(["accounted", "unresolved", "out-of-scope"]), requirementIds: z.array(id), capabilityIds: z.array(id), note: text, reviewed: z.boolean() })).max(200).optional(),
@@ -37,6 +43,9 @@ export const intakeModelSchema = z.object({
   }
   const fail = (message: string) => ctx.addIssue({ code: "custom", message });
   const reqs = new Set(m.requirements.map(r => r.id)), caps = new Set(m.capabilities.map(c => c.id));
+  const sources = new Set(m.sources.map(s => s.id));
+  for (const r of m.requirements) for (const sid of r.sources) if (!sources.has(sid)) fail(`Unknown requirement source ${sid}.`);
+  for (const c of m.capabilities) if (c.sourceId && !sources.has(c.sourceId)) fail(`Unknown capability source ${c.sourceId}.`);
   const items = new Set([...reqs, ...caps]), groups = new Set(m.groups?.map(g => g.id));
   if (items.size !== reqs.size + caps.size) fail("Requirement and capability identifiers must be distinct.");
   for (const r of [...m.requirements, ...m.capabilities]) if (r.group && !groups.has(r.group)) fail(`Unknown group ${r.group}.`);

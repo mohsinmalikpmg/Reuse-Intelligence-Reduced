@@ -3,6 +3,17 @@ import assert from "node:assert/strict";
 import { groupIssues, normalizeModel, readiness, serializeModel } from "./model.ts";
 
 const legacyRaw = { requirements: [{ id: "r1", text: "Track orders", reviewed: true }], capabilities: [], orderReviewed: true };
+test("saved provider provenance survives normalization, manual corrections and save payloads", () => {
+  const analysis = { id: "analysis-1", model: "gpt-5.4-mini", promptVersion: "intake-mece-v4", inputFingerprint: "abc123", createdAt: "2026-01-01T00:00:00.000Z", cached: false };
+  const model = normalizeModel({ ...legacyRaw, analysis, nameAnalysis: analysis });
+  model.requirements[0].text = "Only track controller-approved orders";
+  model.requirements[0].edited = true;
+  const saved = normalizeModel(serializeModel(model));
+  assert.deepEqual(saved.analysis, analysis);
+  assert.deepEqual(saved.nameAnalysis, analysis);
+  assert.equal(saved.requirements[0].edited, true);
+  assert.equal(saved.requirements[0].text, "Only track controller-approved orders");
+});
 
 test("legacy record without groups stays exempt after a browser edit and save", () => {
   const m = normalizeModel(legacyRaw);

@@ -5,7 +5,6 @@ import type {
   SolutionMatch,
   CapabilityMatch,
   MatchScoring,
-  FitLabel,
 } from "@workspace/api-zod";
 import {
   solutions,
@@ -16,6 +15,11 @@ import {
   sortByMaturity,
 } from "../data/catalog";
 import { rankBucket } from "./governance";
+import { z } from "zod";
+import { analyze, readSavedAnalysis } from "./ai-analysis";
+import { briefEvidence, groundingInstructions, provenanceLabel } from "./assessment-evidence";
+import { freshContext, moduleBlockedReason } from "./configuration";
+import type { CoverageRow } from "./reuse-check";
 
 const STOPWORDS = new Set(
   "the a an and or of to in on for with by from at is are be been it its this that these those we our they their as into than then there here use uses using each week weeks hour hours take takes several different manual manually".split(
@@ -93,13 +97,6 @@ const evidenceScore: Record<Solution["evidenceLevel"], number> = {
   none: 0.1,
 };
 
-function labelFor(score: number): FitLabel {
-  if (score >= 75) return "strong";
-  if (score >= 55) return "good";
-  if (score >= 35) return "partial";
-  return "weak";
-}
-
 function scoreSolution(brief: Brief, solution: Solution): { scoring: MatchScoring; fitScore: number } {
   const meta = solutionSearchMeta.get(solution.id);
   const text = briefText(brief);
@@ -160,115 +157,83 @@ export interface MatchOutcome {
   missingRequirements: string[];
   headline: string;
   valueStatement: string;
+  coverage?: CoverageRow[];
 }
 
-export function matchBrief(brief: Brief): MatchOutcome {
+function retrieveBriefCandidates(brief: Brief) {
   const scored = solutions.map((solution) => ({ solution, ...scoreSolution(brief, solution) }));
 
   // Only keep solutions with a meaningful signal
-  const relevant = scored
+  return scored
     .filter((s) => s.scoring.semantic >= 12 && s.fitScore >= 20)
     .sort((a, b) => b.fitScore - a.fitScore)
     .slice(0, 5);
 
-  const recommendedId = pickRecommended(relevant.map((r) => r.solution), relevant);
-
-  const matches: SolutionMatch[] = relevant.map((r, index) => ({
-    rank: index + 1,
-    solution: r.solution,
-    fitScore: r.fitScore,
-    fitLabel: labelFor(r.fitScore),
-    recommended: r.solution.id === recommendedId,
-    whyMatched: whyMatched(brief, r.solution, r.scoring),
-    gaps: r.solution.knownGaps.slice(0, 2),
-    scoring: r.scoring,
-  }));
-
-  const briefTokens = new Set(tokenize(briefText(brief)));
-  const capabilityMatches: CapabilityMatch[] = capabilities
-    .map((capability) => {
-      const kw = capabilityKeywords.get(capability.id) ?? [];
-      const capTokens = new Set(tokenize([capability.name, capability.description, ...kw].join(" ")));
-      const sim = overlap(briefTokens, capTokens);
-      return { capability, sim };
-    })
-    .filter((c) => c.sim >= 0.2 && c.capability.controlType === "optional" && c.capability.supportStatus !== "Unsupported")
-    .sort((a, b) => b.sim - a.sim)
-    .slice(0, 4)
-    .map((c) => ({
-      capability: c.capability,
-      fitScore: round(Math.min(100, c.sim * 130)),
-      whyMatched: [
-        `Addresses "${c.capability.workflowStep.toLowerCase()}" in the described workflow.`,
-        `Reusable from ${c.capability.sourceSolutionName} (${c.capability.evidenceLevel} evidence).`,
-      ],
-    }));
-
-  const missingRequirements = computeMissing(matches, capabilityMatches);
-  const addresses = (m: SolutionMatch) => m.fitScore >= 30 && m.scoring.semantic >= 35;
-  const certifiedCount = matches.filter((m) => m.solution.status === "certified" && addresses(m)).length;
-  const addressing = matches.filter(addresses).length;
-
-  const headline =
-    addressing === 0
-      ? "No existing solution closely addresses this need yet."
-      : certifiedCount > 0
-        ? "A certified solution already addresses most of this need."
-        : "Existing work addresses part of this need, but nothing is certified yet.";
-
-  const valueStatement =
-    addressing === 0
-      ? "Nothing in the library addresses this need directly. Consider submitting it as a new intake."
-      : `${numberWord(addressing)} existing ${addressing === 1 ? "product addresses" : "products address"} this need.${
-          certifiedCount > 0
-            ? ` ${numberWord(certifiedCount)} certified ${certifiedCount === 1 ? "solution" : "solutions"} already ${certifiedCount === 1 ? "covers" : "cover"} most of the required workflow.`
-            : ""
-        }`;
-
-  return { matches, capabilityMatches, missingRequirements, headline, valueStatement };
 }
 
-function pickRecommended(
-  list: Solution[],
-  scored: { solution: Solution; fitScore: number }[],
-): string | null {
-  if (list.length === 0) return null;
-  if (scored[0]!.fitScore < 30) return null;
-  // Prefer the best-fitting certified complete solution when it is within reach of the top score.
-  const top = scored[0]!;
-  const bestCertified = scored.find((s) => s.solution.status === "certified" && s.solution.kind === "complete_solution");
-  if (bestCertified && bestCertified.fitScore >= top.fitScore - 15) return bestCertified.solution.id;
-  const ordered = sortByMaturity(list.filter((s) => s.status !== "deprecated"));
-  return ordered[0]?.id ?? top.solution.id;
+export async function matchBrief(brief: Brief, options: { force?: boolean; analyzer?: typeof analyze } = {}): Promise<MatchOutcome> {
+  const retrieved = retrieveBriefCandidates(brief);
+  const candidates = retrieved.filter(m => m.solution.status !== "deprecated");
+  const caps = allCapabilities().filter(c => c.supportStatus !== "Unsupported");
+  const schema = z.object({
+    matches: z.array(z.object({ solutionId: z.string(), fitLabel: z.enum(["strong", "good", "partial", "weak"]), reason: z.string().min(1), gaps: z.array(z.string()) }).strict()),
+    recommendedId: z.string().nullable(), capabilityMatches: z.array(z.object({ capabilityId: z.string(), reason: z.string().min(1) }).strict()),
+    missingRequirements: z.array(z.string()), headline: z.string().min(1), valueStatement: z.string().min(1),
+    coverage: z.array(z.object({ requirementId: z.string(), capabilityId: z.string().nullable() }).strict()),
+  }).strict().superRefine((v, ctx) => {
+    const ids = v.matches.map(m => m.solutionId);
+    if (new Set(ids).size !== ids.length || ids.some(id => !candidates.some(c => c.solution.id === id))
+      || (v.recommendedId && !ids.includes(v.recommendedId))
+      || v.capabilityMatches.some(m => !caps.some(c => c.id === m.capabilityId))
+      || v.coverage.length !== brief.requirements.length || new Set(v.coverage.map(c => c.requirementId)).size !== brief.requirements.length
+      || v.coverage.some(c => !brief.requirements.some(r => r.id === c.requirementId) || (c.capabilityId && !caps.some(cap => cap.id === c.capabilityId)))) {
+      ctx.addIssue({ code: "custom", message: "Invalid or duplicate catalogue/requirement ID." });
+    }
+  });
+  const result = await (options.analyzer ?? analyze)({
+    purpose: "brief-matching", promptVersion: "brief-matching-evidence-v1", force: options.force, schema,
+    instructions: `${groundingInstructions} Semantically assess and order retrieved solution candidates; omit irrelevant candidates. Recommend at most one candidate. Assess reusable capabilities from supplied catalogue. List unmet requirements honestly. coverage maps each requirement to one capability ONLY if its documented scope fully addresses it (null for partial/negative/unknown). No cost savings, time estimates, certainty or execution claims. Numeric retrieval scores are lexical heuristics, not measured fit. Return JSON {"matches":[{"solutionId":"...","fitLabel":"partial","reason":"...","gaps":["..."]}],"recommendedId":null,"capabilityMatches":[{"capabilityId":"...","reason":"..."}],"missingRequirements":["..."],"headline":"...","valueStatement":"...","coverage":[{"requirementId":"...","capabilityId":null}]}.`,
+    input: { brief: briefEvidence(brief), candidates: candidates.map(c => ({ solution: c.solution, retrievalScore: c.fitScore })), capabilities: caps },
+  });
+  const label = provenanceLabel(result.provenance);
+  const matches = result.data.matches.map((m, i) => {
+    const original = candidates.find(c => c.solution.id === m.solutionId)!;
+    return { ...original, rank: i + 1, fitLabel: m.fitLabel, recommended: result.data.recommendedId === m.solutionId,
+      whyMatched: [m.reason, "Numeric score is a deterministic retrieval heuristic, not measured fit.", label], gaps: m.gaps };
+  });
+  const recommended = matches.find(m => m.recommended)?.solution;
+  const ctx = recommended ? freshContext(recommended) : null;
+  const coverage: CoverageRow[] = brief.requirements.map(r => {
+    const mapping = result.data.coverage.find(c => c.requirementId === r.id)!;
+    const cap = caps.find(c => c.id === mapping.capabilityId);
+    const inBase = !!cap && !!recommended?.capabilityIds.includes(cap.id);
+    const eligible = !!cap && !!ctx && (inBase || moduleBlockedReason(cap, ctx) === null);
+    return { requirementId: r.id, text: r.text, status: !eligible ? "uncovered" : inBase ? "covered" : "covered_reusable",
+      capabilityId: eligible ? cap!.id : null, capabilityName: eligible ? cap!.name : null, coveredBy: eligible ? (inBase ? recommended!.name : cap!.sourceSolutionName) : null, score: null };
+  });
+  return { matches, capabilityMatches: result.data.capabilityMatches.map(m => {
+    const capability = caps.find(c => c.id === m.capabilityId)!;
+    const retrievalScore = round(Math.min(100, overlap(new Set(tokenize(briefText(brief))),
+      new Set(tokenize([capability.name, capability.description, ...(capabilityKeywords.get(capability.id) ?? [])].join(" ")))) * 130));
+    return { capability, fitScore: retrievalScore, whyMatched: [m.reason, "Numeric score is a deterministic lexical retrieval heuristic, not measured fit or AI confidence.", label] };
+  }),
+    missingRequirements: result.data.missingRequirements, headline: result.data.headline, valueStatement: `${result.data.valueStatement} ${label}`, coverage };
 }
 
-function whyMatched(brief: Brief, solution: Solution, scoring: MatchScoring): string[] {
-  const reasons: string[] = [];
-  if (scoring.semantic >= 40) reasons.push(`Describes the same business problem: ${solution.outcome}`);
-  else if (scoring.semantic >= 12) reasons.push(`Overlaps with part of the described problem.`);
-  if (scoring.workflow >= 80) reasons.push(`Covers the workflow steps the brief implies (${solution.workflowSteps.join(" > ")}).`);
-  else if (scoring.workflow >= 40) reasons.push(`Covers some workflow steps (${solution.workflowSteps.join(", ")}).`);
-  if (scoring.persona >= 50) reasons.push(`Built for ${brief.fields.user.value.toLowerCase() || "the same users"}.`);
-  if (solution.status === "certified") reasons.push(`Certified and in production with ${solution.activeUsers} users across ${solution.businessUnits.length} business units.`);
-  else if (solution.status === "pilot") reasons.push(`In pilot with ${solution.activeUsers} users; ${solution.evidenceLevel} evidence.`);
-  else reasons.push(`Experimental prototype with ${solution.evidenceLevel} evidence.`);
-  if (scoring.integration >= 60) reasons.push(`Already connected to the data the brief relies on.`);
-  return reasons.slice(0, 4);
-}
+class UnassessedBrief extends Error {}
 
-function computeMissing(matches: SolutionMatch[], capabilityMatches: CapabilityMatch[]): string[] {
-  const top = matches.find((m) => m.recommended);
-  if (!top) return [];
-  const missing = capabilityMatches
-    .filter((cm) => !top.solution.capabilityIds.includes(cm.capability.id))
-    .map((cm) => `${cm.capability.name}: not in ${top.solution.name}; available from ${cm.capability.sourceSolutionName}.`);
-  if (missing.length === 0 && top.solution.knownGaps.length > 0) missing.push(top.solution.knownGaps[0]!);
-  return missing;
-}
-
-function numberWord(n: number): string {
-  const words = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
-  return words[n] ?? String(n);
+/** Overview reads never generate analysis or replace missing results with catalog guesses. */
+export async function savedBriefMatch(brief: Brief, reader = readSavedAnalysis) {
+  try {
+    return await matchBrief(brief, { analyzer: async opts => {
+      const saved = await reader(opts);
+      if (!saved) throw new UnassessedBrief();
+      return saved;
+    } });
+  } catch (error) {
+    if (error instanceof UnassessedBrief) return null;
+    throw error;
+  }
 }
 
 /** Library text search across problems, roles, workflow, outcomes, capabilities and names. */

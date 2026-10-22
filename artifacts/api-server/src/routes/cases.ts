@@ -137,9 +137,9 @@ router.get("/cases/:caseId/recommendation", async (req, res) => {
   let fit: number | null = null;
   if (c.briefId) {
     const brief = await getBrief(c.briefId);
-    if (brief) fit = matchBrief(brief).matches.find((m) => m.solution.id === c.baseSolutionId)?.fitScore ?? null;
+    if (brief) fit = (await matchBrief(brief)).matches.find((m) => m.solution.id === c.baseSolutionId)?.fitScore ?? null;
   }
-  res.json(buildRecommendation(c, ctx, fit));
+  res.json(await buildRecommendation(c, ctx, fit));
 });
 
 router.get("/cases/:caseId/configuration", async (req, res) => {
@@ -198,10 +198,12 @@ router.post("/cases/:caseId/requirements", async (req, res) => {
   }
   const text = parsed.data.text.trim();
   const requirement = { id: newId("creq"), text, createdAt: new Date().toISOString() };
-  const updated = await updateCaseRow(c.id, { requirements: [...c.requirements, requirement] });
+  // Finish model interpretation before mutating the case; provider/validation errors apply nothing.
+  const coverage = await coveredByVersionA(text, c);
   // The same reuse check as everywhere else, so the event history shows what the person was offered here.
   const check = await performReuseCheck({ need: text, trigger: "add_requirement", base: getSolution(c.baseSolutionId) ?? null, caseId: c.id, briefId: c.briefId });
-  const result: CaseRequirementResult = { case: updated, requirement, coverage: coveredByVersionA(text, c), check };
+  const updated = await updateCaseRow(c.id, { requirements: [...c.requirements, requirement] });
+  const result: CaseRequirementResult = { case: updated, requirement, coverage, check };
   res.status(201).json(result);
 });
 

@@ -103,7 +103,7 @@ export async function validateConsolidationCase(c: ConsolidationCase): Promise<v
 }
 function present(row: Record<string, any>): ConsolidationCase {
   const c = { ...row.snapshot, id: row.id, revision: row.revision, createdAt: row.created_at.toISOString(), updatedAt: row.updated_at.toISOString() };
-  return { ...c, assessment: assessCombination(c.requirements ?? [], c) };
+  return { ...c, assessment: c.assessment ?? (c.requirements ?? []).map((r: CombinationRequirement) => ({ ...r, status: "missing", capabilityIds: [], note: "Not AI-assessed yet. Save the combination to request evidence-grounded assessment." })) };
 }
 export async function ownedConsolidationCase(userId: string, id: string): Promise<ConsolidationCase> {
   const { rows } = await pool.query("SELECT * FROM consolidation_cases WHERE id=$1 AND user_id=$2", [id, userId]);
@@ -163,6 +163,8 @@ export async function saveConsolidationCase(userId: string, input: z.infer<typeo
     runUrl: `${consolidationRecipes.find(r => r.id === input.recipeId)!.runPath}?consolidationCaseId=${encodeURIComponent(id)}` };
   await validateConsolidationCase(snapshot);
   snapshot.fingerprint = consolidationFingerprint(snapshot);
+  // Explicit save analyzes changed evidence; reads only present the persisted result.
+  snapshot.assessment = await assessCombination(requirements, { ...snapshot, userId });
   const result = old
     ? await pool.query("UPDATE consolidation_cases SET snapshot=$1,revision=revision+1,updated_at=clock_timestamp() WHERE id=$2 AND user_id=$3 AND revision=$4 RETURNING *", [snapshot, id, userId, expectedRevision])
     : await pool.query("INSERT INTO consolidation_cases(id,user_id,snapshot) VALUES($1,$2,$3) RETURNING *", [id, userId, snapshot]);

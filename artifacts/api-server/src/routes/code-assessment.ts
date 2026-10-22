@@ -32,7 +32,7 @@ router.get("/briefs/:briefId/acceptance-checks", async (req, res): Promise<void>
   if (!brief) { res.status(404).json({ error: "Brief not found." }); return; }
   if (!brief.confirmed) { res.status(400).json({ error: "Confirm requirements first." }); return; }
   const { objectPath: _objectPath, ...pkg } = manifest;
-  const plan = acceptancePlan(assessCode(brief, pkg as LibraryCodePackage));
+  const plan = acceptancePlan(await assessCode(brief, pkg as LibraryCodePackage));
   const rows = await db.select().from(acceptanceRunsTable).where(eq(acceptanceRunsTable.briefId, brief.id)).orderBy(desc(acceptanceRunsTable.createdAt));
   res.json(GetAcceptanceChecksResponse.parse({ ...plan, runs: rows.map(row => row.snapshot) }));
 });
@@ -45,7 +45,7 @@ router.post("/briefs/:briefId/acceptance-checks", async (req, res): Promise<void
   if (!brief.confirmed) { res.status(400).json({ error: "Confirm requirements first." }); return; }
   try {
     const { objectPath: _objectPath, ...pkg } = manifest;
-    const report = assessCode(brief, pkg as LibraryCodePackage);
+    const report = await assessCode(brief, pkg as LibraryCodePackage);
     const engineFingerprint = await verifyAcceptanceEngine(report);
     const result = RunAcceptanceCheckResponse.parse(runAcceptance(report, parsed.data, engineFingerprint));
     await db.insert(acceptanceRunsTable).values({ id: result.id, briefId: brief.id, snapshot: result });
@@ -61,6 +61,6 @@ router.get("/briefs/:briefId/code-assessment", async (req, res) => {
   if (!brief.confirmed) { res.status(400).json({ error: "Confirm the requirements before assessing code coverage." }); return; }
   const { objectPath: _objectPath, ...pkg } = manifest;
   res.setHeader("Cache-Control", "no-store");
-  res.json(assessCode(brief, pkg as LibraryCodePackage));
+  res.json(await assessCode(brief, pkg as LibraryCodePackage));
 });
 export default router;

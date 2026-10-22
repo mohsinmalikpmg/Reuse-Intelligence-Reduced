@@ -14,8 +14,11 @@ import type { IntakeModelProfile } from './intakeModelProfile';
 import type { IntakeModelQuestionsItem } from './intakeModelQuestionsItem';
 import type { IntakeModelSourcesItem } from './intakeModelSourcesItem';
 import type { IntakeRequirement } from './intakeRequirement';
+import type { InvoiceAnalysisProvenance } from './invoiceAnalysisProvenance';
 
 export interface IntakeModel {
+  analysis?: InvoiceAnalysisProvenance;
+  nameAnalysis?: InvoiceAnalysisProvenance;
   name?: IntakeModelName;
   profile: IntakeModelProfile;
   requirements: IntakeRequirement[];

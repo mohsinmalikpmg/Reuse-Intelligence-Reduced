@@ -18,7 +18,7 @@ A reuse-first solution discovery and A/B workbench: a maintenance supervisor des
 - `pnpm run typecheck` — full typecheck. Run `pnpm run typecheck:libs` first after changing anything in `lib/` or the api-server typecheck sees stale lib output.
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate React Query hooks and Zod schemas after editing `lib/api-spec/openapi.yaml`
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL`. Optional: `AI_INTEGRATIONS_OPENAI_API_KEY` / `AI_INTEGRATIONS_OPENAI_BASE_URL` — without them the interpreter falls back to cached/rule-based parsing and the demo still works.
+- Required env: `DATABASE_URL`. Active analysis requires `AI_INTEGRATIONS_OPENAI_API_KEY` / `AI_INTEGRATIONS_OPENAI_BASE_URL`, securely provisioned through Replit AI Integrations. Missing configuration/provider failures return explicit errors; there is no canned interpretation fallback. Existing saved records remain readable.
 - Reset the demo: "Reset demo" in the sidebar demo-state card (or the persona menu), or `POST /api/demo/reset`.
 - Demo deep links: append `?as=seeker|owner|it` to any route to sign in as that persona.
 
@@ -39,7 +39,9 @@ Replace the placeholder with the exact verified ID; never grant all users. Revok
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5; DB: PostgreSQL + Drizzle ORM; Validation: Zod v4; codegen: Orval
 - Frontend: React 19 + Vite, Tailwind, shadcn/ui, wouter, TanStack Query, dnd-kit (drag); `@xyflow/react` is still installed but unused (the Library tree view was replaced by the schematic)
-- AI: OpenAI via Replit AI Integrations (brief interpretation only; never produces numbers or outputs)
+- AI: OpenAI via Replit AI Integrations for intake naming/MECE, legacy brief interpretation, semantic matching, reuse/prototype assessment, code/combination mapping, workbench recommendations and explicit invoice redundancy reasoning. Arithmetic, source hashes, authorization, actual workflow execution and acceptance checks remain deterministic.
+- Analysis provenance persists in `ai_analysis_records`: model, prompt version, input/evidence fingerprint, timestamp and validated result (not raw input bodies). Unchanged reads reuse labelled saved analyses; explicit analyses call the provider. Private record analyses include access scope in their inputs. Apply the database schema migration before deployment; production builds already use the same server and shared secrets. No deployment was performed.
+- Verification scripts: `scripts/ai-recommendation-check.ts`, `scripts/intake-ai-smoke.ts`, `scripts/assessment-ai-smoke.ts`, and `scripts/invoice-ai-smoke.ts` under `artifacts/api-server/`. These make billable real provider calls; unit tests use bounded mocks for invalid IDs, failed providers and correction preservation.
 
 ## Where things live
 

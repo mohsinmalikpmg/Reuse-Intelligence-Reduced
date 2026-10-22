@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, Download, FileCode2 } from "lucide-react";
+import { ChevronDown, Download, FileCode2, Sparkles } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getGetInvoiceAnalysisQueryKey, useGetInvoiceAnalysis, useAnalyzeInvoiceFeatures } from "@workspace/api-client-react";
 import { ErrorView, Skel, Tag } from "@/components/bits";
 import { cn } from "@/lib/utils";
 import { msgOf, useRegisteredSources, type CombinedCase, type RegisteredSource } from "@/lib/consolidation";
@@ -29,12 +31,14 @@ export function InvoiceOverlap({ c }: { c: CombinedCase }) {
       <header className="border-b border-border px-4 py-3">
         <div className="flex flex-wrap items-baseline gap-2">
           <h2 id="overlap-title" className="text-[16px] font-semibold">Feature redundancy</h2>
+          <Tag tone="muted">Source review · not live AI</Tag>
           <span className="text-[12px] text-muted-foreground" data-testid="text-overlap-revision">Saved · rev {c.revision}</span>
         </div>
         <p className="mt-1 text-[12px] text-muted-foreground">
           {counts.groups} features · {counts.overlapGroups} overlap · {counts.uniqueGroups} unique · {counts.unknownGroups} unknown
         </p>
       </header>
+      <InvoiceAI key={`${c.id}:${c.revision}:${c.fingerprint}`} c={c} rows={rows} />
 
       <div className="h-[400px] max-h-[60dvh] overflow-y-auto overscroll-contain" role="region" aria-label="Feature redundancy list" tabIndex={0} data-testid="overlap-scroll-window">
         {rows.map(r => {
@@ -99,6 +103,58 @@ export function InvoiceOverlap({ c }: { c: CombinedCase }) {
       </footer>
     </section>
   );
+}
+
+/** GET is persisted-only; this explicit mutation is the only model-generation path. */
+function InvoiceAI({ c, rows }: { c: CombinedCase; rows: Row[] }) {
+  const qc = useQueryClient();
+  const queryKey = [...getGetInvoiceAnalysisQueryKey(c.id), c.revision, c.fingerprint];
+  const saved = useGetInvoiceAnalysis(c.id, { query: { queryKey, retry: false, staleTime: 0 } });
+  const generate = useAnalyzeInvoiceFeatures({ mutation: {
+    onSuccess: result => { qc.setQueryData(queryKey, result); },
+  } });
+  const response = saved.data?.revision === c.revision ? saved.data : undefined;
+  const result = response?.analysis;
+  const provenance = response?.provenance;
+  return <div className="space-y-3 border-b border-border bg-muted/20 px-4 py-3" data-testid="invoice-ai-analysis">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="text-[13px] font-semibold">AI explanation · separate from source review</h3>
+      <button type="button" disabled={generate.isPending || saved.isLoading}
+        onClick={() => generate.mutate({ id: c.id })}
+        className="inline-flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-[12px] font-medium hover:bg-muted disabled:cursor-wait disabled:opacity-60"
+        data-testid="button-analyze-invoice">
+        <Sparkles className="h-3.5 w-3.5" aria-hidden />
+        {generate.isPending ? "Analyzing…" : "Analyze with AI"}
+      </button>
+    </div>
+    <p className="text-[12px] text-muted-foreground">Explicit analysis of this saved revision and original capability manifests. Proposals only; no configuration, permissions or original apps are changed.</p>
+    {saved.isLoading && <p className="text-[12px]" role="status">Reading saved analysis…</p>}
+    {saved.isError && <ErrorView message={`Saved AI analysis could not load. ${msgOf(saved.error)}`} onRetry={() => void saved.refetch()} />}
+    {generate.isError && <p role="alert" className="text-[12px] text-siennaink">{msgOf(generate.error)} Nothing was applied.</p>}
+    {!saved.isLoading && !saved.isError && !result && <p className="text-[12px] text-muted-foreground">No saved AI analysis matches this revision and evidence. Use Analyze with AI to request one.</p>}
+    {result && provenance && <div className="space-y-3 text-[12px]">
+      <p>{result.summary}</p>
+      <p className="text-muted-foreground" data-testid="invoice-ai-provenance">
+        {new Date(provenance.createdAt).toLocaleString()} · {provenance.model} · {provenance.cached ? "Saved / cached result" : "Newly generated result"} · {provenance.promptVersion} · rev {response.revision}
+      </p>
+      <details>
+        <summary className="cursor-pointer font-medium">AI reasoning and cited evidence ({result.proposals.length} features)</summary>
+        <div className="mt-3 space-y-4">
+          {result.proposals.map(proposal => <div key={proposal.rowId} className="space-y-1 border-l-2 border-border pl-3">
+            <h4 className="font-semibold">{rows.find(row => row.id === proposal.rowId)?.name ?? proposal.rowId} · proposed {proposal.action}</h4>
+            <p>{proposal.reasoning}</p>
+            <ul className="list-disc pl-4 text-muted-foreground">{proposal.limitations.map((item, i) => <li key={i}>{item}</li>)}</ul>
+            <p className="break-all font-mono text-[10px] text-muted-foreground">Row: {proposal.rowId} · {proposal.citations.map(ref => `${ref.sourceId} sha256:${ref.sha256}`).join(" · ")}</p>
+          </div>)}
+          <h4 className="font-semibold">Limits and unresolved work</h4>
+          <ul className="list-disc pl-4 text-muted-foreground">{result.limitations.map((item, i) => <li key={i}>{item}</li>)}</ul>
+          <h4 className="font-semibold">Evidence content versions</h4>
+          {response.evidence.map(source => <p key={source.sourceId} className="break-all font-mono text-[10px] text-muted-foreground">{source.sourceId} · {source.path} · sha256:{source.sha256}</p>)}
+          <p className="break-all font-mono text-[10px] text-muted-foreground">Evidence set: {response.evidenceHash}<br />Analysis input: {provenance.inputFingerprint}</p>
+        </div>
+      </details>
+    </div>}
+  </div>;
 }
 
 function Provenance({ row, regById, q }: { row: Row; regById: Record<string, RegisteredSource>; q: SrcQ }) {

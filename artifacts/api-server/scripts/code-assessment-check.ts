@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { assessCode } from "../src/lib/code-assessment";
+import { fixtureAssessCode as assessCode } from "./assessment-fixture";
 import manifest from "../src/data/solution-code-manifest.json";
 import type { Brief, LibraryCodePackage } from "@workspace/api-zod";
 import { acceptancePlan, runAcceptance, verifyAcceptanceEngine } from "../src/lib/acceptance-checks";
@@ -22,7 +22,7 @@ const input = brief([
   "Highlight safety hazards",
   "Predictive machine learning for failures",
 ]);
-const report = assessCode(input, pkg as LibraryCodePackage);
+const report = await assessCode(input, pkg as LibraryCodePackage);
 assert.equal(report.bestSolutionId, "sol-workorder-insight");
 assert.deepEqual(report.requirements.map(r => r.priority), [1, 2, 3, 4, 5, 6]);
 assert.deepEqual(report.requirements.slice(0, 3).map(r => r.status), ["covered", "covered", "covered"]);
@@ -31,15 +31,15 @@ assert.equal(report.requirements[4]?.status, "borrow");
 assert.equal(report.requirements[5]?.status, "missing");
 assert.equal(new Set(report.requirements.slice(3, 5).flatMap(r => r.matches.map(m => m.solutionId))).size, 2);
 assert(report.requirements.filter(r => r.status !== "missing").every(r => r.matches.every(m => m.evidence.file && m.evidence.symbol && m.evidence.lines.length === 2)));
-assert.equal(assessCode(brief(["Provide original work-order links"]), pkg as LibraryCodePackage).requirements[0]?.status, "partial");
-assert.equal(assessCode(brief(["Require human approval"]), pkg as LibraryCodePackage).requirements[0]?.status, "partial");
-const unrelated = assessCode(brief(["Summarize invoices"], "Finance teams review invoices"), pkg as LibraryCodePackage);
+assert.equal((await assessCode(brief(["Provide original work-order links"]), pkg as LibraryCodePackage)).requirements[0]?.status, "partial");
+assert.equal((await assessCode(brief(["Require human approval"]), pkg as LibraryCodePackage)).requirements[0]?.status, "partial");
+const unrelated = await assessCode(brief(["Summarize invoices"], "Finance teams review invoices"), pkg as LibraryCodePackage);
 assert.equal(unrelated.bestSolutionId, null);
 assert.equal(unrelated.requirements[0]?.status, "missing");
-const absent = assessCode(brief(["Translate maintenance notes into Japanese"]), pkg as LibraryCodePackage);
+const absent = await assessCode(brief(["Translate maintenance notes into Japanese"]), pkg as LibraryCodePackage);
 assert.equal(absent.bestSolutionId, null);
 assert.equal(absent.requirements[0]?.status, "missing");
-const controls = assessCode(brief(["Do not perform automatic updates.", "Support read-only review across two sites."]), pkg as LibraryCodePackage);
+const controls = await assessCode(brief(["Do not perform automatic updates.", "Support read-only review across two sites."]), pkg as LibraryCodePackage);
 assert.deepEqual(controls.requirements.map(r => r.status), ["constraint", "constraint"]);
 process.stdout.write("Code assessment checks passed: base selection, ordered coverage, two-donor reuse, gaps, partial claims, unrelated-domain rejection, source evidence.\n");
 
@@ -83,9 +83,9 @@ assert.throws(() => runAcceptance(report, { ...request, planFingerprint: "old" }
 assert.throws(() => runAcceptance(report, { ...request, borrowedIds: ["uploaded-script"] }, engineFingerprint), /Only proposed/);
 assert.throws(() => runAcceptance(report, { ...request, inputMode: "supplied", inputText: "" }, engineFingerprint), /Supply/);
 assert.throws(() => runAcceptance(report, { ...request, inputMode: "supplied", inputText: "line\n".repeat(501) }, engineFingerprint), /Supply/);
-const partialPlan = acceptancePlan(assessCode(brief(["Require human approval", "Do not summarize maintenance notes", "Provide original work-order links", "No automatic updates", "Don't summarize maintenance notes", "No safety alerts"]), pkg as LibraryCodePackage));
+const partialPlan = acceptancePlan(await assessCode(brief(["Require human approval", "Do not summarize maintenance notes", "Provide original work-order links", "No automatic updates", "Don't summarize maintenance notes", "No safety alerts"]), pkg as LibraryCodePackage));
 assert(partialPlan.criteria.every(c => !c.testable));
-const rankReport = assessCode(brief(["Summarize maintenance notes", "Provide supervisor review", "Rank issues"]), pkg as LibraryCodePackage);
+const rankReport = await assessCode(brief(["Summarize maintenance notes", "Provide supervisor review", "Rank issues"]), pkg as LibraryCodePackage);
 const rankPlan = acceptancePlan(rankReport);
 assert(rankPlan.borrowedOptions.some(o => o.capabilityId === "cap-clustering"));
 assert.throws(() => runAcceptance(rankReport, { ...request, planFingerprint: rankPlan.planFingerprint, reviewedCriterionIds: rankPlan.criteria.map(c => c.id), borrowedIds: ["cap-similarity"] }, engineFingerprint), /requires cap-clustering/);

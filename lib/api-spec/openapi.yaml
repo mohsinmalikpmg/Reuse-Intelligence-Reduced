@@ -20,6 +20,30 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /consolidation/cases/{id}/invoice-analysis:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getInvoiceAnalysis
+      description: Read saved evidence-matched AI analysis for an owned invoice case. Never calls the model.
+      responses:
+        "200":
+          description: Saved result or null when no analysis matches the current case and evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceAnalysisResponse" }
+    post:
+      operationId: analyzeInvoiceFeatures
+      description: Explicitly generate and persist evidence-grounded invoice reasoning. Requires ownership and same-origin CSRF validation. Does not change configuration.
+      responses:
+        "200":
+          description: Validated model result and provenance
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvoiceAnalysisResponse" }
   /consolidation/briefs/{briefId}/workbench:
     post:
       operationId: openIntakeCombination
@@ -2473,6 +2497,64 @@ components:
         solutionId: { type: string }
         version: { type: string }
         sha256: { type: string }
+    InvoiceAnalysisResponse:
+      type: object
+      required: [caseId, revision, evidenceHash, evidence, analysis, provenance]
+      properties:
+        caseId: { type: string }
+        revision: { type: integer }
+        evidenceHash: { type: string }
+        evidence:
+          type: array
+          items:
+            type: object
+            required: [sourceId, path, sha256]
+            properties:
+              sourceId: { type: string }
+              path: { type: string }
+              sha256: { type: string }
+        analysis:
+          anyOf:
+            - $ref: "#/components/schemas/InvoiceFeatureAnalysis"
+            - type: "null"
+        provenance:
+          anyOf:
+            - $ref: "#/components/schemas/InvoiceAnalysisProvenance"
+            - type: "null"
+    InvoiceAnalysisProvenance:
+      type: object
+      required: [id, model, promptVersion, inputFingerprint, createdAt, cached]
+      properties:
+        id: { type: string }
+        model: { type: string }
+        promptVersion: { type: string }
+        inputFingerprint: { type: string }
+        createdAt: { type: string }
+        cached: { type: boolean }
+    InvoiceFeatureAnalysis:
+      type: object
+      required: [summary, proposals, limitations]
+      properties:
+        summary: { type: string }
+        limitations: { type: array, items: { type: string } }
+        proposals:
+          type: array
+          items:
+            type: object
+            required: [rowId, action, reasoning, limitations, citations]
+            properties:
+              rowId: { type: string }
+              action: { type: string, enum: [retain, replace, combine, keep separate] }
+              reasoning: { type: string }
+              limitations: { type: array, items: { type: string } }
+              citations:
+                type: array
+                items:
+                  type: object
+                  required: [sourceId, sha256]
+                  properties:
+                    sourceId: { type: string }
+                    sha256: { type: string }
     ConsolidationCase:
       type: object
       required: [id, recipeId, title, need, baseSolutionId, selectedSources, capabilityIds, config, wiring, revision, createdAt, updatedAt, fingerprint, runUrl]
@@ -3119,6 +3201,10 @@ components:
       type: object
       required: [profile, requirements, capabilities, sources, questions, orderReviewed, safety, agreed, confirmed]
       properties:
+        analysis:
+          $ref: "#/components/schemas/InvoiceAnalysisProvenance"
+        nameAnalysis:
+          $ref: "#/components/schemas/InvoiceAnalysisProvenance"
         name:
           type: object
           required: [value, origin, provenance]

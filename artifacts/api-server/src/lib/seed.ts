@@ -57,7 +57,8 @@ export async function resetDemo(): Promise<DemoState> {
     confirmed: true,
     createdAt: new Date().toISOString(),
   };
-  const outcome = matchBrief(provisional);
+  // Seeding does not spend provider calls or claim that this fixture was AI assessed.
+  const outcome = { valueStatement: "Demo brief. Open matches to request an evidence-grounded AI assessment." };
   const [briefRow] = await db
     .insert(briefsTable)
     .values({

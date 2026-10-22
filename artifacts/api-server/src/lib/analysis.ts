@@ -39,6 +39,8 @@ const READINESS: Record<Solution["status"], number> = { certified: 1, pilot: 0.7
 const EVIDENCE: Record<Solution["evidenceLevel"], number> = { strong: 1, moderate: 0.7, limited: 0.4, none: 0.1 };
 
 import { configDiff, provenance } from "./lineage";
+import { z } from "zod";
+import { analyze } from "./ai-analysis";
 
 export function isDuplicate(cap: Capability, ctx: CaseContext): Capability | null {
   const conflict = conflictingBaseCapability(cap, ctx);
@@ -46,7 +48,7 @@ export function isDuplicate(cap: Capability, ctx: CaseContext): Capability | nul
   return cap.riskClass === "high" ? null : conflict;
 }
 
-export function buildRecommendation(c: Case, ctx: CaseContext, fitFromBrief: number | null): Recommendation {
+function recommendationFacts(c: Case, ctx: CaseContext, fitFromBrief: number | null): Recommendation {
   const toAdd: CapabilityProvenance[] = [];
   const duplicates: CapabilityProvenance[] = [];
   const incompatible: CapabilityProvenance[] = [];
@@ -120,6 +122,42 @@ export function buildRecommendation(c: Case, ctx: CaseContext, fitFromBrief: num
       it: `Consolidates ${ctx.candidates.length + 1} overlapping products into one certified base, retires ${retirementCandidates.length}, and reuses ${recommendedAdds.length} capabilit${recommendedAdds.length === 1 ? "y" : "ies"} instead of rebuilding.`,
     },
     adoptionEffort: `${ctx.base.adoptionEffort === "low" ? "Low" : ctx.base.adoptionEffort === "medium" ? "Medium" : "High"} for existing ${ctx.base.name} users; ${ctx.base.timeToAdopt} for new sites. Added modules need ${recommendedAdds.some((p) => isUnsupported(p.capability)) ? "an ownership transfer and " : ""}integration work by Operations Platforms.`,
+  };
+}
+
+export async function buildRecommendation(c: Case, ctx: CaseContext, fitFromBrief: number | null): Promise<Recommendation> {
+  const facts = recommendationFacts(c, ctx, fitFromBrief);
+  const allowed = new Set(facts.capabilitiesToAdd.map(p => p.capability.id));
+  const schema = z.object({
+    summary: z.string().min(1),
+    rationale: z.array(z.string().min(1)).min(1),
+    roleSummaries: z.object({ seeker: z.string(), owner: z.string(), it: z.string() }),
+    additions: z.array(z.object({ id: z.string(), recommended: z.boolean(), reason: z.string().min(1) })),
+  }).superRefine((r, check) => {
+    if (r.additions.length !== allowed.size || new Set(r.additions.map(a => a.id)).size !== allowed.size || r.additions.some(a => !allowed.has(a.id)))
+      check.addIssue({ code: "custom", message: "Every allowed capability must be accounted for exactly once." });
+  });
+  const result = await analyze({
+    purpose: "workbench-recommendation", promptVersion: "grounded-recommendation-v1",
+    schema,
+    instructions: `Return JSON {summary,rationale:string[],roleSummaries:{seeker,owner,it},additions:[{id,recommended:boolean,reason}]}. Assess the actual intent and configured capabilities against source evidence. Account for every allowed addition exactly once. Required controls and server exclusions cannot be changed. Do NOT claim full coverage, measured benefit, retirement or approval without evidence. Recommendations are proposals for testing, not implementation proof. No numerical fit/confidence/savings claims. Explain uncertainties and relevant differences.`,
+    input: {
+      caseId: c.id, intent: c.intent, title: c.title, base: ctx.base,
+      configuration: { modules: c.moduleStates, values: c.configValues },
+      allowedAdditions: facts.capabilitiesToAdd.map(p => p.capability),
+      retained: facts.capabilitiesToRetain.map(p => p.capability),
+      excluded: [...facts.duplicates, ...facts.incompatible],
+    },
+  });
+  const choices = new Map(result.data.additions.map(a => [a.id, a]));
+  return {
+    ...facts, ...result.data,
+    capabilitiesToAdd: facts.capabilitiesToAdd.map(p => {
+      const choice = choices.get(p.capability.id)!;
+      return { ...p, state: choice.recommended ? "recommended" : "optional", reason: choice.reason };
+    }),
+    rationale: [...result.data.rationale, `AI analysis · ${result.provenance.model} · ${result.provenance.createdAt} · ${result.provenance.cached ? "saved unchanged analysis" : "new analysis"} · ${result.provenance.inputFingerprint}`],
+    retirementCandidates: [],
   };
 }
 
