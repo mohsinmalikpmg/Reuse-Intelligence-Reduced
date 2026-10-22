@@ -12,11 +12,11 @@ paths = [ "/finance-demo/" ]
 localPort = 21404
 
 [services.development]
-run = "pnpm --filter @workspace/finance-consolidation-demo run dev"
+run = "pnpm --filter @workspace/finance-consolidation-demo exec vite --config host-theme.vite.config.ts --host 0.0.0.0"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/finance-consolidation-demo", "run", "build" ]
-run = ["pnpm", "--filter", "@workspace/finance-consolidation-demo", "run", "serve"]
+build = [ "pnpm", "--filter", "@workspace/finance-consolidation-demo", "exec", "vite", "build", "--config", "host-theme.vite.config.ts" ]
+run = ["pnpm", "--filter", "@workspace/finance-consolidation-demo", "exec", "vite", "preview", "--config", "host-theme.vite.config.ts", "--host", "0.0.0.0"]
 
 [services.env]
 PORT = "21404"

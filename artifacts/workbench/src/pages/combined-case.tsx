@@ -117,7 +117,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
             <Node title={finance ? "Monthly management report" : "One combined invoice app"} sub={`Opens at ${recipe.runPath}`} />
           </ol>
           {edge && (
-            <div className="mt-4 rounded-xl bg-white p-4 text-foreground" role="dialog" aria-label="Adapter detail" data-testid="panel-adapter">
+            <div className="mt-4 rounded-xl bg-card p-4 text-foreground" role="dialog" aria-label="Adapter detail" data-testid="panel-adapter">
               <div className="flex items-start gap-2"><Cable className="mt-0.5 h-4 w-4 text-primary" /><div className="min-w-0 flex-1"><div className="font-semibold">{nodeName(edge.from)} to {nodeName(edge.to)}</div><p className="mt-1 text-[13.5px]">{edge.contract}</p><p className="mt-1 font-mono text-[11.5px] text-muted-foreground">{edge.id}</p></div>
                 <button onClick={() => setEdge(null)} className={btn.quiet} aria-label="Close adapter detail"><X className="h-4 w-4" /></button></div>
             </div>

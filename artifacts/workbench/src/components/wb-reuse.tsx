@@ -288,8 +288,8 @@ export function RequirementAdder({ actions, briefRequirements, caseRequirements,
             <p className="mt-2 text-[13.5px] text-muted-foreground" data-testid="text-covered-note">Nothing to add: the current product already does this, so Version B does too.</p>
           ) : state === "added" ? (
             <div className="mt-3 flex flex-wrap items-center gap-3" data-testid="panel-run-both-prompt">
-              <span className="text-[14px]">Added to Version B. Energize A/B to see what it changes.</span>
-              <button data-testid="button-run-both-prompt" onClick={onRunBoth} disabled={runBothBusy || !needsBoth} className={cn(btn.accent, "min-h-11 px-5 text-[15px]")}><Zap className="h-4 w-4" /> {runBothBusy ? "Energizing..." : "Energize A/B"}</button>
+              <span className="text-[14px]">Added to Version B. Fuse A/B to see what it changes.</span>
+              <button data-testid="button-run-both-prompt" onClick={onRunBoth} disabled={runBothBusy || !needsBoth} className={cn(btn.accent, "min-h-11 px-5 text-[15px]")}><Zap className="h-4 w-4" /> {runBothBusy ? "Fusing..." : "Fuse A/B"}</button>
             </div>
           ) : (
             <div className="mt-3">

@@ -4,6 +4,10 @@ A reuse-first solution discovery and A/B workbench: a maintenance supervisor des
 
 ## Run & Operate
 
+- All seven runnable web apps use `host-theme.vite.config.ts` via their managed workflows and production builds. This adds shared light/dark persistence before paint without modifying registered original source files. For manual Vite commands use `--config host-theme.vite.config.ts`; direct legacy package dev/build scripts do not include the host theme.
+- Shared theme assets live in `scripts/theme/`. Browser smoke check: start Chromium with remote debugging on port 9222, then run `node --experimental-websocket scripts/theme/check-theme.mjs`. It checks navigation, reload, toggles and cross-tab synchronization without changing application data.
+- Use “Fuse” / “Fusing” for user-facing workflow actions; internal legacy identifiers remain compatible.
+
 - Forecast to Report follows Library (`?recipe=finance`) → saved combination Workbench → run. Finance controls edit that case's configuration; `/workbench/wiring` redirects to Library. `/finance-demo/` requires a saved case for execution and otherwise offers the Library entry. The original finance engines and server validation remain unchanged.
 
 - Library trials now use the invoice workbench's dark Included capabilities panel and side controls. Keep cross-app additions, source attribution, insertion/request slots, configuration editing and Undo in this layout; do not restore the old schematic/rows toggle. A/B evidence remains below the editor.

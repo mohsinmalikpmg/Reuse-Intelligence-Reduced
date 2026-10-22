@@ -258,7 +258,7 @@ function Field({ label, hint, changed, children }: { label: string; hint?: strin
     </div>
   );
 }
-const seg = (on: boolean) => cn("min-h-9 rounded-lg px-3 text-[13.5px] font-semibold transition-colors", on ? "bg-primary text-white shadow-sm" : "text-primary/80 hover:bg-secondary");
+const seg = (on: boolean) => cn("min-h-9 rounded-lg px-3 text-[13.5px] font-semibold transition-colors", on ? "bg-primary text-primary-foreground shadow-sm" : "text-primary/80 hover:bg-secondary");
 
 export function Controls({ cat, draft, edit, savedConfig }: { cat: FinanceWiringCatalog; draft: FinanceWiringConfig; edit: (p: Partial<FinanceWiringConfig>) => void; savedConfig?: FinanceWiringConfig }) {
   const validAmount = Number.isInteger(draft.adjustment) && draft.adjustment % 6 === 0 && draft.adjustment >= -600 && draft.adjustment <= 6000;
@@ -304,7 +304,7 @@ export function Controls({ cat, draft, edit, savedConfig }: { cat: FinanceWiring
               return (
                 <button key={c.id} aria-pressed={on} data-testid={`toggle-centre-${c.id}`}
                   onClick={() => edit({ centres: (on ? draft.centres.filter((x) => x !== c.name) : [...draft.centres, c.name]) as FinanceWiringConfig["centres"] })}
-                  className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13.5px] font-medium", on ? "border-primary bg-primary text-white" : "border-input bg-card text-foreground hover:border-primary/50")}>
+                  className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13.5px] font-medium", on ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card text-foreground hover:border-primary/50")}>
                   {on && <Check className="h-3.5 w-3.5" />}{c.name}<span className="font-mono text-[11px] opacity-70">#{c.id}</span>
                 </button>
               );
@@ -362,7 +362,7 @@ function ActionPanel(p: {
   const v = p.validation;
   return (
     <section className="card-soft border-t-4 border-t-sienna p-5" data-testid="panel-actions">
-      <h2 className="text-[17px] font-semibold">Energize this config</h2>
+      <h2 className="text-[17px] font-semibold">Fuse this config</h2>
       <div className="mt-3" data-testid="status-validation">
         {!v ? <p className="text-[13.5px] text-muted-foreground">Not validated yet.</p>
           : !p.validationCurrent ? <p className="text-[13.5px] text-muted-foreground">Last check was for a previous config ({v.valid ? "valid" : "invalid"}). Validate again.</p>

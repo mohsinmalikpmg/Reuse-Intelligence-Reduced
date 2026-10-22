@@ -12,8 +12,8 @@ const SOURCE_LABEL: Record<SourceId, string> = { "invoice-finder": "Invoice Find
 const CAP_LABEL: Record<CapabilityId, string> = { "fuzzy-search": "Fuzzy search", "bulk-decisions": "Bulk decisions", "spend-tracing": "Spend tracing" };
 const CAP_SOURCE: Record<CapabilityId, string> = { "fuzzy-search": "invoice-finder/src/domain/search.ts", "bulk-decisions": "approval-desk/src/domain/bulk.ts", "spend-tracing": "spend-tracker/src/domain/lines.ts" };
 const STATUS_TONE: Record<string, string> = {
-  pending: "bg-[hsl(40_70%_88%)] text-[hsl(32_60%_28%)]", approved: "bg-[hsl(158_30%_86%)] text-[hsl(158_40%_22%)]",
-  rejected: "bg-[hsl(2_60%_90%)] text-[hsl(2_60%_34%)]", paid: "bg-[hsl(222_40%_88%)] text-[hsl(222_52%_24%)]",
+  pending: "bg-[hsl(40_70%_88%)] text-[hsl(32_60%_28%)] dark:bg-[hsl(38_35%_18%)] dark:text-[hsl(40_75%_72%)]", approved: "bg-[hsl(158_30%_86%)] text-[hsl(158_40%_22%)] dark:bg-[hsl(158_25%_16%)] dark:text-[hsl(158_45%_66%)]",
+  rejected: "bg-[hsl(2_60%_90%)] text-[hsl(2_60%_34%)] dark:bg-[hsl(2_35%_18%)] dark:text-[hsl(2_70%_72%)]", paid: "bg-[hsl(222_40%_88%)] text-[hsl(222_52%_24%)] dark:bg-[hsl(222_30%_20%)] dark:text-[hsl(220_60%_78%)]",
 };
 
 function Pill({ status }: { status: string }) {
@@ -325,7 +325,7 @@ function Trace({ recipe, ledger }: { recipe: Recipe; ledger: readonly DecisionEv
       {data.error || !data.t ? <p role="alert" className="border border-destructive/40 p-3 text-sm text-destructive">{data.error}</p> : (
         <div className="grid gap-6 md:grid-cols-[1fr_1.4fr]">
           <div className="border border-border bg-card">
-            <div className={`flex items-center justify-between px-4 py-3 ${data.t.summary.reconciles ? "bg-[hsl(158_30%_90%)]" : "bg-destructive/10"}`}>
+            <div className={`flex items-center justify-between px-4 py-3 ${data.t.summary.reconciles ? "bg-[hsl(158_30%_90%)] dark:bg-[hsl(158_25%_14%)]" : "bg-destructive/10"}`}>
               <span className="text-sm font-medium">{data.t.summary.reconciles ? "Reconciles" : "Does not reconcile"}</span>
               <span className="num text-xs">{data.t.summary.total.lineCount} lines / {data.t.summary.total.invoiceIds.length} invoices</span>
             </div>

@@ -227,68 +227,68 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 90 14% 95%;
+  --background: 196 22% 9%;
 
-  --foreground: 196 30% 27%;
+  --foreground: 90 14% 90%;
 
-  --border: 150 9% 87%;
+  --border: 196 15% 20%;
 
-  --card: 80 14% 98%;
+  --card: 196 20% 12%;
 
-  --card-foreground: 196 30% 27%;
+  --card-foreground: 90 14% 90%;
 
-  --card-border: 150 9% 87%;
+  --card-border: 196 15% 21%;
 
-  --sidebar: 160 10% 92%;
+  --sidebar: 196 22% 11%;
 
-  --sidebar-foreground: 196 30% 27%;
+  --sidebar-foreground: 90 14% 88%;
 
-  --sidebar-border: 150 9% 87%;
+  --sidebar-border: 196 15% 20%;
 
-  --sidebar-primary: 196 30% 27%;
+  --sidebar-primary: 190 32% 70%;
 
-  --sidebar-primary-foreground: 90 30% 97%;
+  --sidebar-primary-foreground: 196 30% 11%;
 
-  --sidebar-accent: 190 20% 93%;
+  --sidebar-accent: 196 18% 17%;
 
-  --sidebar-accent-foreground: 196 30% 27%;
+  --sidebar-accent-foreground: 90 14% 90%;
 
-  --sidebar-ring: 22 40% 52%;
+  --sidebar-ring: 22 55% 62%;
 
-  --popover: 80 14% 98%;
+  --popover: 196 20% 13%;
 
-  --popover-foreground: 196 30% 27%;
+  --popover-foreground: 90 14% 90%;
 
-  --popover-border: 150 9% 87%;
+  --popover-border: 196 15% 22%;
 
-  --primary: 196 30% 27%;
+  --primary: 190 32% 70%;
 
-  --primary-foreground: 90 30% 97%;
+  --primary-foreground: 196 30% 11%;
 
-  --secondary: 190 20% 93%;
+  --secondary: 196 16% 18%;
 
-  --secondary-foreground: 196 30% 27%;
+  --secondary-foreground: 90 14% 88%;
 
-  --muted: 150 10% 92%;
+  --muted: 196 14% 17%;
 
-  --muted-foreground: 197 10% 44%;
+  --muted-foreground: 190 9% 64%;
 
-  --accent: 26 55% 94%;
+  --accent: 22 30% 18%;
 
-  --accent-foreground: 19 53% 42%;
+  --accent-foreground: 22 60% 70%;
 
-  --destructive: 19 53% 42%;
+  --destructive: 8 60% 58%;
 
   --destructive-foreground: 40 50% 97%;
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
-  --input: 160 10% 80%;
-  --ring: 22 40% 52%;
-  --chart-1: 196 30% 27%;
-  --chart-2: 19 53% 42%;
-  --chart-3: 93 28% 33%;
-  --chart-4: 198 18% 54%;
-  --chart-5: 26 55% 70%;
+  --input: 196 14% 28%;
+  --ring: 22 55% 62%;
+  --chart-1: 190 32% 66%;
+  --chart-2: 19 60% 62%;
+  --chart-3: 93 30% 58%;
+  --chart-4: 198 25% 64%;
+  --chart-5: 40 50% 62%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);

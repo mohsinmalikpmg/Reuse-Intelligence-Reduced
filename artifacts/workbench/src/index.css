@@ -156,6 +156,62 @@
   --sidebar-accent-border: hsl(191 30% 18%);
 }
 
+/* DARK MODE: Electric Ink extended to the page. Same hues as light; the sidebar and the
+   live schematic were already dark and stay exactly as designed. Set by the shared
+   FUSEBOX theme runtime (localStorage "fusebox.theme") on <html>. */
+.dark {
+  --button-outline: rgba(232, 247, 248, 0.12);
+  --badge-outline: rgba(232, 247, 248, 0.07);
+  --opaque-button-border-intensity: 8;
+  --elevate-1: rgba(232, 247, 248, 0.04);
+  --elevate-2: rgba(232, 247, 248, 0.08);
+  --background: 199 45% 7%;
+  --foreground: 190 20% 88%;
+  --border: 197 30% 17%;
+  --card: 198 42% 10%;
+  --card-foreground: 190 20% 88%;
+  --card-border: 197 30% 17%;
+  --sidebar: 199 72% 6%;
+  --sidebar-border: 197 40% 15%;
+  --popover: 198 42% 11%;
+  --popover-foreground: 190 20% 88%;
+  --popover-border: 197 30% 20%;
+  --primary: 187 45% 70%;
+  --primary-foreground: 199 70% 9%;
+  --secondary: 197 35% 15%;
+  --secondary-foreground: 187 40% 82%;
+  --muted: 197 30% 14%;
+  --muted-foreground: 192 12% 64%;
+  --accent: 20 35% 17%;
+  --accent-foreground: 22 70% 72%;
+  --destructive: 2 62% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --input: 197 25% 25%;
+  --ring: 187 50% 60%;
+  --chart-1: 187 45% 66%;
+  --chart-2: 20 65% 62%;
+  --chart-3: 70 45% 55%;
+  --chart-4: 196 35% 62%;
+  --chart-5: 191 10% 55%;
+  --ok: 70 45% 62%;
+  --okbg: 70 25% 15%;
+  --siennaink: 22 65% 66%;
+  --skyink: 196 40% 70%;
+  --warn: 22 65% 66%;
+  --bad: 2 70% 66%;
+  --ink: 190 20% 88%;
+  --primary-border: hsl(187 45% 62%);
+  --secondary-border: hsl(197 35% 22%);
+  --muted-border: hsl(197 30% 20%);
+  --accent-border: hsl(20 35% 26%);
+  --destructive-border: hsl(2 62% 48%);
+}
+/* Filled sienna actions keep white type: the fill stays deep while siennaink text lightens. */
+.dark .bg-siennaink { background-color: hsl(20 56% 42%); }
+.dark .card-soft { box-shadow: 0 1px 2px hsl(199 70% 3% / .4), 0 10px 26px -18px hsl(199 70% 2% / .7); }
+.dark .lift { box-shadow: 0 2px 4px hsl(199 70% 3% / .45), 0 14px 28px -12px hsl(199 70% 2% / .75); }
+.dark .schem { border-color: #1E4A58; }
+
 @layer base {
   * {
     @apply border-border;
@@ -369,3 +425,5 @@
   :root:not([data-motion="on"]) .weld { display: none; }
   :root:not([data-motion="on"]) .cube-spark { opacity: .85; }
 }
+/* Arbitrary light sky tint used for explanations and the Pilot badge */
+.dark [class~="bg-[hsl(196_30%_93%)]"] { background-color: hsl(196 32% 15%); }

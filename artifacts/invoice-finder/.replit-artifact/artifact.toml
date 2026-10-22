@@ -12,10 +12,10 @@ paths = [ "/invoice-finder/" ]
 localPort = 23481
 
 [services.development]
-run = "pnpm --filter @workspace/invoice-finder run dev"
+run = "pnpm --filter @workspace/invoice-finder exec vite --config host-theme.vite.config.ts --host 0.0.0.0"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/invoice-finder", "run", "build" ]
+build = [ "pnpm", "--filter", "@workspace/invoice-finder", "exec", "vite", "build", "--config", "host-theme.vite.config.ts" ]
 serve = "static"
 publicDir = "artifacts/invoice-finder/dist/public"
 

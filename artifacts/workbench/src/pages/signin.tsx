@@ -5,6 +5,7 @@ import { useListPersonas, type Role } from "@workspace/api-client-react";
 import { usePersona } from "@/lib/persona";
 import { landingFor } from "@/lib/case";
 import { CenovusEndorsement, Logo, ROLE_TABS } from "@/components/frame";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const LINE: Record<Role, { text: string; icon: typeof Compass }> = {
   seeker: { text: "Describe a problem. Find what already exists. Try it on real data.", icon: Compass },
@@ -32,7 +33,7 @@ export default function SignIn() {
       <div className="bg-sidebar">
         <header className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-5 md:px-8">
           <div className="flex items-center gap-3"><Logo light /><span className="hidden font-mono text-[10.5px] uppercase tracking-[0.16em] text-cyan/80 sm:inline">AI solution convergence</span></div>
-          <div className="flex items-center gap-3"><span aria-hidden className="h-6 w-px bg-white/15" /><CenovusEndorsement /></div>
+          <div className="flex items-center gap-3"><ThemeToggle onDark /><span aria-hidden className="h-6 w-px bg-white/15" /><CenovusEndorsement /></div>
         </header>
       </div>
       <div className="mx-auto max-w-[1100px] px-5 pb-16 pt-14 md:px-8 md:pt-20">
@@ -50,7 +51,7 @@ export default function SignIn() {
                 <span className="mt-2 text-[15px] leading-snug text-muted-foreground">{LINE[t.role].text}</span>
                 <span className="mt-auto flex items-end justify-between pt-6">
                   <span className="text-[14px] font-semibold" data-testid={`text-persona-${t.role}`}>Continue as {t.label}</span>
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-white transition-transform group-hover:translate-x-0.5"><ArrowRight className="h-5 w-5" /></span>
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:translate-x-0.5"><ArrowRight className="h-5 w-5" /></span>
                 </span>
               </button>
             );

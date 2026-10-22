@@ -14,7 +14,7 @@ function diffTone(v: string, id: string) {
   const t = v.trim();
   if (/^-?0*(\.0*)?$/.test(t.replace('-', ''))) return 'text-muted-foreground';
   const favourable = id === '1' || id === 'opex' ? t.startsWith('-') : !t.startsWith('-');
-  return favourable ? 'text-[hsl(150_45%_28%)]' : 'text-[hsl(4_66%_42%)]';
+  return favourable ? 'text-[hsl(150_45%_28%)] dark:text-[hsl(150_45%_62%)]' : 'text-[hsl(4_66%_42%)] dark:text-[hsl(4_70%_68%)]';
 }
 
 function LinesTable({ lines, id }: { lines: ReportLine[]; id: string }) {

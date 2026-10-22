@@ -1,0 +1,7 @@
+/* Hand-tuned dark overrides for Spend Tracker literals the generator cannot see (arbitrary Tailwind values). */
+html.dark [class~="text-[hsl(32_80%_32%)]"], html.dark [class~="text-[hsl(32_80%_28%)]"] { color: hsl(36 80% 68%); }
+html.dark [class~="bg-[hsl(210_10%_92%)]"] { background-color: hsl(210 8% 20%); }
+html.dark [class~="shadow-[4px_4px_0_hsl(38_84%_44%)]"] { box-shadow: 4px 4px 0 hsl(38 70% 40%); }
+html.dark [class*="repeating-linear-gradient(135deg"] { background-image: repeating-linear-gradient(135deg, hsl(38 70% 52%) 0 4px, hsl(42 50% 30%) 4px 8px); }
+html.dark { --color-gray-50: hsl(200 18% 12%); --color-gray-100: hsl(200 16% 16%); --color-gray-900: hsl(200 15% 88%); }
+html.dark .bg-gray-900 { color: hsl(200 30% 10%); }

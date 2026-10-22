@@ -11,6 +11,8 @@ import { useMotion } from "@/lib/motion";
 import { landingFor, useCurrentCase, useInvalidateAll } from "@/lib/case";
 import { useUndoToast } from "@/components/bits";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const ROLE_TABS: { role: Role; label: string; id: string }[] = [
   { role: "seeker", label: "Solution Seeker", id: "persona-seeker" },
@@ -21,6 +23,8 @@ const BRAND = `${import.meta.env.BASE_URL}brand/`;
 
 /** FUSEBOX wordmark with the Power Cube mark. `light` = the version for dark surfaces. Vector artwork, never retyped. */
 export function Logo({ light, className, plain }: { light?: boolean; className?: string; plain?: boolean }) {
+  const dark = useTheme().theme === "dark";
+  if (dark) light = true; // dark theme surfaces always take the dark-surface wordmark
   return (
     <img data-testid={plain ? undefined : "img-logo"} src={`${BRAND}${light ? "fusebox-logo-dark" : "fusebox-logo-light"}.svg`} alt="FUSEBOX" className={cn("h-7 w-auto select-none", className)} draggable={false} />
   );
@@ -38,7 +42,7 @@ export function CenovusEndorsement({ className }: { className?: string }) {
 /** The three circuit stages of the kit. Every destination and every page belongs to exactly one. */
 export const STAGES = {
   trace: { n: "01", label: "Trace" },
-  connect: { n: "02", label: "Connect + Energize" },
+  connect: { n: "02", label: "Connect + Fuse" },
   converge: { n: "03", label: "Converge" },
 } as const;
 export type Stage = keyof typeof STAGES;
@@ -146,7 +150,7 @@ export function Frame({ children }: { children: ReactNode }) {
           aria-checked={persona.role === t.role}
           data-testid={`button-role-${t.role}`}
           onClick={() => setPersona({ id: personas.data?.find((p) => p.role === t.role)?.id ?? t.id, role: t.role })}
-          className={cn("min-h-8 rounded-md px-3 text-[13.5px] font-semibold transition-colors", persona.role === t.role ? "bg-primary text-white shadow-sm" : "text-primary/80 hover:text-primary")}
+          className={cn("min-h-8 rounded-md px-3 text-[13.5px] font-semibold transition-colors", persona.role === t.role ? "bg-primary text-primary-foreground shadow-sm" : "text-primary/80 hover:text-primary")}
         >
           {t.label}
         </button>
@@ -240,7 +244,7 @@ export function Frame({ children }: { children: ReactNode }) {
       {desktop && <aside className="sticky top-0 flex h-[100dvh] flex-col overflow-y-auto bg-sidebar text-sidebar-foreground" data-testid={wide ? "sidebar" : "sidebar-rail"}>{sidebarBody(!wide)}</aside>}
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-40 h-[var(--shell-top)] border-b border-border bg-white/95 backdrop-blur-sm">
+        <header className="sticky top-0 z-40 h-[var(--shell-top)] border-b border-border bg-background/95 backdrop-blur-sm">
           <div className="flex h-full items-center gap-3 px-4 md:px-6">
             {/* Phone: menu + wordmark */}
             {!desktop && <button type="button" onClick={() => setMenu(true)} aria-label="Open menu" data-testid="button-menu" className="grid h-9 w-9 place-items-center rounded-lg text-primary hover:bg-secondary"><Menu className="h-5 w-5" /></button>}
@@ -259,9 +263,10 @@ export function Frame({ children }: { children: ReactNode }) {
             {/* Global search is always reachable: in the top bar from 768px up, in the phone menu below */}
             {desktop && search("w-[200px] lg:w-[240px] xl:w-[300px]")}
             {desktop && roleSwitch}
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger data-testid="button-persona-menu" className="flex min-h-9 items-center gap-2 rounded-lg px-1.5 text-[13px] text-primary hover:bg-secondary">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[12px] font-semibold text-white">{initials}</span>
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground">{initials}</span>
                 <span data-testid="text-persona-role" className="hidden max-w-[140px] truncate xl:block">{roleLabel}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </DropdownMenuTrigger>

@@ -85,8 +85,8 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
             return (
               <li key={e.id} className={horizontal ? "shrink-0" : ""}>
                 <button data-testid={`map-${e.id}`} aria-current={isCurrent ? "location" : undefined} onClick={() => onJump(e.id)}
-                  className={cn("relative flex w-full items-center gap-2.5 rounded-lg text-left transition-colors", horizontal ? "min-h-9 px-2.5 py-1" : "min-h-9 px-2 py-1", isCurrent ? "bg-primary text-white" : "text-primary hover:bg-secondary")}>
-                  <span className={cn("relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-dashed text-[11px] font-semibold", isCurrent ? "border-white/60 bg-primary text-white" : "border-sienna/60 bg-card text-siennaink")}>?</span>
+                  className={cn("relative flex w-full items-center gap-2.5 rounded-lg text-left transition-colors", horizontal ? "min-h-9 px-2.5 py-1" : "min-h-9 px-2 py-1", isCurrent ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary")}>
+                  <span className={cn("relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-dashed text-[11px] font-semibold", isCurrent ? "border-white/60 bg-primary text-primary-foreground" : "border-sienna/60 bg-card text-siennaink")}>?</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium italic leading-tight">Requested: {e.request.need}</span>
                     <span className={cn("block text-[11px] leading-tight", isCurrent ? "text-white/80" : "text-siennaink")}>Not built yet</span>
@@ -104,12 +104,12 @@ export function WorkflowMap({ entries, current, open, onJump, onExpandAll, onCol
                 className={cn(
                   "relative flex w-full items-center gap-2.5 rounded-lg text-left transition-colors",
                   horizontal ? "min-h-9 px-2.5 py-1" : "min-h-9 px-2 py-1",
-                  isCurrent ? "bg-primary text-white" : "text-primary hover:bg-secondary",
+                  isCurrent ? "bg-primary text-primary-foreground" : "text-primary hover:bg-secondary",
                 )}
               >
                 <span data-lit={lit?.has(e.id) ? "true" : undefined} className={cn(
                   "relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[11px] font-semibold transition-shadow",
-                  isCurrent ? "border-white/40 bg-primary text-white" : r?.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : "border-border bg-card text-muted-foreground",
+                  isCurrent ? "border-white/40 bg-primary text-primary-foreground" : r?.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : "border-border bg-card text-muted-foreground",
                   lit?.has(e.id) && "ring-2 ring-cyan shadow-[0_0_10px_hsl(187_70%_65%/.7)]",
                 )}>
                   {e.id === "input" ? <ChevronDown className="h-3.5 w-3.5" /> : e.id === "output" ? "=" : e.id === "verdict" ? <Check className="h-3.5 w-3.5" /> : r?.deviation === "added" ? "+" : stepNo ?? i}
@@ -265,7 +265,7 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
   const spine = (hasLine: boolean, label?: ReactNode) => (
     <div className="relative flex justify-center">
       {hasLine && <span aria-hidden className="absolute inset-y-0 w-px bg-border" />}
-      {label !== undefined && <span className={cn("relative z-10 mt-[15px] grid h-6 w-6 place-items-center rounded-full border text-[11px] font-semibold", r.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : open ? "border-primary bg-primary text-white" : "border-border bg-background text-muted-foreground")}>{label}</span>}
+      {label !== undefined && <span className={cn("relative z-10 mt-[15px] grid h-6 w-6 place-items-center rounded-full border text-[11px] font-semibold", r.deviation === "added" ? "border-sienna/50 bg-accent text-siennaink" : open ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground")}>{label}</span>}
     </div>
   );
   if (narrow) {
@@ -404,7 +404,7 @@ export function LaneHeaders({ editTools, narrow, showA, setShowA, controls, aLab
     <div className="mb-3">
       <div className={laneGrid}>
         <div data-testid="workflow-a" className="flex min-h-10 flex-wrap items-center gap-2 px-1">
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[13px] font-bold text-white">A</span>
+          <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[13px] font-bold text-primary-foreground">A</span>
           <span className="font-semibold" data-testid="text-lane-a-label">{aLabel}</span>
           <span className="inline-flex items-center gap-1 text-[12.5px] text-muted-foreground"><Lock className="h-3.5 w-3.5" /> Locked baseline</span>
         </div>

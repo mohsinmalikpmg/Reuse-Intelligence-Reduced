@@ -228,68 +228,68 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 40 33% 96%; /*replace with H S L */
+  --background: 222 30% 9%; /*replace with H S L */
 
-  --foreground: 222 38% 16%; /*replace with H S L */
+  --foreground: 40 25% 90%; /*replace with H S L */
 
-  --border: 38 18% 84%; /*replace with H S L */
+  --border: 222 18% 20%; /*replace with H S L */
 
-  --card: 42 40% 98%; /*replace with H S L */
+  --card: 222 26% 12%; /*replace with H S L */
 
-  --card-foreground: 222 38% 16%; /*replace with H S L */
+  --card-foreground: 40 25% 90%; /*replace with H S L */
 
-  --card-border: 38 18% 82%; /*replace with H S L */
+  --card-border: 222 18% 21%; /*replace with H S L */
 
-  --sidebar: 40 28% 93%; /*replace with H S L */
+  --sidebar: 222 28% 10%; /*replace with H S L */
 
-  --sidebar-foreground: 222 38% 16%; /*replace with H S L */
+  --sidebar-foreground: 40 25% 88%; /*replace with H S L */
 
-  --sidebar-border: 38 18% 84%; /*replace with H S L */
+  --sidebar-border: 222 18% 20%; /*replace with H S L */
 
-  --sidebar-primary: 222 52% 24%; /*replace with H S L */
+  --sidebar-primary: 220 60% 74%; /*replace with H S L */
 
-  --sidebar-primary-foreground: 40 33% 96%; /*replace with H S L */
+  --sidebar-primary-foreground: 222 40% 12%; /*replace with H S L */
 
-  --sidebar-accent: 38 30% 88%; /*replace with H S L */
+  --sidebar-accent: 222 20% 18%; /*replace with H S L */
 
-  --sidebar-accent-foreground: 222 38% 16%; /*replace with H S L */
+  --sidebar-accent-foreground: 40 25% 90%; /*replace with H S L */
 
-  --sidebar-ring: 12 74% 48%; /*replace with H S L */
+  --sidebar-ring: 12 80% 60%; /*replace with H S L */
 
-  --popover: 42 40% 98%; /*replace with H S L */
+  --popover: 222 26% 13%; /*replace with H S L */
 
-  --popover-foreground: 222 38% 16%; /*replace with H S L */
+  --popover-foreground: 40 25% 90%; /*replace with H S L */
 
-  --popover-border: 38 18% 82%; /*replace with H S L */
+  --popover-border: 222 18% 22%; /*replace with H S L */
 
-  --primary: 222 52% 24%; /*replace with H S L */
+  --primary: 220 60% 74%; /*replace with H S L */
 
-  --primary-foreground: 40 33% 96%; /*replace with H S L */
+  --primary-foreground: 222 40% 12%; /*replace with H S L */
 
-  --secondary: 38 30% 89%; /*replace with H S L */
+  --secondary: 222 18% 18%; /*replace with H S L */
 
-  --secondary-foreground: 222 38% 16%; /*replace with H S L */
+  --secondary-foreground: 40 25% 90%; /*replace with H S L */
 
-  --muted: 38 26% 91%; /*replace with H S L */
+  --muted: 222 16% 17%; /*replace with H S L */
 
-  --muted-foreground: 222 12% 42%; /*replace with H S L */
+  --muted-foreground: 222 10% 66%; /*replace with H S L */
 
-  --accent: 12 74% 48%; /*replace with H S L */
+  --accent: 12 74% 56%; /*replace with H S L */
 
   --accent-foreground: 40 33% 97%; /*replace with H S L */
 
-  --destructive: 2 66% 44%; /*replace with H S L */
+  --destructive: 2 66% 58%; /*replace with H S L */
 
   --destructive-foreground: 40 33% 97%; /*replace with H S L */
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
-  --input: 38 16% 74%; /*replace with H S L */
-  --ring: 12 74% 48%; /*replace with H S L */
-  --chart-1: 222 52% 30%; /*replace with H S L */
-  --chart-2: 12 74% 50%; /*replace with H S L */
-  --chart-3: 158 34% 36%; /*replace with H S L */
-  --chart-4: 40 70% 50%; /*replace with H S L */
-  --chart-5: 222 12% 55%; /*replace with H S L */
+  --input: 222 14% 30%; /*replace with H S L */
+  --ring: 12 74% 58%; /*replace with H S L */
+  --chart-1: 220 60% 70%; /*replace with H S L */
+  --chart-2: 12 74% 62%; /*replace with H S L */
+  --chart-3: 158 40% 56%; /*replace with H S L */
+  --chart-4: 40 70% 60%; /*replace with H S L */
+  --chart-5: 222 12% 66%; /*replace with H S L */
 
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);

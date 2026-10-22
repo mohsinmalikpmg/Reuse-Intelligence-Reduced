@@ -222,7 +222,7 @@ export function StepDetail({ r, no, labelA, labelB, picked, onPick, explanation,
       <p className="mb-3 text-[13px] text-muted-foreground">{r.description}</p>
       <div className={cn(laneGrid, "gap-y-3 max-lg:grid-cols-1")}>
         <div className="card-block p-3.5">
-          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold"><span className="grid h-5 w-5 place-items-center rounded bg-primary text-[11px] text-white">A</span>{r.a ? "Current product" : "Not in the current product"}</div>
+          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold"><span className="grid h-5 w-5 place-items-center rounded bg-primary text-[11px] text-primary-foreground">A</span>{r.a ? "Current product" : "Not in the current product"}</div>
           {r.a ? <><TraceBody t={r.traceA} label={labelA} /><DiffLines entries={removed} picked={picked} onPick={onPick} title={`Lines only A produced (${removed.length})`} /></>
             : <p className="text-[13px] text-muted-foreground">This step only runs in Version B.</p>}
         </div>

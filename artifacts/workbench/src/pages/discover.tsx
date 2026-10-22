@@ -171,7 +171,7 @@ function Understanding({ briefId, showResults, onFind }: { briefId: string; show
           {b.clarification && <p className="mt-2 text-[13.5px] text-muted-foreground">Also noted: {b.clarification}</p>}
         </div>
         <RequirementChips items={b.requirements} busy={upd.isPending} onChange={(next, msg) => patch({ requirements: next }, msg, () => patch({ requirements: b.requirements }, "Undone"))} />
-        <DragOverlay dropAnimation={null}>{dragging && <span className="lift inline-flex rounded-full bg-primary px-3 py-1.5 text-[13.5px] font-medium text-white">{chips.find((c) => c.key === dragging)?.value}</span>}</DragOverlay>
+        <DragOverlay dropAnimation={null}>{dragging && <span className="lift inline-flex rounded-full bg-primary px-3 py-1.5 text-[13.5px] font-medium text-primary-foreground">{chips.find((c) => c.key === dragging)?.value}</span>}</DragOverlay>
       </DndContext>
       {!showResults && (
         <div className="mt-8 flex items-center gap-4">

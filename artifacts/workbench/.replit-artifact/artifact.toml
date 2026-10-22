@@ -12,10 +12,10 @@ paths = [ "/" ]
 localPort = 22653
 
 [services.development]
-run = "pnpm --filter @workspace/workbench run dev"
+run = "pnpm --filter @workspace/workbench exec vite --config host-theme.vite.config.ts --host 0.0.0.0"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/workbench", "run", "build" ]
+build = [ "pnpm", "--filter", "@workspace/workbench", "exec", "vite", "build", "--config", "host-theme.vite.config.ts" ]
 serve = "static"
 publicDir = "artifacts/workbench/dist/public"
 

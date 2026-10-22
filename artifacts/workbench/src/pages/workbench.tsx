@@ -332,15 +332,15 @@ export default function Workbench() {
   const busyRun = runOne.isPending || runBoth.isPending;
   const noInput = !sampleId && !text.trim();
   const stepsResponsible = cmp?.diff.stepsResponsible ?? [];
-  const connectStatus = busyRun ? "Energizing A and B…" : connected ?? (changedFromA.length ? `${changedFromA.length} change${changedFromA.length === 1 ? "" : "s"} in B · ready to energize` : "Ready to connect");
+  const connectStatus = busyRun ? "Fusing A and B…" : connected ?? (changedFromA.length ? `${changedFromA.length} change${changedFromA.length === 1 ? "" : "s"} in B · ready to fuse` : "Ready to connect");
 
   const stateText = runBoth.isPending ? "Running both..." : runOne.isPending ? "Running..."
     : cmp?.staleB ? "Version B changed since the last run" : fresh ? `Compared on "${samples.find((s) => s.id === cmp.sampleInputId)?.name ?? "edited text"}" · ${new Date(cmp.runB.createdAt).toLocaleTimeString()}`
     : changedFromA.length ? "B differs from A · not compared yet" : "Version B equals the current product";
-  // The kit's one action: "Energize A/B" in sienna. Before B differs from A there is only B to energize.
+  // The kit's one action: "Fuse A/B" in sienna. Before B differs from A there is only B to fuse.
   const primary = !cmp && !needsBoth
-    ? <button data-testid="button-run" onClick={doRun} disabled={busyRun || noInput} className={cn(btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runOne.isPending ? "Energizing..." : "Energize B"}</button>
-    : <button data-testid="button-run-both" onClick={doBoth} disabled={busyRun || noInput} className={cn(fresh ? btn.secondary : btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runBoth.isPending ? "Energizing..." : cmp ? "Energize A/B again" : "Energize A/B"}</button>;
+    ? <button data-testid="button-run" onClick={doRun} disabled={busyRun || noInput} className={cn(btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runOne.isPending ? "Fusing..." : "Fuse B"}</button>
+    : <button data-testid="button-run-both" onClick={doBoth} disabled={busyRun || noInput} className={cn(fresh ? btn.secondary : btn.accent, "min-h-12 px-7")}><Zap className="h-5 w-5" /> {runBoth.isPending ? "Fusing..." : cmp ? "Fuse A/B again" : "Fuse A/B"}</button>;
 
   if (proposalView) {
     const baseName = wbQ.data?.solution.name ?? theCase.lineage.parentSolutionName;
@@ -600,18 +600,18 @@ export default function Workbench() {
               ) : run ? (
                 <div className={narrow ? "space-y-3" : laneGrid}>
                   {!narrow ? <div className="rounded-[14px] border border-dashed border-input bg-card/60 p-5 text-[14px] text-muted-foreground" data-testid="panel-version-a">
-                    {changedFromA.length === 0 ? "Version B equals the current product, so this output is the same for A." : "Energize A/B to see the current product's output beside Version B."}
+                    {changedFromA.length === 0 ? "Version B equals the current product, so this output is the same for A." : "Fuse A/B to see the current product's output beside Version B."}
                   </div> : null}
                   {!narrow && <div />}
                   <div>
-                    {run.configFingerprint !== theCase.lineage.fingerprint && <p className="mb-2 rounded-lg bg-accent px-3 py-2 text-[13px] text-siennaink" data-testid="text-run-stale">Saved run from {new Date(run.createdAt).toLocaleString()} · Version B has changed since. Energize again for the current version.</p>}
+                    {run.configFingerprint !== theCase.lineage.fingerprint && <p className="mb-2 rounded-lg bg-accent px-3 py-2 text-[13px] text-siennaink" data-testid="text-run-stale">Saved run from {new Date(run.createdAt).toLocaleString()} · Version B has changed since. Fuse again for the current version.</p>}
                     {outputCard("B", run)}
                   </div>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-input bg-card/60 p-8 text-center" data-testid="state-no-comparison">
-                  <div className="text-[16px] font-semibold text-primary">{needsBoth ? "Energize A/B to see A and B side by side" : "Energize to see the output"}</div>
-                  <p className="mt-1 text-[14px] text-muted-foreground">{needsBoth ? "Version B differs from the current product. The same input goes through both." : "Connect a component to Version B, or energize the current product as it is."}</p>
+                  <div className="text-[16px] font-semibold text-primary">{needsBoth ? "Fuse A/B to see A and B side by side" : "Fuse to see the output"}</div>
+                  <p className="mt-1 text-[14px] text-muted-foreground">{needsBoth ? "Version B differs from the current product. The same input goes through both." : "Connect a component to Version B, or fuse the current product as it is."}</p>
                 </div>
               )}
             </BandRow>
@@ -639,7 +639,7 @@ export default function Workbench() {
               ) : (
                 <div className="rounded-2xl border border-dashed border-input bg-card/60 p-6 text-center" data-testid="state-no-verdict">
                   <div className="text-[15px] font-semibold text-primary">Which result better solves the problem?</div>
-                  <p className="mt-1 text-[14px] text-muted-foreground">Energize A/B first. Your preference is recorded only against a real comparison.</p>
+                  <p className="mt-1 text-[14px] text-muted-foreground">Fuse A/B first. Your preference is recorded only against a real comparison.</p>
                 </div>
               )}
               <CaseExports theCase={theCase} configPending={put.isPending} />
