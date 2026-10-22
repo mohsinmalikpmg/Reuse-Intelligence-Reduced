@@ -3,6 +3,12 @@ name: Invoice source-demo boundaries
 description: Provenance and independence requirements for the three synthetic invoice originals
 ---
 
+Consolidation must account for the originals' full functionality, not only their three standout capabilities: budget views, invoice-detail links, structured date/amount/status filters and duplicate detection are explicitly important.
+
+**Why:** The user identified omitted source functionality as a failure of the feature-deconstruction and consolidation mandate.
+
+**How to apply:** Audit the originals and map each feature to retained behavior, a validated consolidated equivalent or an explicit remaining gap. Do not claim full replacement merely because the headline features work.
+
 The user requires three deliberately constructed invoice originals, not claims
 of software authored by actual independent Cenovus teams. Shared fixture data
 and expected outcomes are allowed; shared mutable data or feature implementations
