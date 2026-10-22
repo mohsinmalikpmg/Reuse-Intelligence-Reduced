@@ -40,11 +40,11 @@ export function RequirementLedger({ c, rows: override }: { c: Composition; rows?
   const open = merged.filter((r) => r.status !== "proposed").length;
   const untested = [...new Set(merged.flatMap((r) => r.untestedConstraints))];
   return (
-    <section className="card-soft p-5" data-testid="panel-requirement-ledger" aria-labelledby="ledger-h">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 id="ledger-h" className="text-[16px] font-semibold">Original requirements</h2>
+    <details className="card-soft p-5" data-testid="panel-requirement-ledger">
+      <summary className="cursor-pointer rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+        <h2 className="mr-2 inline text-[16px] font-semibold">Original requirements ({merged.length})</h2>
         <Tag tone={open ? "sienna" : "sky"}>{open ? `${open} not covered by this plan` : "All proposed"}</Tag>
-      </div>
+      </summary>
       {snap && <div className="mt-1 text-[12.5px] text-muted-foreground" data-testid="text-ledger-source">
         <p>From intake <Link href={`/discover?brief=${encodeURIComponent(snap.briefId)}&results=1`} className="text-primary underline">{snap.briefId}</Link>, revision {snap.sourceRevision}
           {snap.intakeId ? ` · intake ${snap.intakeId}${snap.intakeRevision !== null ? ` r${snap.intakeRevision}` : ""}` : ""} · captured {new Date(snap.capturedAt).toLocaleString()}
@@ -57,6 +57,6 @@ export function RequirementLedger({ c, rows: override }: { c: Composition; rows?
         <h3 className="font-semibold uppercase tracking-[0.06em] text-muted-foreground">Untested constraints</h3>
         <ul className="mt-1 list-disc pl-5">{untested.map((x, i) => <li key={i}>{x}</li>)}</ul>
       </div>}
-    </section>
+    </details>
   );
 }
