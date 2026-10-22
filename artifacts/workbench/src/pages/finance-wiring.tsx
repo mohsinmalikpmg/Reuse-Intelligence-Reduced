@@ -260,7 +260,7 @@ function Field({ label, hint, changed, children }: { label: string; hint?: strin
 }
 const seg = (on: boolean) => cn("min-h-9 rounded-lg px-3 text-[13.5px] font-semibold transition-colors", on ? "bg-primary text-white shadow-sm" : "text-primary/80 hover:bg-secondary");
 
-function Controls({ cat, draft, edit, savedConfig }: { cat: FinanceWiringCatalog; draft: FinanceWiringConfig; edit: (p: Partial<FinanceWiringConfig>) => void; savedConfig?: FinanceWiringConfig }) {
+export function Controls({ cat, draft, edit, savedConfig }: { cat: FinanceWiringCatalog; draft: FinanceWiringConfig; edit: (p: Partial<FinanceWiringConfig>) => void; savedConfig?: FinanceWiringConfig }) {
   const validAmount = Number.isInteger(draft.adjustment) && draft.adjustment % 6 === 0 && draft.adjustment >= -600 && draft.adjustment <= 6000;
   const ch = (k: keyof FinanceWiringConfig) => !!savedConfig && keyOf(savedConfig[k]) !== keyOf(draft[k]);
   const sources = Object.keys(draft.accountMapping);
@@ -427,7 +427,7 @@ function ReportPanel({ shown, running }: { shown: { r: FinanceWiringResult; labe
   );
 }
 
-function LinesTable({ lines, compact, testid }: { lines: FinanceWiringResult["lines"]; compact?: boolean; testid: string }) {
+export function LinesTable({ lines, compact, testid }: { lines: FinanceWiringResult["lines"]; compact?: boolean; testid: string }) {
   return (
     <div className="overflow-x-auto">
       <table className={cn("w-full text-[13.5px]", compact && "text-[12.5px]")} data-testid={testid}>
@@ -452,7 +452,7 @@ function LinesTable({ lines, compact, testid }: { lines: FinanceWiringResult["li
   );
 }
 
-function SourceList({ sources }: { sources: { path: string; sha256: string }[] }) {
+export function SourceList({ sources }: { sources: { path: string; sha256: string }[] }) {
   return (
     <ul className="space-y-1 px-5 pb-4">
       {sources.map((s) => (

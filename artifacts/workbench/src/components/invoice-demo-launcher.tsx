@@ -66,7 +66,14 @@ export function InvoiceDemoLauncher() {
   const signedIn = !!auth.data?.user;
   const sourcesQ = useRegisteredSources(signedIn);
   const casesQ = useCombinedCases(signedIn);
-  const [recipeId, setRecipeId] = useState<RecipeId>(search.get("combine") === "finance" ? "finance" : "invoice");
+  const requestedRecipe = search.get("combine") ?? search.get("recipe");
+  const [recipeId, setRecipeId] = useState<RecipeId>(requestedRecipe === "finance" ? "finance" : "invoice");
+  useEffect(() => {
+    if (requestedRecipe === "finance" || requestedRecipe === "invoice") {
+      setRecipeId(requestedRecipe);
+      requestAnimationFrame(() => document.getElementById("combine")?.scrollIntoView());
+    }
+  }, [requestedRecipe]);
   const [drafts, setDrafts] = useState<Partial<Record<RecipeId, Draft>>>({});
   const recipe = recipesQ.data?.find((r) => r.id === recipeId);
   const presetNeed = search.get("need") ?? "";
@@ -75,12 +82,12 @@ export function InvoiceDemoLauncher() {
     if (!recipe || drafts[recipe.id]) return;
     setDrafts((d) => ({ ...d, [recipe.id]: {
       sources: [...recipe.sourceIds], base: recipe.baseSolutionIds[0], caps: recipe.capabilities.map((c) => c.id),
-      need: search.get("combine") === recipe.id ? presetNeed : "", title: "",
+      need: (search.get("combine") ?? search.get("recipe")) === recipe.id ? presetNeed : "", title: "",
     } }));
   }, [recipe, drafts, presetNeed, search]);
 
   return (
-    <section aria-labelledby="combine-title" data-testid="section-invoice-demo" className="rounded-2xl border border-border bg-secondary/40 p-5 md:p-6">
+    <section id="combine" aria-labelledby="combine-title" data-testid="section-invoice-demo" className="rounded-2xl border border-border bg-secondary/40 p-5 md:p-6">
       <div className="flex flex-wrap items-end gap-4">
         <div className="min-w-0 flex-1">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Combine what already exists</p>

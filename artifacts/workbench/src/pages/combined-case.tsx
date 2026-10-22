@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Cable, Check, ExternalLink, Info, Minus, Play, RotateCcw, Save, Undo2, X } from "lucide-react";
-import { useGetCurrentAuthUser } from "@workspace/api-client-react";
-import { ErrorView, LoadingView, Page, StageEyebrow, Tag, btn, useUndoToast } from "@/components/bits";
+import { Cable, Check, ExternalLink, Info, Minus, Play, RotateCcw, Save, Undo2, X } from "lucide-react";
+import { useGetCurrentAuthUser, useGetFinanceWiringCatalog, type FinanceWiringConfig } from "@workspace/api-client-react";
+import { Controls } from "@/pages/finance-wiring";
+import { ErrorView, LoadingView, Page, Skel, StageEyebrow, Tag, btn, useUndoToast } from "@/components/bits";
 import { CaseExportHistory } from "@/components/solution-exports";
 import { cn } from "@/lib/utils";
 import Workbench from "@/pages/workbench";
@@ -139,7 +140,6 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
           <section className="card-soft p-5" data-testid="panel-requirement-gaps">
             <RequirementCoverage c={c} recipe={recipe} />
           </section>
-          {finance && <FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Adjustment saved")} />}
           <section className="card-soft p-5">
             <h2 className="text-[16px] font-semibold">Try the real combination</h2>
             <p className="mt-1 text-[13.5px] text-muted-foreground">Checks the saved version, then opens the actual app with it.</p>
@@ -151,6 +151,8 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
           {err && <p role="alert" className="rounded-lg bg-accent px-3 py-2 text-[13px] text-siennaink" data-testid="text-combined-error">{err}</p>}
         </aside>
       </div>
+
+      {finance && <div className="mt-6" id="finance-settings"><FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Finance settings saved")} /></div>}
 
       <div className="mt-6">
         <CaseExportHistory caseId={c.id} updatedAt={c.updatedAt} pending={upd.isPending} onConflict={() => void qc.invalidateQueries({ queryKey: ccKeys.case(c.id) })} />
@@ -198,26 +200,26 @@ function Node({ title, sub }: { title: string; sub: string }) {
 }
 
 function FinanceAdjust({ c, busy, onSave }: { c: CombinedCase; busy: boolean; onSave: (config: Record<string, unknown>) => void }) {
-  const saved = Number(c.config.adjustment ?? 0);
-  const [draft, setDraft] = useState<string>(String(saved));
+  const catQ = useGetFinanceWiringCatalog();
+  const saved = c.config as unknown as FinanceWiringConfig;
+  const [draft, setDraft] = useState<FinanceWiringConfig>(() => structuredClone(saved));
   const forRev = useRef(c.revision);
-  useEffect(() => { if (forRev.current !== c.revision) { forRev.current = c.revision; setDraft(String(saved)); } }, [c.revision, saved]);
-  const n = draft === "" ? Number.NaN : Number(draft);
-  const ok = validAdj(n);
-  const dirty = n !== saved;
+  useEffect(() => { if (forRev.current !== c.revision) { forRev.current = c.revision; setDraft(structuredClone(c.config as unknown as FinanceWiringConfig)); } }, [c.revision, c.config]);
+  if (catQ.isLoading) return <Skel className="h-72 rounded-[20px]" />;
+  if (catQ.isError || !catQ.data) return <ErrorView onRetry={() => void catQ.refetch()} message="Finance options could not load." />;
+  const okAdj = validAdj(draft.adjustment);
+  const okCentres = draft.centres.length > 0;
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved) && (Object.keys(draft) as (keyof FinanceWiringConfig)[]).some((k) => JSON.stringify(draft[k]) !== JSON.stringify(saved[k]));
   return (
-    <section className="card-soft p-5" data-testid="panel-finance-adjust">
-      <h2 className="text-[16px] font-semibold">Q4 adjustment</h2>
-      <p className="mt-1 text-[13px] text-muted-foreground">Total in whole USD, a multiple of 6 from -600 to 6000. Spread across chosen centres and the three Q4 months.</p>
-      <div className="mt-3 flex items-center gap-2">
-        <input type="number" step={6} min={-600} max={6000} value={draft} onChange={(e) => setDraft(e.target.value)} aria-invalid={!ok} aria-label="Q4 adjustment in USD"
-          className="h-10 w-full rounded-xl border border-input bg-card px-3 text-center font-mono text-[15px] outline-none focus:border-primary" data-testid="input-adjustment" />
-        <button className={btn.primary} disabled={!ok || !dirty || busy} onClick={() => onSave({ ...c.config, adjustment: n })} data-testid="button-save-adjustment"><Save className="h-4 w-4" /> Save</button>
-        <button className={btn.quiet} disabled={!dirty || busy} onClick={() => setDraft(String(saved))} data-testid="button-revert-adjustment"><RotateCcw className="h-4 w-4" /> Revert</button>
+    <div data-testid="panel-finance-adjust">
+      <fieldset disabled={busy} className="min-w-0 disabled:opacity-70">
+        <Controls cat={catQ.data} draft={draft} edit={(p) => setDraft((d) => ({ ...d, ...p }))} savedConfig={saved} />
+      </fieldset>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button className={btn.primary} disabled={!okAdj || !okCentres || !dirty || busy} onClick={() => onSave(draft as unknown as Record<string, unknown>)} data-testid="button-save-finance-config"><Save className="h-4 w-4" /> Save to this combination</button>
+        <button className={btn.quiet} disabled={!dirty || busy} onClick={() => setDraft(structuredClone(saved))} data-testid="button-revert-finance-config"><RotateCcw className="h-4 w-4" /> Revert</button>
+        <span className="text-[12.5px] text-muted-foreground">{!okCentres ? "Choose at least one centre." : dirty ? "Unsaved settings. Try it runs the saved revision only." : `Saved in rev ${c.revision}. Undo above reverts it.`}</span>
       </div>
-      {!ok && <p className="mt-1 text-[12.5px] text-siennaink" role="alert">Use a whole-dollar multiple of 6 between -600 and 6000.</p>}
-      <p className="mt-2 text-[12px] text-muted-foreground">Saved: {saved >= 0 ? "+" : ""}{saved} USD. <Link href="/workbench/wiring" className="text-primary hover:underline">All finance settings <ArrowRight className="inline h-3 w-3" /></Link></p>
-    </section>
+    </div>
   );
 }
-
