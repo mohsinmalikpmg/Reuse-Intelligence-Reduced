@@ -122,3 +122,46 @@ export const asset = (p: string) => `${import.meta.env.BASE_URL}${p}`;
 /** Display state for the intake name: never fabricates a label. */
 export const displayName = (m: Model, title: string) => (m.name?.value.trim() || title.trim());
 export const NAME_PENDING = 'Name suggested after interpretation';
+
+/** What the single review acceptance on the simple review cannot honestly cover. Each entry needs its own explicit user action. */
+export type ReviewExceptions = { changedSources: boolean; missingProfile: ProfileKey[]; noNeeds: boolean; openGaps: Capability[]; openQuestions: Question[]; /** Unreviewed excerpts the acceptance cannot cover: unresolved, out of scope, or accounted without a valid visible link. */ openCoverage: Coverage[]; coverage: number; overlaps: number; groups: string[] };
+/** Accounted coverage whose every link points at a need or capability shown on the simple review. */
+export const coverageLinked = (m: Model, c: Coverage) => {
+  const ids = new Set([...m.requirements.map(r => r.id), ...m.capabilities.map(x => x.id)]);
+  const refs = [...c.requirementIds, ...c.capabilityIds];
+  return c.disposition === 'accounted' && refs.length > 0 && refs.every(id => ids.has(id));
+};
+export function reviewExceptions(m: Model): ReviewExceptions {
+  return {
+    changedSources: m.sources.some(s => s.changed),
+    missingProfile: PROFILE_KEYS.filter(k => !m.profile[k].value.trim()),
+    noNeeds: m.requirements.length === 0,
+    openGaps: m.capabilities.filter(c => c.gap.trim() && !c.carry),
+    openQuestions: m.questions.filter(q => !q.answer.trim() && !q.acknowledged),
+    openCoverage: m.coverage.filter(c => !c.reviewed && !coverageLinked(m, c)),
+    coverage: m.coverage.filter(c => !c.reviewed && !coverageLinked(m, c)).length,
+    overlaps: m.overlaps.filter(o => !o.resolved).length,
+    groups: groupIssues(m),
+  };
+}
+export const exceptionCount = (x: ReviewExceptions) => (x.changedSources ? 1 : 0) + x.missingProfile.length + (x.noNeeds ? 1 : 0) + x.openGaps.length + x.openQuestions.length + x.coverage + x.overlaps + x.groups.length;
+
+/**
+ * One explicit user acceptance of what the simple review shows: the summary fields, every need in its
+ * current order, every supplied capability description, and input excerpts the AI matched to those visible
+ * items (accounted coverage with valid links). It never answers questions, carries gaps, acknowledges
+ * unresolved or out-of-scope coverage, resolves overlaps or clears changed sources; those stay separate user actions.
+ * Returns null when anything outside its scope is still open.
+ */
+export function acceptReview(m: Model): Model | null {
+  if (exceptionCount(reviewExceptions(m))) return null;
+  return {
+    ...m,
+    profile: Object.fromEntries(PROFILE_KEYS.map(k => [k, { ...m.profile[k], reviewed: true, changed: false }])) as Model['profile'],
+    requirements: m.requirements.map(r => ({ ...r, reviewed: true, changed: false })),
+    orderReviewed: true,
+    capabilities: m.capabilities.map(c => ({ ...c, status: 'Confirmed' as const, changed: false })),
+    coverage: m.coverage.map(c => (!c.reviewed && coverageLinked(m, c) ? { ...c, reviewed: true } : c)),
+    agreed: true,
+  };
+}

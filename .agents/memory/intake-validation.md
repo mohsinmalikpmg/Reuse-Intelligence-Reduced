@@ -3,6 +3,12 @@ name: Intake as collaborative validation
 description: User intent for the intake redesign and the boundary between confirmation and proof.
 ---
 
+Keep the primary intake experience simple: describe → review → find matching solutions. Show an editable name, business problem, concise distinct requirements and supplied capabilities only when a solution is provided. Keep groups, boundaries, source evidence and coverage in collapsed Analysis details; do not require per-item confirmation checkboxes.
+
+**Why:** The user found the expanded MECE interface more complex and worse than the earlier intake. MECE is an analysis responsibility, not an administration task for the user.
+
+**How to apply:** Preserve substantive corrections and honest unresolved questions, but use a single explicit review acceptance and progressive disclosure instead of exposing every analysis control by default.
+
 Intake should be one of FUSEBOX's most critical steps: validate understanding of the user's needs and the components/capabilities of presented prototypes or solutions through a highly interactive, iterative experience.
 
 **Why:** The user wants smaller iterations and shared understanding before comparison or consolidation, not immediate recommendations from an unvalidated submission.

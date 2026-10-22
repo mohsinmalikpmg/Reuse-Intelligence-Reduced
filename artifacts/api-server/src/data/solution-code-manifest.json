@@ -1,5 +1,5 @@
 {
-  "packageId": "demo-engine-4753a2261827095e6db40d7abfd946c624235a3b3067babee1aafef692d99ca8",
+  "packageId": "demo-engine-397aa075413b329b28300399573c7726e6eea2a03ff15e98eff536eba8c85d19",
   "version": "1.0.0-catalog-2026.10",
   "scope": "Implemented local seed demo engine with bundled Node runner; seed executor configurations and reference-only Workbench UI. Not live integrations, persisted governance export or standalone enterprise application.",
   "createdAt": "2026-10-01T00:00:00.000Z",
@@ -11,7 +11,7 @@
       "symbol": "readNotes",
       "lines": [
         86,
-        91
+        94
       ],
       "limitations": [
         "Parses local pipe-delimited or free-text lines; no CMMS connection and not a general CSV parser."
@@ -24,11 +24,11 @@
       "file": "engine/steps.ts",
       "symbol": "summarize",
       "lines": [
-        93,
-        103
+        98,
+        109
       ],
       "limitations": [
-        "First matching regex issue label plus leading sentence; no LLM. Both summarizer IDs share this executor and cap-summarize config key."
+        "First matching regex issue label plus leading sentence; no LLM. Uses its own capability configuration key."
       ],
       "tested": true
     },
@@ -38,8 +38,8 @@
       "file": "engine/steps.ts",
       "symbol": "identifyConcerns",
       "lines": [
-        105,
-        128
+        112,
+        135
       ],
       "limitations": [
         "Counts exact site/tag/regex-issue groups; ignores untagged notes; not predictive detection."
@@ -52,8 +52,8 @@
       "file": "engine/steps.ts",
       "symbol": "humanReview",
       "lines": [
-        227,
-        267
+        236,
+        276
       ],
       "limitations": [
         "In-memory queue using a parsed numeric threshold; safety grouping uses tag and issue, not site; no human task system."
@@ -66,8 +66,8 @@
       "file": "engine/steps.ts",
       "symbol": "notify",
       "lines": [
-        293,
-        299
+        302,
+        308
       ],
       "limitations": [
         "Produces a digest sentence only; sends no notifications."
@@ -80,8 +80,8 @@
       "file": "engine/steps.ts",
       "symbol": "approvalGate",
       "lines": [
-        269,
-        274
+        278,
+        283
       ],
       "limitations": [
         "Adds approval-required text only; does not enforce authorization or block downstream actions."
@@ -94,8 +94,8 @@
       "file": "engine/steps.ts",
       "symbol": "routeFindings",
       "lines": [
-        276,
-        287
+        285,
+        296
       ],
       "limitations": [
         "Produces textual queue labels only; no dispatch or planner integration."
@@ -108,8 +108,8 @@
       "file": "engine/steps.ts",
       "symbol": "weeklyReport",
       "lines": [
-        326,
-        331
+        335,
+        340
       ],
       "limitations": [
         "Produces a single totals line; no scheduled reporting or export."
@@ -122,8 +122,8 @@
       "file": "engine/steps.ts",
       "symbol": "execDigest",
       "lines": [
-        333,
-        340
+        342,
+        349
       ],
       "limitations": [
         "Produces one templated headline from existing findings/clusters; no narrative generation."
@@ -136,8 +136,8 @@
       "file": "engine/steps.ts",
       "symbol": "clusterIssues",
       "lines": [
-        130,
-        147
+        137,
+        155
       ],
       "limitations": [
         "Groups exact equipment class and regex issue with two reports, even within one site; skips general, wear and facility categories."
@@ -150,8 +150,8 @@
       "file": "engine/steps.ts",
       "symbol": "rankPatterns",
       "lines": [
-        158,
-        166
+        167,
+        175
       ],
       "limitations": [
         "Sorts existing clusters by count then latest date; no semantic similarity or historical retrieval."
@@ -162,13 +162,13 @@
       "capabilityId": "cap-b-summarize",
       "solutionId": "sol-site-pattern-finder",
       "file": "engine/steps.ts",
-      "symbol": "summarize",
+      "symbol": "patternSummarize",
       "lines": [
-        93,
-        103
+        98,
+        110
       ],
       "limitations": [
-        "First matching regex issue label plus leading sentence; no LLM. Both summarizer IDs share this executor and cap-summarize config key."
+        "Shared local summarizer factory using Pattern Finder's capability identity and configuration; no LLM."
       ],
       "tested": true
     },
@@ -176,13 +176,13 @@
       "capabilityId": "cap-csv-ingest",
       "solutionId": "sol-site-pattern-finder",
       "file": "engine/steps.ts",
-      "symbol": "readNotes",
+      "symbol": "readCsvNotes",
       "lines": [
         86,
-        91
+        95
       ],
       "limitations": [
-        "Parses local pipe-delimited or free-text lines; no CMMS connection and not a general CSV parser."
+        "Reads normalized local work-order records with the shared note parser; not a general CSV parser or enterprise connector."
       ],
       "tested": true
     },
@@ -192,8 +192,8 @@
       "file": "engine/steps.ts",
       "symbol": "followUpActions",
       "lines": [
-        301,
-        324
+        310,
+        333
       ],
       "limitations": [
         "Generates Open actions with templated owners and latest-report-plus-14-day due dates; no persistence, closure or enforced approval."
@@ -206,8 +206,8 @@
       "file": "engine/steps.ts",
       "symbol": "incidentActions",
       "lines": [
-        368,
-        376
+        377,
+        385
       ],
       "limitations": [
         "Regex-splits commitment sentences into Open action text; no lifecycle tracking, owners or system of record."
@@ -220,8 +220,8 @@
       "file": "engine/steps.ts",
       "symbol": "safetySignals",
       "lines": [
-        199,
-        225
+        208,
+        234
       ],
       "limitations": [
         "Fixed keyword/regex lexicon with blanket not-safety-critical exclusion; not a safety assessment."
@@ -305,8 +305,8 @@
       ]
     }
   ],
-  "sha256": "4753a2261827095e6db40d7abfd946c624235a3b3067babee1aafef692d99ca8",
-  "objectPath": "solution-code/4753a2261827095e6db40d7abfd946c624235a3b3067babee1aafef692d99ca8.zip",
+  "sha256": "397aa075413b329b28300399573c7726e6eea2a03ff15e98eff536eba8c85d19",
+  "objectPath": "solution-code/397aa075413b329b28300399573c7726e6eea2a03ff15e98eff536eba8c85d19.zip",
   "files": [
     {
       "path": "README.md",
@@ -342,27 +342,27 @@
     },
     {
       "path": "demo-source.ts",
-      "sha256": "3c7e040a363370f21af0d59525ed8900ae36808fc8df6537a60c2f50a657d509"
+      "sha256": "757ea352a9f07e1212e48f3bf4b42c70a6cb5e150310caf6a0320dacd18fd120"
     },
     {
       "path": "demo.mjs",
-      "sha256": "22c02c2bf9ac32f13498cb73363f9c98f9731caeed22ab68ec0bbd2dfb131cbd"
+      "sha256": "fcc975c37590d0a7417dffeea44fa4ec6d5b1db06edc75b57357a7523bba4cda"
     },
     {
       "path": "engine/diff.ts",
-      "sha256": "b81f67e9d66f369896668c2bd9ac31e3dcabaa5b9d51c6d7c0c063ce2508ee70"
+      "sha256": "8c53b1f3477f4b31d8a9d843983300b9ca9e27e0b4d29d2a81ca2be955bf88dd"
     },
     {
       "path": "engine/run.ts",
-      "sha256": "1b6e2e5acaec4ea802b04b31082cf19110940fc76cd31398caf1ca10a4ce934a"
+      "sha256": "01272e06bbd4e085feaa021b01352f7a4c21648480ba0e46434fdcc8ee3239e6"
     },
     {
       "path": "engine/steps.ts",
-      "sha256": "c2803495eda4afbb349279ece470544c3a67ab5cfafc44947a2647ff1a5726ad"
+      "sha256": "091fbe88794c401afb229c2a5f10cff666884163b9ba2aac9425071e9f21a8a8"
     },
     {
       "path": "engine/types.ts",
-      "sha256": "4fca4b0f0575b04caac493eca15582fd7c9aed294550b97a22e4af8e5f091fe9"
+      "sha256": "ab3658b8371dbf44ba8c749196c2c10f7a546951416e0a4a26847647ba02ada9"
     },
     {
       "path": "engine/workorders.ts",
@@ -370,7 +370,7 @@
     },
     {
       "path": "manifest.json",
-      "sha256": "5ec423d9ae23fcafb860442488e5d08825eb22b22e1ffd6d2d21a5b47da1e9d2"
+      "sha256": "01c2d324a8e61c3c4fec9129c118a32490afcf700bd194db7dc188d66684f1d5"
     },
     {
       "path": "package.json",
@@ -378,15 +378,15 @@
     },
     {
       "path": "reference-ui/output-view.tsx",
-      "sha256": "6d0bdaef08cfdc776ac2dcc985ed89c8fcf9c129bd19b9d84250fd586865b85d"
+      "sha256": "9bae8ca26588d305c66e3948915a0b1599c32a38c5deb060900269256ca4d854"
     },
     {
       "path": "reference-ui/wb-compare.tsx",
-      "sha256": "766bf5ea5551e5a739027479527f4ff06df629ebee15a54aa40cf2b959c44ecb"
+      "sha256": "e6fed585f216d70a1e2e9d2bff54de3c07b0afc29ddf542bf0484c690224f156"
     },
     {
       "path": "reference-ui/wb-reuse.tsx",
-      "sha256": "f3b304a0e736bfdeac727183cd07b8df75833c43b09b542592e83cc3d88204d9"
+      "sha256": "d01907e2162f0aa1eeba2411691f8af4f292f67da2ae601efdf32a3d1fd5c1c1"
     }
   ]
 }

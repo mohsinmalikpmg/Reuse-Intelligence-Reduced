@@ -63,6 +63,12 @@ until actual user-participating launch verification is available.
 
 ## Exported UI evidence
 
+The indexed demo package must be refreshed through its verified packaging process after engine evolution; never silence a source-hash mismatch by merely editing the manifest hash.
+
+**Why:** Intake matching can successfully confirm a draft yet fail at its destination because the source-evidence index is stale. Factory-based executors and changed output attribution can also invalidate old package proof assumptions.
+
+**How to apply:** Keep the package's executable checks, source ranges, limitations and archive hashes aligned with actual engine behavior before replacing the index. Preserve immutable older archives.
+
 Check the mounted exported application, not just a successful HTTP response and
 engine tests.
 
