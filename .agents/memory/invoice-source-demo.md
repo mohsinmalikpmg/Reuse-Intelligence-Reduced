@@ -27,3 +27,9 @@ wire into a fourth product.
 **How to apply:** keep other overlaps basic and secondary. Do not make Invoice
 Finder the fourth app. Demonstrate search → bulk decisions → grouped source-line
 reporting as the future combined workflow, not already completed integration.
+
+The invoice value demonstration must also show redundant features across the three originals and the opportunity to consolidate development and maintenance, not only combine their standout capabilities.
+
+**Why:** The user explicitly identified redundancy reduction as part of the product's value demonstration.
+
+**How to apply:** Expose source-backed overlaps and meaningful differences, then show proposed retain/replace/combine decisions. Keep proposed redundancy reduction distinct from verified replacement, retirement and measured maintenance savings.
