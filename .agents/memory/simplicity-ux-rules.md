@@ -44,3 +44,10 @@ Show only Solution Seeker and IT Owner in role selection, shell profile labels a
 **Why:** The user asked to drop the names from user roles.
 
 **How to apply:** Keep internal persona identifiers and permissions intact. This is a presentation rule, not a request to erase record ownership or attribution.
+
+## Seeker Library browsing density
+Use business functions (Finance, Supply Chain, Operations, Investor Relations, etc.) rather than individual business problems as visible browsing categories. Keep capability chips and the evidence/provenance summary inside Details, not on collapsed cards.
+
+**Why:** The user explicitly requested simpler categories and less detail on individual cards.
+
+**How to apply:** Preserve detailed capability discovery and comparison, but do not restore those dense summaries to the default card view.
