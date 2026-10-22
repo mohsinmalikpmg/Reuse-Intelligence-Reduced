@@ -4,10 +4,8 @@ import { BarChart3, Blocks, ChevronDown, ClipboardCheck, Compass, Layers, LogOut
 import { useGetDemoState, useListPersonas, useResetDemo, type Role } from "@workspace/api-client-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePersona } from "@/lib/persona";
-import { useMotion } from "@/lib/motion";
 import { landingFor, useCurrentCase, useInvalidateAll } from "@/lib/case";
 import { useUndoToast } from "@/components/bits";
 import { cn } from "@/lib/utils";
@@ -89,7 +87,6 @@ export function Frame({ children }: { children: ReactNode }) {
   const reset = useResetDemo();
   const invalidate = useInvalidateAll();
   const say = useUndoToast();
-  const { motion, setMotion } = useMotion();
   const [q, setQ] = useState("");
   const [menu, setMenu] = useState(false);
   const desktop = useMediaQuery("(min-width: 768px)"); // sidebar (rail or full) + top-bar controls; below it the phone menu
@@ -198,14 +195,6 @@ export function Frame({ children }: { children: ReactNode }) {
     </nav>
   );
 
-  const motionSwitch = (rail: boolean) => (
-    <label className={cn("flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-white/80 hover:bg-white/5", rail && "justify-center px-0")} title={rail ? "Tactile motion" : undefined}>
-      <Switch data-testid="switch-motion" checked={motion} onCheckedChange={setMotion} aria-label="Tactile motion"
-        className="data-[state=checked]:bg-sienna data-[state=unchecked]:bg-white/25 focus-visible:ring-orange focus-visible:ring-offset-navy" />
-      {!rail && <span className="min-w-0"><span className="block text-[13.5px] font-medium text-white">Tactile motion</span><span className="block text-[11.5px] leading-snug text-white/55">Visual feedback is optional; the facts stay.</span></span>}
-    </label>
-  );
-
   const demoCard = (rail: boolean) => (
     <div className={cn("rounded-xl border border-sidebar-border bg-sidebar-accent", rail ? "p-1.5" : "p-3")} data-testid="panel-demo-state">
       <div className={cn("flex items-center gap-2.5", rail && "justify-center")}>
@@ -237,7 +226,6 @@ export function Frame({ children }: { children: ReactNode }) {
       <div className="flex-1" />
       <div className={cn("flex flex-col gap-2 pb-4", rail ? "px-2" : "px-3")}>
         {demoCard(rail)}
-        {motionSwitch(rail)}
       </div>
     </>
   );
@@ -304,7 +292,6 @@ export function Frame({ children }: { children: ReactNode }) {
           </div>
           <div className="eyebrow px-5 pb-2 pt-6 text-white/45">Explore the system</div>
           {navList(false)}
-          <div className="px-3 pb-6 pt-6">{motionSwitch(false)}</div>
         </SheetContent>
       </Sheet>}
     </div>

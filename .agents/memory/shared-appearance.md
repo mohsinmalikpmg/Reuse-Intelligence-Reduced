@@ -13,3 +13,9 @@ Use “Fuse” and “Fusing” in user-facing language instead of “Energize�
 it before first paint. Preserve the source archives of registered originals:
 host-level appearance wrappers must not change files in their source allowlists,
 because those changes invalidate source hashes and existing combinations.
+
+Do not show a tactile-motion or workflow-animation preference toggle.
+
+**Why:** The user explicitly chose to remove it altogether.
+
+**How to apply:** Preserve automatic reduced-motion accessibility behavior without a user-facing app preference or saved override.

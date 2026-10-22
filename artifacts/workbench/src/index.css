@@ -404,7 +404,7 @@
 @keyframes cube-spark { 0% { opacity: 0; transform: scale(.6); } 40% { opacity: 1; transform: scale(1.08); } 100% { opacity: .85; transform: scale(1); } }
 .cube-spark { animation: cube-spark .6s ease-out .55s both; }
 .press:active { transform: scale(.985); }
-/* Tactile motion off: the persisted preference (defaults to the OS reduced-motion setting) sets data-motion on <html>.
+/* Reduced motion: the device accessibility setting sets data-motion on <html>.
    Every effect is removed; the state it confirmed stays visible. */
 :root[data-motion="off"] .seat, :root[data-motion="off"] .weld, :root[data-motion="off"] .socket-over, :root[data-motion="off"] .current-on,
 :root[data-motion="off"] .trace-in, :root[data-motion="off"] .converge-in, :root[data-motion="off"] .converge-out, :root[data-motion="off"] .cube-spark,
@@ -417,7 +417,7 @@
 :root[data-motion="off"] .weld { display: none; }
 :root[data-motion="off"] .cube-spark { opacity: .85; }
 :root[data-motion="off"] .press:active { transform: none; }
-/* OS reduced-motion applies unless the person explicitly turned tactile motion on. */
+/* OS reduced-motion also applies before the accessibility effect initializes. */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion="on"]) :is(.seat, .weld, .socket-over, .current-on, .trace-in, .converge-in, .converge-out, .cube-spark, .drop-pop, .reveal, .blk.charged, .wire.flow, [style*="running-bar"]) { animation: none !important; }
   :root:not([data-motion="on"]) :is(.trace-in, .converge-in, .converge-out) { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 1; }
