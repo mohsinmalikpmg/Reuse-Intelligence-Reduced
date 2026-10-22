@@ -20,6 +20,25 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /consolidation/briefs/{briefId}/workbench:
+    post:
+      operationId: openIntakeCombination
+      parameters:
+        - name: briefId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntakeCombinationInput" }
+      responses:
+        "200":
+          description: Existing or newly created combination with confirmed intake requirements
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsolidationCase" }
   /consolidation/recipes:
     get:
       operationId: listConsolidationRecipes
@@ -2390,6 +2409,11 @@ components:
       schema:
         type: string
   schemas:
+    IntakeCombinationInput:
+      type: object
+      required: [recipeId]
+      properties:
+        recipeId: { type: string, enum: [invoice, finance] }
     ConsolidationWiring:
       type: object
       additionalProperties: false
@@ -2400,6 +2424,7 @@ components:
       type: object
       required: [recipeId, title, need, baseSolutionId, selectedSourceIds, capabilityIds, wiring, config]
       properties:
+        briefId: { type: string, description: Confirmed intake brief to snapshot; omitted for source-first combinations. }
         recipeId: { type: string, enum: [invoice, finance] }
         title: { type: string, minLength: 1, maxLength: 200 }
         need: { type: string, minLength: 1, maxLength: 4000 }
@@ -2427,6 +2452,13 @@ components:
       type: object
       required: [id, recipeId, title, need, baseSolutionId, selectedSources, capabilityIds, config, wiring, revision, createdAt, updatedAt, fingerprint, runUrl]
       properties:
+        briefId: { type: string }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/CombinationRequirement" }
+        assessment:
+          type: array
+          items: { $ref: "#/components/schemas/CombinationRequirementAssessment" }
         id: { type: string }
         recipeId: { type: string, enum: [invoice, finance] }
         title: { type: string }
@@ -2441,6 +2473,23 @@ components:
         updatedAt: { type: string }
         fingerprint: { type: string }
         runUrl: { type: string }
+    CombinationRequirement:
+      type: object
+      required: [id, text, priority]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        priority: { type: integer }
+    CombinationRequirementAssessment:
+      type: object
+      required: [id, text, priority, status, capabilityIds, note]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        priority: { type: integer }
+        status: { type: string, enum: [covered, partial, missing, constraint] }
+        capabilityIds: { type: array, items: { type: string } }
+        note: { type: string }
     ConsolidationRecipe:
       type: object
       required: [id, name, sourceIds, baseSolutionIds, runPath, capabilities, edges, defaultConfig]

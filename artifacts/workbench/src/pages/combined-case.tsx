@@ -57,7 +57,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
     const before = inputFrom(c);
     setErr(null);
     upd.mutate({ id: c.id, data: { ...inputFrom(c, patch), expectedRevision: c.revision } }, {
-      onSuccess: () => { setRunUrl(null); if (undoable) setHistory((h) => [...h, before]); say(label); },
+      onSuccess: () => { setRunUrl(null); if (patch.briefId && patch.briefId !== c.briefId) setHistory([]); else if (undoable) setHistory((h) => [...h, before]); say(label); },
       onError: (e) => {
         if (statusOf(e) === 409) { void qc.invalidateQueries({ queryKey: ccKeys.case(c.id) }); setErr("This combination changed elsewhere. The latest version is loaded; try again."); }
         else setErr(msgOf(e));
@@ -90,7 +90,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
       <blockquote className="mt-2 max-w-3xl border-l-4 border-sienna pl-3 text-[15px] text-muted-foreground" data-testid="text-need">{c.need}</blockquote>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <section className="rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6" data-testid="panel-map" aria-label="Proposed map">
+        <section id="wiring" className="scroll-mt-24 rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6" data-testid="panel-map" aria-label="Proposed map">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-semibold">Included capabilities</h2>
             <span className="text-[12.5px] opacity-75">Starts from {name(c.baseSolutionId)}. Click a connection for its adapter.</span>
@@ -137,11 +137,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
               })}</ul>
           </section>}
           <section className="card-soft p-5" data-testid="panel-requirement-gaps">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[16px] font-semibold">Still needed</h2>
-              <Tag tone="muted">Not assessed yet</Tag>
-            </div>
-            <p className="mt-2 text-[13.5px] text-muted-foreground">Your requirements haven’t been checked against this combination yet.</p>
+            <RequirementCoverage c={c} recipe={recipe} />
           </section>
           {finance && <FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Adjustment saved")} />}
           <section className="card-soft p-5">
@@ -170,6 +166,31 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
       </details>
     </div>
   );
+}
+
+function RequirementCoverage({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
+  const assessment = c.assessment ?? [];
+  const gaps = assessment.filter(r => r.status === "partial" || r.status === "missing");
+  const addressed = assessment.filter(r => r.status === "covered");
+  const constraints = assessment.filter(r => r.status === "constraint");
+  const row = (r: typeof assessment[number]) => (
+    <li key={r.id} className="rounded-lg border border-border p-3 text-[13px]" data-testid={`requirement-${r.id}`}>
+      <div className="flex items-start gap-2"><span className="text-muted-foreground">{r.priority}.</span><span className="flex-1 font-medium">{r.text}</span>
+        <Tag tone={r.status === "covered" ? "green" : r.status === "constraint" ? "muted" : "sienna"}>{r.status === "covered" ? "Addressed" : r.status === "partial" ? "Partial" : r.status === "constraint" ? "Constraint" : "Missing"}</Tag></div>
+      <p className="mt-1 text-muted-foreground">{r.note}</p>
+      {r.capabilityIds.length > 0 && <p className="mt-1 text-primary">{r.capabilityIds.map(id => recipe.capabilities.find(cap => cap.id === id)?.name ?? id).join(" + ")}</p>}
+    </li>
+  );
+  return <>
+    <h2 className="text-[16px] font-semibold">Still needed</h2>
+    {!c.briefId ? <p className="mt-2 text-sm text-muted-foreground">This combination has no recorded intake. <Link href="/discover" className="text-primary underline">Start from Discover</Link> to carry your requirements into Workbench automatically.</p>
+      : assessment.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">This intake has no requirements to check.</p>
+      : <>
+        {gaps.length ? <ol className="mt-3 space-y-2">{gaps.map(row)}</ol> : <p className="mt-2 text-sm text-muted-foreground">{addressed.length ? "No capability gaps found in these requirements." : "Only constraints are listed in this intake."}</p>}
+        {addressed.length > 0 && <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Addressed · {addressed.length}</summary><ol className="mt-2 space-y-2">{addressed.map(row)}</ol></details>}
+        {constraints.length > 0 && <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Constraints to check · {constraints.length}</summary><ol className="mt-2 space-y-2">{constraints.map(row)}</ol></details>}
+      </>}
+  </>;
 }
 
 function Node({ title, sub }: { title: string; sub: string }) {

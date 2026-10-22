@@ -5,6 +5,18 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export type IntakeCombinationInputRecipeId = typeof IntakeCombinationInputRecipeId[keyof typeof IntakeCombinationInputRecipeId];
+
+
+export const IntakeCombinationInputRecipeId = {
+  invoice: 'invoice',
+  finance: 'finance',
+} as const;
+
+export interface IntakeCombinationInput {
+  recipeId: IntakeCombinationInputRecipeId;
+}
+
 export interface ConsolidationWiring {
   /** @maxItems 5 */
   edgeIds: string[];
@@ -21,6 +33,8 @@ export const ConsolidationCaseInputRecipeId = {
 export type ConsolidationCaseInputConfig = { [key: string]: unknown };
 
 export interface ConsolidationCaseInput {
+  /** Confirmed intake brief to snapshot; omitted for source-first combinations. */
+  briefId?: string;
   recipeId: ConsolidationCaseInputRecipeId;
   /**
      * @minLength 1
@@ -69,7 +83,35 @@ export const ConsolidationCaseRecipeId = {
 
 export type ConsolidationCaseConfig = { [key: string]: unknown };
 
+export interface CombinationRequirement {
+  id: string;
+  text: string;
+  priority: number;
+}
+
+export type CombinationRequirementAssessmentStatus = typeof CombinationRequirementAssessmentStatus[keyof typeof CombinationRequirementAssessmentStatus];
+
+
+export const CombinationRequirementAssessmentStatus = {
+  covered: 'covered',
+  partial: 'partial',
+  missing: 'missing',
+  constraint: 'constraint',
+} as const;
+
+export interface CombinationRequirementAssessment {
+  id: string;
+  text: string;
+  priority: number;
+  status: CombinationRequirementAssessmentStatus;
+  capabilityIds: string[];
+  note: string;
+}
+
 export interface ConsolidationCase {
+  briefId?: string;
+  requirements?: CombinationRequirement[];
+  assessment?: CombinationRequirementAssessment[];
   id: string;
   recipeId: ConsolidationCaseRecipeId;
   title: string;

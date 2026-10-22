@@ -113,6 +113,7 @@ function Composer({ recipe, draft, setDraft, signedIn, authLoading, sourcesQ }: 
   recipe: Recipe; draft: Draft; setDraft: (p: Partial<Draft>) => void; signedIn: boolean; authLoading: boolean; sourcesQ: ReturnType<typeof useRegisteredSources>;
 }) {
   const [, navigate] = useLocation();
+  const briefId = new URLSearchParams(useSearch()).get("briefId") || undefined;
   const say = useUndoToast();
   const create = useCreateCombinedCase();
   const [err, setErr] = useState<string | null>(null);
@@ -146,6 +147,7 @@ function Composer({ recipe, draft, setDraft, signedIn, authLoading, sourcesQ }: 
     if (problems.length) return;
     const names = draft.sources.map((s) => SOURCE_NAMES[s] ?? s);
     create.mutate({ data: {
+      briefId,
       recipeId: recipe.id, title: draft.title.trim() || `${recipe.name}: ${names.join(" + ")}`, need: draft.need.trim(), baseSolutionId: draft.base,
       selectedSourceIds: draft.sources, capabilityIds: activeCaps, config: recipe.defaultConfig ?? (recipe.id === "invoice" ? { schemaVersion: 1 } : {}), wiring: { edgeIds: edgesFor(recipe, activeCaps) },
     } }, {

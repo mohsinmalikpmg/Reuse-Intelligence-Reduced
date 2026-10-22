@@ -117,6 +117,9 @@ function Workspace({ recipe }: { recipe: Recipe }) {
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">Find invoices, decide them in batches, and trace project cost back to source lines. One isolated ledger, three original domain engines.</p>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
+          {new URLSearchParams(window.location.search).get("consolidationCaseId") && (
+            <a data-testid="link-workbench-wiring" href={`/workbench/${encodeURIComponent(new URLSearchParams(window.location.search).get("consolidationCaseId")!)}#wiring`} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40">View wiring in Workbench</a>
+          )}
           <button onClick={() => setShowProv(v => !v)} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40">{showProv ? "Hide" : "Show"} provenance</button>
           <button onClick={undo} disabled={!ledger.length || !has("bulk-decisions")} className="border border-border bg-card px-3 py-1.5 hover:border-foreground/40 disabled:opacity-40">Undo last</button>
           <button onClick={reset} className="border border-destructive/40 bg-card px-3 py-1.5 text-destructive hover:bg-destructive/5">Reset snapshot</button>

@@ -6,6 +6,9 @@ import { z } from "zod";
 import { financeRepositoryRoot, financeConfigSchema, validateFinanceConfig, financeCatalog } from "./finance-wiring";
 import { savePackageOriginal, packageObject } from "./solution-package-storage";
 import { isRedistributionExcludedPath } from "./solution-package-archive";
+import { getBrief } from "./store";
+import { assessCombination } from "./combination-assessment";
+import type { CombinationRequirement, CombinationRequirementAssessment } from "@workspace/api-zod";
 
 export class ConsolidationError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -36,12 +39,14 @@ export const consolidationRecipes = [
 ];
 export type SelectedSource = { id: string; solutionId: string; version: string; sha256: string };
 export type ConsolidationCase = {
+  briefId?: string; requirements?: CombinationRequirement[]; assessment?: CombinationRequirementAssessment[];
   id: string; recipeId: "invoice" | "finance"; title: string; need: string; baseSolutionId: string;
   selectedSources: SelectedSource[]; capabilityIds: string[]; config: Record<string, unknown>;
   wiring: { edgeIds: string[] }; revision: number; createdAt: string; updatedAt: string;
   fingerprint: string; runUrl: string;
 };
 export const consolidationCaseInput = z.object({
+  briefId: z.string().min(1).max(200).optional(),
   recipeId: z.enum(["invoice", "finance"]), title: z.string().trim().min(1).max(200),
   need: z.string().trim().min(1).max(4000), baseSolutionId: z.string().max(100),
   selectedSourceIds: z.array(z.string().max(100)).min(2).max(5),
@@ -97,7 +102,8 @@ export async function validateConsolidationCase(c: ConsolidationCase): Promise<v
   if (c.fingerprint && c.fingerprint !== consolidationFingerprint(c)) throw new ConsolidationError(409, "The persisted recipe fingerprint does not match its contents.");
 }
 function present(row: Record<string, any>): ConsolidationCase {
-  return { ...row.snapshot, id: row.id, revision: row.revision, createdAt: row.created_at.toISOString(), updatedAt: row.updated_at.toISOString() };
+  const c = { ...row.snapshot, id: row.id, revision: row.revision, createdAt: row.created_at.toISOString(), updatedAt: row.updated_at.toISOString() };
+  return { ...c, assessment: assessCombination(c.requirements ?? [], c) };
 }
 export async function ownedConsolidationCase(userId: string, id: string): Promise<ConsolidationCase> {
   const { rows } = await pool.query("SELECT * FROM consolidation_cases WHERE id=$1 AND user_id=$2", [id, userId]);
@@ -108,9 +114,42 @@ export async function listConsolidationCases(userId: string) {
   const { rows } = await pool.query("SELECT * FROM consolidation_cases WHERE user_id=$1 ORDER BY updated_at DESC", [userId]);
   return rows.map(present);
 }
+
+/** Intake has one repeatable destination per account and recipe; reopening preserves edits. */
+export async function openIntakeCombination(userId: string, briefId: string, recipeId: "invoice" | "finance") {
+  const lock = await pool.connect();
+  const key = `intake-combination:${JSON.stringify([userId, briefId, recipeId])}`;
+  try {
+    await lock.query("SELECT pg_advisory_lock(hashtextextended($1,0))", [key]);
+    const existing = (await listConsolidationCases(userId)).find(c => c.briefId === briefId && c.recipeId === recipeId);
+    if (existing) return existing;
+    const brief = await getBrief(briefId);
+    if (!brief) throw new ConsolidationError(404, "Intake brief not found.");
+    if (!brief.confirmed) throw new ConsolidationError(422, "Confirm your intake before opening Workbench.");
+    const recipe = (await recipeCatalog()).find(r => r.id === recipeId)!;
+    if (!recipe.defaultConfig) throw new ConsolidationError(409, "The combination's starting configuration is unavailable.");
+    return await saveConsolidationCase(userId, {
+      briefId, recipeId, title: recipe.name, need: (brief.better || brief.rawText).slice(0, 4000),
+      baseSolutionId: recipe.baseSolutionIds[0], selectedSourceIds: [...recipe.sourceIds],
+      capabilityIds: recipe.capabilities.map(c => c.id), config: recipe.defaultConfig,
+      wiring: { edgeIds: [...new Set(recipe.capabilities.map(c => c.edgeId))] },
+    });
+  } finally {
+    await lock.query("SELECT pg_advisory_unlock(hashtextextended($1,0))", [key]);
+    lock.release();
+  }
+}
 export async function saveConsolidationCase(userId: string, input: z.infer<typeof consolidationCaseInput>, existingId?: string, expectedRevision?: number) {
   const old = existingId ? await ownedConsolidationCase(userId, existingId) : undefined;
   if (old && (old.recipeId !== input.recipeId || old.revision !== expectedRevision)) throw new ConsolidationError(409, "Recipe is immutable or revision is stale. Reload before updating.");
+  const briefId = input.briefId ?? old?.briefId;
+  let requirements = old?.requirements ?? [];
+  if (briefId && (briefId !== old?.briefId || !old?.requirements)) {
+    const brief = await getBrief(briefId);
+    if (!brief) throw new ConsolidationError(404, "Intake brief not found.");
+    if (!brief.confirmed) throw new ConsolidationError(422, "Confirm the intake requirements before linking them.");
+    requirements = brief.requirements.map((r, index) => ({ id: r.id, text: r.text, priority: index + 1 }));
+  }
   const registered = await registeredConsolidationSources();
   const selectedSources = input.selectedSourceIds.map(id => {
     const source = registered.find(s => s.id === id);
@@ -119,7 +158,7 @@ export async function saveConsolidationCase(userId: string, input: z.infer<typeo
   });
   const id = existingId ?? `cc_${randomUUID()}`;
   const { selectedSourceIds: _, ...fields } = input;
-  const snapshot: ConsolidationCase = { ...fields, id, selectedSources, revision: (old?.revision ?? 0) + 1,
+  const snapshot: ConsolidationCase = { ...fields, briefId, requirements, id, selectedSources, revision: (old?.revision ?? 0) + 1,
     createdAt: old?.createdAt ?? new Date().toISOString(), updatedAt: new Date().toISOString(), fingerprint: "",
     runUrl: `${consolidationRecipes.find(r => r.id === input.recipeId)!.runPath}?consolidationCaseId=${encodeURIComponent(id)}` };
   await validateConsolidationCase(snapshot);

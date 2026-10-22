@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
 import { pool } from "@workspace/db";
+import { z } from "zod";
 import {
   ConsolidationError, consolidationCaseInput, consolidationCaseUpdate, recipeCatalog,
   registeredConsolidationSources, registerConsolidationSources, consolidationSourceDownload,
   ownedConsolidationCase, listConsolidationCases, saveConsolidationCase, validateConsolidationCase,
+  openIntakeCombination,
 } from "../lib/consolidation-recipes";
 const router: IRouter = Router();
 router.get("/consolidation/recipes", async (_req,res) => { res.json(await recipeCatalog()); });
@@ -20,6 +22,11 @@ router.use("/consolidation", (req,res,next) => {
   next();
 });
 router.get("/consolidation/sources", async (_req,res) => { res.json(await registeredConsolidationSources()); });
+router.post("/consolidation/briefs/:briefId/workbench", async (req,res) => {
+  const parsed = z.object({ recipeId: z.enum(["invoice", "finance"]) }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({error:"Choose a supported combination."}); return; }
+  res.json(await openIntakeCombination(req.user!.id, String(req.params.briefId), parsed.data.recipeId));
+});
 router.post("/consolidation/sources/register", async (req,res) => {
   const {rows} = await pool.query("SELECT can_manage_solution_packages FROM users WHERE id=$1",[req.user!.id]);
   if (!rows[0]?.can_manage_solution_packages) { res.status(403).json({error:"IT package-management permission is required."}); return; }

@@ -27,6 +27,18 @@ Keep uploader claims, static source mappings, and executed sandbox results disti
 
 **How to apply:** downstream assessment must preserve provenance and test scope rather than treating an approved ZIP as a passed acceptance test.
 
+An intake-to-combination handoff must preserve the confirmed, prioritized requirements, not just a summary of the need. Requirement assessment already exists in the original Workbench; do not describe it as an unbuilt product feature.
+
+**Why:** the invoice/finance shortcut dropped the intake reference and made an implemented capability disappear from the new route; the user explicitly corrected the claim that assessment did not exist.
+
+**How to apply:** snapshot requirements when linking intake, recompute combination coverage from selected sources/capabilities/wiring, and keep the agreed snapshot stable during edits. Use domain-specific mappings rather than inheriting maintenance-demo verdicts. Broad or compound matches remain partial, not full coverage.
+
+The user rejected manual intake linking: confirmed intake must open its combination directly, carrying requirements automatically. Do not insert a Library detour or an intake picker into that journey.
+
+**Why:** asking the user to reconnect the intake defeats the purpose of the end-to-end workflow.
+
+**How to apply:** reopening the same intake should return the same saved combination without resetting edits. The running invoice application should refer to that exact saved Workbench wiring, not an independent configuration.
+
 ## Workbench output goal
 The user wants the Workbench to produce an integrated, importable Replit ZIP that combines features from library solution sources and, when provided, the user's supplied solution sources. A diagram, configuration export, or collection of untouched archives is not that deliverable.
 

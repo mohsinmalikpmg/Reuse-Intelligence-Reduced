@@ -8,6 +8,57 @@
 import * as zod from 'zod';
 
 
+export const OpenIntakeCombinationParams = zod.object({
+  "briefId": zod.coerce.string()
+})
+
+export const OpenIntakeCombinationBody = zod.object({
+  "recipeId": zod.enum(['invoice', 'finance'])
+})
+
+export const openIntakeCombinationResponseWiringEdgeIdsMax = 5;
+
+
+
+export const OpenIntakeCombinationResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
+  "id": zod.string(),
+  "recipeId": zod.enum(['invoice', 'finance']),
+  "title": zod.string(),
+  "need": zod.string(),
+  "baseSolutionId": zod.string(),
+  "selectedSources": zod.array(zod.object({
+  "id": zod.string(),
+  "solutionId": zod.string(),
+  "version": zod.string(),
+  "sha256": zod.string()
+})),
+  "capabilityIds": zod.array(zod.string()),
+  "config": zod.record(zod.string(), zod.unknown()),
+  "wiring": zod.object({
+  "edgeIds": zod.array(zod.string()).max(openIntakeCombinationResponseWiringEdgeIdsMax)
+}),
+  "revision": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "fingerprint": zod.string(),
+  "runUrl": zod.string()
+})
+
+
 export const ListConsolidationRecipesResponseItem = zod.object({
   "id": zod.enum(['invoice', 'finance']),
   "name": zod.string(),
@@ -96,6 +147,20 @@ export const listConsolidationCasesResponseWiringEdgeIdsMax = 5;
 
 
 export const ListConsolidationCasesResponseItem = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "recipeId": zod.enum(['invoice', 'finance']),
   "title": zod.string(),
@@ -135,6 +200,7 @@ export const createConsolidationCaseBodyWiringEdgeIdsMax = 5;
 
 
 export const CreateConsolidationCaseBody = zod.object({
+  "briefId": zod.string().optional().describe('Confirmed intake brief to snapshot; omitted for source-first combinations.'),
   "recipeId": zod.enum(['invoice', 'finance']),
   "title": zod.string().min(1).max(createConsolidationCaseBodyTitleMax),
   "need": zod.string().min(1).max(createConsolidationCaseBodyNeedMax),
@@ -152,6 +218,20 @@ export const createConsolidationCaseResponseWiringEdgeIdsMax = 5;
 
 
 export const CreateConsolidationCaseResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "recipeId": zod.enum(['invoice', 'finance']),
   "title": zod.string(),
@@ -185,6 +265,20 @@ export const getConsolidationCaseResponseWiringEdgeIdsMax = 5;
 
 
 export const GetConsolidationCaseResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "recipeId": zod.enum(['invoice', 'finance']),
   "title": zod.string(),
@@ -231,6 +325,7 @@ export const updateConsolidationCaseBodyOneWiringEdgeIdsMax = 5;
 
 
 export const UpdateConsolidationCaseBody = zod.object({
+  "briefId": zod.string().optional().describe('Confirmed intake brief to snapshot; omitted for source-first combinations.'),
   "recipeId": zod.enum(['invoice', 'finance']),
   "title": zod.string().min(1).max(updateConsolidationCaseBodyOneTitleMax),
   "need": zod.string().min(1).max(updateConsolidationCaseBodyOneNeedMax),
@@ -250,6 +345,20 @@ export const updateConsolidationCaseResponseWiringEdgeIdsMax = 5;
 
 
 export const UpdateConsolidationCaseResponse = zod.object({
+  "briefId": zod.string().optional(),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int()
+})).optional(),
+  "assessment": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "priority": zod.number().int(),
+  "status": zod.enum(['covered', 'partial', 'missing', 'constraint']),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string()
+})).optional(),
   "id": zod.string(),
   "recipeId": zod.enum(['invoice', 'finance']),
   "title": zod.string(),

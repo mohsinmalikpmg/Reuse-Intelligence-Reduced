@@ -73,6 +73,7 @@ import type {
   HealthStatus,
   ImprovementGroupDetail,
   IntakeAttachment,
+  IntakeCombinationInput,
   IntakeComparison,
   IntakeFileInput,
   IntakeRecord,
@@ -155,6 +156,89 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getOpenIntakeCombinationUrl = (briefId: string,) => {
+
+
+
+
+  return `/api/consolidation/briefs/${briefId}/workbench`
+}
+
+export const openIntakeCombination = async (briefId: string,
+    intakeCombinationInput: IntakeCombinationInput, options?: Parameters<typeof customFetch>[1]): Promise<ConsolidationCase> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ConsolidationCase>(getOpenIntakeCombinationUrl(briefId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(intakeCombinationInput)
+  }
+);}
+
+
+
+
+
+export const getOpenIntakeCombinationMutationKey = () => ['openIntakeCombination'] as const;
+
+export const getOpenIntakeCombinationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openIntakeCombination>>, TError,OpenIntakeCombinationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof openIntakeCombination>>, TError,OpenIntakeCombinationMutationVariables, TContext> => {
+
+const mutationKey = getOpenIntakeCombinationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof openIntakeCombination>>, OpenIntakeCombinationMutationVariables> = (props) => {
+          const {briefId,data} = props ?? {};
+
+          return  openIntakeCombination(briefId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OpenIntakeCombinationMutationResult = NonNullable<Awaited<ReturnType<typeof openIntakeCombination>>>
+    export type OpenIntakeCombinationMutationBody = BodyType<IntakeCombinationInput>
+    export type OpenIntakeCombinationMutationError = ErrorType<unknown>
+    export type OpenIntakeCombinationMutationVariables = {briefId: string;data: BodyType<IntakeCombinationInput>}
+
+    export const useOpenIntakeCombination = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openIntakeCombination>>, TError,OpenIntakeCombinationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof openIntakeCombination>>,
+        TError,
+        OpenIntakeCombinationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOpenIntakeCombinationMutationOptions(options));
+    }
 
 export const getListConsolidationRecipesUrl = () => {
 

@@ -49,6 +49,7 @@ export const edgesFor = (recipe: Recipe, capabilityIds: string[]) =>
   [...new Set(recipe.capabilities.filter((c) => capabilityIds.includes(c.id)).map((c) => c.edgeId))].sort();
 
 export const inputFrom = (c: CombinedCase, patch: Partial<CombinedCaseInput> = {}): CombinedCaseInput => ({
+  briefId: c.briefId,
   recipeId: c.recipeId, title: c.title, need: c.need, baseSolutionId: c.baseSolutionId,
   selectedSourceIds: c.selectedSources.map((s) => s.id), capabilityIds: c.capabilityIds, config: c.config, wiring: c.wiring, ...patch,
 });

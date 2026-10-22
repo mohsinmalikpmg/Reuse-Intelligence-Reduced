@@ -5,12 +5,17 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { CombinationRequirement } from './combinationRequirement';
+import type { CombinationRequirementAssessment } from './combinationRequirementAssessment';
 import type { ConsolidationCaseConfig } from './consolidationCaseConfig';
 import type { ConsolidationCaseRecipeId } from './consolidationCaseRecipeId';
 import type { ConsolidationSelectedSource } from './consolidationSelectedSource';
 import type { ConsolidationWiring } from './consolidationWiring';
 
 export interface ConsolidationCase {
+  briefId?: string;
+  requirements?: CombinationRequirement[];
+  assessment?: CombinationRequirementAssessment[];
   id: string;
   recipeId: ConsolidationCaseRecipeId;
   title: string;

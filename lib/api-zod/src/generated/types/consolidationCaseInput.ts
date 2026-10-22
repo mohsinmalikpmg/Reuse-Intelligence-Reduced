@@ -10,6 +10,8 @@ import type { ConsolidationCaseInputRecipeId } from './consolidationCaseInputRec
 import type { ConsolidationWiring } from './consolidationWiring';
 
 export interface ConsolidationCaseInput {
+  /** Confirmed intake brief to snapshot; omitted for source-first combinations. */
+  briefId?: string;
   recipeId: ConsolidationCaseInputRecipeId;
   /**
      * @minLength 1

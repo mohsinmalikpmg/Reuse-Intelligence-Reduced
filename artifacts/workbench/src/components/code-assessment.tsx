@@ -5,7 +5,8 @@ import { useMutation } from "@tanstack/react-query";
 import {
   createBriefWorkbench, getGetBriefQueryKey, getGetCodeAssessmentQueryKey, useGetBrief, getGetIntakeSessionQueryKey,
   useGetCodeAssessment, useGetIntakeSession, useGetLibraryCodePackage,
-  type CodeCapabilityEvidence, type CodeRequirementAssessment, type LibraryCodePackage,
+  useOpenIntakeCombination, useGetCurrentAuthUser,
+  type Brief, type CodeCapabilityEvidence, type CodeRequirementAssessment, type LibraryCodePackage,
 } from "@workspace/api-client-react";
 import { Skel, Tag, btn } from "@/components/bits";
 import { errMsg, useCurrentCase } from "@/lib/case";
@@ -101,17 +102,25 @@ function OpenProposal({ briefId, enabled, label }: { briefId: string; enabled: b
 }
 
 export function CodeAssessment({ briefId }: { briefId: string }) {
+  const brief = useGetBrief(briefId, { query: { queryKey: getGetBriefQueryKey(briefId), enabled: !!briefId } });
+  if (brief.isLoading) return <Skel className="mt-10 h-44" />;
+  if (!brief.data) return <div role="alert" className="mt-10">Intake could not load. <button className={btn.quiet} onClick={() => void brief.refetch()}>Retry</button></div>;
+  const b = brief.data;
+  const text = [b.rawText, b.today, b.better, b.valueStatement, b.clarification, ...b.requirements.map(r => r.text)].filter(Boolean).join(" ");
+  const recipe = FINANCE_RE.test(text) ? "finance" : INVOICE_RE.test(text) ? "invoice" : null;
+  return recipe ? <CombineShortcut brief={b} recipe={recipe} /> : <MaintenanceAssessment briefId={briefId} />;
+}
+
+function MaintenanceAssessment({ briefId }: { briefId: string }) {
   const query = useGetCodeAssessment(briefId, { query: { queryKey: getGetCodeAssessmentQueryKey(briefId), enabled: !!briefId } });
   const [tech, setTech] = useState(false);
   if (query.isLoading) return <section className="mt-10" aria-label="Code-grounded assessment" role="status"><p className="mb-3 text-[14px] text-muted-foreground">Checking which existing code fits your need…</p><Skel className="h-44" /></section>;
   if (query.isError || !query.data) return <section className="card-soft mt-10 p-5" role="alert"><h2 className="font-semibold">Recommendation unavailable</h2><p className="mt-2 text-[14px]">Source evidence could not load.</p><button className={`${btn.secondary} mt-3`} onClick={() => query.refetch()}>Retry</button></section>;
   const report = query.data;
   const best = report.candidates.find((c) => c.solutionId === report.bestSolutionId);
-  const combo = <CombineShortcut briefId={briefId} />;
   const alts = report.candidates.filter((c) => c.solutionId !== report.bestSolutionId).sort((a, b) => b.weightedCoverage - a.weightedCoverage).slice(0, 2);
   return (
     <section className="mt-10 space-y-5" data-testid="code-assessment">
-      {combo}
       <div className="card-soft border-l-4 border-l-primary p-6">
         <div className="eyebrow mb-2">Proposed workflow</div>
         <h2 className="text-[26px] font-semibold">{best ? `Start from ${best.name}` : "No existing solution fits as a base"}</h2>
@@ -173,22 +182,21 @@ const FINANCE_RE = /\b(forecast|budget|management report|reporting|cost cent(re|
 const INVOICE_RE = /\b(invoices?|suppliers?|approv(al|e|als)|spend|line items?|purchase)\b/i;
 
 /** When the brief reads like invoices or finance, offer the existing-source combination instead of a maintenance no-match. */
-function CombineShortcut({ briefId }: { briefId: string }) {
-  const q = useGetBrief(briefId, { query: { queryKey: getGetBriefQueryKey(briefId), enabled: !!briefId } });
-  const b = q.data;
-  if (!b) return null;
-  const text = [b.rawText, b.today, b.better, b.valueStatement, b.clarification, ...b.requirements.map((r) => JSON.stringify(r))].filter(Boolean).join(" ");
-  const recipe = FINANCE_RE.test(text) ? "finance" : INVOICE_RE.test(text) ? "invoice" : null;
-  if (!recipe) return null;
-  const need = (b.better || b.rawText || "").slice(0, 600);
+function CombineShortcut({ brief: b, recipe }: { brief: Brief; recipe: "invoice" | "finance" }) {
+  const [, navigate] = useLocation();
+  const open = useOpenIntakeCombination();
+  const auth = useGetCurrentAuthUser();
   const label = recipe === "finance" ? "Forecast to Report" : "Invoice Operations";
-  const href = `/library?combine=${recipe}&need=${encodeURIComponent(need)}`;
   return (
-    <div className="card-soft border-l-4 border-l-sienna p-6" data-testid={`shortcut-combine-${recipe}`}>
-      <div className="eyebrow mb-2">Existing apps cover this</div>
+    <div className="card-soft mt-10 border-l-4 border-l-sienna p-6" data-testid={`shortcut-combine-${recipe}`}>
+      <div className="eyebrow mb-2">Proposed workflow</div>
       <h2 className="text-[22px] font-semibold">Combine them as {label}</h2>
-      <p className="mt-2 text-[14.5px] text-muted-foreground">{recipe === "finance" ? "Budget & Forecast and Management Reporting already do the two halves. Connect them and try the result." : "Invoice Finder, Approval Desk and Spend Tracker each do part of this. Pick two or three and try the combination."}</p>
-      <Link href={href} className={`${btn.accent} mt-4`} data-testid="link-combine-shortcut">Choose sources <ArrowRight className="h-4 w-4" /></Link>
+      <p className="mt-2 text-[14.5px] text-muted-foreground">Your confirmed requirements go with you. Adjust the capabilities and wiring in Workbench.</p>
+      {!auth.isLoading && !auth.data?.user ? <a href={`/api/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`} className={`${btn.accent} mt-4`}>Sign in to open Workbench</a> :
+        <button className={`${btn.accent} mt-4`} data-testid="button-open-proposed-workflow" disabled={auth.isLoading || !b.confirmed || open.isPending} onClick={() => open.mutate({ briefId: b.id, data: { recipeId: recipe } }, { onSuccess: c => navigate(`/workbench/${c.id}`) })}>
+          {open.isPending ? "Opening…" : "Open proposed workflow"} <ArrowRight className="h-4 w-4" />
+        </button>}
+      {open.isError && <p role="alert" className="mt-3 text-sm text-bad">{errMsg(open.error)}</p>}
     </div>
   );
 }
