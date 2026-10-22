@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useRememberConfirmedBrief } from "@/lib/composition";
 import { Link, useLocation, useSearch } from "wouter";
 import { DndContext, DragOverlay, PointerSensor, KeyboardSensor, pointerWithin, rectIntersection, useDraggable, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
 import { ArrowRight, Check, CornerDownLeft, GripVertical, Pencil, Plus, Sparkles, X } from "lucide-react";
@@ -34,6 +35,8 @@ export default function Discover() {
   const create = useCreateBrief();
   const [text, setText] = useState("");
   const say = useUndoToast();
+  // A confirmed intake becomes the context for Build from selected solutions in the library.
+  useRememberConfirmedBrief(briefId);
 
   const submit = () => {
     if (create.isPending) return;

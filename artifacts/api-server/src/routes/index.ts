@@ -18,9 +18,15 @@ import financeWiringRouter from "./finance-wiring";
 import consolidationCasesRouter from "./consolidation-cases";
 import portfolioAnalyticsRouter from "./portfolio-analytics";
 import invoiceAnalysisRouter from "./invoice-analysis";
+import compositionsRouter from "./compositions";
+import featureRedundancyRouter from "./feature-redundancy";
+import workbenchInputsRouter from "./workbench-inputs";
 
 const router: IRouter = Router();
 router.use(authRouter);
+router.use(compositionsRouter);
+router.use(featureRedundancyRouter);
+router.use(workbenchInputsRouter);
 router.use(solutionExportsRouter);
 router.use(financeWiringRouter);
 router.use(consolidationCasesRouter);

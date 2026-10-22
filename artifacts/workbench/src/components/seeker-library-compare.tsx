@@ -2,10 +2,14 @@ import { Link } from "wouter";
 import { ArrowRight, X } from "lucide-react";
 import { useTry } from "@/components/family-card";
 import { btn } from "@/components/bits";
+import { BuildFromSelected } from "@/components/composition-build";
+import { useComposing } from "@/lib/composition";
+import { FeatureRedundancy } from "@/components/feature-redundancy";
 import { EVIDENCE_LABEL, orUnknown, readinessOf, roleLabel, type Entry } from "./seeker-library-model";
 
-export function SeekerCompare({ picked, onRemove, onClear }: { picked: Entry[]; onRemove: (id: string) => void; onClear: () => void }) {
+export function SeekerCompare({ picked, pinned, onRepin, onRemove, onClear }: { picked: Entry[]; pinned: Record<string, string>; onRepin: (ids: string[]) => void; onRemove: (id: string) => void; onClear: () => void }) {
   const { go, busy } = useTry();
+  const composing = useComposing();
   if (picked.length === 0) return null;
   const caps = new Map<string, string>();
   picked.forEach((e) => e.caps.forEach((c) => caps.set(c.id, c.name)));
@@ -13,7 +17,7 @@ export function SeekerCompare({ picked, onRemove, onClear }: { picked: Entry[]; 
     <section aria-labelledby="compare-heading" className="card-soft mt-8 p-5" data-testid="seeker-compare">
       <div className="flex flex-wrap items-center gap-3">
         <h2 id="compare-heading" className="text-[18px] font-semibold">Compare {picked.length} of 3</h2>
-        <button className={btn.quiet} onClick={onClear} data-testid="button-compare-clear">Clear</button>
+        <button className={btn.quiet} onClick={onClear} disabled={composing} data-testid="button-compare-clear">Clear</button>
       </div>
       {picked.length < 2 && <p className="mt-1 text-[13.5px] text-muted-foreground">Pick one more to see them side by side.</p>}
       <div className="mt-4 overflow-x-auto rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" tabIndex={0} role="region" aria-labelledby="compare-heading">
@@ -26,9 +30,9 @@ export function SeekerCompare({ picked, onRemove, onClear }: { picked: Entry[]; 
                 <th key={e.key} scope="col" className="p-2 align-top">
                   <div className="flex items-start gap-1">
                     <Link href={`/solutions/${e.s.id}`} className="font-semibold text-primary hover:underline">{e.s.name}</Link>
-                    <button aria-label={`Remove ${e.s.name} from comparison`} onClick={() => onRemove(e.s.id)} className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted"><X className="h-4 w-4" /></button>
+                    <button aria-label={`Remove ${e.s.name} from comparison`} onClick={() => onRemove(e.s.id)} disabled={composing} className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-40"><X className="h-4 w-4" /></button>
                   </div>
-                  <div className="text-[12.5px] font-normal text-muted-foreground">{roleLabel(e)} · v{e.s.currentVersion}</div>
+                  <div className="text-[12.5px] font-normal text-muted-foreground">{roleLabel(e)} · v{pinned[e.s.id] ?? e.s.currentVersion}</div>
                 </th>
               ))}
             </tr>
@@ -64,6 +68,9 @@ export function SeekerCompare({ picked, onRemove, onClear }: { picked: Entry[]; 
           </tbody>
         </table>
       </div>
+      {picked.length >= 2 && <div className="mt-5"><FeatureRedundancy key={picked.map((e) => e.s.id).join("|")} title="Feature redundancy across these picks" names={(id) => picked.find((e) => e.s.id === id)?.s.name ?? id}
+        target={{ sources: picked.map((e) => ({ solutionId: e.s.id, version: pinned[e.s.id] ?? String(e.s.currentVersion) })) }} /></div>}
+      <BuildFromSelected picked={picked} pinned={pinned} onRepin={onRepin} />
     </section>
   );
 }

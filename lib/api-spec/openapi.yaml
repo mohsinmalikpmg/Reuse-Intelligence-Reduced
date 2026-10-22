@@ -20,6 +20,177 @@ tags:
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
+  /workbench-inputs/{targetId}/validate:
+    post:
+      operationId: validateWorkbenchInput
+      summary: Validate a transient custom file against actual selected workbench ingestion contracts
+      parameters:
+        - { name: targetId, in: path, required: true, schema: { type: string }, description: "Ordinary case ID, cc_ combined case ID or cmp_ composition ID" }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/WorkbenchInputUploadInput" }
+      responses:
+        "200":
+          description: Valid normalized input; runnable is false for proposal-only inspection
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkbenchInputValidation" }
+        "422":
+          description: Incompatible ingestion or malformed file; includes actionable contracts and row issues
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkbenchInputValidation" }
+        "413":
+          description: File or normalized input exceeds 256 KiB
+  /compositions/{id}/suggestions/{suggestionId}/accept:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: suggestionId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: acceptCompositionSuggestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompositionSuggestionAcceptanceInput" }
+      responses:
+        "200":
+          description: Explicit donor acceptance on the same composition, supported or visibly proposed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
+  /feature-redundancy:
+    post:
+      operationId: analyzeFeatureRedundancy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FeatureRedundancyInput" }
+      responses:
+        "200":
+          description: Persisted evidence-matched AI feature grouping, not measured equivalence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureRedundancyResult" }
+  /compositions/{id}/plan:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: editCompositionPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompositionPlanEditInput" }
+      responses:
+        "200":
+          description: Revision-safe saved manual proposal edit with Undo; never an executable run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
+  /compositions:
+    get:
+      operationId: listCompositions
+      parameters:
+        - { name: caseId, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Owned compositions, optionally linked to a case
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Composition" } }
+    post:
+      operationId: createComposition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompositionCreateInput" }
+      responses:
+        "201":
+          description: Idempotently saved recommendation and validated case or non-executable proposal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
+  /compositions/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getComposition
+      responses:
+        "200":
+          description: Owned saved composition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
+  /compositions/{id}/refinements:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: previewCompositionRefinement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompositionRefinementInput" }
+      responses:
+        "200":
+          description: Preview against current persisted case including manual edits
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompositionRefinement" }
+  /compositions/{id}/refinements/{previewId}/apply:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: previewId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: applyCompositionRefinement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompositionRevisionBody" }
+      responses:
+        "200":
+          description: Atomically applied plan and settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
+  /compositions/{id}/refinements/{previewId}/cancel:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: previewId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: cancelCompositionRefinement
+      responses:
+        "200":
+          description: Preview discarded without modifying case
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [cancelled] }
+  /compositions/{id}/undo:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: undoCompositionRefinement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompositionRevisionBody" }
+      responses:
+        "200":
+          description: Atomic selective Undo preserving unrelated manual edits
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Composition" }
   /consolidation/cases/{id}/invoice-analysis:
     parameters:
       - name: id
@@ -2458,6 +2629,273 @@ components:
       schema:
         type: string
   schemas:
+    WorkbenchInputUploadInput:
+      type: object
+      required: [file]
+      properties:
+        file: { type: string, format: binary, description: UTF-8 txt/csv/json; maximum 256 KiB. Not persisted. }
+    WorkbenchInputIssue:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        row: { type: integer }
+        field: { type: string }
+    WorkbenchInputContract:
+      type: object
+      required: [version, sourceSolutionId, ingestionCapabilityIds, supportedFormats, expectedFields, description, compatible, reason]
+      properties:
+        version: { type: string }
+        sourceSolutionId: { type: string }
+        ingestionCapabilityIds: { type: array, items: { type: string } }
+        supportedFormats: { type: array, items: { type: string } }
+        expectedFields: { type: array, items: { type: string } }
+        description: { type: string }
+        compatible: { type: boolean }
+        reason: { type: string }
+    WorkbenchInputValidation:
+      type: object
+      required: [compatible, runnable, targetId, caseId, caseKind, filename, format, normalizedInputText, recordCount, contracts, issues, limitations]
+      properties:
+        error: { type: string }
+        compatible: { type: boolean }
+        runnable: { type: boolean }
+        targetId: { type: string }
+        caseId: { type: [string, "null"] }
+        caseKind: { type: string, enum: [case, combined, proposal] }
+        filename: { type: string }
+        format: { type: string }
+        normalizedInputText: { type: [string, "null"] }
+        recordCount: { type: integer }
+        contracts: { type: array, items: { $ref: "#/components/schemas/WorkbenchInputContract" } }
+        issues: { type: array, items: { $ref: "#/components/schemas/WorkbenchInputIssue" } }
+        limitations: { type: array, items: { type: string } }
+    CompositionSuggestionAcceptanceInput:
+      type: object
+      required: [expectedRevision, idempotencyKey]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+    CompositionCapabilityGap:
+      type: object
+      required: [id, need, reason]
+      properties:
+        id: { type: string }
+        need: { type: string }
+        reason: { type: string }
+    CompositionLibrarySuggestion:
+      type: object
+      required: [id, sourceSolutionId, version, capabilityIds, gapIds, reason, compatibility, compatibilityReason]
+      properties:
+        id: { type: string }
+        sourceSolutionId: { type: string }
+        version: { type: string }
+        capabilityIds: { type: array, items: { type: string } }
+        gapIds: { type: array, items: { type: string } }
+        reason: { type: string }
+        compatibility: { type: string, enum: [supported, proposed-adapter] }
+        compatibilityReason: { type: string }
+    CompositionAcceptedSuggestion:
+      type: object
+      required: [suggestionId, sourceSolutionId, acceptedRevision, executable]
+      properties:
+        suggestionId: { type: string }
+        sourceSolutionId: { type: string }
+        acceptedRevision: { type: integer }
+        executable: { type: boolean }
+        capabilityIds: { type: array, items: { type: string } }
+        gapIds: { type: array, items: { type: string } }
+        suggestionReason: { type: string }
+    CompositionPlanEditInput:
+      type: object
+      required: [expectedRevision, plan]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+        plan: { $ref: "#/components/schemas/CompositionPlan" }
+    FeatureRedundancyInput:
+      type: object
+      description: Exactly one of sources, compositionId, or caseId is required
+      properties:
+        sources: { type: array, minItems: 2, maxItems: 12, items: { $ref: "#/components/schemas/CompositionSource" } }
+        compositionId: { type: string }
+        caseId: { type: string }
+        force: { type: boolean, default: false }
+    FeatureEvidence:
+      type: object
+      required: [id, sourceId, kind, sha256, label]
+      properties:
+        id: { type: string }
+        sourceId: { type: string }
+        kind: { type: string, enum: [catalog, source-review, manifest] }
+        sha256: { type: string }
+        label: { type: string }
+    FeatureRedundancyCoverage:
+      type: object
+      required: [sourceId, capabilityIds, coverage, evidenceIds, reason]
+      properties:
+        sourceId: { type: string }
+        capabilityIds: { type: array, items: { type: string } }
+        coverage: { type: string, enum: [full, partial, none, unknown] }
+        evidenceIds: { type: array, items: { type: string } }
+        reason: { type: string }
+    FeatureRedundancyGroup:
+      type: object
+      required: [id, title, classification, coverage, recommendation, reasoning, gaps]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        classification: { type: string, enum: [overlap, partial, unique, unknown] }
+        coverage: { type: array, items: { $ref: "#/components/schemas/FeatureRedundancyCoverage" } }
+        recommendation: { type: string, enum: [retain, replace, combine, "keep separate"] }
+        reasoning: { type: string }
+        gaps: { type: array, items: { type: string } }
+    FeatureRedundancyAnalysis:
+      type: object
+      required: [summary, groups, limitations]
+      properties:
+        summary: { type: string }
+        groups: { type: array, items: { $ref: "#/components/schemas/FeatureRedundancyGroup" } }
+        limitations: { type: array, items: { type: string } }
+    FeatureRedundancyResult:
+      type: object
+      required: [analysis, provenance, evidenceHash, evidence, sources]
+      properties:
+        analysis: { $ref: "#/components/schemas/FeatureRedundancyAnalysis" }
+        provenance: { type: object, additionalProperties: true }
+        evidenceHash: { type: string }
+        evidence: { type: array, items: { $ref: "#/components/schemas/FeatureEvidence" } }
+        sources: { type: array, items: { $ref: "#/components/schemas/CompositionSource" } }
+    CompositionSource:
+      type: object
+      required: [solutionId, version]
+      properties:
+        solutionId: { type: string }
+        version: { type: string }
+    CompositionRefinementInput:
+      type: object
+      required: [expectedRevision, instruction]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+        instruction: { type: string, minLength: 1, maxLength: 4000 }
+    CompositionCreateInput:
+      type: object
+      required: [idempotencyKey, sources]
+      properties:
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+        sources: { type: array, minItems: 2, maxItems: 3, items: { $ref: "#/components/schemas/CompositionSource" } }
+        desiredOutcome: { type: string, maxLength: 4000 }
+        targetGroup: { type: string, maxLength: 1000 }
+        comparisonContext: { type: string, maxLength: 12000 }
+        briefId: { type: string }
+    CompositionPlan:
+      type: object
+      required: [title, goal, goalInferred, baseSolutionId, rationale, decisions, flow, overlapDecisions, dependencies, integrationGaps, clarifications]
+      properties:
+        title: { type: string }
+        goal: { type: string }
+        goalInferred: { type: boolean }
+        baseSolutionId: { type: string }
+        rationale: { type: string }
+        decisions:
+          type: array
+          items:
+            type: object
+            required: [solutionId, disposition, reason]
+            properties:
+              solutionId: { type: string }
+              disposition: { type: string, enum: [included, not_suitable, unnecessary] }
+              reason: { type: string }
+        flow:
+          type: array
+          description: Proposed explanatory order, not a runnable sequencing engine
+          items:
+            type: object
+            required: [sourceSolutionId, capabilityId, reason]
+            properties:
+              sourceSolutionId: { type: string }
+              capabilityId: { type: string }
+              reason: { type: string }
+        overlapDecisions: { type: array, items: { type: string } }
+        dependencies: { type: array, items: { type: string } }
+        integrationGaps: { type: array, items: { type: string } }
+        clarifications: { type: array, items: { type: string } }
+        capabilityGaps: { type: array, items: { $ref: "#/components/schemas/CompositionCapabilityGap" } }
+        librarySuggestions: { type: array, items: { $ref: "#/components/schemas/CompositionLibrarySuggestion" } }
+    Composition:
+      type: object
+      required: [id, revision, sources, desiredOutcome, targetGroup, comparisonContext, plan, provenance, caseId, caseKind, executable, limitations, createdAt, updatedAt, sourceEvidence, sourceFingerprint, baseline, canUndo]
+      properties:
+        id: { type: string }
+        revision: { type: integer }
+        sources: { type: array, items: { $ref: "#/components/schemas/CompositionSource" } }
+        desiredOutcome: { type: string }
+        targetGroup: { type: string }
+        comparisonContext: { type: string }
+        briefId: { type: string }
+        plan: { $ref: "#/components/schemas/CompositionPlan" }
+        provenance: { type: object, additionalProperties: true }
+        creationProvenance: { type: object, additionalProperties: true }
+        originalPlan: { $ref: "#/components/schemas/CompositionPlan" }
+        flowSemantics: { type: string, enum: [proposed-not-execution-order] }
+        executionState:
+          type: ["object", "null"]
+          additionalProperties: true
+          description: Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence
+        sourceEvidence: { type: array, items: { type: object, additionalProperties: true } }
+        sourceFingerprint: { type: string }
+        baseline: { type: object, additionalProperties: true }
+        requirements: { type: array, items: { type: object, additionalProperties: true } }
+        caseId: { type: ["string", "null"] }
+        caseKind: { type: string, enum: [case, combined, proposal] }
+        canUndo: { type: boolean }
+        acceptedSuggestions: { type: array, items: { $ref: "#/components/schemas/CompositionAcceptedSuggestion" } }
+        executable: { type: boolean }
+        supportedExecution:
+          type: ["object", "null"]
+          required: [capabilityIds, omittedCapabilities]
+          properties:
+            capabilityIds:
+              type: array
+              items: { type: string }
+            omittedCapabilities:
+              type: array
+              items:
+                type: object
+                required: [capabilityId, reason]
+                properties:
+                  capabilityId: { type: string }
+                  reason: { type: string }
+          description: Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run
+        limitations: { type: array, items: { type: string } }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    CompositionRevisionBody:
+      type: object
+      required: [expectedRevision]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+    CompositionRefinement:
+      type: object
+      required: [id, compositionId, expectedRevision, currentFingerprint, plan, changes, provenance, status]
+      properties:
+        id: { type: string }
+        compositionId: { type: string }
+        expectedRevision: { type: integer }
+        currentFingerprint: { type: string }
+        plan: { $ref: "#/components/schemas/CompositionPlan" }
+        changes:
+          type: array
+          items:
+            type: object
+            required: [path, before, after, reason]
+            properties:
+              path: { type: string }
+              before: {}
+              after: {}
+              reason: { type: string }
+        provenance: { type: object, additionalProperties: true }
+        status: { type: string, enum: [preview] }
     IntakeCombinationInput:
       type: object
       required: [recipeId]
@@ -4734,6 +5172,13 @@ components:
         text: { type: string }
         detail: { type: ["string", "null"] }
         stepId: { type: string, description: Capability id of the step that produced this line }
+        originStepId: { type: string, description: Original producer before a later step rewrote presentation }
+        ranking:
+          type: object
+          required: [position, basis]
+          properties:
+            position: { type: integer, minimum: 1 }
+            basis: { type: string }
         refs:
           type: array
           items: { type: string }
@@ -4774,6 +5219,11 @@ components:
         itemCount: { type: integer }
         durationMs: { type: integer }
         error: { type: ["string", "null"] }
+        outputSections:
+          type: array
+          description: Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output
+          items: { $ref: "#/components/schemas/OutputSection" }
+        outputSnapshotStatus: { type: string, enum: [available, unavailable], description: Missing or unavailable means the saved run has no per-step snapshot }
 
     RunStats:
       type: object
@@ -4829,7 +5279,7 @@ components:
           type: string
           enum: [A, B]
         sampleInputId: { type: string }
-        inputText: { type: string, description: Overrides the sample text; used as-is when no sample is given }
+        inputText: { type: string, description: "Custom work-order notes or normalized file input; maximum 256 KiB. Server validates against the selected version and normalizes supported CSV/JSON note records. Explicit empty input is rejected, never replaced with a sample." }
 
     WorkflowBlock:
       type: object
@@ -4888,6 +5338,8 @@ components:
         after: { type: ["string", "null"] }
         itemKey: { type: string }
         kind: { type: string }
+        changeType: { type: string, enum: [ranking, content] }
+        reason: { type: string }
 
     OutputDiff:
       type: object
@@ -4967,7 +5419,7 @@ components:
       type: object
       properties:
         sampleInputId: { type: string }
-        inputText: { type: string }
+        inputText: { type: string, description: "Custom work-order notes or normalized file input; maximum 256 KiB. Both actual A and B ingestion contracts are validated before either run is saved." }
 
     Evaluation:
       type: object

@@ -10,6 +10,17 @@ export interface DiffEntry {
   after: string | null;
   itemKey: string;
   kind: string;
+  changeType?: "ranking" | "content";
+  reason?: string;
+}
+
+function baseText(item:OutputItem):string|null{
+  if(!item.ranking)return item.text;
+  const prefix=`#${item.ranking.position} `;
+  return Number.isInteger(item.ranking.position)&&item.ranking.position>0&&item.text.startsWith(prefix)?item.text.slice(prefix.length):null;
+}
+function rankingOnly(a:OutputItem,b:OutputItem):boolean{
+  return !!(a.ranking||b.ranking)&&baseText(a)!==null&&baseText(a)===baseText(b)&&a.kind===b.kind&&a.detail===b.detail&&JSON.stringify(a.refs)===JSON.stringify(b.refs)&&(a.originStepId??a.stepId)===(b.originStepId??b.stepId);
 }
 
 export interface OutputDiff {
@@ -36,12 +47,16 @@ export function diffOutputs(a: RunOutput, b: RunOutput): OutputDiff {
   let unchanged = 0;
   for (const [key, bv] of ib) {
     const av = ia.get(key);
-    if (!av) entries.push({ change: "added", sectionKey: bv.sectionKey, sectionTitle: bv.sectionTitle, stepId: bv.item.stepId, before: null, after: bv.item.text, itemKey: bv.item.key, kind: bv.item.kind });
-    else if (av.item.text !== bv.item.text) entries.push({ change: "changed", sectionKey: bv.sectionKey, sectionTitle: bv.sectionTitle, stepId: bv.item.stepId, before: av.item.text, after: bv.item.text, itemKey: bv.item.key, kind: bv.item.kind });
+    if (!av) entries.push({ change: "added", sectionKey: bv.sectionKey, sectionTitle: bv.sectionTitle, stepId: bv.item.stepId, before: null, after: bv.item.text, itemKey: bv.item.key, kind: bv.item.kind,changeType:"content",reason:"This output item is present only in B." });
+    else if (av.item.text !== bv.item.text||av.item.detail!==bv.item.detail||av.item.kind!==bv.item.kind||JSON.stringify(av.item.refs)!==JSON.stringify(bv.item.refs)||av.item.ranking?.position!==bv.item.ranking?.position||av.item.ranking?.basis!==bv.item.ranking?.basis) {
+      const ranking=rankingOnly(av.item,bv.item);
+      const writer=ranking&&!bv.item.ranking?av.item.stepId:bv.item.stepId;
+      entries.push({ change: "changed", sectionKey: bv.sectionKey, sectionTitle: bv.sectionTitle, stepId: writer, before: av.item.text, after: bv.item.text, itemKey: bv.item.key, kind: bv.item.kind,changeType:ranking?"ranking":"content",reason:ranking?"Ranking/presentation changed; finding text, references and details are unchanged. No new finding was added.":"The output content or supporting evidence differs." });
+    }
     else unchanged += 1;
   }
   for (const [key, av] of ia) {
-    if (!ib.has(key)) entries.push({ change: "removed", sectionKey: av.sectionKey, sectionTitle: av.sectionTitle, stepId: av.item.stepId, before: av.item.text, after: null, itemKey: av.item.key, kind: av.item.kind });
+    if (!ib.has(key)) entries.push({ change: "removed", sectionKey: av.sectionKey, sectionTitle: av.sectionTitle, stepId: av.item.stepId, before: av.item.text, after: null, itemKey: av.item.key, kind: av.item.kind,changeType:"content",reason:"This output item is present only in A." });
   }
   const counts = new Map<string, number>();
   for (const e of entries) counts.set(e.stepId, (counts.get(e.stepId) ?? 0) + 1);

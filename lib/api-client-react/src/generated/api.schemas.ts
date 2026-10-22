@@ -5,6 +5,391 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+export interface WorkbenchInputUploadInput {
+  /** UTF-8 txt/csv/json; maximum 256 KiB. Not persisted. */
+  file: Blob;
+}
+
+export interface WorkbenchInputIssue {
+  code: string;
+  message: string;
+  row?: number;
+  field?: string;
+}
+
+export interface WorkbenchInputContract {
+  version: string;
+  sourceSolutionId: string;
+  ingestionCapabilityIds: string[];
+  supportedFormats: string[];
+  expectedFields: string[];
+  description: string;
+  compatible: boolean;
+  reason: string;
+}
+
+export type WorkbenchInputValidationCaseKind = typeof WorkbenchInputValidationCaseKind[keyof typeof WorkbenchInputValidationCaseKind];
+
+
+export const WorkbenchInputValidationCaseKind = {
+  case: 'case',
+  combined: 'combined',
+  proposal: 'proposal',
+} as const;
+
+export interface WorkbenchInputValidation {
+  error?: string;
+  compatible: boolean;
+  runnable: boolean;
+  targetId: string;
+  /** @nullable */
+  caseId: string | null;
+  caseKind: WorkbenchInputValidationCaseKind;
+  filename: string;
+  format: string;
+  /** @nullable */
+  normalizedInputText: string | null;
+  recordCount: number;
+  contracts: WorkbenchInputContract[];
+  issues: WorkbenchInputIssue[];
+  limitations: string[];
+}
+
+export interface CompositionSuggestionAcceptanceInput {
+  /** @minimum 1 */
+  expectedRevision: number;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+}
+
+export interface CompositionCapabilityGap {
+  id: string;
+  need: string;
+  reason: string;
+}
+
+export type CompositionLibrarySuggestionCompatibility = typeof CompositionLibrarySuggestionCompatibility[keyof typeof CompositionLibrarySuggestionCompatibility];
+
+
+export const CompositionLibrarySuggestionCompatibility = {
+  supported: 'supported',
+  'proposed-adapter': 'proposed-adapter',
+} as const;
+
+export interface CompositionLibrarySuggestion {
+  id: string;
+  sourceSolutionId: string;
+  version: string;
+  capabilityIds: string[];
+  gapIds: string[];
+  reason: string;
+  compatibility: CompositionLibrarySuggestionCompatibility;
+  compatibilityReason: string;
+}
+
+export interface CompositionAcceptedSuggestion {
+  suggestionId: string;
+  sourceSolutionId: string;
+  acceptedRevision: number;
+  executable: boolean;
+  capabilityIds?: string[];
+  gapIds?: string[];
+  suggestionReason?: string;
+}
+
+export type CompositionPlanDecisionsItemDisposition = typeof CompositionPlanDecisionsItemDisposition[keyof typeof CompositionPlanDecisionsItemDisposition];
+
+
+export const CompositionPlanDecisionsItemDisposition = {
+  included: 'included',
+  not_suitable: 'not_suitable',
+  unnecessary: 'unnecessary',
+} as const;
+
+export type CompositionPlanDecisionsItem = {
+  solutionId: string;
+  disposition: CompositionPlanDecisionsItemDisposition;
+  reason: string;
+};
+
+export type CompositionPlanFlowItem = {
+  sourceSolutionId: string;
+  capabilityId: string;
+  reason: string;
+};
+
+export interface CompositionPlan {
+  title: string;
+  goal: string;
+  goalInferred: boolean;
+  baseSolutionId: string;
+  rationale: string;
+  decisions: CompositionPlanDecisionsItem[];
+  /** Proposed explanatory order, not a runnable sequencing engine */
+  flow: CompositionPlanFlowItem[];
+  overlapDecisions: string[];
+  dependencies: string[];
+  integrationGaps: string[];
+  clarifications: string[];
+  capabilityGaps?: CompositionCapabilityGap[];
+  librarySuggestions?: CompositionLibrarySuggestion[];
+}
+
+export interface CompositionPlanEditInput {
+  /** @minimum 1 */
+  expectedRevision: number;
+  plan: CompositionPlan;
+}
+
+export interface CompositionSource {
+  solutionId: string;
+  version: string;
+}
+
+/**
+ * Exactly one of sources, compositionId, or caseId is required
+ */
+export interface FeatureRedundancyInput {
+  /**
+     * @minItems 2
+     * @maxItems 12
+     */
+  sources?: CompositionSource[];
+  compositionId?: string;
+  caseId?: string;
+  force?: boolean;
+}
+
+export type FeatureEvidenceKind = typeof FeatureEvidenceKind[keyof typeof FeatureEvidenceKind];
+
+
+export const FeatureEvidenceKind = {
+  catalog: 'catalog',
+  'source-review': 'source-review',
+  manifest: 'manifest',
+} as const;
+
+export interface FeatureEvidence {
+  id: string;
+  sourceId: string;
+  kind: FeatureEvidenceKind;
+  sha256: string;
+  label: string;
+}
+
+export type FeatureRedundancyCoverageCoverage = typeof FeatureRedundancyCoverageCoverage[keyof typeof FeatureRedundancyCoverageCoverage];
+
+
+export const FeatureRedundancyCoverageCoverage = {
+  full: 'full',
+  partial: 'partial',
+  none: 'none',
+  unknown: 'unknown',
+} as const;
+
+export interface FeatureRedundancyCoverage {
+  sourceId: string;
+  capabilityIds: string[];
+  coverage: FeatureRedundancyCoverageCoverage;
+  evidenceIds: string[];
+  reason: string;
+}
+
+export type FeatureRedundancyGroupClassification = typeof FeatureRedundancyGroupClassification[keyof typeof FeatureRedundancyGroupClassification];
+
+
+export const FeatureRedundancyGroupClassification = {
+  overlap: 'overlap',
+  partial: 'partial',
+  unique: 'unique',
+  unknown: 'unknown',
+} as const;
+
+export type FeatureRedundancyGroupRecommendation = typeof FeatureRedundancyGroupRecommendation[keyof typeof FeatureRedundancyGroupRecommendation];
+
+
+export const FeatureRedundancyGroupRecommendation = {
+  retain: 'retain',
+  replace: 'replace',
+  combine: 'combine',
+  keep_separate: 'keep separate',
+} as const;
+
+export interface FeatureRedundancyGroup {
+  id: string;
+  title: string;
+  classification: FeatureRedundancyGroupClassification;
+  coverage: FeatureRedundancyCoverage[];
+  recommendation: FeatureRedundancyGroupRecommendation;
+  reasoning: string;
+  gaps: string[];
+}
+
+export interface FeatureRedundancyAnalysis {
+  summary: string;
+  groups: FeatureRedundancyGroup[];
+  limitations: string[];
+}
+
+export type FeatureRedundancyResultProvenance = { [key: string]: unknown };
+
+export interface FeatureRedundancyResult {
+  analysis: FeatureRedundancyAnalysis;
+  provenance: FeatureRedundancyResultProvenance;
+  evidenceHash: string;
+  evidence: FeatureEvidence[];
+  sources: CompositionSource[];
+}
+
+export interface CompositionRefinementInput {
+  /** @minimum 1 */
+  expectedRevision: number;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  instruction: string;
+}
+
+export interface CompositionCreateInput {
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+  /**
+     * @minItems 2
+     * @maxItems 3
+     */
+  sources: CompositionSource[];
+  /** @maxLength 4000 */
+  desiredOutcome?: string;
+  /** @maxLength 1000 */
+  targetGroup?: string;
+  /** @maxLength 12000 */
+  comparisonContext?: string;
+  briefId?: string;
+}
+
+export type CompositionProvenance = { [key: string]: unknown };
+
+export type CompositionCreationProvenance = { [key: string]: unknown };
+
+export type CompositionFlowSemantics = typeof CompositionFlowSemantics[keyof typeof CompositionFlowSemantics];
+
+
+export const CompositionFlowSemantics = {
+  'proposed-not-execution-order': 'proposed-not-execution-order',
+} as const;
+
+/**
+ * Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence
+ * @nullable
+ */
+export type CompositionExecutionState = { [key: string]: unknown } | null;
+
+export type CompositionSourceEvidenceItem = { [key: string]: unknown };
+
+export type CompositionBaseline = { [key: string]: unknown };
+
+export type CompositionRequirementsItem = { [key: string]: unknown };
+
+export type CompositionCaseKind = typeof CompositionCaseKind[keyof typeof CompositionCaseKind];
+
+
+export const CompositionCaseKind = {
+  case: 'case',
+  combined: 'combined',
+  proposal: 'proposal',
+} as const;
+
+export type CompositionSupportedExecutionOmittedCapabilitiesItem = {
+  capabilityId: string;
+  reason: string;
+};
+
+/**
+ * Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run
+ * @nullable
+ */
+export type CompositionSupportedExecution = {
+  capabilityIds: string[];
+  omittedCapabilities: CompositionSupportedExecutionOmittedCapabilitiesItem[];
+} | null;
+
+export interface Composition {
+  id: string;
+  revision: number;
+  sources: CompositionSource[];
+  desiredOutcome: string;
+  targetGroup: string;
+  comparisonContext: string;
+  briefId?: string;
+  plan: CompositionPlan;
+  provenance: CompositionProvenance;
+  creationProvenance?: CompositionCreationProvenance;
+  originalPlan?: CompositionPlan;
+  flowSemantics?: CompositionFlowSemantics;
+  /**
+     * Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence
+     * @nullable
+     */
+  executionState?: CompositionExecutionState;
+  sourceEvidence: CompositionSourceEvidenceItem[];
+  sourceFingerprint: string;
+  baseline: CompositionBaseline;
+  requirements?: CompositionRequirementsItem[];
+  /** @nullable */
+  caseId: string | null;
+  caseKind: CompositionCaseKind;
+  canUndo: boolean;
+  acceptedSuggestions?: CompositionAcceptedSuggestion[];
+  executable: boolean;
+  /**
+     * Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run
+     * @nullable
+     */
+  supportedExecution?: CompositionSupportedExecution;
+  limitations: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompositionRevisionBody {
+  /** @minimum 1 */
+  expectedRevision: number;
+}
+
+export type CompositionRefinementChangesItem = {
+  path: string;
+  before: unknown;
+  after: unknown;
+  reason: string;
+};
+
+export type CompositionRefinementProvenance = { [key: string]: unknown };
+
+export type CompositionRefinementStatus = typeof CompositionRefinementStatus[keyof typeof CompositionRefinementStatus];
+
+
+export const CompositionRefinementStatus = {
+  preview: 'preview',
+} as const;
+
+export interface CompositionRefinement {
+  id: string;
+  compositionId: string;
+  expectedRevision: number;
+  currentFingerprint: string;
+  plan: CompositionPlan;
+  changes: CompositionRefinementChangesItem[];
+  provenance: CompositionRefinementProvenance;
+  status: CompositionRefinementStatus;
+}
+
 export type IntakeCombinationInputRecipeId = typeof IntakeCombinationInputRecipeId[keyof typeof IntakeCombinationInputRecipeId];
 
 
@@ -671,6 +1056,12 @@ export const AcceptanceRunInputMode = {
   supplied: 'supplied',
 } as const;
 
+export type OutputItemRanking = {
+  /** @minimum 1 */
+  position: number;
+  basis: string;
+};
+
 export interface OutputItem {
   id: string;
   /** Stable across runs so A and B lines can be matched */
@@ -681,6 +1072,9 @@ export interface OutputItem {
   detail: string | null;
   /** Capability id of the step that produced this line */
   stepId: string;
+  /** Original producer before a later step rewrote presentation */
+  originStepId?: string;
+  ranking?: OutputItemRanking;
   refs: string[];
 }
 
@@ -705,6 +1099,17 @@ export const StepTraceStatus = {
   error: 'error',
 } as const;
 
+/**
+ * Missing or unavailable means the saved run has no per-step snapshot
+ */
+export type StepTraceOutputSnapshotStatus = typeof StepTraceOutputSnapshotStatus[keyof typeof StepTraceOutputSnapshotStatus];
+
+
+export const StepTraceOutputSnapshotStatus = {
+  available: 'available',
+  unavailable: 'unavailable',
+} as const;
+
 export interface StepTrace {
   stepId: string;
   name: string;
@@ -717,6 +1122,10 @@ export interface StepTrace {
   durationMs: number;
   /** @nullable */
   error: string | null;
+  /** Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output */
+  outputSections?: OutputSection[];
+  /** Missing or unavailable means the saved run has no per-step snapshot */
+  outputSnapshotStatus?: StepTraceOutputSnapshotStatus;
 }
 
 export interface AcceptanceRun {
@@ -2675,7 +3084,7 @@ export interface RunRequest {
   caseId?: string;
   version: RunRequestVersion;
   sampleInputId?: string;
-  /** Overrides the sample text; used as-is when no sample is given */
+  /** Custom work-order notes or normalized file input; maximum 256 KiB. Server validates against the selected version and normalizes supported CSV/JSON note records. Explicit empty input is rejected, never replaced with a sample. */
   inputText?: string;
 }
 
@@ -2733,6 +3142,14 @@ export const DiffEntryChange = {
   changed: 'changed',
 } as const;
 
+export type DiffEntryChangeType = typeof DiffEntryChangeType[keyof typeof DiffEntryChangeType];
+
+
+export const DiffEntryChangeType = {
+  ranking: 'ranking',
+  content: 'content',
+} as const;
+
 export interface DiffEntry {
   change: DiffEntryChange;
   sectionKey: string;
@@ -2750,6 +3167,8 @@ export interface DiffEntry {
   after: string | null;
   itemKey: string;
   kind: string;
+  changeType?: DiffEntryChangeType;
+  reason?: string;
 }
 
 export type OutputDiffStepsResponsibleItem = {
@@ -2841,6 +3260,7 @@ export interface ABComparison {
 
 export interface CompareRequest {
   sampleInputId?: string;
+  /** Custom work-order notes or normalized file input; maximum 256 KiB. Both actual A and B ingestion contracts are validated before either run is saved. */
   inputText?: string;
 }
 
@@ -3740,6 +4160,21 @@ export interface PrototypeDetail {
  * Opaque session token, Bearer sid.
  */
 export type AuthorizationSessionHeaderParameter = string;
+
+export type ListCompositionsParams = {
+caseId?: string;
+};
+
+export type CancelCompositionRefinement200Status = typeof CancelCompositionRefinement200Status[keyof typeof CancelCompositionRefinement200Status];
+
+
+export const CancelCompositionRefinement200Status = {
+  cancelled: 'cancelled',
+} as const;
+
+export type CancelCompositionRefinement200 = {
+  status: CancelCompositionRefinement200Status;
+};
 
 export type RunConsolidationCase200 = {
   runUrl: string;

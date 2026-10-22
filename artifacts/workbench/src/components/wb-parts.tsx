@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { ChevronDown, FileText, GripVertical, Lock, Plus } from "lucide-react";
 import type { ComponentConfig, EvaluationSummary, SampleInput } from "@workspace/api-client-react";
@@ -6,13 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tag, btn } from "@/components/bits";
 import { cn } from "@/lib/utils";
 
-export function InputPanel({ samples, sampleId, text, edited, onPick, onText, compact }: {
-  samples: SampleInput[]; sampleId: string; text: string; edited: boolean; onPick: (s: SampleInput) => void; onText: (t: string) => void; compact?: boolean;
+export function InputPanel({ samples, sampleId, text, edited, onPick, onText, compact, upload }: {
+  samples: SampleInput[]; sampleId: string; text: string; edited: boolean; onPick: (s: SampleInput) => void; onText: (t: string) => void; compact?: boolean; upload?: ReactNode;
 }) {
   const [open, setOpen] = useState(!compact);
   return (
     <div data-testid="panel-input">
-      <div className="mb-2 flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-[14px] font-semibold text-primary">Input</span>{edited && <Tag tone="sienna">Edited</Tag>}</div>
+      <div className="mb-2 flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-[14px] font-semibold text-primary">Input</span>{edited && <Tag tone="sienna">Edited</Tag>}<span className="ml-auto text-[12px] text-muted-foreground">Pick an example or use your own</span></div>
       <div className={cn("flex gap-1.5", compact ? "flex-wrap" : "flex-col")} role="radiogroup" aria-label="Sample input">
         {samples.map((s) => (
           <button key={s.id} role="radio" aria-checked={sampleId === s.id && !edited} data-testid={`sample-${s.id}`} onClick={() => onPick(s)}
@@ -22,6 +22,7 @@ export function InputPanel({ samples, sampleId, text, edited, onPick, onText, co
           </button>
         ))}
       </div>
+      {upload}
       <button data-testid="button-toggle-input-text" onClick={() => setOpen((v) => !v)} className={cn(btn.quiet, "mt-2 px-1")}><ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} /> {open ? "Hide text" : "View or edit text"}</button>
       {open && <Textarea data-testid="input-sample-text" value={text} onChange={(e) => onText(e.target.value)} className="mt-1 min-h-[200px] font-mono text-[12.5px] leading-relaxed" placeholder="Paste work-order notes, one per line." />}
     </div>

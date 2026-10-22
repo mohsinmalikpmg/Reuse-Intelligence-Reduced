@@ -14,3 +14,33 @@ The user likes the Library compare view and wants comparison to lead directly in
 **Why:** The user explicitly praised comparison and identified composition as its missing next action.
 
 **How to apply:** Preserve the comparison experience and selected-source context; account for overlap, compatibility and provenance rather than concatenating features or treating proposed integrations as proven.
+
+Composition's ordered flow is a recommendation, not permission to reorder an existing engine. A combined recipe's A baseline is the pinned original source, never the combined ledger; only B runs through the combined adapter unless a real A runner exists.
+
+**Why:** The supported engines have fixed sequencing, and treating a union-ledger run as the original source would fabricate comparison evidence.
+
+**How to apply:** Keep source/version provenance and proposed flow separate from current executable settings. Refinement must read current manual settings, preview explicit changes, and reject stale applies rather than replace the whole configuration.
+
+Unsupported execution is not a reason to move a proposed combination outside the workbench. Use the existing workbench workflow to illustrate and edit proposed changes, marking unsupported connections honestly. Feature redundancy must be standard when comparing or consolidating across solutions.
+
+**Why:** The user rejected the separate proposal-only report and explicitly praised the invoice demo's feature-redundancy experience, asking that it become standard.
+
+**How to apply:** Reuse the invoice workbench interaction pattern and feature-redundancy presentation across combinations. Keep execution guards without removing proposed flows from the shared workbench.
+
+When selected solutions lack a needed capability, show the gap and offer relevant components from other Library solutions, with an explicit action to use them.
+
+**Why:** The user agreed that invalid AI capability references should become understandable gaps and explicitly requested suggestions and reuse from elsewhere in the Library.
+
+**How to apply:** Distinguish selected-source coverage, suggested Library contributions, and capabilities still needing implementation. Preserve provenance and require explicit acceptance before adding donor sources.
+
+The plan presentation should integrate into the workbench flow without overwhelming users; show details only when accessed. Sample inputs are starting points, not a restriction: allow input files and explain incompatibility with the solution's ingestion.
+
+**Why:** The user reiterated that plan information is too prominent and requested file-based experimentation with clear rejection reasons.
+
+**How to apply:** Keep the flow and immediate action primary. Put rationale and evidence on demand; validate uploaded input against real ingestion support, preserve the prior input on rejection, and never substitute a sample silently.
+
+Existing native capabilities with real executors may be exercised in their own product's workbench even when their evidence/support rating is weak. This does not authorize importing them into other products or approving them for production.
+
+**Why:** Applying external-donor restrictions to Pattern Finder's own reader and summarizer prevented users from adding back real native steps. Evidence maturity and sandbox executability are distinct.
+
+**How to apply:** Retain risk labels, real dependency checks and external-donor restrictions; explain genuinely blocked steps visibly rather than presenting unexplained disabled controls.

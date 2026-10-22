@@ -9,6 +9,1115 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Validate a transient custom file against actual selected workbench ingestion contracts
+ */
+export const ValidateWorkbenchInputParams = zod.object({
+  "targetId": zod.coerce.string().describe('Ordinary case ID, cc_ combined case ID or cmp_ composition ID')
+})
+
+export const ValidateWorkbenchInputBody = zod.object({
+  "file": zod.instanceof(Blob).describe('UTF-8 txt/csv/json; maximum 256 KiB. Not persisted.')
+})
+
+export const ValidateWorkbenchInputResponse = zod.object({
+  "error": zod.string().optional(),
+  "compatible": zod.boolean(),
+  "runnable": zod.boolean(),
+  "targetId": zod.string(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "filename": zod.string(),
+  "format": zod.string(),
+  "normalizedInputText": zod.string().nullable(),
+  "recordCount": zod.number().int(),
+  "contracts": zod.array(zod.object({
+  "version": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "ingestionCapabilityIds": zod.array(zod.string()),
+  "supportedFormats": zod.array(zod.string()),
+  "expectedFields": zod.array(zod.string()),
+  "description": zod.string(),
+  "compatible": zod.boolean(),
+  "reason": zod.string()
+})),
+  "issues": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string(),
+  "row": zod.number().int().optional(),
+  "field": zod.string().optional()
+})),
+  "limitations": zod.array(zod.string())
+})
+
+
+export const AcceptCompositionSuggestionParams = zod.object({
+  "id": zod.coerce.string(),
+  "suggestionId": zod.coerce.string()
+})
+
+
+export const acceptCompositionSuggestionBodyIdempotencyKeyMin = 8;
+export const acceptCompositionSuggestionBodyIdempotencyKeyMax = 200;
+
+
+
+export const AcceptCompositionSuggestionBody = zod.object({
+  "expectedRevision": zod.number().int().min(1),
+  "idempotencyKey": zod.string().min(acceptCompositionSuggestionBodyIdempotencyKeyMin).max(acceptCompositionSuggestionBodyIdempotencyKeyMax)
+})
+
+export const AcceptCompositionSuggestionResponse = zod.object({
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const analyzeFeatureRedundancyBodySourcesMin = 2;
+export const analyzeFeatureRedundancyBodySourcesMax = 12;
+
+export const analyzeFeatureRedundancyBodyForceDefault = false;
+
+export const AnalyzeFeatureRedundancyBody = zod.object({
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})).min(analyzeFeatureRedundancyBodySourcesMin).max(analyzeFeatureRedundancyBodySourcesMax).optional(),
+  "compositionId": zod.string().optional(),
+  "caseId": zod.string().optional(),
+  "force": zod.boolean().default(analyzeFeatureRedundancyBodyForceDefault)
+}).describe('Exactly one of sources, compositionId, or caseId is required')
+
+export const AnalyzeFeatureRedundancyResponse = zod.object({
+  "analysis": zod.object({
+  "summary": zod.string(),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "classification": zod.enum(['overlap', 'partial', 'unique', 'unknown']),
+  "coverage": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "coverage": zod.enum(['full', 'partial', 'none', 'unknown']),
+  "evidenceIds": zod.array(zod.string()),
+  "reason": zod.string()
+})),
+  "recommendation": zod.enum(['retain', 'replace', 'combine', 'keep separate']),
+  "reasoning": zod.string(),
+  "gaps": zod.array(zod.string())
+})),
+  "limitations": zod.array(zod.string())
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "evidenceHash": zod.string(),
+  "evidence": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.string(),
+  "kind": zod.enum(['catalog', 'source-review', 'manifest']),
+  "sha256": zod.string(),
+  "label": zod.string()
+})),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+}))
+})
+
+
+export const EditCompositionPlanParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const EditCompositionPlanBody = zod.object({
+  "expectedRevision": zod.number().int().min(1),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+})
+})
+
+export const EditCompositionPlanResponse = zod.object({
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const ListCompositionsQueryParams = zod.object({
+  "caseId": zod.coerce.string().optional()
+})
+
+export const ListCompositionsResponseItem = zod.object({
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListCompositionsResponse = zod.array(ListCompositionsResponseItem)
+
+
+export const createCompositionBodyIdempotencyKeyMin = 8;
+export const createCompositionBodyIdempotencyKeyMax = 200;
+
+export const createCompositionBodySourcesMin = 2;
+export const createCompositionBodySourcesMax = 3;
+
+export const createCompositionBodyDesiredOutcomeMax = 4000;
+
+export const createCompositionBodyTargetGroupMax = 1000;
+
+export const createCompositionBodyComparisonContextMax = 12000;
+
+
+
+export const CreateCompositionBody = zod.object({
+  "idempotencyKey": zod.string().min(createCompositionBodyIdempotencyKeyMin).max(createCompositionBodyIdempotencyKeyMax),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})).min(createCompositionBodySourcesMin).max(createCompositionBodySourcesMax),
+  "desiredOutcome": zod.string().max(createCompositionBodyDesiredOutcomeMax).optional(),
+  "targetGroup": zod.string().max(createCompositionBodyTargetGroupMax).optional(),
+  "comparisonContext": zod.string().max(createCompositionBodyComparisonContextMax).optional(),
+  "briefId": zod.string().optional()
+})
+
+export const CreateCompositionResponse = zod.object({
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const GetCompositionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetCompositionResponse = zod.object({
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const PreviewCompositionRefinementParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const previewCompositionRefinementBodyInstructionMax = 4000;
+
+
+
+export const PreviewCompositionRefinementBody = zod.object({
+  "expectedRevision": zod.number().int().min(1),
+  "instruction": zod.string().min(1).max(previewCompositionRefinementBodyInstructionMax)
+})
+
+export const PreviewCompositionRefinementResponse = zod.object({
+  "id": zod.string(),
+  "compositionId": zod.string(),
+  "expectedRevision": zod.number().int(),
+  "currentFingerprint": zod.string(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "changes": zod.array(zod.object({
+  "path": zod.string(),
+  "before": zod.unknown(),
+  "after": zod.unknown(),
+  "reason": zod.string()
+})),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "status": zod.enum(['preview'])
+})
+
+
+export const ApplyCompositionRefinementParams = zod.object({
+  "id": zod.coerce.string(),
+  "previewId": zod.coerce.string()
+})
+
+
+
+
+export const ApplyCompositionRefinementBody = zod.object({
+  "expectedRevision": zod.number().int().min(1)
+})
+
+export const ApplyCompositionRefinementResponse = zod.object({
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const CancelCompositionRefinementParams = zod.object({
+  "id": zod.coerce.string(),
+  "previewId": zod.coerce.string()
+})
+
+export const CancelCompositionRefinementResponse = zod.object({
+  "status": zod.enum(['cancelled'])
+})
+
+
+export const UndoCompositionRefinementParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const UndoCompositionRefinementBody = zod.object({
+  "expectedRevision": zod.number().int().min(1)
+})
+
+export const UndoCompositionRefinementResponse = zod.object({
+  "id": zod.string(),
+  "revision": zod.number().int(),
+  "sources": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "version": zod.string()
+})),
+  "desiredOutcome": zod.string(),
+  "targetGroup": zod.string(),
+  "comparisonContext": zod.string(),
+  "briefId": zod.string().optional(),
+  "plan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}),
+  "provenance": zod.record(zod.string(), zod.unknown()),
+  "creationProvenance": zod.record(zod.string(), zod.unknown()).optional(),
+  "originalPlan": zod.object({
+  "title": zod.string(),
+  "goal": zod.string(),
+  "goalInferred": zod.boolean(),
+  "baseSolutionId": zod.string(),
+  "rationale": zod.string(),
+  "decisions": zod.array(zod.object({
+  "solutionId": zod.string(),
+  "disposition": zod.enum(['included', 'not_suitable', 'unnecessary']),
+  "reason": zod.string()
+})),
+  "flow": zod.array(zod.object({
+  "sourceSolutionId": zod.string(),
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+})).describe('Proposed explanatory order, not a runnable sequencing engine'),
+  "overlapDecisions": zod.array(zod.string()),
+  "dependencies": zod.array(zod.string()),
+  "integrationGaps": zod.array(zod.string()),
+  "clarifications": zod.array(zod.string()),
+  "capabilityGaps": zod.array(zod.object({
+  "id": zod.string(),
+  "need": zod.string(),
+  "reason": zod.string()
+})).optional(),
+  "librarySuggestions": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "version": zod.string(),
+  "capabilityIds": zod.array(zod.string()),
+  "gapIds": zod.array(zod.string()),
+  "reason": zod.string(),
+  "compatibility": zod.enum(['supported', 'proposed-adapter']),
+  "compatibilityReason": zod.string()
+})).optional()
+}).optional(),
+  "flowSemantics": zod.enum(['proposed-not-execution-order']).optional(),
+  "executionState": zod.record(zod.string(), zod.unknown()).nullish().describe('Current persisted executable settings and fingerprint on GET; never the explanatory proposed sequence'),
+  "sourceEvidence": zod.array(zod.record(zod.string(), zod.unknown())),
+  "sourceFingerprint": zod.string(),
+  "baseline": zod.record(zod.string(), zod.unknown()),
+  "requirements": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "caseId": zod.string().nullable(),
+  "caseKind": zod.enum(['case', 'combined', 'proposal']),
+  "canUndo": zod.boolean(),
+  "acceptedSuggestions": zod.array(zod.object({
+  "suggestionId": zod.string(),
+  "sourceSolutionId": zod.string(),
+  "acceptedRevision": zod.number().int(),
+  "executable": zod.boolean(),
+  "capabilityIds": zod.array(zod.string()).optional(),
+  "gapIds": zod.array(zod.string()).optional(),
+  "suggestionReason": zod.string().optional()
+})).optional(),
+  "executable": zod.boolean(),
+  "supportedExecution": zod.object({
+  "capabilityIds": zod.array(zod.string()),
+  "omittedCapabilities": zod.array(zod.object({
+  "capabilityId": zod.string(),
+  "reason": zod.string()
+}))
+}).nullish().describe('Supported engine capability IDs and explicit omitted-capability reasons; never a claim that all proposed features run'),
+  "limitations": zod.array(zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
  * Read saved evidence-matched AI analysis for an owned invoice case. Never calls the model.
  */
 export const GetInvoiceAnalysisParams = zod.object({
@@ -1603,6 +2712,10 @@ export const GetAcceptanceChecksParams = zod.object({
   "briefId": zod.coerce.string()
 })
 
+
+
+
+
 export const GetAcceptanceChecksResponse = zod.object({
   "planFingerprint": zod.string(),
   "baseSolutionId": zod.string().nullable(),
@@ -1672,6 +2785,11 @@ export const GetAcceptanceChecksResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -1686,7 +2804,27 @@ export const GetAcceptanceChecksResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "errors": zod.array(zod.string())
 }))
@@ -1712,6 +2850,10 @@ export const RunAcceptanceCheckBody = zod.object({
   "inputMode": zod.enum(['fixture', 'supplied']),
   "inputText": zod.string().max(runAcceptanceCheckBodyInputTextMax)
 })
+
+
+
+
 
 export const RunAcceptanceCheckResponse = zod.object({
   "id": zod.string(),
@@ -1753,6 +2895,11 @@ export const RunAcceptanceCheckResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -1767,7 +2914,27 @@ export const RunAcceptanceCheckResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "errors": zod.array(zod.string())
 })
@@ -4120,6 +5287,10 @@ export const GetSolutionWorkbenchParams = zod.object({
   "solutionId": zod.coerce.string()
 })
 
+
+
+
+
 export const GetSolutionWorkbenchResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
@@ -4323,6 +5494,11 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -4337,7 +5513,27 @@ export const GetSolutionWorkbenchResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -4382,8 +5578,12 @@ export const RunWorkflowBody = zod.object({
   "caseId": zod.string().optional().describe('Run a case; version A is the base product'),
   "version": zod.enum(['A', 'B']),
   "sampleInputId": zod.string().optional(),
-  "inputText": zod.string().optional().describe('Overrides the sample text; used as-is when no sample is given')
+  "inputText": zod.string().optional().describe('Custom work-order notes or normalized file input; maximum 256 KiB. Server validates against the selected version and normalizes supported CSV/JSON note records. Explicit empty input is rejected, never replaced with a sample.')
 })
+
+
+
+
 
 export const RunWorkflowResponse = zod.object({
   "id": zod.string(),
@@ -4410,6 +5610,11 @@ export const RunWorkflowResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -4424,7 +5629,27 @@ export const RunWorkflowResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -4447,6 +5672,10 @@ export const RunWorkflowResponse = zod.object({
 export const GetRunParams = zod.object({
   "runId": zod.coerce.string()
 })
+
+
+
+
 
 export const GetRunResponse = zod.object({
   "id": zod.string(),
@@ -4473,6 +5702,11 @@ export const GetRunResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -4487,7 +5721,27 @@ export const GetRunResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -4883,6 +6137,12 @@ export const GetConfigurationPreviewParams = zod.object({
   "version": zod.coerce.string()
 })
 
+
+
+
+
+
+
 export const GetConfigurationPreviewResponse = zod.object({
   "solutionId": zod.string(),
   "version": zod.string(),
@@ -4921,6 +6181,11 @@ export const GetConfigurationPreviewResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -4935,7 +6200,27 @@ export const GetConfigurationPreviewResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -4975,6 +6260,11 @@ export const GetConfigurationPreviewResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -4989,7 +6279,27 @@ export const GetConfigurationPreviewResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -5017,7 +6327,9 @@ export const GetConfigurationPreviewResponse = zod.object({
   "before": zod.string().nullable(),
   "after": zod.string().nullable(),
   "itemKey": zod.string(),
-  "kind": zod.string()
+  "kind": zod.string(),
+  "changeType": zod.enum(['ranking', 'content']).optional(),
+  "reason": zod.string().optional()
 })),
   "added": zod.number().int(),
   "removed": zod.number().int(),
@@ -7545,6 +8857,10 @@ export const GetCaseBaselineParams = zod.object({
   "caseId": zod.coerce.string()
 })
 
+
+
+
+
 export const GetCaseBaselineResponse = zod.object({
   "solution": zod.object({
   "id": zod.string(),
@@ -7748,6 +9064,11 @@ export const GetCaseBaselineResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -7762,7 +9083,27 @@ export const GetCaseBaselineResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -8244,6 +9585,12 @@ export const GetCaseComparisonParams = zod.object({
   "caseId": zod.coerce.string()
 })
 
+
+
+
+
+
+
 export const GetCaseComparisonResponseItem = zod.object({
   "caseId": zod.string(),
   "staleB": zod.boolean().describe('True when Version B has changed since this run; rerun to refresh'),
@@ -8275,6 +9622,11 @@ export const GetCaseComparisonResponseItem = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8289,7 +9641,27 @@ export const GetCaseComparisonResponseItem = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -8329,6 +9701,11 @@ export const GetCaseComparisonResponseItem = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8343,7 +9720,27 @@ export const GetCaseComparisonResponseItem = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -8371,7 +9768,9 @@ export const GetCaseComparisonResponseItem = zod.object({
   "before": zod.string().nullable(),
   "after": zod.string().nullable(),
   "itemKey": zod.string(),
-  "kind": zod.string()
+  "kind": zod.string(),
+  "changeType": zod.enum(['ranking', 'content']).optional(),
+  "reason": zod.string().optional()
 })),
   "added": zod.number().int(),
   "removed": zod.number().int(),
@@ -8441,8 +9840,14 @@ export const RunCaseComparisonParams = zod.object({
 
 export const RunCaseComparisonBody = zod.object({
   "sampleInputId": zod.string().optional(),
-  "inputText": zod.string().optional()
+  "inputText": zod.string().optional().describe('Custom work-order notes or normalized file input; maximum 256 KiB. Both actual A and B ingestion contracts are validated before either run is saved.')
 })
+
+
+
+
+
+
 
 export const RunCaseComparisonResponse = zod.object({
   "caseId": zod.string(),
@@ -8475,6 +9880,11 @@ export const RunCaseComparisonResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8489,7 +9899,27 @@ export const RunCaseComparisonResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -8529,6 +9959,11 @@ export const RunCaseComparisonResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8543,7 +9978,27 @@ export const RunCaseComparisonResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -8571,7 +10026,9 @@ export const RunCaseComparisonResponse = zod.object({
   "before": zod.string().nullable(),
   "after": zod.string().nullable(),
   "itemKey": zod.string(),
-  "kind": zod.string()
+  "kind": zod.string(),
+  "changeType": zod.enum(['ranking', 'content']).optional(),
+  "reason": zod.string().optional()
 })),
   "added": zod.number().int(),
   "removed": zod.number().int(),
@@ -8736,6 +10193,10 @@ export const ListTestSessionsParams = zod.object({
   "caseId": zod.coerce.string()
 })
 
+
+
+
+
 export const ListTestSessionsResponseItem = zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -8759,6 +10220,11 @@ export const ListTestSessionsResponseItem = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8776,6 +10242,11 @@ export const ListTestSessionsResponseItem = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8812,6 +10283,10 @@ export const CreateTestSessionBody = zod.object({
   "title": zod.string().optional()
 })
 
+
+
+
+
 export const CreateTestSessionResponse = zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -8835,6 +10310,11 @@ export const CreateTestSessionResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8852,6 +10332,11 @@ export const CreateTestSessionResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8882,6 +10367,10 @@ export const GetTestSessionParams = zod.object({
   "sessionId": zod.coerce.string()
 })
 
+
+
+
+
 export const GetTestSessionResponse = zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -8905,6 +10394,11 @@ export const GetTestSessionResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8922,6 +10416,11 @@ export const GetTestSessionResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -8965,6 +10464,10 @@ export const RespondToTestSessionBody = zod.object({
   "demo": zod.boolean().optional().describe('Mark as a simulated demo account vote')
 })
 
+
+
+
+
 export const RespondToTestSessionResponse = zod.object({
   "id": zod.string(),
   "caseId": zod.string(),
@@ -8988,6 +10491,11 @@ export const RespondToTestSessionResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -9005,6 +10513,11 @@ export const RespondToTestSessionResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -12058,6 +13571,10 @@ export const RegisterPrototypeBody = zod.object({
 })).optional().describe('The confirmed component list; when omitted the server proposes one from the examples')
 })
 
+
+
+
+
 export const RegisterPrototypeResponse = zod.object({
   "prototype": zod.object({
   "id": zod.string().describe('Also the catalogue solution id'),
@@ -12255,6 +13772,11 @@ export const RegisterPrototypeResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -12269,7 +13791,27 @@ export const RegisterPrototypeResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -12345,6 +13887,10 @@ export const AnalyzePrototypeBody = zod.object({
 })).optional().describe('The confirmed component list; when omitted the server proposes one from the examples')
 })
 
+
+
+
+
 export const AnalyzePrototypeResponse = zod.object({
   "components": zod.array(zod.object({
   "id": zod.string(),
@@ -12403,6 +13949,11 @@ export const AnalyzePrototypeResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -12417,7 +13968,27 @@ export const AnalyzePrototypeResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),
@@ -12450,6 +14021,10 @@ export const AnalyzePrototypeResponse = zod.object({
 export const GetPrototypeParams = zod.object({
   "prototypeId": zod.coerce.string()
 })
+
+
+
+
 
 export const GetPrototypeResponse = zod.object({
   "prototype": zod.object({
@@ -12648,6 +14223,11 @@ export const GetPrototypeResponse = zod.object({
   "text": zod.string(),
   "detail": zod.string().nullable(),
   "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
   "refs": zod.array(zod.string())
 }))
 }))
@@ -12662,7 +14242,27 @@ export const GetPrototypeResponse = zod.object({
   "outputSummary": zod.string(),
   "itemCount": zod.number().int(),
   "durationMs": zod.number().int(),
-  "error": zod.string().nullable()
+  "error": zod.string().nullable(),
+  "outputSections": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "stepId": zod.string(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.string().describe('Stable across runs so A and B lines can be matched'),
+  "kind": zod.string(),
+  "text": zod.string(),
+  "detail": zod.string().nullable(),
+  "stepId": zod.string().describe('Capability id of the step that produced this line'),
+  "originStepId": zod.string().optional().describe('Original producer before a later step rewrote presentation'),
+  "ranking": zod.object({
+  "position": zod.number().int().min(1),
+  "basis": zod.string()
+}).optional(),
+  "refs": zod.array(zod.string())
+}))
+})).optional().describe('Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output'),
+  "outputSnapshotStatus": zod.enum(['available', 'unavailable']).optional().describe('Missing or unavailable means the saved run has no per-step snapshot')
 })),
   "stats": zod.object({
   "steps": zod.number().int(),

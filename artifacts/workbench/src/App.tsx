@@ -16,6 +16,7 @@ import Library from '@/pages/library';
 import SolutionPage from '@/pages/solution';
 import SearchPage from '@/pages/search';
 import { WorkbenchRoute } from '@/pages/combined-case';
+import CompositionPage from '@/pages/composition';
 import { WiringRedirect } from '@/components/wiring-entry';
 import TestSessionPage from '@/pages/test-session';
 import MySolutions from '@/pages/my-solutions';
@@ -46,6 +47,7 @@ function Router() {
           <Route path="/search" component={SearchPage} />
           <Route path="/workbench/wiring" component={WiringRedirect} />
           <Route path="/workbench/:caseId" component={WorkbenchRoute} />
+          <Route path="/compositions/:id" component={CompositionPage} />
           <Route path="/cases/:caseId/decision" component={DecisionPage} />
           <Route path="/test/:sessionId" component={TestSessionPage} />
           <Route path="/my-solutions" component={MySolutions} />

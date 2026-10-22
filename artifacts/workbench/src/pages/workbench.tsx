@@ -4,7 +4,7 @@ import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, 
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Equal, FileText, GitBranch, Info, ListPlus, Minus, Pencil, Play, Plus, RotateCcw, Save, Undo2, Workflow, Zap } from "lucide-react";
 import {
-  useGetDemoState,
+  useGetDemoState, useListSolutions, getListSolutionsQueryKey,
   getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetCaseBaselineQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
   getSimilarExperiments, useAddCapabilityRequest, useGetBrief, useGetCase, useGetCaseComparison, useGetCaseBaseline, useGetCaseConfiguration, useListCaseEvaluations, useListSampleInputs, useRemoveCapabilityRequest, useRemoveCaseRequirement,
   getGetRunQueryKey, useGetRun, useRunCaseComparison, useRunWorkflow, useUpdateCase, useUpdateCaseConfiguration,
@@ -27,6 +27,12 @@ import { ProposalMap, proposalNodes } from "@/components/wb-proposal";
 import { cn } from "@/lib/utils";
 import { CaseExports } from "@/components/solution-exports";
 import { WiringEntry } from "@/components/wiring-entry";
+import { LinkedComposition } from "@/components/composition-panel";
+import { FeatureRedundancy } from "@/components/feature-redundancy";
+import { InputUpload } from "@/components/input-upload";
+import { addBackState, sectionPresence } from "@/lib/ab-output";
+import { outputRanked, summarize } from "@/lib/step-output";
+import { useCaseComposition, useRefreshCaseComposition } from "@/lib/composition";
 
 type Snap = { moduleStates: Record<string, boolean>; configValues: Record<string, string> };
 const darkTool = "inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium text-[#9ED9E3] transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-40";
@@ -108,6 +114,9 @@ export default function Workbench() {
   const removeRequest = useRemoveCapabilityRequest();
   const removeRequirement = useRemoveCaseRequirement();
   const briefQ = useGetBrief(caseQ.data?.briefId ?? "", { query: { enabled: !!caseQ.data?.briefId, queryKey: getGetBriefQueryKey(caseQ.data?.briefId ?? "") } });
+  const compQ = useCaseComposition(caseId);
+  const refreshComp = useRefreshCaseComposition();
+  const solsQ = useListSolutions(undefined, { query: { queryKey: getListSolutionsQueryKey() } });
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor));
 
   const [sampleId, setSampleId] = useState("");
@@ -197,6 +206,7 @@ export default function Workbench() {
     put.mutate({ caseId, data }, {
       onSuccess: (next) => {
         qc.setQueryData(getGetCaseConfigurationQueryKey(caseId), next);
+        refreshComp(caseId);
         // The weld is the server's confirmation made visible: only when the step is really active in the saved configuration.
         const joined = weldId ? next.steps.flatMap((st) => st.components).find((c) => c.capability.id === weldId && c.active) : undefined;
         if (joined) setWelded(weldId!);
@@ -317,6 +327,11 @@ export default function Workbench() {
   if (gone) return <GoneView caseId={caseId} />;
   if (caseQ.isError || cfgQ.isError || !caseQ.data || !cfg) return <ErrorView onRetry={() => { caseQ.refetch(); cfgQ.refetch(); }} message="This workbench could not load." />;
   const theCase = caseQ.data;
+  // Redundancy for any cross-source case: the linked recommendation, else the base plus the donors active in B.
+  const donorIds = [...new Set(cfg.steps.flatMap((st) => st.components).map((x) => (x.active ? x.capability.sourceSolutionId : undefined)).filter((id): id is string => !!id && id !== baseId))];
+  const donorSources = donorIds.map((id) => { const v = solsQ.data?.find((s) => s.id === id)?.currentVersion; return v === undefined ? null : { solutionId: id, version: String(v) }; });
+  const redundancyTarget = compQ.data ? { caseId } : donorIds.length && baseId && donorSources.every((x) => x !== null)
+    ? { sources: [{ solutionId: baseId, version: String(theCase.parentVersion) }, ...donorSources.filter((x): x is { solutionId: string; version: string } => x !== null)] } : null;
   const standardA = !!wbQ.data && wbQ.data.liveVersion !== wbQ.data.solution.currentVersion;
   const reuseActions: ReuseActions = {
     caseId, baseName: wbQ.data?.solution.name ?? "this product", cfg, busy: put.isPending,
@@ -402,6 +417,7 @@ export default function Workbench() {
         picker={<div className="mt-2 rounded-xl bg-card p-1 text-foreground"><StepPicker afterId={afterId} afterName={afterName} actions={reuseActions} browse={browse} onClose={() => setSlotOpen(null)} /></div>} />
     </li>
   );
+  const presence = cmp ? sectionPresence(cmp.runA.output.sections, cmp.runB.output.sections) : undefined;
   const outputCard = (v: "A" | "B", r: Run, marks?: Map<string, DiffEntry>) => (
     <div className={cn("card-soft p-4", v === "B" && "border-t-4 border-t-sienna")} data-testid={`panel-version-${v.toLowerCase()}`}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -409,7 +425,7 @@ export default function Workbench() {
         <span className="text-[14px] font-semibold">{v === "A" ? (standardA ? `Standard product · v${theCase.parentVersion}` : "Current product") : "Proposed version"}</span>
         <span className="ml-auto"><RunMeta run={r} testid={`run-meta-${v}`} /></span>
       </div>
-      <OutputView output={r.output} marks={marks} selectedKey={picked ? diffKey(picked) : null} onPick={marks ? onPick : undefined} testid={`output-${v.toLowerCase()}`} dim={v === "B" && !!cmp?.staleB} />
+      <OutputView output={r.output} marks={marks} selectedKey={picked ? diffKey(picked) : null} onPick={marks ? onPick : undefined} testid={`output-${v.toLowerCase()}`} presence={marks ? presence : undefined} side={v} dim={v === "B" && !!cmp?.staleB} />
     </div>
   );
 
@@ -461,6 +477,9 @@ export default function Workbench() {
           </DialogContent>
         </Dialog>
 
+        {compQ.data && <div className="mt-6" id="recommendation"><LinkedComposition c={compQ.data} names={(id) => solsQ.data?.find((s) => s.id === id)?.name ?? (id === baseId ? theCase.lineage.parentSolutionName : id)} savedAt={theCase.updatedAt} /></div>}
+        {redundancyTarget && <div className="mt-5" id="feature-redundancy"><FeatureRedundancy key={JSON.stringify(redundancyTarget)} target={redundancyTarget} scope={`case:${theCase.updatedAt}|cfg:${JSON.stringify(snapshot(cfg))}${compQ.data ? `|cmp:${compQ.data.revision}` : ""}`} names={(id) => solsQ.data?.find((s) => s.id === id)?.name ?? id} inPlan={new Set(bBlocks.filter((b) => b.active).map((b) => b.id))} /></div>}
+
         {/* Included capabilities: the invoice workbench layout, one dark map and straightforward side controls */}
         <div className="mt-6 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
           <LanesDrop enabled={editable} dragging={!!dragging}>
@@ -502,9 +521,12 @@ export default function Workbench() {
                             )}
                             {r.kind === "optional" && (r.b.active
                               ? <button onClick={() => toggle(r.id, r.name, false)} disabled={!editable || put.isPending} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-remove-${r.id}`}><Minus className="h-3.5 w-3.5" /> Remove</button>
-                              : <button onClick={() => toggle(r.id, r.name, true)} disabled={!editable || put.isPending || !!r.b.blockedReason} title={r.b.blockedReason ?? "Switch on in Version B"} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-restore-${r.id}`}><Plus className="h-3.5 w-3.5" /> Add back</button>)}
+                              : addBackState(r.b, !editable || put.isPending).kind === "blocked"
+                                ? <span className="text-[12px] text-[#FFD09F]" data-testid={`text-blocked-${r.id}`}>Can't add</span>
+                                : <button onClick={() => toggle(r.id, r.name, true)} disabled={!editable || put.isPending} title="Switch on in Version B" className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-restore-${r.id}`}><Plus className="h-3.5 w-3.5" /> Add back</button>)}
                             {r.kind === "required" && <span className="text-[11.5px] opacity-70">required</span>}
                           </div>
+                          {!r.b.active && (() => { const st = addBackState(r.b, false); return st.kind === "blocked" ? <p className="mt-1 pl-7 text-[12px] opacity-80" data-testid={`text-blocked-reason-${r.id}`}>{st.reason}</p> : null; })()}
                         </div>
                       </li>{slotFor(r.id, r.name)}</Fragment>
                     );
@@ -530,7 +552,7 @@ export default function Workbench() {
             <section className="card-soft p-5" data-testid="panel-input">
               <h2 className="text-[16px] font-semibold">Input</h2>
               <p className="mt-1 text-[13px] text-muted-foreground">Shared by A and B. Pick a sample or edit the text.</p>
-              <div className="mt-3">{samplesQ.isLoading ? <Skel className="h-24" /> : <InputPanel compact samples={samples} sampleId={sampleId} text={text} edited={edited} onPick={pickSample} onText={(t) => { setText(t); setEdited(true); }} />}</div>
+              <div className="mt-3">{samplesQ.isLoading ? <Skel className="h-24" /> : <InputPanel compact samples={samples} sampleId={sampleId} text={text} edited={edited} onPick={pickSample} onText={(t) => { setText(t); setEdited(true); }} upload={<InputUpload targetId={caseId} currentText={text} onAccept={(t) => { setText(t); setEdited(true); }} />} />}</div>
             </section>
             <section className="card-soft p-5">
               <h2 className="text-[16px] font-semibold">Try the real workflow</h2>
@@ -584,8 +606,8 @@ export default function Workbench() {
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-[16px] font-semibold">What changed</h3>
                       {cmp.diff.entries.length === 0 ? <span data-testid="text-no-diff" className="text-[14px]">Both versions produced the same output for this input.</span> : <>
-                        <Tag tone="green">{cmp.diff.added} new</Tag><Tag>{cmp.diff.removed} removed</Tag><Tag tone="sienna">{cmp.diff.changed} changed</Tag>
-                        <span className="text-[12.5px] text-muted-foreground">{cmp.diff.unchanged} unchanged · click a highlighted line to open the step that caused it</span>
+                        <span className="text-[14px] font-medium" data-testid="text-diff-summary">{summarize(cmp.diff.entries, outputRanked(cmp.runA.output.sections), outputRanked(cmp.runB.output.sections))}</span>
+                        <span className="text-[12.5px] text-muted-foreground">{cmp.diff.unchanged} unchanged · click a highlighted line to open its step</span>
                       </>}
                     </div>
                     {cmp.explanation.length > 0 && <ul className="mt-2 space-y-1 text-[14px]" data-testid="list-explanation">{cmp.explanation.map((x, i) => <li key={i} className="flex gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0 text-skyink" />{x}</li>)}</ul>}

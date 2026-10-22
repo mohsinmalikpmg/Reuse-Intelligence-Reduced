@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DiffEntryChange } from './diffEntryChange';
+import type { DiffEntryChangeType } from './diffEntryChangeType';
 
 export interface DiffEntry {
   change: DiffEntryChange;
@@ -24,4 +25,6 @@ export interface DiffEntry {
   after: string | null;
   itemKey: string;
   kind: string;
+  changeType?: DiffEntryChangeType;
+  reason?: string;
 }

@@ -18,3 +18,4 @@
 - [Finance source integration](finance-source-integration.md) — forecast-only Q4 proof; explicit cents bridge preserves precision without claiming full reporting-app reuse.
 - [Invoice source-demo boundaries](invoice-source-demo.md) — constructed originals must stay independent; shared fixtures are allowed, shared feature engines are not.
 - [Recharts axis discovery](recharts-axis-discovery.md) — keep axes as direct chart children; fragments can silently hide axes and bars.
+- [Authentication after testing](auth-after-testing.md) — browser testing can leave a runtime-only login override; restore the API and verify the login destination.

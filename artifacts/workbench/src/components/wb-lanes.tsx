@@ -6,6 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tag } from "@/components/bits";
 import type { FlowBlock } from "@/components/flow";
 import { cn } from "@/lib/utils";
+import { StepResult, snapshotFor } from "@/components/step-result";
+import { stepDiffSummary } from "@/lib/step-output";
 import { useRole } from "@/lib/persona";
 
 /* ---------- Row model ---------- */
@@ -192,8 +194,6 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
 }) {
   const K = KIND[r.kind];
   const offB = !r.b.active;
-  const removed = r.entries.filter((e) => e.change === "removed");
-  const addedOrChanged = r.entries.filter((e) => e.change !== "removed");
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   const Chevron = open ? ChevronDown : ChevronRight;
   const headerCls = "flex min-h-[52px] w-full items-center gap-2 px-3.5 py-2.5 text-left";
@@ -250,16 +250,15 @@ export function StepRow({ r, no, open, onToggle, editable, busy, onSetOption, on
     <div className={cn("card-soft rounded-t-none border-primary/40 px-3.5 pb-4 pt-3", !r.a && "border-dashed border-input bg-card/60")}>
       {r.a ? <>
         <p className="mb-3 text-[13px] text-muted-foreground">{r.description}</p>
-        <TraceBody t={r.traceA} label={labelA} />
-        <DiffLines entries={removed} picked={picked} onPick={onPick} title={`Lines only A produced (${removed.length})`} />
+        <StepResult t={r.traceA} active={!!r.a?.active} other={r.traceB} otherActive={!offB} side="A" label={labelA} entries={r.entries} picked={picked} onPick={onPick} />
       </> : <p className="text-[13px] text-muted-foreground">This step only runs in Version B. The next shared step stays aligned below.</p>}
     </div>
   );
   const bodyB = (
     <div className={cn("card-soft rounded-t-none px-3.5 pb-4 pt-3", r.deviation ? "border-sienna" : "border-primary/40")}>
       {!r.a && <p className="mb-3 text-[13px] text-muted-foreground">{r.description}</p>}
-      {offB ? <p className="text-[13px] text-muted-foreground">Switched off in Version B, so it does not run.</p> : <TraceBody t={r.traceB} label={labelB} />}
-      <DiffLines entries={addedOrChanged} picked={picked} onPick={onPick} title={`Lines this step ${r.entries.some((e) => e.change === "changed") && !r.entries.some((e) => e.change === "added") ? "changed" : "added"} in B (${addedOrChanged.length})`} />
+      {(() => { const sum = stepDiffSummary(snapshotFor(r.traceA, !!r.a?.active), snapshotFor(r.traceB, !offB), r.entries); return sum ? <p className="mb-2 text-[13px] font-medium" data-testid={`step-summary-${r.id}`}>{sum}</p> : null; })()}
+      <StepResult t={r.traceB} active={!offB} other={r.traceA} otherActive={!!r.a?.active} side="B" label={labelB} entries={r.entries} picked={picked} onPick={onPick} />
     </div>
   );
   const spine = (hasLine: boolean, label?: ReactNode) => (

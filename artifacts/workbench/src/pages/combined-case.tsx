@@ -9,6 +9,11 @@ import { InvoiceOverlap } from "@/components/invoice-overlap";
 import { CaseExportHistory } from "@/components/solution-exports";
 import { cn } from "@/lib/utils";
 import Workbench from "@/pages/workbench";
+import { LinkedComposition } from "@/components/composition-panel";
+import { useCaseComposition, useRefreshCaseComposition } from "@/lib/composition";
+import { ProposalWorkbenchPage } from "@/pages/proposal-workbench";
+import { InputUpload } from "@/components/input-upload";
+import { FeatureRedundancy } from "@/components/feature-redundancy";
 import {
   SOURCE_COPY, SOURCE_NAMES, ccKeys, edgesFor, inputFrom, msgOf, statusOf, useCombinedCase, useRecipes, useRunCombinedCase, useUpdateCombinedCase,
   type CombinedCase, type CombinedCaseInput, type Recipe, type RecipeEdge,
@@ -17,6 +22,8 @@ import {
 /** cc_ ids are combined proposals; everything else keeps the existing maintenance workbench. */
 export function WorkbenchRoute() {
   const { caseId } = useParams<{ caseId: string }>();
+  // cmp_ ids are proposal-only plans: same workbench place, never the legacy case queries.
+  if (caseId?.startsWith("cmp_")) return <ProposalWorkbenchPage id={caseId} />;
   return caseId?.startsWith("cc_") ? <CombinedCasePage id={caseId} /> : <Workbench />;
 }
 
@@ -54,12 +61,14 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
   const enabled = recipe.capabilities.filter((x) => c.capabilityIds.includes(x.id));
   const excluded = recipe.capabilities.filter((x) => !c.capabilityIds.includes(x.id));
   const edges = recipe.edges.filter((e) => c.wiring.edgeIds.includes(e.id));
+  const compQ = useCaseComposition(c.id);
+  const refreshComp = useRefreshCaseComposition();
 
   const save = (patch: Partial<CombinedCaseInput>, label: string, undoable = true) => {
     const before = inputFrom(c);
     setErr(null);
     upd.mutate({ id: c.id, data: { ...inputFrom(c, patch), expectedRevision: c.revision } }, {
-      onSuccess: () => { setRunUrl(null); if (patch.briefId && patch.briefId !== c.briefId) setHistory([]); else if (undoable) setHistory((h) => [...h, before]); say(label); },
+      onSuccess: () => { refreshComp(c.id); setRunUrl(null); if (patch.briefId && patch.briefId !== c.briefId) setHistory([]); else if (undoable) setHistory((h) => [...h, before]); say(label); },
       onError: (e) => {
         if (statusOf(e) === 409) { void qc.invalidateQueries({ queryKey: ccKeys.case(c.id) }); setErr("This combination changed elsewhere. The latest version is loaded; try again."); }
         else setErr(msgOf(e));
@@ -146,6 +155,7 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
             <p className="mt-1 text-[13.5px] text-muted-foreground">Checks the saved version, then opens the actual app with it.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={tryIt} disabled={run.isPending || upd.isPending} className={cn(btn.accent, "min-h-12 px-6")} data-testid="button-run-combined"><Play className="h-4 w-4" /> {run.isPending ? "Checking…" : "Try it"}</button>
+              <InputUpload targetId={c.id} fixedNote="Runs on the source apps' fixed demo inputs; your own files are not supported here yet." />
               {runUrl && <a href={runUrl} target="_blank" rel="noopener noreferrer" className={cn(btn.primary, "min-h-12")} data-testid="link-open-combined-app">Open combined app <ExternalLink className="h-4 w-4" /></a>}
             </div>
           </section>
@@ -153,9 +163,12 @@ function Combined({ c, recipe }: { c: CombinedCase; recipe: Recipe }) {
         </aside>
       </div>
 
+      {compQ.data && <div className="mt-6" id="recommendation"><LinkedComposition c={compQ.data} names={name} savedAt={c.updatedAt} /></div>}
+
       {finance && <div className="mt-6" id="finance-settings"><FinanceAdjust c={c} busy={upd.isPending} onSave={(config) => save({ config }, "Finance settings saved")} /></div>}
 
       {c.recipeId === "invoice" && <div className="mt-6" id="invoice-overlap"><InvoiceOverlap c={c} /></div>}
+      {c.recipeId !== "invoice" && <div className="mt-6" id="feature-redundancy"><FeatureRedundancy target={{ caseId: c.id }} scope={`rev:${c.revision}`} names={name} inPlan={new Set(c.capabilityIds)} /></div>}
 
       <div className="mt-6">
         <CaseExportHistory caseId={c.id} updatedAt={c.updatedAt} pending={upd.isPending} onConflict={() => void qc.invalidateQueries({ queryKey: ccKeys.case(c.id) })} />

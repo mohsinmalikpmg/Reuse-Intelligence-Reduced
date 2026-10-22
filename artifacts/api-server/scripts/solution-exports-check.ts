@@ -9,10 +9,12 @@ import { pool } from "@workspace/db";
 import router from "../src/routes/solution-exports";
 import { createCase, getCase } from "../src/lib/store";
 import { validateExportLinks } from "../src/lib/solution-export-links";
+import { packageObject } from "../src/lib/solution-package-storage";
 
 const user = `export-test-${randomUUID()}`;
 const other = `export-other-${randomUUID()}`;
 const caseId = `export-case-${randomUUID()}`;
+const compositionId = `export-composition-${randomUUID()}`;
 const app = express();
 app.use(express.json());
 app.use((req, _res, next) => {
@@ -49,6 +51,40 @@ try {
   assert.equal(downloaded.status,200);
   assert.equal(createHash("sha256").update(Buffer.from(await downloaded.arrayBuffer())).digest("hex"),first.sha256);
   assert.equal((await request(`/solution-exports/${first.id}/download`,"GET",undefined,null)).status,401);
+  // Legacy ordinary-case export visibility is intentionally unchanged.
+  assert.equal((await request(`/solution-exports/${first.id}/download`,"GET",undefined,other)).status,200);
+  const legacyList = await (await request(`/solution-exports?caseId=${caseId}`,"GET",undefined,other)).json() as any[];
+  assert.ok(legacyList.some(e=>e.id===first.id));
+  // Link this real case/export to a private composition, then exercise the
+  // actual router in isolation (without the global compositions middleware).
+  await pool.query("INSERT INTO compositions(id,user_id,idempotency_key,request_fingerprint,case_id,snapshot) VALUES($1,$2,$1,'test-only',$3,$4)",
+    [compositionId,user,caseId,{caseKind:"case",testFixture:true}]);
+  for (const manager of [false,true]) {
+    await pool.query("UPDATE users SET can_manage_solution_packages=$2 WHERE id=$1",[other,manager]);
+    for (const path of ["/solution-exports",`/solution-exports?caseId=${caseId}`,`/solution-exports?solutionId=${c.baseSolutionId}`]) {
+      const response = await request(path,"GET",undefined,other);
+      assert.equal(response.status,200);
+      const listed = await response.json() as any[];
+      assert.ok(!listed.some(e=>e.id===first.id),"Private composition export must not leak through collection/filter listing.");
+    }
+    assert.equal((await request(`/solution-exports/${first.id}/download`,"GET",undefined,other)).status,404);
+    assert.equal((await request("/solution-exports","POST",body,other)).status,404);
+    assert.equal((await request(`/solution-exports/${first.id}/link`,"PUT",{workspaceUrl:"https://replit.com/@fixture/private",publishedUrl:"",expectedRevision:0},other)).status,404);
+  }
+  const ownerList = await (await request(`/solution-exports?caseId=${caseId}`)).json() as any[];
+  assert.ok(ownerList.some(e=>e.id===first.id));
+  assert.ok(ownerList.every(e=>!("object_path" in e) && !("objectPath" in e)),"Private object paths must never be serialized.");
+  assert.equal((await request(`/solution-exports/${first.id}/download`)).status,200);
+  assert.equal((await request("/solution-exports","POST",body)).status,200);
+  const stored = await pool.query("SELECT object_path FROM solution_exports WHERE id=$1",[first.id]);
+  const object = packageObject(stored.rows[0].object_path);
+  const rawDownload = await fetch(`https://storage.googleapis.com/${encodeURIComponent(object.bucket.name)}/${object.name.split("/").map(encodeURIComponent).join("/")}`);
+  assert.ok([403,404].includes(rawDownload.status),"The private export object must not be publicly downloadable outside the authorized route.");
+  await rawDownload.body?.cancel();
+  console.log("PASS unauthenticated direct object-storage download denied (no bucket/path disclosed).");
+  await pool.query("DELETE FROM compositions WHERE id=$1",[compositionId]);
+  await pool.query("UPDATE users SET can_manage_solution_packages=false WHERE id=$1",[other]);
+  console.log("PASS two-account real-route export privacy: ordinary private composition listings/download/create/link denied to other account (including manager), owner permitted, legacy access preserved.");
   const link = { workspaceUrl: "https://replit.com/@fixture/test-app", publishedUrl: "https://fixture-test.replit.app", expectedRevision: 0 };
   assert.equal((await request(`/solution-exports/${first.id}/link`,"PUT",link,other)).status,403);
   const saved = await (await request(`/solution-exports/${first.id}/link`,"PUT",link)).json() as any;
@@ -96,6 +132,7 @@ try {
   assert.throws(() => validateExportLinks("","https://test.replit.app"));
   console.log("PASS export lifecycle: real build/storage/download hash; idempotency; stale case; versions; failure recovery; auth; link revision/edit/remove/persistence; URL safety.");
 } finally {
+  await pool.query("DELETE FROM compositions WHERE id=$1",[compositionId]);
   await pool.query("DELETE FROM solution_exports WHERE created_by=$1",[user]);
   await pool.query("DELETE FROM cases WHERE id=$1",[caseId]);
   await pool.query("DELETE FROM users WHERE id=ANY($1::text[])",[[user,other]]);

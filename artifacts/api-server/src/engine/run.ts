@@ -1,6 +1,11 @@
 import type { Capability } from "@workspace/api-zod";
-import { executionOrder, executorById, readInput } from "./steps";
-import type { OutputItem, RunContext, RunOutput, RunStats, StepTrace } from "./types";
+import { executionOrder, executorById, readInput, readWorkbenchNotes } from "./steps";
+import type { OutputItem, OutputSection, RunContext, RunOutput, RunStats, StepTrace } from "./types";
+
+function sectionState(sections:OutputSection[]):Map<string,string>{return new Map(sections.map(s=>[s.key,JSON.stringify(s)]));}
+function changedSections(before:Map<string,string>,sections:OutputSection[]):OutputSection[]{
+  return structuredClone(sections.filter(s=>before.get(s.key)!==JSON.stringify(s)));
+}
 
 export interface ExecutionResult {
   output: RunOutput;
@@ -24,6 +29,14 @@ export function executableSteps(active: Capability[]): Capability[] {
 export function executeWorkflow(active: Capability[], configValues: Record<string, string>, input: string): ExecutionResult {
   const started = performance.now();
   const steps = executableSteps(active);
+  const unavailableReaders=active.filter(cap=>cap.category==="Data ingestion"&&!["cap-wo-ingest","cap-csv-ingest"].includes(cap.id));
+  if(unavailableReaders.length){
+    const errors=unavailableReaders.map(cap=>`${cap.name}: selected ingestion has no supported reader. Supply input through a supported ingestion contract; analysis was not run.`);
+    return {output:{headline:"Input ingestion unavailable",sections:[{key:"ingestion-error",title:"Input could not be ingested",stepId:"input",items:errors.map((text,i)=>({id:`input:ingestion-${i}`,key:`ingestion-${i}`,kind:"note",text,detail:null,stepId:"input",refs:[]}))}]},
+      trace:[...unavailableReaders.map((cap,i)=>({stepId:cap.id,name:cap.name,stage:cap.workflowStep,status:"error" as const,inputSummary:"Input not ingested",transformation:"No supported ingestion executor",outputSummary:"Analysis not run",itemCount:0,durationMs:0,error:errors[i],outputSections:[],outputSnapshotStatus:"available" as const})),
+        ...steps.map(cap=>({stepId:cap.id,name:cap.name,stage:cap.workflowStep,status:"skipped" as const,inputSummary:"Input not ingested",transformation:"Skipped because selected ingestion is unavailable",outputSummary:"Not run",itemCount:0,durationMs:0,error:null,outputSections:[],outputSnapshotStatus:"available" as const}))],
+      stats:{steps:0,sections:1,items:errors.length,issues:0,patterns:0,actions:0,errors:errors.length},durationMs:ms(started),errors};
+  }
   const ctx: RunContext = {
     input,
     config: configValues,
@@ -43,22 +56,28 @@ export function executeWorkflow(active: Capability[], configValues: Record<strin
   const hasReader = steps.some((s) => s.id === "cap-wo-ingest" || s.id === "cap-csv-ingest");
   if (!hasReader) {
     const t0 = performance.now();
-    const r = readInput(ctx);
-    trace.push({ stepId: "input", name: "Read input", stage: "Ingest", status: "ran", ...r, durationMs: ms(t0), error: null });
+    // These existing executors consume parsed notes, not raw free text. The workbench
+    // input bridge must populate that context without silently enabling CSV ingestion.
+    const usesNotes=steps.some(s=>["cap-summarize","cap-b-summarize","cap-recurring","cap-clustering","cap-similarity","cap-action-tracking","cap-reports","cap-exec-digest"].includes(s.id));
+    const r = (usesNotes?readWorkbenchNotes:readInput)(ctx);
+    trace.push({ stepId: "input", name: "Read input", stage: "Ingest", status: "ran", ...r, durationMs: ms(t0), error: null,outputSections:structuredClone(ctx.sections),outputSnapshotStatus:"available" });
   }
   for (const cap of steps) {
     const run = executorById.get(cap.id)!;
     const t0 = performance.now();
+    const before=sectionState(ctx.sections);
     try {
       const r = run(ctx);
-      trace.push({ stepId: cap.id, name: cap.name, stage: cap.workflowStep, status: "ran", ...r, durationMs: ms(t0), error: null });
+      trace.push({ stepId: cap.id, name: cap.name, stage: cap.workflowStep, status: "ran", ...r, durationMs: ms(t0), error: null,outputSections:changedSections(before,ctx.sections),outputSnapshotStatus:"available" });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errors.push(`${cap.name}: ${message}`);
-      trace.push({ stepId: cap.id, name: cap.name, stage: cap.workflowStep, status: "error", inputSummary: "", transformation: "", outputSummary: "", itemCount: 0, durationMs: ms(t0), error: message });
+      trace.push({ stepId: cap.id, name: cap.name, stage: cap.workflowStep, status: "error", inputSummary: "", transformation: "", outputSummary: "", itemCount: 0, durationMs: ms(t0), error: message,outputSections:changedSections(before,ctx.sections),outputSnapshotStatus:"available" });
     }
   }
   const sections = ctx.sections.filter((s) => s.items.length > 0);
+  if(!sections.length)sections.push({key:"no-output",title:"No output produced",stepId:"input",items:[{id:"input:no-output",key:"no-output",kind:"note",stepId:"input",refs:[],detail:null,text:steps.length?"The selected steps produced no output for this input. Check the step trace and required input fields.":"No executable analysis steps are enabled. Add a supported step before testing this input."}]});
+  else if(sections.every(s=>s.key==="input"))sections.push({key:"no-analysis",title:"Input read; no analysis result",stepId:"input",items:[{id:"input:no-analysis",key:"no-analysis",kind:"note",stepId:"input",refs:[],detail:null,text:"The input was read, but no selected analysis step produced a result. Enable an analysis step or check its dependencies and trace."}]});
   const output: RunOutput = { headline: headline(ctx, sections.flatMap((s) => s.items)), sections };
   const items = sections.flatMap((s) => s.items);
   const stats: RunStats = {

@@ -8,5 +8,6 @@
 
 export interface CompareRequest {
   sampleInputId?: string;
+  /** Custom work-order notes or normalized file input; maximum 256 KiB. Both actual A and B ingestion contracts are validated before either run is saved. */
   inputText?: string;
 }

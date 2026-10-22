@@ -11,6 +11,7 @@ import { sampleInputById, sampleInputsFor, type SampleInput as SeedInput } from 
 import { buildComponents, caseContext, defaultConfigValues, defaultModuleStates, productionConfigValue, productionModuleOn, type CaseContext } from "./configuration";
 import { configFingerprint } from "./fingerprint";
 import { hashInput, insertRun, listRunsForCase } from "./workbench-store";
+import { noteInputContract, validateEngineInput } from "./workbench-input";
 
 export class WorkbenchError extends Error {
   constructor(message: string, public status = 400) {
@@ -77,10 +78,10 @@ export function resolveInput(sampleInputId: string | undefined, inputText: strin
   if (sampleInputId) {
     const sample = sampleInputById.get(sampleInputId);
     if (!sample) throw new WorkbenchError(`Unknown sample input ${sampleInputId}`, 404);
-    const text = inputText?.trim() ? inputText : sample.text;
+    const text = inputText !== undefined ? inputText : sample.text;
     return { sampleInputId: text === sample.text ? sample.id : null, text };
   }
-  if (inputText?.trim()) return { sampleInputId: null, text: inputText };
+  if (inputText !== undefined) return { sampleInputId: null, text: inputText };
   // Default to the richest sample so the saved example output shows what the product does at scale.
   const richest = [...sampleInputsFor(solutionId)].sort((a, b) => b.noteCount - a.noteCount)[0];
   if (!richest) throw new WorkbenchError("No input provided and no sample input exists for this solution.");
@@ -99,6 +100,7 @@ interface RunSpec {
 }
 
 function execute(spec: RunSpec): Omit<Run, "id" | "createdAt"> {
+  spec={...spec,text:validateEngineInput(spec.text,[noteInputContract(spec.version,spec.solution,spec.active)]).text};
   const result = executeWorkflow(spec.active, spec.configValues, spec.text);
   const enabledCapabilityIds = executableSteps(spec.active).map((cap) => cap.id);
   return {
@@ -220,6 +222,12 @@ export function explain(runA: Run, runB: Run, diff: OutputDiff, names: { a: stri
   const onlyB = runB.enabledCapabilityIds.filter((id) => !runA.enabledCapabilityIds.includes(id));
   const onlyA = runA.enabledCapabilityIds.filter((id) => !runB.enabledCapabilityIds.includes(id));
   for (const step of diff.stepsResponsible) {
+    const stepChanges=diff.entries.filter(e=>e.stepId===step.stepId);
+    if(stepChanges.every(e=>e.changeType==="ranking")){
+      const action=onlyA.includes(step.stepId)?`was removed in ${names.b}, removing the ranking of`:onlyB.includes(step.stepId)?`only runs in ${names.b}, ranking`:"changed the ranking of";
+      lines.push(`${step.name}${step.sourceSolutionName?` (from ${step.sourceSolutionName})`:""} ${action} ${stepChanges.length} existing finding${stepChanges.length===1?"":"s"}. The finding content is unchanged; no new findings were added.`);
+      continue;
+    }
     const added = diff.entries.filter((e) => e.stepId === step.stepId && e.change === "added").length;
     const removed = diff.entries.filter((e) => e.stepId === step.stepId && e.change === "removed").length;
     const changed = diff.entries.filter((e) => e.stepId === step.stepId && e.change === "changed").length;
@@ -232,7 +240,7 @@ export function explain(runA: Run, runB: Run, diff: OutputDiff, names: { a: stri
         ? ` because it only runs in ${names.a}`
         : settingA !== undefined && settingB !== undefined && settingA !== settingB
           ? ` because its setting changed (${settingA} → ${settingB})`
-          : " because its input changed upstream";
+          : "";
     lines.push(`${step.name}${step.sourceSolutionName ? ` (from ${step.sourceSolutionName})` : ""} ${parts}${why}.`);
   }
   return lines;
@@ -269,6 +277,8 @@ export async function runComparison(c: Case, sampleInputId: string | undefined, 
   const labels = versionLabels(c, ctx);
   const a = versionACapabilities(ctx);
   const b = versionBCapabilities(c, ctx);
+  // Validate BOTH before inserting either run; a rejected B must not leave a misleading A-only comparison.
+  input.text=validateEngineInput(input.text,[noteInputContract("A",ctx.base,a.active),noteInputContract("B",ctx.base,b.active)]).text;
   const runA = await insertRun(execute({ caseId: c.id, solution: ctx.base, version: "A", versionLabel: labels.a, active: a.active, configValues: a.configValues, sampleInputId: input.sampleInputId, text: input.text }));
   const runB = await insertRun(execute({ caseId: c.id, solution: ctx.base, version: "B", versionLabel: labels.b, active: b.active, configValues: b.configValues, sampleInputId: input.sampleInputId, text: input.text }));
   return { runA, runB };

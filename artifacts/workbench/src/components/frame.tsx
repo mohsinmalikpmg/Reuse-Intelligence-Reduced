@@ -55,6 +55,7 @@ function crumbsFor(location: string): { stage: Stage; page: string } {
   if (location.startsWith("/search")) return { stage: "trace", page: "Search" };
   if (location.startsWith("/workbench/wiring")) return { stage: "connect", page: "Finance wiring" };
   if (location.startsWith("/workbench")) return { stage: "connect", page: "Workbench" };
+  if (location.startsWith("/compositions/")) return { stage: "connect", page: "Proposed combination" };
   if (location.startsWith("/test/")) return { stage: "connect", page: "Blind test" };
   if (location.startsWith("/cases/")) return { stage: "converge", page: "Decision view" };
   if (/^\/my-solutions\/.+\/improvements\//.test(location)) return { stage: "converge", page: "Shared improvement" };

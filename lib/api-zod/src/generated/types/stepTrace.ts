@@ -5,6 +5,8 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
+import type { OutputSection } from './outputSection';
+import type { StepTraceOutputSnapshotStatus } from './stepTraceOutputSnapshotStatus';
 import type { StepTraceStatus } from './stepTraceStatus';
 
 export interface StepTrace {
@@ -19,4 +21,8 @@ export interface StepTrace {
   durationMs: number;
   /** @nullable */
   error: string | null;
+  /** Independent snapshot of sections this step created or modified immediately when it finished; never reconstructed from final output */
+  outputSections?: OutputSection[];
+  /** Missing or unavailable means the saved run has no per-step snapshot */
+  outputSnapshotStatus?: StepTraceOutputSnapshotStatus;
 }

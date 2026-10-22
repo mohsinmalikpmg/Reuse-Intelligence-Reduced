@@ -3,6 +3,7 @@ import { db, reuseEventsTable } from "@workspace/db";
 import type { ReuseEventRow } from "@workspace/db";
 import type { ReuseEvent } from "@workspace/api-zod";
 import { newId } from "./ids";
+import { caseVisible, visibleCaseRows } from "./case-access";
 
 export function toReuseEvent(row: ReuseEventRow): ReuseEvent {
   return {
@@ -36,15 +37,16 @@ export async function insertReuseEvent(e: NewReuseEvent): Promise<ReuseEvent> {
 
 export async function listReuseEvents(): Promise<ReuseEvent[]> {
   const rows = await db.select().from(reuseEventsTable).orderBy(desc(reuseEventsTable.createdAt));
-  return rows.map(toReuseEvent);
+  return visibleCaseRows(rows).map(toReuseEvent);
 }
 
 export async function getReuseEvent(id: string): Promise<ReuseEvent | null> {
   const [row] = await db.select().from(reuseEventsTable).where(eq(reuseEventsTable.id, id));
-  return row ? toReuseEvent(row) : null;
+  return row && caseVisible(row.caseId) ? toReuseEvent(row) : null;
 }
 
 export async function setReusePathTaken(id: string, pathTaken: ReuseEvent["pathTaken"]): Promise<ReuseEvent | null> {
+  if (!(await getReuseEvent(id))) return null;
   const [row] = await db.update(reuseEventsTable).set({ pathTaken }).where(eq(reuseEventsTable.id, id)).returning();
   return row ? toReuseEvent(row) : null;
 }

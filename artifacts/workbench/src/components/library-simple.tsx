@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { loadDraft, saveDraft, useComposing } from "@/lib/composition";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 import { useListCapabilities, useListSolutionFamilies, useListSolutions } from "@workspace/api-client-react";
@@ -23,7 +24,14 @@ export function SeekerLibrary() {
   const [cap, setCap] = useState("");
   const [ready, setReady] = useState("");
   const [page, setPage] = useState(0);
-  const [pickedIds, setPickedIds] = useState<string[]>([]);
+  const [pickedIds, setPickedIds] = useState<string[]>(() => loadDraft().pickedIds.slice(0, MAX_PICK));
+  // Each pick is pinned to the version seen when it was compared; later builds use the pin, never the live version.
+  const [pinned, setPinned] = useState<Record<string, string>>(() => loadDraft().pinned);
+  // The selection survives sign-in redirects, errors and reloads in this tab.
+  useEffect(() => {
+    const keep = Object.fromEntries(Object.entries(pinned).filter(([id]) => pickedIds.includes(id)));
+    saveDraft({ ...loadDraft(), pickedIds, pinned: keep });
+  }, [pickedIds, pinned]);
 
   const all = useMemo(() => buildEntries(families.data ?? [], sols.data ?? [], caps.data ?? []), [families.data, sols.data, caps.data]);
   const picked = useMemo(() => pickedIds.map((id) => all.find((e) => e.s.id === id)).filter((e): e is Entry => !!e), [pickedIds, all]);
@@ -42,7 +50,14 @@ export function SeekerLibrary() {
   const shown = items.slice(cur * SEEKER_PER_PAGE, cur * SEEKER_PER_PAGE + SEEKER_PER_PAGE);
   const filtered = !!(q || problem || cap || ready);
   const reset = () => { setQ(""); setDraft(""); setProblem(""); setCap(""); setReady(""); setPage(0); };
-  const toggle = (id: string) => setPickedIds((p) => p.includes(id) ? p.filter((x) => x !== id) : p.length >= MAX_PICK ? p : [...p, id]);
+  const composing = useComposing();
+  const pin = (id: string) => { const v = all.find((e) => e.s.id === id)?.s.currentVersion; if (v !== undefined) setPinned((m) => ({ ...m, [id]: String(v) })); };
+  const toggle = (id: string) => {
+    if (composing) return;
+    if (pickedIds.includes(id)) { setPickedIds((p) => p.filter((x) => x !== id)); return; }
+    if (pickedIds.length >= MAX_PICK) return;
+    pin(id); setPickedIds((p) => [...p, id]);
+  };
 
   const loading = families.isLoading || sols.isLoading || caps.isLoading;
   if (families.isError || sols.isError || caps.isError)
@@ -91,7 +106,7 @@ export function SeekerLibrary() {
           ) : <>
             <p className="mb-3 text-[13.5px] text-muted-foreground" aria-live="polite">{items.length} {items.length === 1 ? "option" : "options"} · {pickedIds.length} of {MAX_PICK} picked to compare</p>
             <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="library-cards">
-              {shown.map((e) => <SeekerCard key={e.key} e={e} matchedCapability={capOptions.find((c) => c.id === cap)?.name} matchLabel={cap ? capabilityMatch(e, cap) : null} selected={pickedIds.includes(e.s.id)} canSelect={pickedIds.length < MAX_PICK} onToggle={() => toggle(e.s.id)} />)}
+              {shown.map((e) => <SeekerCard key={e.key} e={e} matchedCapability={capOptions.find((c) => c.id === cap)?.name} matchLabel={cap ? capabilityMatch(e, cap) : null} selected={pickedIds.includes(e.s.id)} canSelect={!composing && pickedIds.length < MAX_PICK} onToggle={() => toggle(e.s.id)} />)}
             </ul>
             {pages > 1 && (
               <nav aria-label="Pagination" className="mt-6 flex items-center gap-3">
@@ -101,7 +116,7 @@ export function SeekerLibrary() {
               </nav>
             )}
           </>}
-        <SeekerCompare picked={picked} onRemove={(id) => setPickedIds((p) => p.filter((x) => x !== id))} onClear={() => setPickedIds([])} />
+        <SeekerCompare picked={picked} pinned={pinned} onRepin={(ids) => ids.forEach(pin)} onRemove={(id) => setPickedIds((p) => p.filter((x) => x !== id))} onClear={() => setPickedIds([])} />
         {!loading && <p className="mt-8 text-[14px] text-muted-foreground">Not quite it? <Link href="/discover" className="font-semibold text-primary underline-offset-2 hover:underline">Describe your need</Link> and we will compare what exists.</p>}
       </div>
     </Page>

@@ -9,6 +9,8 @@ export interface OutputItem {
   detail: string | null;
   stepId: string;
   refs: string[];
+  originStepId?: string;
+  ranking?: { position: number; basis: string };
 }
 
 export interface OutputSection {
@@ -34,6 +36,8 @@ export interface StepTrace {
   itemCount: number;
   durationMs: number;
   error: string | null;
+  outputSections?: OutputSection[];
+  outputSnapshotStatus?: "available" | "unavailable";
 }
 
 export interface RunStats {

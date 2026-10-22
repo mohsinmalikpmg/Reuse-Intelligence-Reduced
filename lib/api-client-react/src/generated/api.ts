@@ -30,6 +30,7 @@ import type {
   BriefInput,
   BriefUpdate,
   BusinessProblem,
+  CancelCompositionRefinement200,
   Capability,
   CapabilityExplorerEntry,
   CapabilityRequestInput,
@@ -42,6 +43,13 @@ import type {
   ChangeReview,
   CodeAssessment,
   CompareRequest,
+  Composition,
+  CompositionCreateInput,
+  CompositionPlanEditInput,
+  CompositionRefinement,
+  CompositionRefinementInput,
+  CompositionRevisionBody,
+  CompositionSuggestionAcceptanceInput,
   Configuration,
   ConfigurationPreview,
   ConfigurationUpdate,
@@ -62,6 +70,8 @@ import type {
   EvaluationList,
   Experiment,
   ExperimentPlan,
+  FeatureRedundancyInput,
+  FeatureRedundancyResult,
   FinanceWiringActivationInput,
   FinanceWiringCatalog,
   FinanceWiringInput,
@@ -86,6 +96,7 @@ import type {
   InvoiceAnalysisResponse,
   LibraryCodePackage,
   ListCasesParams,
+  ListCompositionsParams,
   ListPrototypesParams,
   ListSampleInputsParams,
   ListSolutionExportsParams,
@@ -131,7 +142,9 @@ import type {
   SolutionWorkbench,
   TestResponseInput,
   TestSession,
-  TestSessionInput
+  TestSessionInput,
+  WorkbenchInputUploadInput,
+  WorkbenchInputValidation
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -160,6 +173,885 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getValidateWorkbenchInputUrl = (targetId: string,) => {
+
+
+
+
+  return `/api/workbench-inputs/${targetId}/validate`
+}
+
+/**
+ * @summary Validate a transient custom file against actual selected workbench ingestion contracts
+ */
+export const validateWorkbenchInput = async (targetId: string,
+    workbenchInputUploadInput: WorkbenchInputUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<WorkbenchInputValidation> => {
+    const formData = new FormData();
+formData.append(`file`, workbenchInputUploadInput.file);
+
+  return customFetch<WorkbenchInputValidation>(getValidateWorkbenchInputUrl(targetId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getValidateWorkbenchInputMutationKey = () => ['validateWorkbenchInput'] as const;
+
+export const getValidateWorkbenchInputMutationOptions = <TError = ErrorType<void | WorkbenchInputValidation>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateWorkbenchInput>>, TError,ValidateWorkbenchInputMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof validateWorkbenchInput>>, TError,ValidateWorkbenchInputMutationVariables, TContext> => {
+
+const mutationKey = getValidateWorkbenchInputMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof validateWorkbenchInput>>, ValidateWorkbenchInputMutationVariables> = (props) => {
+          const {targetId,data} = props ?? {};
+
+          return  validateWorkbenchInput(targetId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ValidateWorkbenchInputMutationResult = NonNullable<Awaited<ReturnType<typeof validateWorkbenchInput>>>
+    export type ValidateWorkbenchInputMutationBody = BodyType<WorkbenchInputUploadInput>
+    export type ValidateWorkbenchInputMutationError = ErrorType<void | WorkbenchInputValidation>
+    export type ValidateWorkbenchInputMutationVariables = {targetId: string;data: BodyType<WorkbenchInputUploadInput>}
+
+    /**
+ * @summary Validate a transient custom file against actual selected workbench ingestion contracts
+ */
+export const useValidateWorkbenchInput = <TError = ErrorType<void | WorkbenchInputValidation>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateWorkbenchInput>>, TError,ValidateWorkbenchInputMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof validateWorkbenchInput>>,
+        TError,
+        ValidateWorkbenchInputMutationVariables,
+        TContext
+      > => {
+      return useMutation(getValidateWorkbenchInputMutationOptions(options));
+    }
+
+export const getAcceptCompositionSuggestionUrl = (id: string,
+    suggestionId: string,) => {
+
+
+
+
+  return `/api/compositions/${id}/suggestions/${suggestionId}/accept`
+}
+
+export const acceptCompositionSuggestion = async (id: string,
+    suggestionId: string,
+    compositionSuggestionAcceptanceInput: CompositionSuggestionAcceptanceInput, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Composition>(getAcceptCompositionSuggestionUrl(id,suggestionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(compositionSuggestionAcceptanceInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptCompositionSuggestionMutationKey = () => ['acceptCompositionSuggestion'] as const;
+
+export const getAcceptCompositionSuggestionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptCompositionSuggestion>>, TError,AcceptCompositionSuggestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptCompositionSuggestion>>, TError,AcceptCompositionSuggestionMutationVariables, TContext> => {
+
+const mutationKey = getAcceptCompositionSuggestionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptCompositionSuggestion>>, AcceptCompositionSuggestionMutationVariables> = (props) => {
+          const {id,suggestionId,data} = props ?? {};
+
+          return  acceptCompositionSuggestion(id,suggestionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptCompositionSuggestionMutationResult = NonNullable<Awaited<ReturnType<typeof acceptCompositionSuggestion>>>
+    export type AcceptCompositionSuggestionMutationBody = BodyType<CompositionSuggestionAcceptanceInput>
+    export type AcceptCompositionSuggestionMutationError = ErrorType<unknown>
+    export type AcceptCompositionSuggestionMutationVariables = {id: string;suggestionId: string;data: BodyType<CompositionSuggestionAcceptanceInput>}
+
+    export const useAcceptCompositionSuggestion = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptCompositionSuggestion>>, TError,AcceptCompositionSuggestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptCompositionSuggestion>>,
+        TError,
+        AcceptCompositionSuggestionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcceptCompositionSuggestionMutationOptions(options));
+    }
+
+export const getAnalyzeFeatureRedundancyUrl = () => {
+
+
+
+
+  return `/api/feature-redundancy`
+}
+
+export const analyzeFeatureRedundancy = async (featureRedundancyInput: FeatureRedundancyInput, options?: Parameters<typeof customFetch>[1]): Promise<FeatureRedundancyResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FeatureRedundancyResult>(getAnalyzeFeatureRedundancyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(featureRedundancyInput)
+  }
+);}
+
+
+
+
+
+export const getAnalyzeFeatureRedundancyMutationKey = () => ['analyzeFeatureRedundancy'] as const;
+
+export const getAnalyzeFeatureRedundancyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeFeatureRedundancy>>, TError,AnalyzeFeatureRedundancyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeFeatureRedundancy>>, TError,AnalyzeFeatureRedundancyMutationVariables, TContext> => {
+
+const mutationKey = getAnalyzeFeatureRedundancyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeFeatureRedundancy>>, AnalyzeFeatureRedundancyMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  analyzeFeatureRedundancy(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeFeatureRedundancyMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeFeatureRedundancy>>>
+    export type AnalyzeFeatureRedundancyMutationBody = BodyType<FeatureRedundancyInput>
+    export type AnalyzeFeatureRedundancyMutationError = ErrorType<unknown>
+    export type AnalyzeFeatureRedundancyMutationVariables = {data: BodyType<FeatureRedundancyInput>}
+
+    export const useAnalyzeFeatureRedundancy = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeFeatureRedundancy>>, TError,AnalyzeFeatureRedundancyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeFeatureRedundancy>>,
+        TError,
+        AnalyzeFeatureRedundancyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalyzeFeatureRedundancyMutationOptions(options));
+    }
+
+export const getEditCompositionPlanUrl = (id: string,) => {
+
+
+
+
+  return `/api/compositions/${id}/plan`
+}
+
+export const editCompositionPlan = async (id: string,
+    compositionPlanEditInput: CompositionPlanEditInput, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Composition>(getEditCompositionPlanUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(compositionPlanEditInput)
+  }
+);}
+
+
+
+
+
+export const getEditCompositionPlanMutationKey = () => ['editCompositionPlan'] as const;
+
+export const getEditCompositionPlanMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editCompositionPlan>>, TError,EditCompositionPlanMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof editCompositionPlan>>, TError,EditCompositionPlanMutationVariables, TContext> => {
+
+const mutationKey = getEditCompositionPlanMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editCompositionPlan>>, EditCompositionPlanMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  editCompositionPlan(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditCompositionPlanMutationResult = NonNullable<Awaited<ReturnType<typeof editCompositionPlan>>>
+    export type EditCompositionPlanMutationBody = BodyType<CompositionPlanEditInput>
+    export type EditCompositionPlanMutationError = ErrorType<unknown>
+    export type EditCompositionPlanMutationVariables = {id: string;data: BodyType<CompositionPlanEditInput>}
+
+    export const useEditCompositionPlan = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editCompositionPlan>>, TError,EditCompositionPlanMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof editCompositionPlan>>,
+        TError,
+        EditCompositionPlanMutationVariables,
+        TContext
+      > => {
+      return useMutation(getEditCompositionPlanMutationOptions(options));
+    }
+
+export const getListCompositionsUrl = (params?: ListCompositionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/compositions?${stringifiedParams}` : `/api/compositions`
+}
+
+export const listCompositions = async (params?: ListCompositionsParams, options?: Parameters<typeof customFetch>[1]): Promise<Composition[]> => {
+
+  return customFetch<Composition[]>(getListCompositionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCompositionsQueryKey = (params?: ListCompositionsParams,) => {
+    return [
+    `/api/compositions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListCompositionsQueryOptions = <TData = Awaited<ReturnType<typeof listCompositions>>, TError = ErrorType<unknown>>(params?: ListCompositionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCompositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCompositionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCompositions>>> = ({ signal }) => listCompositions(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCompositions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCompositionsQueryResult = NonNullable<Awaited<ReturnType<typeof listCompositions>>>
+export type ListCompositionsQueryError = ErrorType<unknown>
+
+
+
+export function useListCompositions<TData = Awaited<ReturnType<typeof listCompositions>>, TError = ErrorType<unknown>>(
+ params?: ListCompositionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCompositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCompositionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCompositionUrl = () => {
+
+
+
+
+  return `/api/compositions`
+}
+
+export const createComposition = async (compositionCreateInput: CompositionCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Composition>(getCreateCompositionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(compositionCreateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCompositionMutationKey = () => ['createComposition'] as const;
+
+export const getCreateCompositionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComposition>>, TError,CreateCompositionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createComposition>>, TError,CreateCompositionMutationVariables, TContext> => {
+
+const mutationKey = getCreateCompositionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createComposition>>, CreateCompositionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createComposition(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCompositionMutationResult = NonNullable<Awaited<ReturnType<typeof createComposition>>>
+    export type CreateCompositionMutationBody = BodyType<CompositionCreateInput>
+    export type CreateCompositionMutationError = ErrorType<unknown>
+    export type CreateCompositionMutationVariables = {data: BodyType<CompositionCreateInput>}
+
+    export const useCreateComposition = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createComposition>>, TError,CreateCompositionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createComposition>>,
+        TError,
+        CreateCompositionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCompositionMutationOptions(options));
+    }
+
+export const getGetCompositionUrl = (id: string,) => {
+
+
+
+
+  return `/api/compositions/${id}`
+}
+
+export const getComposition = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+  return customFetch<Composition>(getGetCompositionUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCompositionQueryKey = (id: string,) => {
+    return [
+    `/api/compositions/${id}`
+    ] as const;
+    }
+
+
+export const getGetCompositionQueryOptions = <TData = Awaited<ReturnType<typeof getComposition>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComposition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCompositionQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getComposition>>> = ({ signal }) => getComposition(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getComposition>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCompositionQueryResult = NonNullable<Awaited<ReturnType<typeof getComposition>>>
+export type GetCompositionQueryError = ErrorType<unknown>
+
+
+
+export function useGetComposition<TData = Awaited<ReturnType<typeof getComposition>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getComposition>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCompositionQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPreviewCompositionRefinementUrl = (id: string,) => {
+
+
+
+
+  return `/api/compositions/${id}/refinements`
+}
+
+export const previewCompositionRefinement = async (id: string,
+    compositionRefinementInput: CompositionRefinementInput, options?: Parameters<typeof customFetch>[1]): Promise<CompositionRefinement> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CompositionRefinement>(getPreviewCompositionRefinementUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(compositionRefinementInput)
+  }
+);}
+
+
+
+
+
+export const getPreviewCompositionRefinementMutationKey = () => ['previewCompositionRefinement'] as const;
+
+export const getPreviewCompositionRefinementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewCompositionRefinement>>, TError,PreviewCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewCompositionRefinement>>, TError,PreviewCompositionRefinementMutationVariables, TContext> => {
+
+const mutationKey = getPreviewCompositionRefinementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewCompositionRefinement>>, PreviewCompositionRefinementMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  previewCompositionRefinement(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewCompositionRefinementMutationResult = NonNullable<Awaited<ReturnType<typeof previewCompositionRefinement>>>
+    export type PreviewCompositionRefinementMutationBody = BodyType<CompositionRefinementInput>
+    export type PreviewCompositionRefinementMutationError = ErrorType<unknown>
+    export type PreviewCompositionRefinementMutationVariables = {id: string;data: BodyType<CompositionRefinementInput>}
+
+    export const usePreviewCompositionRefinement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewCompositionRefinement>>, TError,PreviewCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewCompositionRefinement>>,
+        TError,
+        PreviewCompositionRefinementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPreviewCompositionRefinementMutationOptions(options));
+    }
+
+export const getApplyCompositionRefinementUrl = (id: string,
+    previewId: string,) => {
+
+
+
+
+  return `/api/compositions/${id}/refinements/${previewId}/apply`
+}
+
+export const applyCompositionRefinement = async (id: string,
+    previewId: string,
+    compositionRevisionBody: CompositionRevisionBody, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Composition>(getApplyCompositionRefinementUrl(id,previewId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(compositionRevisionBody)
+  }
+);}
+
+
+
+
+
+export const getApplyCompositionRefinementMutationKey = () => ['applyCompositionRefinement'] as const;
+
+export const getApplyCompositionRefinementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyCompositionRefinement>>, TError,ApplyCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof applyCompositionRefinement>>, TError,ApplyCompositionRefinementMutationVariables, TContext> => {
+
+const mutationKey = getApplyCompositionRefinementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyCompositionRefinement>>, ApplyCompositionRefinementMutationVariables> = (props) => {
+          const {id,previewId,data} = props ?? {};
+
+          return  applyCompositionRefinement(id,previewId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyCompositionRefinementMutationResult = NonNullable<Awaited<ReturnType<typeof applyCompositionRefinement>>>
+    export type ApplyCompositionRefinementMutationBody = BodyType<CompositionRevisionBody>
+    export type ApplyCompositionRefinementMutationError = ErrorType<unknown>
+    export type ApplyCompositionRefinementMutationVariables = {id: string;previewId: string;data: BodyType<CompositionRevisionBody>}
+
+    export const useApplyCompositionRefinement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyCompositionRefinement>>, TError,ApplyCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof applyCompositionRefinement>>,
+        TError,
+        ApplyCompositionRefinementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getApplyCompositionRefinementMutationOptions(options));
+    }
+
+export const getCancelCompositionRefinementUrl = (id: string,
+    previewId: string,) => {
+
+
+
+
+  return `/api/compositions/${id}/refinements/${previewId}/cancel`
+}
+
+export const cancelCompositionRefinement = async (id: string,
+    previewId: string, options?: Parameters<typeof customFetch>[1]): Promise<CancelCompositionRefinement200> => {
+
+  return customFetch<CancelCompositionRefinement200>(getCancelCompositionRefinementUrl(id,previewId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCancelCompositionRefinementMutationKey = () => ['cancelCompositionRefinement'] as const;
+
+export const getCancelCompositionRefinementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelCompositionRefinement>>, TError,CancelCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelCompositionRefinement>>, TError,CancelCompositionRefinementMutationVariables, TContext> => {
+
+const mutationKey = getCancelCompositionRefinementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelCompositionRefinement>>, CancelCompositionRefinementMutationVariables> = (props) => {
+          const {id,previewId} = props ?? {};
+
+          return  cancelCompositionRefinement(id,previewId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelCompositionRefinementMutationResult = NonNullable<Awaited<ReturnType<typeof cancelCompositionRefinement>>>
+
+    export type CancelCompositionRefinementMutationError = ErrorType<unknown>
+    export type CancelCompositionRefinementMutationVariables = {id: string;previewId: string}
+
+    export const useCancelCompositionRefinement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelCompositionRefinement>>, TError,CancelCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelCompositionRefinement>>,
+        TError,
+        CancelCompositionRefinementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCancelCompositionRefinementMutationOptions(options));
+    }
+
+export const getUndoCompositionRefinementUrl = (id: string,) => {
+
+
+
+
+  return `/api/compositions/${id}/undo`
+}
+
+export const undoCompositionRefinement = async (id: string,
+    compositionRevisionBody: CompositionRevisionBody, options?: Parameters<typeof customFetch>[1]): Promise<Composition> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Composition>(getUndoCompositionRefinementUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(compositionRevisionBody)
+  }
+);}
+
+
+
+
+
+export const getUndoCompositionRefinementMutationKey = () => ['undoCompositionRefinement'] as const;
+
+export const getUndoCompositionRefinementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoCompositionRefinement>>, TError,UndoCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof undoCompositionRefinement>>, TError,UndoCompositionRefinementMutationVariables, TContext> => {
+
+const mutationKey = getUndoCompositionRefinementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof undoCompositionRefinement>>, UndoCompositionRefinementMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  undoCompositionRefinement(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UndoCompositionRefinementMutationResult = NonNullable<Awaited<ReturnType<typeof undoCompositionRefinement>>>
+    export type UndoCompositionRefinementMutationBody = BodyType<CompositionRevisionBody>
+    export type UndoCompositionRefinementMutationError = ErrorType<unknown>
+    export type UndoCompositionRefinementMutationVariables = {id: string;data: BodyType<CompositionRevisionBody>}
+
+    export const useUndoCompositionRefinement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoCompositionRefinement>>, TError,UndoCompositionRefinementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof undoCompositionRefinement>>,
+        TError,
+        UndoCompositionRefinementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUndoCompositionRefinementMutationOptions(options));
+    }
 
 export const getGetInvoiceAnalysisUrl = (id: string,) => {
 

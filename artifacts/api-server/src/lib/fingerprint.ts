@@ -12,6 +12,7 @@ export function configFingerprint(enabledCapabilityIds: string[], configValues: 
     .filter(([, v]) => v !== undefined && v !== null && v !== "")
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}=${v}`);
-  const material = `catalog:${CATALOG_VERSION}|caps:${caps.join(",")}|cfg:${settings.join(",")}`;
+  // Older runs with an empty implicit note context must not count as current evidence.
+  const material = `engine:step-snapshots-v3|catalog:${CATALOG_VERSION}|caps:${caps.join(",")}|cfg:${settings.join(",")}`;
   return createHash("sha256").update(material).digest("hex").slice(0, 16);
 }
