@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useParams, useSearch } from "wouter";
 import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, pointerWithin, rectIntersection, useDroppable, useSensor, useSensors, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Equal, FileText, GitBranch, Info, LayoutList, ListPlus, Pencil, Play, RotateCcw, Save, Undo2, Workflow, Zap } from "lucide-react";
+import { Check, Equal, FileText, GitBranch, Info, ListPlus, Minus, Pencil, Play, Plus, RotateCcw, Save, Undo2, Workflow, Zap } from "lucide-react";
 import {
   useGetDemoState,
   getGetBriefQueryKey, getGetCaseComparisonQueryKey, getGetCaseConfigurationQueryKey, getGetCaseQueryKey, getGetCaseBaselineQueryKey, getListCaseEvaluationsQueryKey, getListSampleInputsQueryKey,
@@ -17,9 +17,9 @@ import { blocksFromConfig, blocksFromWorkbench, controlsFromConfig } from "@/com
 import { OutputView, RunMeta, diffKey, marksFrom } from "@/components/output-view";
 import { InputPanel, SummaryCounts, Tray } from "@/components/wb-parts";
 import { Measures, StaleHint, Vote } from "@/components/wb-compare";
-import { AddSlot, BandRow, LaneHeaders, RequestRow, StepRow, WorkflowMap, buildRows, laneGrid, useNarrow, type LaneRow, type MapEntry } from "@/components/wb-lanes";
+import { AddSlot, BandRow, buildRows, laneGrid, useNarrow } from "@/components/wb-lanes";
 import { RequirementAdder, StepPicker, type ReuseActions } from "@/components/wb-reuse";
-import { Schematic, StepDetail, type LaneEntry } from "@/components/wb-schematic";
+import { StepDetail, type LaneEntry } from "@/components/wb-schematic";
 import { InviteTesters, OwnerDecision, PROMOTION_LABEL, ProposeActions, caseStatusLabel, lineageChanges } from "@/components/wb-pilot";
 import { errMsg, httpStatus, useInvalidateCase } from "@/lib/case";
 import { useRole } from "@/lib/persona";
@@ -29,8 +29,6 @@ import { CaseExports } from "@/components/solution-exports";
 import { WiringEntry } from "@/components/wiring-entry";
 
 type Snap = { moduleStates: Record<string, boolean>; configValues: Record<string, string> };
-/** Remembered per browser: the schematic viewport is the default from 1024px up; "Prefer rows?" restores the list layout. */
-const LAYOUT_KEY = "reuse-workbench.workbench.layout";
 const darkTool = "inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium text-[#9ED9E3] transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-40";
 const dropUnderPointer: CollisionDetection = (args) => { const hits = pointerWithin(args); return hits.length ? hits : rectIntersection(args); };
 
@@ -92,7 +90,6 @@ export default function Workbench() {
   const say = useUndoToast();
   const invalidateCase = useInvalidateCase();
   const narrow = useNarrow();
-  const coarsePointer = useNarrow("(hover: none)");
   const caseQ = useGetCase(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseQueryKey(caseId) } });
   const baseId = caseQ.data?.baseSolutionId ?? "";
   const cfgQ = useGetCaseConfiguration(caseId, { query: { enabled: !!caseId, queryKey: getGetCaseConfigurationQueryKey(caseId) } });
@@ -116,8 +113,6 @@ export default function Workbench() {
   const [sampleId, setSampleId] = useState("");
   const [text, setText] = useState("");
   const [edited, setEdited] = useState(false);
-  // "Try with my input" from the library lands with the input panel already open.
-  const [inputOpen, setInputOpen] = useState(initialMode === "input");
   const [localRun, setLocalRun] = useState<Run | null>(null);
   // A single B run is persisted; its id lives in the address so a reload rehydrates the real run.
   const runParam = search.get("run") ?? "";
@@ -133,14 +128,10 @@ export default function Workbench() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [picked, setPicked] = useState<DiffEntry | null>(null);
   const [open, setOpen] = useState<Set<string>>(() => new Set());
-  const [current, setCurrent] = useState<string | null>(null);
   const [slotOpen, setSlotOpen] = useState<string | null>(null);
   // Set only from a confirmed server response; cleared after the short seat/weld (or run-illumination) moment.
   const [welded, setWelded] = useState<string | null>(null);
   const [energized, setEnergized] = useState<Set<string>>(() => new Set());
-  const [showA, setShowA] = useState(false);
-  const [rowsPref, setRowsPref] = useState(() => localStorage.getItem(LAYOUT_KEY) === "rows");
-  const setLayout = (rows: boolean) => { setRowsPref(rows); localStorage.setItem(LAYOUT_KEY, rows ? "rows" : "schematic"); };
   // The footer status line: set only from the configuration the server returned.
   const [connected, setConnected] = useState<string | null>(null);
   const [reqOpen, setReqOpen] = useState(false);
@@ -199,11 +190,6 @@ export default function Workbench() {
     return out;
   }, [rows, requests]);
   const votes = evalsQ.data?.summary.tests ?? 0;
-  const entries = useMemo<MapEntry[]>(() => [
-    { id: "input", label: "Input" },
-    ...lane.map((x) => (x.kind === "step" ? { id: x.row.id, label: x.row.name, row: x.row } : { id: `req:${x.req.id}`, label: `Requested: ${x.req.need}`, request: x.req })),
-    { id: "output", label: "Output" }, { id: "verdict", label: "Verdict", votes },
-  ], [lane, votes]);
 
   const apply = (data: ConfigurationUpdate, label: string, record = true, weldId?: string) => {
     if (!cfg) return;
@@ -314,33 +300,12 @@ export default function Workbench() {
 
   const toggleRow = useCallback((id: string) => setOpen((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
   const jump = (id: string) => {
-    if (id === "input") { setInputOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); setCurrent("input"); return; }
+    if (id === "input") { document.querySelector('[data-testid="panel-input"]')?.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     if (rows.some((r) => r.id === id)) setOpen((o) => new Set(o).add(id));
     window.setTimeout(() => scrollToRow(id), 40);
   };
   // Clicking a block opens its detail below the viewport and brings it into view; clicking again closes it.
-  const toggleBlock = (id: string) => { const opening = !open.has(id); toggleRow(id); if (opening) window.setTimeout(() => scrollToRow(id), 60); };
   const onPick = (e: DiffEntry) => { setPicked(e); setOpen((o) => new Set(o).add(e.stepId)); scrollToRow(e.stepId); };
-
-  // Scroll-spy: the map highlights the row nearest the top of the viewport.
-  useEffect(() => {
-    let raf = 0;
-    const measure = () => {
-      raf = 0;
-      const line = 200;
-      let best: string | null = "input";
-      for (const e of entries) {
-        if (e.id === "input") continue;
-        const el = document.getElementById(`row-${e.id}`);
-        if (el && el.getBoundingClientRect().top <= line) best = e.id;
-      }
-      setCurrent(best);
-    };
-    const onScroll = () => { if (!raf) raf = window.requestAnimationFrame(measure); };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    measure();
-    return () => { window.removeEventListener("scroll", onScroll); if (raf) window.cancelAnimationFrame(raf); };
-  }, [entries]);
 
   useEffect(() => {
     if (jumpedRef.current || rows.length === 0 || cmpQ.isLoading) return;
@@ -367,7 +332,6 @@ export default function Workbench() {
   const busyRun = runOne.isPending || runBoth.isPending;
   const noInput = !sampleId && !text.trim();
   const stepsResponsible = cmp?.diff.stepsResponsible ?? [];
-  const schematic = !narrow && !rowsPref;
   const connectStatus = busyRun ? "Energizing A and B…" : connected ?? (changedFromA.length ? `${changedFromA.length} change${changedFromA.length === 1 ? "" : "s"} in B · ready to energize` : "Ready to connect");
 
   const stateText = runBoth.isPending ? "Running both..." : runOne.isPending ? "Running..."
@@ -384,7 +348,6 @@ export default function Workbench() {
     const runnable = nodes.some((n) => n.kind !== "build");
     const openFull = () => navigate(`/workbench/${caseId}`);
     const tryIt = () => {
-      setInputOpen(true);
       runOne.mutate({ data: { caseId, version: "B", ...inputArgs } }, {
         onSuccess: (r) => { setRun(r); invalidateCase(caseId); navigate(`/workbench/${caseId}`); window.setTimeout(() => scrollToRow("output"), 120); },
         onError: (e) => say(errMsg(e)),
@@ -417,20 +380,20 @@ export default function Workbench() {
 
   const editTools = editable && (
     <div className="flex flex-wrap items-center gap-1">
-      <button data-testid="button-undo" disabled={!undo.length || put.isPending} onClick={() => restore(undo[undo.length - 1])} className={schematic ? darkTool : btn.quiet}><Undo2 className="h-4 w-4" /> Undo</button>
-      <button data-testid="button-reset-b" disabled={put.isPending || changedFromA.length === 0} onClick={resetToA} className={schematic ? darkTool : btn.quiet}><RotateCcw className="h-4 w-4" /> Reset B</button>
+      <button data-testid="button-undo" disabled={!undo.length || put.isPending} onClick={() => restore(undo[undo.length - 1])} className={darkTool}><Undo2 className="h-4 w-4" /> Undo</button>
+      <button data-testid="button-reset-b" disabled={put.isPending || changedFromA.length === 0} onClick={resetToA} className={darkTool}><RotateCcw className="h-4 w-4" /> Reset B</button>
     </div>
   );
-  const layoutToggle = !narrow && (schematic
-    ? <button data-testid="button-layout-rows" onClick={() => setLayout(true)} className={darkTool} title="Show the same steps as a list"><LayoutList className="h-4 w-4" /> Prefer rows?</button>
-    : <button data-testid="button-layout-schematic" onClick={() => setLayout(false)} className={btn.quiet}><Workflow className="h-4 w-4" /> Schematic</button>);
-  const slotRow = slotOpen && slotOpen !== "end" ? rows.find((r) => r.id === slotOpen) ?? null : null;
   const labelA = cmp ? "A · comparison run" : "A · saved example";
   const labelB = cmp ? "B · comparison run" : "B · your run";
+  const slotRow = slotOpen && slotOpen !== "end" ? rows.find((r) => r.id === slotOpen) ?? null : null;
   const browse = <Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={(c) => { add(c); setSlotOpen(null); }} />;
-  const slotFor = (afterId: string | null, afterName: string | null, visible: boolean) => (
-    <AddSlot id={afterId ?? "end"} afterName={afterName} dragging={!!dragging} enabled={editable} openId={slotOpen} setOpenId={setSlotOpen} visible={visible}
-      picker={<StepPicker afterId={afterId} afterName={afterName} actions={reuseActions} browse={browse} onClose={() => setSlotOpen(null)} />} />
+  // Insertion sockets between steps: click to open the reuse-first picker for that position, or drop a library capability on it.
+  const slotFor = (afterId: string | null, afterName: string | null) => (
+    <li className="list-none" data-testid={`slot-${afterId ?? "start"}`}>
+      <AddSlot id={afterId ?? "start"} afterName={afterName} dragging={!!dragging} enabled={editable} openId={slotOpen} setOpenId={setSlotOpen} visible
+        picker={<div className="mt-2 rounded-xl bg-card p-1 text-foreground"><StepPicker afterId={afterId} afterName={afterName} actions={reuseActions} browse={browse} onClose={() => setSlotOpen(null)} /></div>} />
+    </li>
   );
   const outputCard = (v: "A" | "B", r: Run, marks?: Map<string, DiffEntry>) => (
     <div className={cn("card-soft p-4", v === "B" && "border-t-4 border-t-sienna")} data-testid={`panel-version-${v.toLowerCase()}`}>
@@ -491,93 +454,105 @@ export default function Workbench() {
           </DialogContent>
         </Dialog>
 
-        {/* Pinned input bar */}
-        <div id="row-input" className="sticky top-[var(--shell-top)] z-30 mt-4 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur-sm">
-          <section className="card-soft flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5" data-testid="panel-shared-input">
-            <FileText className="h-5 w-5 shrink-0 text-primary" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[14px] font-semibold text-primary" data-testid="text-input-name">{edited ? (caseQ.data?.presetInputText && text === caseQ.data.presetInputText ? "Prototype's worked example" : "Edited text") : sample?.name ?? "Input"}{edited && <Tag tone="sienna">Edited</Tag>}</div>
-              <div className="text-[12px] text-muted-foreground">{sample && !edited ? `${sample.noteCount} note${sample.noteCount === 1 ? "" : "s"}${sample.hasExpected ? " · labelled findings" : ""} · ` : ""}shared by A and B</div>
-            </div>
-            <button data-testid="button-change-input" aria-expanded={inputOpen} onClick={() => { setInputOpen((v) => !v); setReqOpen(false); }} className={cn(btn.quiet, "px-2")}><ChevronDown className={cn("h-4 w-4 transition-transform", inputOpen && "rotate-180")} /> {inputOpen ? "Hide input" : "Change input"}</button>
-            {editable && <button data-testid="button-add-requirement" aria-expanded={reqOpen} onClick={() => { setReqOpen((v) => !v); setInputOpen(false); }} className={cn(btn.quiet, "px-2", reqOpen && "bg-muted text-foreground")}><ListPlus className="h-4 w-4" /> Add a requirement</button>}
-            <div className="ml-auto flex items-center gap-3">
-              <span className="hidden text-[12.5px] text-muted-foreground md:block" data-testid="text-compared-input">{stateText}</span>
-              {primary}
-            </div>
-          </section>
-        </div>
-        {inputOpen && (
-          <section className="card-soft reveal mt-1 p-4">
-            {samplesQ.isLoading ? <Skel className="h-24" /> : <InputPanel compact samples={samples} sampleId={sampleId} text={text} edited={edited} onPick={pickSample} onText={(t) => { setText(t); setEdited(true); }} />}
-          </section>
-        )}
-        {reqOpen && editable && (
-          <RequirementAdder actions={reuseActions} briefRequirements={briefQ.data?.requirements.map((r) => r.text) ?? []} caseRequirements={theCase.requirements} onAdded={onRequirementAdded} onRemove={dropRequirement} onRunBoth={doBoth} runBothBusy={runBoth.isPending} needsBoth={needsBoth} />
-        )}
-        {cmp?.staleB && <div className="mt-3"><StaleHint onRun={doBoth} busy={runBoth.isPending} /></div>}
-
-        {/* Map + lanes: the schematic viewport from 1024px up (unless rows are preferred), the list layout otherwise */}
-        <div className={cn("mt-5", narrow ? "space-y-4" : schematic ? "grid grid-cols-[248px_minmax(0,1fr)] items-start gap-5" : "grid grid-cols-[224px_minmax(0,1fr)] items-start gap-6")}>
-          <div className={narrow ? "" : "sticky top-[calc(var(--shell-top)+5.75rem)] max-h-[calc(100dvh-var(--shell-top)-6.75rem)] overflow-y-auto pr-1"}>
-            {schematic && editable && (
-              <section className="card-soft mb-4 p-3.5" data-testid="panel-library">
-                <div className="flex items-baseline justify-between gap-2"><span className="text-[14px] font-semibold text-primary">Component Library</span><span className="font-mono text-[9.5px] uppercase tracking-[.1em] text-muted-foreground">Drag or click</span></div>
-                <p className="mt-1 text-[12px] leading-snug text-muted-foreground">An existing component is recommended before anything new is generated.</p>
-                <div className="mt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={add} /></div>
-              </section>
-            )}
-            <WorkflowMap entries={entries} current={current} open={open} onJump={jump} horizontal={narrow} lit={energized}
-              onExpandAll={() => setOpen(new Set(rows.map((r) => r.id)))} onCollapseAll={() => setOpen(new Set())}>
-              {!narrow && !schematic && editable && <div className="mt-4 border-t border-border px-2 pt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled={editable} onAdd={add} /></div>}
-            </WorkflowMap>
-          </div>
-
-          <div className="min-w-0">
-            {schematic ? (
-              <>
-                {wbQ.isLoading || rows.length === 0 ? <Skel className="h-72 rounded-[20px]" /> : (
-                  <Schematic lane={lane} rows={rows} aLabel={standardA ? `standard product v${theCase.parentVersion}` : "production baseline"} editable={editable} busy={put.isPending}
-                    open={open} onToggle={toggleBlock} onSetOption={(r, v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(r, on) => toggle(r.id, r.name, on)} onRemove={(r) => toggle(r.id, r.name, false)}
-                    onRemoveRequest={(req) => dropRequest(req)} requestBusy={removeRequest.isPending} dragging={!!dragging} slotOpen={slotOpen} setSlotOpen={setSlotOpen}
-                    welded={welded} energized={energized} running={busyRun} status={connectStatus} changes={changedFromA.length}
-                    tools={<>{editTools}{layoutToggle}</>} />
-                )}
-                {controls.length > 0 && <p className="mt-2 px-1 text-[12px] text-muted-foreground" data-testid="list-controls">Controls in place: {controls.map((c) => c.name).join(", ")}</p>}
-                {slotOpen && !dragging && editable && (
-                  <div id="row-picker" className="mt-3 scroll-mt-[calc(var(--shell-top)+5.25rem)]">
-                    <StepPicker afterId={slotRow?.id ?? null} afterName={slotRow?.name ?? null} actions={reuseActions} browse={browse} onClose={() => setSlotOpen(null)} />
-                  </div>
-                )}
-                {rows.some((r) => open.has(r.id)) && (
-                  <div className="mt-3 space-y-3" data-testid="panel-step-details">
-                    {rows.filter((r) => open.has(r.id)).map((r) => (
-                      <StepDetail key={r.id} r={r} no={rows.indexOf(r) + 1} labelA={labelA} labelB={labelB} picked={picked} onPick={onPick}
-                        explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} onClose={() => toggleRow(r.id)} />
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <LaneHeaders editTools={editTools} extra={layoutToggle} narrow={narrow} showA={showA} setShowA={setShowA} controls={controls.map((c) => c.name)} aLabel={standardA ? `Standard product · v${theCase.parentVersion}` : "Current product"} />
-                <LanesDrop enabled={editable} dragging={!!dragging}>
-                  {wbQ.isLoading || rows.length === 0 ? <div className={narrow ? "space-y-2" : laneGrid}><Skel className="h-14" /><div /><Skel className="h-14" /></div> : lane.map((x) => {
-                    if (x.kind === "request") return <RequestRow key={x.req.id} req={x.req} narrow={narrow} showA={showA} editable={editable} busy={removeRequest.isPending} onRemove={() => dropRequest(x.req)} />;
+        {/* Included capabilities: the invoice workbench layout, one dark map and straightforward side controls */}
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+          <LanesDrop enabled={editable} dragging={!!dragging}>
+            <section id="wiring" className="scroll-mt-24 rounded-[20px] bg-[hsl(var(--primary))] p-5 text-primary-foreground md:p-6" data-testid="panel-map" aria-label="Included capabilities">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <h2 className="text-[17px] font-semibold text-primary-foreground">Included capabilities</h2>
+                <span className="text-[12.5px] opacity-75">Starts from {theCase.lineage.parentSolutionName}. Click a step for A/B detail.</span>
+                <span className="ml-auto">{editTools}</span>
+              </div>
+              <p className="mb-3 text-[12px] opacity-75" data-testid="text-connect-status">{connectStatus}</p>
+              {wbQ.isLoading || rows.length === 0 ? <Skel className="h-60 rounded-xl bg-white/10" /> : (
+                <ol className="space-y-3">
+                  <MapNode title={edited ? "Edited input" : sample?.name ?? "Input"} sub="Shared by Version A and Version B" />
+                  {slotFor(null, null)}
+                  {lane.map((x) => {
+                    if (x.kind === "request") return (
+                      <li key={x.req.id} id={`row-req:${x.req.id}`} className="flex items-center gap-3 rounded-xl border border-dashed border-[#FFD09F]/50 px-4 py-3" data-testid={`node-request-${x.req.id}`}>
+                        <ListPlus className="h-4 w-4 shrink-0 text-[#FFD09F]" />
+                        <div className="min-w-0 flex-1"><div className="font-semibold">Requested: {x.req.need}</div><div className="text-[12.5px] opacity-75">Not built yet · does not run</div></div>
+                        <button onClick={() => dropRequest(x.req)} disabled={!editable || removeRequest.isPending} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-remove-request-${x.req.id}`}><Minus className="h-3.5 w-3.5" /> Remove</button>
+                      </li>
+                    );
                     const r = x.row;
-                    const i = rows.indexOf(r);
+                    const reused = r.b.added;
                     return (
-                      <StepRow key={r.id} r={r} no={i + 1} open={open.has(r.id)} onToggle={() => toggleRow(r.id)} editable={editable} busy={put.isPending}
-                        onSetOption={(v) => apply({ configValues: { [r.id]: v } }, `${r.name}: ${v}`)} onSwitch={(on) => toggle(r.id, r.name, on)} onRemove={() => toggle(r.id, r.name, false)}
-                        picked={picked} onPick={onPick} explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} labelA={labelA} labelB={labelB}
-                        narrow={narrow} showA={showA} dragging={!!dragging} slot={slotFor(r.id, r.name, narrow || coarsePointer || i === rows.length - 1)}
-                        welded={welded === r.id} energized={energized.has(r.id)} />
+                      <Fragment key={r.id}><li id={`row-${r.id}`} className="scroll-mt-[calc(var(--shell-top)+6rem)]">
+                        <div className={cn("rounded-xl px-4 py-3 transition-colors", r.b.active ? "bg-white/10" : "bg-white/[.04] opacity-70", welded === r.id && "seat", energized.has(r.id) && "ring-2 ring-[#9ED9E3]")} data-testid={`node-cap-${r.id}`}>
+                          <div className="flex flex-wrap items-center gap-3">
+                            {r.b.active ? <Check className="h-4 w-4 shrink-0 text-[#9ED9E3]" /> : <Minus className="h-4 w-4 shrink-0 opacity-60" />}
+                            <button onClick={() => toggleRow(r.id)} className="min-w-0 flex-1 text-left" aria-expanded={open.has(r.id)} data-testid={`button-step-${r.id}`}>
+                              <div className="font-semibold">{r.name}{r.deviation && <span className="ml-2 rounded bg-[#FFD09F]/20 px-1.5 py-0.5 text-[11px] font-medium text-[#FFD09F]">{r.deviation === "added" ? "added in B" : r.deviation === "off" ? "off in B" : r.deviation === "on" ? "on in B" : "setting changed"}</span>}</div>
+                              <div className="text-[12.5px] opacity-75">{reused ? `from ${r.source}` : r.stage} · {r.kind === "required" ? "required" : r.kind === "configurable" ? "configurable" : "optional"}{r.changes ? ` · ${r.changes} output change${r.changes === 1 ? "" : "s"}` : ""}</div>
+                            </button>
+                            {r.kind === "configurable" && r.b.options && (
+                              <select value={r.b.value ?? ""} disabled={!editable || put.isPending} onChange={(e) => apply({ configValues: { [r.id]: e.target.value } }, `${r.name}: ${e.target.value}`)} aria-label={`${r.name} setting`}
+                                className="h-8 rounded-lg border border-white/25 bg-[hsl(var(--primary))] px-2 text-[12.5px] text-primary-foreground" data-testid={`select-option-${r.id}`}>
+                                {r.b.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            )}
+                            {r.kind === "optional" && (r.b.active
+                              ? <button onClick={() => toggle(r.id, r.name, false)} disabled={!editable || put.isPending} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-remove-${r.id}`}><Minus className="h-3.5 w-3.5" /> Remove</button>
+                              : <button onClick={() => toggle(r.id, r.name, true)} disabled={!editable || put.isPending || !!r.b.blockedReason} title={r.b.blockedReason ?? "Switch on in Version B"} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-[12.5px] hover:bg-white/10 disabled:opacity-40" data-testid={`button-restore-${r.id}`}><Plus className="h-3.5 w-3.5" /> Add back</button>)}
+                            {r.kind === "required" && <span className="text-[11.5px] opacity-70">required</span>}
+                          </div>
+                        </div>
+                      </li>{slotFor(r.id, r.name)}</Fragment>
                     );
                   })}
-                </LanesDrop>
-              </>
-            )}
+                  <MapNode title="Output" sub={`${theCase.lineage.parentSolutionName} result, compared A against B`} />
+                </ol>
+              )}
+              {controls.length > 0 && <p className="mt-3 text-[12px] opacity-75" data-testid="list-controls">Controls in place: {controls.map((c) => c.name).join(", ")}</p>}
+            </section>
+          </LanesDrop>
 
+          <aside className="space-y-4">
+            {editable && (
+              <section className="card-soft p-5" data-testid="panel-library">
+                <h2 className="text-[16px] font-semibold">Add from other apps</h2>
+                <p className="mt-1 text-[13px] text-muted-foreground">Governed capabilities this workflow can actually run. Each shows the app it comes from.</p>
+                <div className="mt-3"><Tray recs={recs} more={more} busy={put.isPending} enabled hideTitle onAdd={add} /></div>
+                {recs.length + more.length === 0 && <p className="mt-2 text-[13px] text-muted-foreground" data-testid="text-no-reuse">Every compatible capability is already included.</p>}
+                <button onClick={() => setSlotOpen(slotOpen ? null : "end")} className={cn(btn.quiet, "mt-2 px-0")} data-testid="button-open-picker"><ListPlus className="h-4 w-4" /> Need something not listed?</button>
+                {slotOpen === "end" && <div className="mt-3"><StepPicker afterId={slotRow?.id ?? null} afterName={null} actions={reuseActions} browse={null} onClose={() => setSlotOpen(null)} /></div>}
+              </section>
+            )}
+            <section className="card-soft p-5" data-testid="panel-input">
+              <h2 className="text-[16px] font-semibold">Input</h2>
+              <p className="mt-1 text-[13px] text-muted-foreground">Shared by A and B. Pick a sample or edit the text.</p>
+              <div className="mt-3">{samplesQ.isLoading ? <Skel className="h-24" /> : <InputPanel compact samples={samples} sampleId={sampleId} text={text} edited={edited} onPick={pickSample} onText={(t) => { setText(t); setEdited(true); }} />}</div>
+            </section>
+            <section className="card-soft p-5">
+              <h2 className="text-[16px] font-semibold">Try the real workflow</h2>
+              <p className="mt-1 text-[13px] text-muted-foreground" data-testid="text-compared-input">{stateText}</p>
+              <div className="mt-3 flex flex-wrap gap-2">{primary}</div>
+              {cmp?.staleB && <div className="mt-3"><StaleHint onRun={doBoth} busy={runBoth.isPending} /></div>}
+            </section>
+            {editable && (
+              <section className="card-soft p-5" data-testid="panel-requirements">
+                <div className="flex items-center gap-2"><h2 className="text-[16px] font-semibold">Requirements</h2>
+                  <button data-testid="button-add-requirement" aria-expanded={reqOpen} onClick={() => setReqOpen((v) => !v)} className={cn(btn.quiet, "ml-auto px-2")}><ListPlus className="h-4 w-4" /> {reqOpen ? "Hide" : "Add a requirement"}</button></div>
+                {reqOpen ? <div className="mt-3"><RequirementAdder actions={reuseActions} briefRequirements={briefQ.data?.requirements.map((r) => r.text) ?? []} caseRequirements={theCase.requirements} onAdded={onRequirementAdded} onRemove={dropRequirement} onRunBoth={doBoth} runBothBusy={runBoth.isPending} needsBoth={needsBoth} /></div>
+                  : <p className="mt-1 text-[13px] text-muted-foreground">{theCase.requirements.length} recorded for this experiment.</p>}
+              </section>
+            )}
+          </aside>
+        </div>
+
+        {rows.some((r) => open.has(r.id)) && (
+          <div className="mt-5 space-y-3" data-testid="panel-step-details">
+            {rows.filter((r) => open.has(r.id)).map((r) => (
+              <StepDetail key={r.id} r={r} no={rows.indexOf(r) + 1} labelA={labelA} labelB={labelB} picked={picked} onPick={onPick}
+                explanation={(cmp?.explanation ?? []).filter((e) => e.startsWith(r.name))} onClose={() => toggleRow(r.id)} />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-6">
+          <div className="min-w-0">
             {/* Output */}
             <BandRow id="output" label="Output" icon={<Equal className="h-3.5 w-3.5" />} narrow={narrow}>
               {runParam && runQ.isError && !run ? <div role="alert" className="card-soft p-5">Saved output could not load. <button className={btn.quiet} onClick={() => void runQ.refetch()}>Retry</button></div> : runParam && runQ.isLoading && !run ? <div role="status" className="card-soft p-5">Loading saved output…</div> : runParam && runQ.data && !run ? <div role="alert" className="card-soft p-5">This saved run belongs to a different workflow.</div> : runBoth.isPending || runOne.isPending ? (
@@ -624,7 +599,7 @@ export default function Workbench() {
                 </>
               ) : run ? (
                 <div className={narrow ? "space-y-3" : laneGrid}>
-                  {!narrow || showA ? <div className="rounded-[14px] border border-dashed border-input bg-card/60 p-5 text-[14px] text-muted-foreground" data-testid="panel-version-a">
+                  {!narrow ? <div className="rounded-[14px] border border-dashed border-input bg-card/60 p-5 text-[14px] text-muted-foreground" data-testid="panel-version-a">
                     {changedFromA.length === 0 ? "Version B equals the current product, so this output is the same for A." : "Energize A/B to see the current product's output beside Version B."}
                   </div> : null}
                   {!narrow && <div />}
@@ -656,7 +631,7 @@ export default function Workbench() {
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <button data-testid="button-try-another" onClick={tryAnother} disabled={runBoth.isPending || samples.length < 2} className={btn.quiet}><RotateCcw className="h-4 w-4" /> Try another input</button>
                       <span className="flex-1" />
-                      <button data-testid="button-continue-testing" onClick={() => { setInputOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); }} className={btn.quiet}>Continue testing</button>
+                      <button data-testid="button-continue-testing" onClick={() => jump("input")} className={btn.quiet}>Continue testing</button>
                       <ProposeActions theCase={theCase} quiet={!cmp.evaluation} />
                     </div>
                   </>}
@@ -683,4 +658,8 @@ export default function Workbench() {
       <DragOverlay dropAnimation={null}>{dragC && <div className="lift w-[220px] rotate-[-2deg] rounded-xl border-2 border-orange bg-card p-3 text-[14px] font-semibold text-primary"><span className="mb-0.5 block font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">From {dragC.sourceSolutionName}</span>{dragC.capability.name}</div>}</DragOverlay>
     </DndContext>
   );
+}
+
+function MapNode({ title, sub }: { title: string; sub: string }) {
+  return <li className="rounded-xl border border-dashed border-white/30 px-4 py-3"><div className="font-semibold">{title}</div><div className="text-[12.5px] opacity-75">{sub}</div></li>;
 }

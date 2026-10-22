@@ -4,6 +4,9 @@ A reuse-first solution discovery and A/B workbench: a maintenance supervisor des
 
 ## Run & Operate
 
+- Library trials now use the invoice workbench's dark Included capabilities panel and side controls. Keep cross-app additions, source attribution, insertion/request slots, configuration editing and Undo in this layout; do not restore the old schematic/rows toggle. A/B evidence remains below the editor.
+- To verify the workbench frontend from a shell: `pnpm run typecheck:libs && pnpm --filter @workspace/workbench run typecheck`; build with `PORT=22653 BASE_PATH=/ pnpm --filter @workspace/workbench run build` (managed workflows provide these values automatically).
+
 - `artifacts/api-server: API Server` workflow — Express API (`pnpm --filter @workspace/api-server run dev`)
 - `artifacts/workbench: web` workflow — React/Vite frontend at `/` (`pnpm --filter @workspace/workbench run dev`)
 - `pnpm run typecheck` — full typecheck. Run `pnpm run typecheck:libs` first after changing anything in `lib/` or the api-server typecheck sees stale lib output.
