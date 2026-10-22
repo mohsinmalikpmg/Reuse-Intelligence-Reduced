@@ -15,6 +15,12 @@ Intake outputs must visibly include a MECE requirements breakdown for business-p
 
 **How to apply:** Treat these as reviewable intake outputs before comparison, not hidden interpretation data. Completeness is relative to supplied scope; expose gaps and inferences rather than inventing requirements or proof.
 
+Saved group boundaries are user-owned scope decisions during reinterpretation, just like manually corrected statements. Preserve their meaning while invalidating affected reviews; regenerating only the name must not change the reviewed breakdown.
+
+**Why:** Replacing a boundary can change what several otherwise unchanged requirements mean. Naming is a separate action and must not silently undo review work.
+
+**How to apply:** Keep content preservation separate from confirmation validity: preserve corrections even before confirmation, but require re-review when their source, boundary, or linked clarification changes.
+
 The approved canvas intake has a standalone artifact; the user subsequently chose to replace Discover's initial intake screen in Reuse Workbench with this design, keeping comparison results and IT Owner pages.
 
 **Why:** The user explicitly selected “Replace Discover’s intake screen” when asked where to integrate the selected design.

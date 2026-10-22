@@ -5,15 +5,12 @@
  * Reuse Workbench API - solution discovery, consolidation, simulation and governance
  * OpenAPI spec version: 0.1.0
  */
-import type { IntakeRecordUpdateModel } from './intakeRecordUpdateModel';
+import type { IntakeModel } from './intakeModel';
 
 export interface IntakeRecordUpdate {
-  /**
-     * @minLength 1
-     * @maxLength 200
-     */
-  title: string;
-  model: IntakeRecordUpdateModel;
+  /** @maxLength 200 */
+  title?: string;
+  model: IntakeModel;
   /** @minimum 1 */
   revision: number;
 }

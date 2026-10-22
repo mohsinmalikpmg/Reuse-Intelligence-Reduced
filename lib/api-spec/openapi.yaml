@@ -698,7 +698,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/IntakeRevisionInput" }
+            schema: { $ref: "#/components/schemas/IntakeInterpretInput" }
       responses:
         "200":
           description: AI interpreted saved inputs, preserving confirmed unaffected content
@@ -3086,7 +3086,7 @@ components:
       properties:
         id: { type: string }
         title: { type: string }
-        model: { type: object, additionalProperties: true }
+        model: { $ref: "#/components/schemas/IntakeModel" }
         revision: { type: integer }
         status: { type: string, enum: [draft, review, confirmed] }
         updatedAt: { type: string }
@@ -3095,21 +3095,156 @@ components:
           items: { $ref: "#/components/schemas/IntakeAttachment" }
     IntakeRecordInput:
       type: object
-      required: [title]
       properties:
-        title: { type: string, minLength: 1, maxLength: 200 }
+        title: { type: string, maxLength: 200 }
     IntakeRecordUpdate:
       type: object
-      required: [title, model, revision]
+      required: [model, revision]
       properties:
-        title: { type: string, minLength: 1, maxLength: 200 }
-        model: { type: object, additionalProperties: true }
+        title: { type: string, maxLength: 200 }
+        model: { $ref: "#/components/schemas/IntakeModel" }
         revision: { type: integer, minimum: 1 }
     IntakeRevisionInput:
       type: object
       required: [revision]
       properties:
         revision: { type: integer, minimum: 1 }
+    IntakeInterpretInput:
+      type: object
+      required: [revision]
+      properties:
+        revision: { type: integer, minimum: 1 }
+        regenerateName: { type: boolean }
+    IntakeModel:
+      type: object
+      required: [profile, requirements, capabilities, sources, questions, orderReviewed, safety, agreed, confirmed]
+      properties:
+        name:
+          type: object
+          required: [value, origin, provenance]
+          properties:
+            value: { type: string, minLength: 1, maxLength: 200 }
+            origin: { type: string, enum: [generated, manual] }
+            provenance: { type: string }
+        profile:
+          type: object
+          required: [problem, user, scope, outcome]
+          properties:
+            problem: { $ref: "#/components/schemas/IntakeProfileField" }
+            user: { $ref: "#/components/schemas/IntakeProfileField" }
+            scope: { $ref: "#/components/schemas/IntakeProfileField" }
+            outcome: { $ref: "#/components/schemas/IntakeProfileField" }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/IntakeRequirement" }
+        capabilities:
+          type: array
+          items: { $ref: "#/components/schemas/IntakeCapability" }
+        sources:
+          type: array
+          items:
+            type: object
+            required: [id, name, text, files, changed]
+            properties:
+              id: { type: string, enum: [problem, prototype, agent] }
+              name: { type: string }
+              text: { type: string }
+              files: { type: array, items: { type: string } }
+              changed: { type: boolean }
+              supplied: { type: boolean }
+        questions:
+          type: array
+          items:
+            type: object
+            required: [id, text, answer, acknowledged]
+            properties:
+              id: { type: string }
+              text: { type: string }
+              answer: { type: string }
+              acknowledged: { type: boolean }
+              itemIds: { type: array, items: { type: string } }
+        groups:
+          type: array
+          items:
+            type: object
+            required: [id, title, boundary]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              boundary: { type: string }
+        coverage:
+          type: array
+          items:
+            type: object
+            required: [id, sourceId, excerpt, disposition, requirementIds, capabilityIds, note, reviewed]
+            properties:
+              id: { type: string }
+              sourceId: { type: string, enum: [problem, prototype, agent] }
+              excerpt: { type: string }
+              disposition: { type: string, enum: [accounted, unresolved, out-of-scope] }
+              requirementIds: { type: array, items: { type: string } }
+              capabilityIds: { type: array, items: { type: string } }
+              note: { type: string }
+              reviewed: { type: boolean }
+        overlaps:
+          type: array
+          items:
+            type: object
+            required: [id, itemIds, note, resolved]
+            properties:
+              id: { type: string }
+              itemIds: { type: array, items: { type: string } }
+              note: { type: string }
+              resolved: { type: boolean }
+        removedItemIds: { type: array, items: { type: string } }
+        orderReviewed: { type: boolean }
+        safety: { type: string }
+        agreed: { type: boolean }
+        confirmed: { type: boolean }
+        interpretedHash: { type: string }
+    IntakeProfileField:
+      type: object
+      required: [value, reviewed, changed]
+      properties:
+        value: { type: string }
+        reviewed: { type: boolean }
+        changed: { type: boolean }
+        basis: { type: string, enum: [explicit, inferred, unknown] }
+        provenance: { type: string }
+    IntakeRequirement:
+      type: object
+      required: [id, text, sources, reviewed, changed]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        sources: { type: array, items: { type: string, enum: [problem, prototype, agent] } }
+        reviewed: { type: boolean }
+        changed: { type: boolean }
+        group: { type: string }
+        kind: { type: string, enum: [functional, constraint] }
+        acceptance: { type: string }
+        provenance: { type: string }
+        edited: { type: boolean }
+    IntakeCapability:
+      type: object
+      required: [id, title, description, workflow, input, output, dependency, status, changed, gap, carry]
+      properties:
+        id: { type: string }
+        sourceId: { type: string, enum: [problem, prototype, agent] }
+        title: { type: string }
+        description: { type: string }
+        workflow: { type: string }
+        input: { type: string }
+        output: { type: string }
+        dependency: { type: string }
+        status: { type: string, enum: [Described, Inferred, Needs clarification, Confirmed] }
+        changed: { type: boolean }
+        gap: { type: string }
+        carry: { type: boolean }
+        group: { type: string }
+        requirementIds: { type: array, items: { type: string } }
+        provenance: { type: string }
+        edited: { type: boolean }
     IntakeFileInput:
       type: object
       required: [file, sourceId]

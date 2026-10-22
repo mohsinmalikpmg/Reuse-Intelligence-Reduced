@@ -2,8 +2,8 @@ import { useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, FileText, GitBranch, RefreshCw, Trash2 } from 'lucide-react';
-import { createIntakeRecord, deleteIntakeRecord, getListIntakeRecordsQueryKey, saveIntakeRecord, useListIntakeRecords, type IntakeRecord } from '@workspace/api-client-react';
-import { errorMessage, normalizeModel, sourceLabels, type SourceId } from './model';
+import { createIntakeRecord, deleteIntakeRecord, getListIntakeRecordsQueryKey, saveIntakeRecord, useListIntakeRecords, type IntakeModel, type IntakeRecord } from '@workspace/api-client-react';
+import { serializeModel, displayName, errorMessage, NAME_PENDING, normalizeModel, sourceLabels, type SourceId } from './model';
 import { deriveName, SAMPLES } from './cards';
 
 const statusLabel = { draft: ['Draft', 'blue'], review: ['In review', 'warm'], confirmed: ['Confirmed', ''] } as const;
@@ -24,13 +24,13 @@ export default function Records() {
     const text = need.trim();
     if (!text || !privacy) return;
     setBusy('need'); setProblem('');
-    const title = deriveName(text, 'Untitled intake');
+    const title = '';
     try {
       if (!pending.current) pending.current = await createIntakeRecord({ title });
       const rec = pending.current;
       const model = normalizeModel(rec.model);
       const next = { ...model, sources: model.sources.map(s => s.id === 'problem' ? { ...s, name: deriveName(text, sourceLabels.problem), text, supplied: true } : s) };
-      await saveIntakeRecord(rec.id, { title, model: next as unknown as Record<string, unknown>, revision: rec.revision });
+      await saveIntakeRecord(rec.id, { title, model: serializeModel(next) as unknown as IntakeModel, revision: rec.revision });
       pending.current = null;
       try { sessionStorage.setItem(privacyKey(rec.id), '1'); } catch { /* storage unavailable */ }
       await qc.invalidateQueries({ queryKey: getListIntakeRecordsQueryKey() });
@@ -43,7 +43,7 @@ export default function Records() {
   const startFrom = async (sid: SourceId) => {
     setBusy(sid); setProblem('');
     try {
-      const rec = await createIntakeRecord({ title: sid === 'prototype' ? 'Prototype intake' : 'Agent intake' });
+      const rec = await createIntakeRecord({ title: '' });
       await qc.invalidateQueries({ queryKey: getListIntakeRecordsQueryKey() });
       navigate(`/discover/records/${rec.id}?start=${sid}`);
     } catch (e) { setProblem(`Could not start the intake: ${errorMessage(e)}`); setBusy(null); }
@@ -77,8 +77,8 @@ export default function Records() {
       : error ? <div className="fi-empty"><h3>Your intakes could not be loaded.</h3><p className="fi-hint">{errorMessage(error)}</p><button className="fi-btn" style={{ marginTop: 14 }} onClick={() => void refetch()}><RefreshCw />Retry</button></div>
       : !records.length ? <div className="fi-empty"><h3>Nothing here yet</h3><p className="fi-hint">Your first answer above becomes your first intake.</p></div>
       : <ul className="fi-records">{records.map(r => { const [lab, tone] = statusLabel[r.status]; return <li key={r.id} className="fi-record" data-testid={`card-record-${r.id}`}>
-        <Link href={`/discover/records/${r.id}`} className="fi-record-link"><span><strong>{r.title}</strong><small>Updated {new Date(r.updatedAt).toLocaleString()} · {r.attachments.length} {r.attachments.length === 1 ? 'file' : 'files'}</small></span><span className={`fi-label ${tone}`}>{lab}</span><ArrowRight /></Link>
-        <button className="fi-icon" aria-label={`Delete ${r.title}`} data-testid={`button-delete-${r.id}`} disabled={busy === r.id} onClick={() => void remove(r.id, r.title)}><Trash2 /></button>
+        <Link href={`/discover/records/${r.id}`} className="fi-record-link"><span><strong>{displayName(normalizeModel(r.model), r.title) || <span className="fi-name-status">{NAME_PENDING}</span>}</strong><small>Updated {new Date(r.updatedAt).toLocaleString()} · {r.attachments.length} {r.attachments.length === 1 ? 'file' : 'files'}</small></span><span className={`fi-label ${tone}`}>{lab}</span><ArrowRight /></Link>
+        <button className="fi-icon" aria-label={`Delete ${r.title || 'intake'}`} data-testid={`button-delete-${r.id}`} disabled={busy === r.id} onClick={() => void remove(r.id, displayName(normalizeModel(r.model), r.title) || 'this intake')}><Trash2 /></button>
       </li>; })}</ul>}
   </div>;
 }

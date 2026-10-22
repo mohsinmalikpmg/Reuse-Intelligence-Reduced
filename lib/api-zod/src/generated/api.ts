@@ -1985,10 +1985,122 @@ export const GetIntakeSessionResponse = zod.object({
 })
 
 
+export const listIntakeRecordsResponseModelNameValueMax = 200;
+
+
+
 export const ListIntakeRecordsResponseItem = zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "model": zod.record(zod.string(), zod.unknown()),
+  "model": zod.object({
+  "name": zod.object({
+  "value": zod.string().min(1).max(listIntakeRecordsResponseModelNameValueMax),
+  "origin": zod.enum(['generated', 'manual']),
+  "provenance": zod.string()
+}).optional(),
+  "profile": zod.object({
+  "problem": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "user": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "scope": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "outcome": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+})
+}),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "sources": zod.array(zod.enum(['problem', 'prototype', 'agent'])),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "group": zod.string().optional(),
+  "kind": zod.enum(['functional', 'constraint']).optional(),
+  "acceptance": zod.string().optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']).optional(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "workflow": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "dependency": zod.string(),
+  "status": zod.enum(['Described', 'Inferred', 'Needs clarification', 'Confirmed']),
+  "changed": zod.boolean(),
+  "gap": zod.string(),
+  "carry": zod.boolean(),
+  "group": zod.string().optional(),
+  "requirementIds": zod.array(zod.string()).optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "sources": zod.array(zod.object({
+  "id": zod.enum(['problem', 'prototype', 'agent']),
+  "name": zod.string(),
+  "text": zod.string(),
+  "files": zod.array(zod.string()),
+  "changed": zod.boolean(),
+  "supplied": zod.boolean().optional()
+})),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "answer": zod.string(),
+  "acknowledged": zod.boolean(),
+  "itemIds": zod.array(zod.string()).optional()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "boundary": zod.string()
+})).optional(),
+  "coverage": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "excerpt": zod.string(),
+  "disposition": zod.enum(['accounted', 'unresolved', 'out-of-scope']),
+  "requirementIds": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "reviewed": zod.boolean()
+})).optional(),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "itemIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "resolved": zod.boolean()
+})).optional(),
+  "removedItemIds": zod.array(zod.string()).optional(),
+  "orderReviewed": zod.boolean(),
+  "safety": zod.string(),
+  "agreed": zod.boolean(),
+  "confirmed": zod.boolean(),
+  "interpretedHash": zod.string().optional()
+}),
   "revision": zod.number().int(),
   "status": zod.enum(['draft', 'review', 'confirmed']),
   "updatedAt": zod.string(),
@@ -2010,13 +2122,125 @@ export const createIntakeRecordBodyTitleMax = 200;
 
 
 export const CreateIntakeRecordBody = zod.object({
-  "title": zod.string().min(1).max(createIntakeRecordBodyTitleMax)
+  "title": zod.string().max(createIntakeRecordBodyTitleMax).optional()
 })
+
+export const createIntakeRecordResponseModelNameValueMax = 200;
+
+
 
 export const CreateIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "model": zod.record(zod.string(), zod.unknown()),
+  "model": zod.object({
+  "name": zod.object({
+  "value": zod.string().min(1).max(createIntakeRecordResponseModelNameValueMax),
+  "origin": zod.enum(['generated', 'manual']),
+  "provenance": zod.string()
+}).optional(),
+  "profile": zod.object({
+  "problem": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "user": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "scope": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "outcome": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+})
+}),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "sources": zod.array(zod.enum(['problem', 'prototype', 'agent'])),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "group": zod.string().optional(),
+  "kind": zod.enum(['functional', 'constraint']).optional(),
+  "acceptance": zod.string().optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']).optional(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "workflow": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "dependency": zod.string(),
+  "status": zod.enum(['Described', 'Inferred', 'Needs clarification', 'Confirmed']),
+  "changed": zod.boolean(),
+  "gap": zod.string(),
+  "carry": zod.boolean(),
+  "group": zod.string().optional(),
+  "requirementIds": zod.array(zod.string()).optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "sources": zod.array(zod.object({
+  "id": zod.enum(['problem', 'prototype', 'agent']),
+  "name": zod.string(),
+  "text": zod.string(),
+  "files": zod.array(zod.string()),
+  "changed": zod.boolean(),
+  "supplied": zod.boolean().optional()
+})),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "answer": zod.string(),
+  "acknowledged": zod.boolean(),
+  "itemIds": zod.array(zod.string()).optional()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "boundary": zod.string()
+})).optional(),
+  "coverage": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "excerpt": zod.string(),
+  "disposition": zod.enum(['accounted', 'unresolved', 'out-of-scope']),
+  "requirementIds": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "reviewed": zod.boolean()
+})).optional(),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "itemIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "resolved": zod.boolean()
+})).optional(),
+  "removedItemIds": zod.array(zod.string()).optional(),
+  "orderReviewed": zod.boolean(),
+  "safety": zod.string(),
+  "agreed": zod.boolean(),
+  "confirmed": zod.boolean(),
+  "interpretedHash": zod.string().optional()
+}),
   "revision": zod.number().int(),
   "status": zod.enum(['draft', 'review', 'confirmed']),
   "updatedAt": zod.string(),
@@ -2036,10 +2260,122 @@ export const GetIntakeRecordParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const getIntakeRecordResponseModelNameValueMax = 200;
+
+
+
 export const GetIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "model": zod.record(zod.string(), zod.unknown()),
+  "model": zod.object({
+  "name": zod.object({
+  "value": zod.string().min(1).max(getIntakeRecordResponseModelNameValueMax),
+  "origin": zod.enum(['generated', 'manual']),
+  "provenance": zod.string()
+}).optional(),
+  "profile": zod.object({
+  "problem": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "user": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "scope": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "outcome": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+})
+}),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "sources": zod.array(zod.enum(['problem', 'prototype', 'agent'])),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "group": zod.string().optional(),
+  "kind": zod.enum(['functional', 'constraint']).optional(),
+  "acceptance": zod.string().optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']).optional(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "workflow": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "dependency": zod.string(),
+  "status": zod.enum(['Described', 'Inferred', 'Needs clarification', 'Confirmed']),
+  "changed": zod.boolean(),
+  "gap": zod.string(),
+  "carry": zod.boolean(),
+  "group": zod.string().optional(),
+  "requirementIds": zod.array(zod.string()).optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "sources": zod.array(zod.object({
+  "id": zod.enum(['problem', 'prototype', 'agent']),
+  "name": zod.string(),
+  "text": zod.string(),
+  "files": zod.array(zod.string()),
+  "changed": zod.boolean(),
+  "supplied": zod.boolean().optional()
+})),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "answer": zod.string(),
+  "acknowledged": zod.boolean(),
+  "itemIds": zod.array(zod.string()).optional()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "boundary": zod.string()
+})).optional(),
+  "coverage": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "excerpt": zod.string(),
+  "disposition": zod.enum(['accounted', 'unresolved', 'out-of-scope']),
+  "requirementIds": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "reviewed": zod.boolean()
+})).optional(),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "itemIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "resolved": zod.boolean()
+})).optional(),
+  "removedItemIds": zod.array(zod.string()).optional(),
+  "orderReviewed": zod.boolean(),
+  "safety": zod.string(),
+  "agreed": zod.boolean(),
+  "confirmed": zod.boolean(),
+  "interpretedHash": zod.string().optional()
+}),
   "revision": zod.number().int(),
   "status": zod.enum(['draft', 'review', 'confirmed']),
   "updatedAt": zod.string(),
@@ -2061,19 +2397,241 @@ export const SaveIntakeRecordParams = zod.object({
 
 export const saveIntakeRecordBodyTitleMax = 200;
 
+export const saveIntakeRecordBodyModelNameValueMax = 200;
+
 
 
 
 export const SaveIntakeRecordBody = zod.object({
-  "title": zod.string().min(1).max(saveIntakeRecordBodyTitleMax),
-  "model": zod.record(zod.string(), zod.unknown()),
+  "title": zod.string().max(saveIntakeRecordBodyTitleMax).optional(),
+  "model": zod.object({
+  "name": zod.object({
+  "value": zod.string().min(1).max(saveIntakeRecordBodyModelNameValueMax),
+  "origin": zod.enum(['generated', 'manual']),
+  "provenance": zod.string()
+}).optional(),
+  "profile": zod.object({
+  "problem": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "user": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "scope": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "outcome": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+})
+}),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "sources": zod.array(zod.enum(['problem', 'prototype', 'agent'])),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "group": zod.string().optional(),
+  "kind": zod.enum(['functional', 'constraint']).optional(),
+  "acceptance": zod.string().optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']).optional(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "workflow": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "dependency": zod.string(),
+  "status": zod.enum(['Described', 'Inferred', 'Needs clarification', 'Confirmed']),
+  "changed": zod.boolean(),
+  "gap": zod.string(),
+  "carry": zod.boolean(),
+  "group": zod.string().optional(),
+  "requirementIds": zod.array(zod.string()).optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "sources": zod.array(zod.object({
+  "id": zod.enum(['problem', 'prototype', 'agent']),
+  "name": zod.string(),
+  "text": zod.string(),
+  "files": zod.array(zod.string()),
+  "changed": zod.boolean(),
+  "supplied": zod.boolean().optional()
+})),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "answer": zod.string(),
+  "acknowledged": zod.boolean(),
+  "itemIds": zod.array(zod.string()).optional()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "boundary": zod.string()
+})).optional(),
+  "coverage": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "excerpt": zod.string(),
+  "disposition": zod.enum(['accounted', 'unresolved', 'out-of-scope']),
+  "requirementIds": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "reviewed": zod.boolean()
+})).optional(),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "itemIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "resolved": zod.boolean()
+})).optional(),
+  "removedItemIds": zod.array(zod.string()).optional(),
+  "orderReviewed": zod.boolean(),
+  "safety": zod.string(),
+  "agreed": zod.boolean(),
+  "confirmed": zod.boolean(),
+  "interpretedHash": zod.string().optional()
+}),
   "revision": zod.number().int().min(1)
 })
+
+export const saveIntakeRecordResponseModelNameValueMax = 200;
+
+
 
 export const SaveIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "model": zod.record(zod.string(), zod.unknown()),
+  "model": zod.object({
+  "name": zod.object({
+  "value": zod.string().min(1).max(saveIntakeRecordResponseModelNameValueMax),
+  "origin": zod.enum(['generated', 'manual']),
+  "provenance": zod.string()
+}).optional(),
+  "profile": zod.object({
+  "problem": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "user": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "scope": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "outcome": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+})
+}),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "sources": zod.array(zod.enum(['problem', 'prototype', 'agent'])),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "group": zod.string().optional(),
+  "kind": zod.enum(['functional', 'constraint']).optional(),
+  "acceptance": zod.string().optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']).optional(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "workflow": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "dependency": zod.string(),
+  "status": zod.enum(['Described', 'Inferred', 'Needs clarification', 'Confirmed']),
+  "changed": zod.boolean(),
+  "gap": zod.string(),
+  "carry": zod.boolean(),
+  "group": zod.string().optional(),
+  "requirementIds": zod.array(zod.string()).optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "sources": zod.array(zod.object({
+  "id": zod.enum(['problem', 'prototype', 'agent']),
+  "name": zod.string(),
+  "text": zod.string(),
+  "files": zod.array(zod.string()),
+  "changed": zod.boolean(),
+  "supplied": zod.boolean().optional()
+})),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "answer": zod.string(),
+  "acknowledged": zod.boolean(),
+  "itemIds": zod.array(zod.string()).optional()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "boundary": zod.string()
+})).optional(),
+  "coverage": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "excerpt": zod.string(),
+  "disposition": zod.enum(['accounted', 'unresolved', 'out-of-scope']),
+  "requirementIds": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "reviewed": zod.boolean()
+})).optional(),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "itemIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "resolved": zod.boolean()
+})).optional(),
+  "removedItemIds": zod.array(zod.string()).optional(),
+  "orderReviewed": zod.boolean(),
+  "safety": zod.string(),
+  "agreed": zod.boolean(),
+  "confirmed": zod.boolean(),
+  "interpretedHash": zod.string().optional()
+}),
   "revision": zod.number().int(),
   "status": zod.enum(['draft', 'review', 'confirmed']),
   "updatedAt": zod.string(),
@@ -2104,13 +2662,126 @@ export const InterpretIntakeRecordParams = zod.object({
 
 
 export const InterpretIntakeRecordBody = zod.object({
-  "revision": zod.number().int().min(1)
+  "revision": zod.number().int().min(1),
+  "regenerateName": zod.boolean().optional()
 })
+
+export const interpretIntakeRecordResponseModelNameValueMax = 200;
+
+
 
 export const InterpretIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "model": zod.record(zod.string(), zod.unknown()),
+  "model": zod.object({
+  "name": zod.object({
+  "value": zod.string().min(1).max(interpretIntakeRecordResponseModelNameValueMax),
+  "origin": zod.enum(['generated', 'manual']),
+  "provenance": zod.string()
+}).optional(),
+  "profile": zod.object({
+  "problem": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "user": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "scope": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "outcome": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+})
+}),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "sources": zod.array(zod.enum(['problem', 'prototype', 'agent'])),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "group": zod.string().optional(),
+  "kind": zod.enum(['functional', 'constraint']).optional(),
+  "acceptance": zod.string().optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']).optional(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "workflow": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "dependency": zod.string(),
+  "status": zod.enum(['Described', 'Inferred', 'Needs clarification', 'Confirmed']),
+  "changed": zod.boolean(),
+  "gap": zod.string(),
+  "carry": zod.boolean(),
+  "group": zod.string().optional(),
+  "requirementIds": zod.array(zod.string()).optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "sources": zod.array(zod.object({
+  "id": zod.enum(['problem', 'prototype', 'agent']),
+  "name": zod.string(),
+  "text": zod.string(),
+  "files": zod.array(zod.string()),
+  "changed": zod.boolean(),
+  "supplied": zod.boolean().optional()
+})),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "answer": zod.string(),
+  "acknowledged": zod.boolean(),
+  "itemIds": zod.array(zod.string()).optional()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "boundary": zod.string()
+})).optional(),
+  "coverage": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "excerpt": zod.string(),
+  "disposition": zod.enum(['accounted', 'unresolved', 'out-of-scope']),
+  "requirementIds": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "reviewed": zod.boolean()
+})).optional(),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "itemIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "resolved": zod.boolean()
+})).optional(),
+  "removedItemIds": zod.array(zod.string()).optional(),
+  "orderReviewed": zod.boolean(),
+  "safety": zod.string(),
+  "agreed": zod.boolean(),
+  "confirmed": zod.boolean(),
+  "interpretedHash": zod.string().optional()
+}),
   "revision": zod.number().int(),
   "status": zod.enum(['draft', 'review', 'confirmed']),
   "updatedAt": zod.string(),
@@ -2137,10 +2808,122 @@ export const ConfirmIntakeRecordBody = zod.object({
   "revision": zod.number().int().min(1)
 })
 
+export const confirmIntakeRecordResponseModelNameValueMax = 200;
+
+
+
 export const ConfirmIntakeRecordResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "model": zod.record(zod.string(), zod.unknown()),
+  "model": zod.object({
+  "name": zod.object({
+  "value": zod.string().min(1).max(confirmIntakeRecordResponseModelNameValueMax),
+  "origin": zod.enum(['generated', 'manual']),
+  "provenance": zod.string()
+}).optional(),
+  "profile": zod.object({
+  "problem": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "user": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "scope": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+}),
+  "outcome": zod.object({
+  "value": zod.string(),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "basis": zod.enum(['explicit', 'inferred', 'unknown']).optional(),
+  "provenance": zod.string().optional()
+})
+}),
+  "requirements": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "sources": zod.array(zod.enum(['problem', 'prototype', 'agent'])),
+  "reviewed": zod.boolean(),
+  "changed": zod.boolean(),
+  "group": zod.string().optional(),
+  "kind": zod.enum(['functional', 'constraint']).optional(),
+  "acceptance": zod.string().optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "capabilities": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']).optional(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "workflow": zod.string(),
+  "input": zod.string(),
+  "output": zod.string(),
+  "dependency": zod.string(),
+  "status": zod.enum(['Described', 'Inferred', 'Needs clarification', 'Confirmed']),
+  "changed": zod.boolean(),
+  "gap": zod.string(),
+  "carry": zod.boolean(),
+  "group": zod.string().optional(),
+  "requirementIds": zod.array(zod.string()).optional(),
+  "provenance": zod.string().optional(),
+  "edited": zod.boolean().optional()
+})),
+  "sources": zod.array(zod.object({
+  "id": zod.enum(['problem', 'prototype', 'agent']),
+  "name": zod.string(),
+  "text": zod.string(),
+  "files": zod.array(zod.string()),
+  "changed": zod.boolean(),
+  "supplied": zod.boolean().optional()
+})),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "answer": zod.string(),
+  "acknowledged": zod.boolean(),
+  "itemIds": zod.array(zod.string()).optional()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "boundary": zod.string()
+})).optional(),
+  "coverage": zod.array(zod.object({
+  "id": zod.string(),
+  "sourceId": zod.enum(['problem', 'prototype', 'agent']),
+  "excerpt": zod.string(),
+  "disposition": zod.enum(['accounted', 'unresolved', 'out-of-scope']),
+  "requirementIds": zod.array(zod.string()),
+  "capabilityIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "reviewed": zod.boolean()
+})).optional(),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "itemIds": zod.array(zod.string()),
+  "note": zod.string(),
+  "resolved": zod.boolean()
+})).optional(),
+  "removedItemIds": zod.array(zod.string()).optional(),
+  "orderReviewed": zod.boolean(),
+  "safety": zod.string(),
+  "agreed": zod.boolean(),
+  "confirmed": zod.boolean(),
+  "interpretedHash": zod.string().optional()
+}),
   "revision": zod.number().int(),
   "status": zod.enum(['draft', 'review', 'confirmed']),
   "updatedAt": zod.string(),

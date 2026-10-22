@@ -3,14 +3,15 @@ import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Download, FileText, GitBranch, MessageSquare, Pencil, Plus, RefreshCw, Save, Sparkles, Trash2, Undo2 } from 'lucide-react';
-import { compareIntakeRecord, confirmIntakeRecord, deleteIntakeRecord, getGetIntakeRecordQueryKey, getIntakeRecord, getListIntakeRecordsQueryKey, interpretIntakeRecord, saveIntakeRecord, useGetIntakeRecord, type IntakeAttachment, type IntakeRecord } from '@workspace/api-client-react';
+import { compareIntakeRecord, confirmIntakeRecord, deleteIntakeRecord, getGetIntakeRecordQueryKey, getIntakeRecord, getListIntakeRecordsQueryKey, interpretIntakeRecord, saveIntakeRecord, useGetIntakeRecord, type IntakeAttachment, type IntakeModel, type IntakeRecord } from '@workspace/api-client-react';
 import { SourceCard, type SourceCardHandle } from './cards';
 import { privacyKey } from './Records';
 import GuidedReview, { approvalProgress, firstPendingStep, type GuideStep } from './GuidedReview';
-import { errorMessage, errorStatus, hasInterpretation, hasSourceMaterial, normalizeModel, PROFILE_KEYS, readiness, sourceLabels, SOURCE_IDS, type Model, type ProfileKey, type Requirement, type Source, type SourceId } from './model';
+import Structured from './Structured';
+import { serializeModel, displayName, NAME_PENDING, errorMessage, errorStatus, hasInterpretation, hasSourceMaterial, normalizeModel, PROFILE_KEYS, readiness, sourceLabels, SOURCE_IDS, type Model, type ProfileKey, type Requirement, type Source, type SourceId } from './model';
 
 type Stage = 'inputs' | 'review' | 'confirm';
-type Busy = null | 'save' | 'interpret' | 'confirm' | 'delete' | 'compare';
+type Busy = null | 'save' | 'interpret' | 'name' | 'confirm' | 'delete' | 'compare';
 const compareResponse = z.object({ briefId: z.string().trim().min(1) });
 const sourceIcon = (id: SourceId) => (id === 'problem' ? <MessageSquare /> : id === 'prototype' ? <FileText /> : <GitBranch />);
 
@@ -38,6 +39,8 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
   const [saved, setSaved] = useState(() => normalizeModel(initial.model));
   const [model, setModel] = useState(saved);
   const [title, setTitle] = useState(initial.title);
+  const [showFull, setShowFull] = useState(true);
+  const [structDirty, setStructDirty] = useState(false);
   const [attachments, setAttachments] = useState<IntakeAttachment[]>(initial.attachments);
   const [busy, setBusy] = useState<Busy>(null);
   const [conflict, setConflict] = useState(false);
@@ -71,11 +74,12 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
   const gaps = model.capabilities.filter(c => c.gap.trim());
 
   useEffect(() => {
-    const h = (e: BeforeUnloadEvent) => { if (dirty || reviewDraftDirty || sourceDraftDirty) { e.preventDefault(); } };
+    const h = (e: BeforeUnloadEvent) => { if (dirty || reviewDraftDirty || sourceDraftDirty || structDirty) { e.preventDefault(); } };
     window.addEventListener('beforeunload', h); return () => window.removeEventListener('beforeunload', h);
-  }, [dirty, reviewDraftDirty, sourceDraftDirty]);
+  }, [dirty, reviewDraftDirty, sourceDraftDirty, structDirty]);
 
   const setStage = (next: Stage) => {
+    if (structDirty && next !== stage) { setNotice('Save or cancel your open correction in the full structured output first.'); return; }
     if (stage === 'inputs' && next !== 'inputs' && Object.values(dirtyInputs.current).some(Boolean)) { setNotice('Keep your changed inputs before leaving this step. Unsaved drafts are preserved when switching input types.'); return; }
     if (next !== 'inputs' && !interpreted) { setNotice('Nothing to review yet. Save at least one input and ask for an interpretation first.'); return; }
     if (reviewDraftDirty) { setNotice('Save or cancel your inline correction before changing steps.'); return; }
@@ -87,7 +91,8 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
   const applyServer = (rec: IntakeRecord, sent?: Model) => {
     const m = normalizeModel(rec.model);
     setRecord(rec); setSaved(m); setTitle(t => (t.trim() === rec.title || !sent ? rec.title : t)); setAttachments(rec.attachments);
-    setModel(cur => (!sent || JSON.stringify(cur) === JSON.stringify(sent) ? m : cur));
+    // A manual name always survives server round-trips (interpretation, reconciliation).
+    setModel(cur => { const keep = cur.name?.origin === 'manual' && (m.name?.value !== cur.name.value || m.name?.origin !== 'manual') ? { ...m, name: cur.name } : m; return !sent || JSON.stringify(cur) === JSON.stringify(sent) ? keep : cur; });
     qc.setQueryData(getGetIntakeRecordQueryKey(id), rec);
     void qc.invalidateQueries({ queryKey: getListIntakeRecordsQueryKey() });
   };
@@ -97,9 +102,10 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
     setFailure({ message: `${action} failed: ${errorMessage(e)}`, retry });
   };
   const save = async (next: Model = model, message = 'Saved.'): Promise<IntakeRecord | null> => {
+    if (structDirty) { setNotice('Save or cancel your open correction in the full structured output first.'); return null; }
     setBusy('save'); setFailure(null);
     try {
-      const rec = await saveIntakeRecord(id, { title: title.trim() || record.title, model: next as unknown as Record<string, unknown>, revision: record.revision });
+      const rec = await saveIntakeRecord(id, { title: displayName(next, title), model: serializeModel(next) as unknown as IntakeModel, revision: record.revision });
       applyServer(rec, next); setNotice(`${message} Revision ${rec.revision}.`); return rec;
     } catch (e) { handleError(e, 'Saving', () => void save(next, message)); return null; } finally { setBusy(null); }
   };
@@ -108,6 +114,7 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
     catch (e) { setFailure({ message: `Could not load the latest version: ${errorMessage(e)}`, retry: () => void reloadLatest() }); }
   };
   const interpret = async () => {
+    if (structDirty) { setNotice('Save or cancel your open correction in the full structured output first.'); return; }
     if (Object.values(dirtyInputs.current).some(Boolean)) { setNotice('Keep or discard your changed inputs before asking for an interpretation.'); return; }
     if (!hasSourceMaterial(model)) { setNotice('Add at least one input before asking for an interpretation.'); return; }
     let rev = record.revision;
@@ -119,7 +126,31 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
       setNotice('Interpretation ready. Read each item against your inputs; your previously confirmed corrections are kept where unaffected.');
     } catch (e) { handleError(e, 'Interpretation', () => void interpret()); setNotice('Interpretation did not complete.'); } finally { setBusy(null); }
   };
+  /** Regenerate ONLY the name: the server re-reads saved inputs, then every other part of the local review is written back unchanged. */
+  const regenerateName = async () => {
+    if (structDirty) { setNotice('Save or cancel your open correction in the full structured output first.'); return; }
+    if (!hasInterpretation(model) || !model.sources.every(x => !x.changed) || Object.values(dirtyInputs.current).some(Boolean)) { setNotice('Your inputs changed since the last interpretation. Interpret the latest inputs first; a name is suggested as part of that.'); return; }
+    if (!window.confirm('Suggest a new name with AI?\n\nYour saved inputs are sent to an AI model to suggest a name. Your current name' + (model.name?.origin === 'manual' ? ' (which you set yourself)' : '') + ' will be replaced.\n\nOnly the name changes. Your needs, capabilities, mappings, coverage and review progress are kept.\n\nContinue?')) return;
+    let rev = record.revision;
+    if (dirty) { const rec = await save(model, 'Saved before naming.'); if (!rec) return; rev = rec.revision; }
+    setBusy('name'); setFailure(null);
+    try {
+      const rec = await interpretIntakeRecord(id, { revision: rev, regenerateName: true });
+      const m = normalizeModel(rec.model);
+      setRecord(rec); setSaved(m); setModel(m); setTitle(rec.title); setAttachments(rec.attachments);
+      qc.setQueryData(getGetIntakeRecordQueryKey(id), rec); void qc.invalidateQueries({ queryKey: getListIntakeRecordsQueryKey() });
+      setNotice(m.name ? `Name suggested: “${m.name.value}”. Your review is unchanged.` : 'No name could be suggested from these inputs. Your review is unchanged.');
+    } catch (e) { handleError(e, 'Naming', () => void regenerateName()); } finally { setBusy(null); }
+  };
+  const setManualName = (value: string) => {
+    const v = value.trim(); setTitle(v);
+    if (!v) { setNotice('A name cannot be blank. Keep the current one or suggest a new one.'); return; }
+    if (v === model.name?.value && model.name.origin === 'manual') return;
+    history.current.push(structuredClone(model)); setHistoryCount(history.current.length);
+    setModel(m => ({ ...m, name: { value: v, origin: 'manual', provenance: 'Named by you' } })); setNotice('Name set by you. It will be kept through re-interpretation. Unsaved.');
+  };
   const confirm = async () => {
+    if (structDirty) { setNotice('Save or cancel your open correction in the full structured output first.'); return; }
     let rev = record.revision;
     if (dirty) { const rec = await save(model, 'Saved before confirmation.'); if (!rec) return; rev = rec.revision; }
     setBusy('confirm'); setFailure(null);
@@ -128,7 +159,7 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
   };
   const compare = async () => {
     if (!serverConfirmed || busy || conflict || Object.values(dirtyInputs.current).some(Boolean)) return;
-    if (!window.confirm('Compare with library?\n\nThis copies your confirmed business profile and requirements, in their agreed order, into the existing SHARED DEMO library-matching workspace. People using that workspace can see this copied information.\n\nPrivate source files, source text and capability claims are NOT shared. This handoff does not reinterpret your intake or use AI.\n\nContinue?')) return;
+    if (!window.confirm('Compare with library?\n\nThis copies this intake’s NAME (“' + (shownName || 'untitled intake') + '”), your confirmed business profile and your requirements in their agreed order into the existing SHARED DEMO library-matching workspace. People using that workspace can see this copied information.\n\nPrivate source files, source text and capability claims are NOT shared. This handoff does not reinterpret your intake or use AI.\n\nContinue?')) return;
     setBusy('compare'); setFailure(null);
     try {
       const body = await compareIntakeRecord(id, { revision: record.revision }, { credentials: 'same-origin' });
@@ -139,7 +170,7 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
     finally { setBusy(null); }
   };
   const remove = async () => {
-    if (!window.confirm(`Delete “${record.title}” and its files? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete “${shownName || 'this intake'}” and its files? This cannot be undone.`)) return;
     setBusy('delete');
     try { await deleteIntakeRecord(id); qc.removeQueries({ queryKey: getGetIntakeRecordQueryKey(id) }); await qc.invalidateQueries({ queryKey: getListIntakeRecordsQueryKey() }); navigate('/discover'); }
     catch (e) { setBusy(null); setFailure({ message: `Delete failed: ${errorMessage(e)}`, retry: () => void remove() }); }
@@ -193,18 +224,20 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
     commit({ ...model, questions: model.questions.map(q => q.id === qid ? { ...q, ...patch } : q), orderReviewed: changedAnswer ? false : model.orderReviewed, requirements: changedAnswer ? model.requirements.map(r => ({ ...r, reviewed: false })) : model.requirements }, changedAnswer ? 'Answer recorded. Needs require re-review; re-interpret to apply your answers.' : 'Question acknowledgement updated.');
   };
   const locked = busy !== null;
+  const shownName = displayName(model, title);
   const progress = approvalProgress(model);
   const curStage: Stage = stage === 'review' && guideStep === 'agree' ? 'confirm' : stage;
 
   return <div className="fi-wrap">
     <div className="fi-stage"><Link href="/discover" className="fi-crumb">All intakes</Link> / Trace · Shared understanding</div>
     <div className="fi-intro"><div><h1>{stage === 'inputs' ? phase === 'consent' ? <>Saved. <em>Now interpret?</em></> : <>Your <em>inputs.</em></> : serverConfirmed ? <>Shared understanding <em>saved.</em></> : <>Get the understanding <em>right.</em></>}</h1>{stage !== 'inputs' && <p>Review the problem, priorities and supplied capabilities.</p>}</div>
-      {editingTitle ? <form className="fi-title-form" onSubmit={e => { e.preventDefault(); if (title.trim()) setEditingTitle(false); }}><input className="fi-input" data-testid="input-title" aria-label="Intake title" maxLength={200} autoFocus value={title} onChange={e => setTitle(e.target.value)} /><button className="fi-btn" disabled={!title.trim()}><Check /></button></form>
-        : <button className="fi-label fi-title-chip" data-testid="button-edit-title" onClick={() => setEditingTitle(true)}><GitBranch />{title || 'Untitled intake'}<Pencil /></button>}
+      {editingTitle ? <form className="fi-title-form" onSubmit={e => { e.preventDefault(); if (title.trim()) { setManualName(title); setEditingTitle(false); } }}><input className="fi-input" data-testid="input-title" aria-label="Intake name" maxLength={200} autoFocus value={title} disabled={locked} onChange={e => setTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') { setTitle(shownName); setEditingTitle(false); } }} /><button className="fi-btn" disabled={!title.trim() || locked}><Check /></button></form>
+        : <span className="fi-actions" style={{ gap: 6 }}><button className="fi-label fi-title-chip" data-testid="button-edit-title" disabled={locked} onClick={() => { setTitle(shownName); setEditingTitle(true); }}><GitBranch />{shownName ? <span data-testid="text-intake-name">{shownName}</span> : <span className="fi-name-status" data-testid="status-name-pending">{NAME_PENDING}</span>}{model.name?.origin === 'manual' && <small>· named by you</small>}<Pencil /></button>
+          {interpreted && <button className="fi-link" data-testid="button-regenerate-name" disabled={locked || conflict} onClick={() => void regenerateName()}><Sparkles style={{ display: 'inline', width: 12, height: 12 }} /> {busy === 'name' ? 'Suggesting…' : 'Suggest a new name'}</button>}</span>}
     </div>
     <nav className="fi-steps" aria-label="Intake stages">{([['inputs', '01', 'Bring your inputs'], ['review', '02', 'Review & refine'], ['confirm', '03', 'Agree on the profile']] as const).map(([key, n, text]) => <button key={key} data-testid={`step-${key}`} aria-current={curStage === key ? 'step' : undefined} disabled={key !== 'inputs' && !interpreted} className={curStage === key ? 'active' : ''} onClick={() => setStage(key)}><b>{n}</b>{text}{(key === 'inputs' && interpreted && sourcesReady || key === 'confirm' && serverConfirmed) && <Check />}</button>)}</nav>
 
-    {conflict && <div className="fi-warning" role="alert"><strong>This intake was changed somewhere else.</strong><p>A newer saved revision exists, so your changes were not saved. Your draft is still on screen. Download it if you want to keep a copy, then load the latest version.</p><div className="fi-actions" style={{ justifyContent: 'flex-start' }}><button className="fi-btn" onClick={() => download(`intake-draft-${id}.json`, { title, model })}><Download />Download my draft</button><button className="fi-btn primary" data-testid="button-reload-latest" onClick={() => void reloadLatest()}><RefreshCw />Load latest saved version</button></div></div>}
+    {conflict && <div className="fi-warning" role="alert"><strong>This intake was changed somewhere else.</strong><p>A newer saved revision exists, so your changes were not saved. Your draft is still on screen. Download it if you want to keep a copy, then load the latest version.</p><div className="fi-actions" style={{ justifyContent: 'flex-start' }}><button className="fi-btn" onClick={() => download(`intake-draft-${id}.json`, { title: shownName, model })}><Download />Download my draft</button><button className="fi-btn primary" data-testid="button-reload-latest" onClick={() => void reloadLatest()}><RefreshCw />Load latest saved version</button></div></div>}
     {failure && !conflict && <div className="fi-warning" role="alert"><strong>Something did not complete.</strong><p>{failure.message}</p><div className="fi-actions" style={{ justifyContent: 'flex-start' }}><button className="fi-link" onClick={() => setFailure(null)}>Dismiss</button><button className="fi-btn" onClick={failure.retry}><RefreshCw />Try again</button></div></div>}
 
     <div className={`fi-layout ${stage === 'inputs' ? 'solo' : ''}`}><div className="fi-main">
@@ -231,9 +264,12 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
           {interpreted && <button type="button" className="fi-btn" onClick={() => setStage('review')}>Skip, keep current review</button>}
           <button className="fi-btn primary fi-btn-lg" data-testid="button-interpret" disabled={locked || !interpretAck || !hasSourceMaterial(model) || conflict} onClick={() => void interpret()}><Sparkles />{busy === 'interpret' ? 'Interpreting…' : interpreted ? 'Re-interpret' : 'Interpret'}</button>
         </div>
-      </section> : <GuidedReview model={model} attachments={attachments} step={guideStep} onStep={setGuideStep} locked={locked} busy={busy} conflict={conflict} serverConfirmed={serverConfirmed} interpretAck={interpretAck} onInterpretAck={setInterpretAck}
+      </section> : <>
+        <div className="sx-toggle"><p className="fi-hint">{showFull ? 'The full structured output comes first. Then confirm it step by step below.' : 'The full structured output is hidden.'}</p><button className="fi-btn" data-testid="button-toggle-structured" aria-expanded={showFull} onClick={() => { if (showFull && structDirty) { setNotice('Save or cancel your open correction in the full structured output first.'); return; } setShowFull(v => !v); }}>{showFull ? 'Hide full output' : 'Show full structured output'}</button></div>
+        {showFull && <Structured model={model} locked={locked || conflict} onCommit={commit} onNotice={setNotice} onDraftDirty={setStructDirty} />}
+        <GuidedReview model={model} attachments={attachments} step={guideStep} onStep={setGuideStep} locked={locked} busy={busy} conflict={conflict} serverConfirmed={serverConfirmed} interpretAck={interpretAck} onInterpretAck={setInterpretAck}
         onCommit={commit} onEditProfile={editProfile} onAnswer={answerQuestion} onReorder={reorder} onDragEnd={() => { dragging.current = false; }} onInterpret={() => void interpret()} onConfirm={() => void confirm()} onCompare={() => void compare()} onDownload={() => download(`fusebox-intake-${id}.json`, record)}
-        onAgreed={v => setModel(m => ({ ...m, agreed: v }))} onGoInputs={() => setStage('inputs')} onNotice={setNotice} onDraftDirty={setReviewDraftDirty} compareHidden={editingTitle} />}
+        onAgreed={v => setModel(m => ({ ...m, agreed: v }))} onGoInputs={() => setStage('inputs')} onNotice={setNotice} onDraftDirty={setReviewDraftDirty} compareHidden={editingTitle} /></>}
     </div>
 
     <aside className="fi-aside">
@@ -241,6 +277,6 @@ function Workspace({ initial }: { initial: IntakeRecord }) {
       <p className="fi-demo">SAVED TO YOUR ACCOUNT<br /><button className="fi-link" style={{ fontSize: '10px', marginTop: 8 }} data-testid="button-delete" disabled={locked} onClick={() => void remove()}><Trash2 style={{ display: 'inline', width: 11, height: 11, marginRight: 3 }} />Delete this intake</button></p>
     </aside></div>
     <footer className="fi-bottom"><div><strong data-testid="status-progress">{serverConfirmed ? 'Shared understanding confirmed' : interpreted ? `${progress.done} of ${progress.total} approvals given` : 'Not yet interpreted'}</strong><small>{model.orderReviewed ? 'Priority order agreed' : 'Priority order needs agreement'} · {gaps.filter(c => c.carry).length} of {gaps.length} open gaps acknowledged</small></div><div className="fi-bottom-actions"></div></footer>
-    <div className="fi-feedback" role="status" aria-live="polite"><span data-testid="status-notice">{notice}</span><span className={`fi-save-state ${dirty ? 'dirty' : ''}`} data-testid="status-saved">{busy === 'save' ? 'Saving…' : dirty ? 'Unsaved changes' : `Saved · rev ${record.revision} · ${new Date(record.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}</span><button className="fi-icon" disabled={!historyCount || locked} onClick={undo} aria-label="Undo last change" data-testid="button-undo"><Undo2 /></button><button className="fi-btn" data-testid="button-save" disabled={!dirty || locked || conflict || !title.trim()} onClick={() => void save(model, 'Changes saved.')}><Save />Save</button></div>
+    <div className="fi-feedback" role="status" aria-live="polite"><span data-testid="status-notice">{notice}</span><span className={`fi-save-state ${dirty ? 'dirty' : ''}`} data-testid="status-saved">{busy === 'save' ? 'Saving…' : dirty ? 'Unsaved changes' : `Saved · rev ${record.revision} · ${new Date(record.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}</span><button className="fi-icon" disabled={!historyCount || locked} onClick={undo} aria-label="Undo last change" data-testid="button-undo"><Undo2 /></button><button className="fi-btn" data-testid="button-save" disabled={!dirty || locked || conflict || structDirty} onClick={() => void save(model, 'Changes saved.')}><Save />Save</button></div>
   </div>;
 }

@@ -77,6 +77,7 @@ import type {
   IntakeCombinationInput,
   IntakeComparison,
   IntakeFileInput,
+  IntakeInterpretInput,
   IntakeRecord,
   IntakeRecordInput,
   IntakeRecordUpdate,
@@ -3675,7 +3676,7 @@ export const getInterpretIntakeRecordUrl = (id: string,) => {
 }
 
 export const interpretIntakeRecord = async (id: string,
-    intakeRevisionInput: IntakeRevisionInput, options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord> => {
+    intakeInterpretInput: IntakeInterpretInput, options?: Parameters<typeof customFetch>[1]): Promise<IntakeRecord> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -3696,7 +3697,7 @@ return customFetch<IntakeRecord>(getInterpretIntakeRecordUrl(id),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(intakeRevisionInput)
+    body: JSON.stringify(intakeInterpretInput)
   }
 );}
 
@@ -3734,9 +3735,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type InterpretIntakeRecordMutationResult = NonNullable<Awaited<ReturnType<typeof interpretIntakeRecord>>>
-    export type InterpretIntakeRecordMutationBody = BodyType<IntakeRevisionInput>
+    export type InterpretIntakeRecordMutationBody = BodyType<IntakeInterpretInput>
     export type InterpretIntakeRecordMutationError = ErrorType<unknown>
-    export type InterpretIntakeRecordMutationVariables = {id: string;data: BodyType<IntakeRevisionInput>}
+    export type InterpretIntakeRecordMutationVariables = {id: string;data: BodyType<IntakeInterpretInput>}
 
     export const useInterpretIntakeRecord = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof interpretIntakeRecord>>, TError,InterpretIntakeRecordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

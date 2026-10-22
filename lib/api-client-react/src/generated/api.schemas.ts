@@ -843,8 +843,6 @@ export interface IntakeSession {
   user: IntakeSessionUser;
 }
 
-export type IntakeRecordModel = { [key: string]: unknown };
-
 export type IntakeRecordStatus = typeof IntakeRecordStatus[keyof typeof IntakeRecordStatus];
 
 
@@ -853,6 +851,202 @@ export const IntakeRecordStatus = {
   review: 'review',
   confirmed: 'confirmed',
 } as const;
+
+export type IntakeModelNameOrigin = typeof IntakeModelNameOrigin[keyof typeof IntakeModelNameOrigin];
+
+
+export const IntakeModelNameOrigin = {
+  generated: 'generated',
+  manual: 'manual',
+} as const;
+
+export type IntakeProfileFieldBasis = typeof IntakeProfileFieldBasis[keyof typeof IntakeProfileFieldBasis];
+
+
+export const IntakeProfileFieldBasis = {
+  explicit: 'explicit',
+  inferred: 'inferred',
+  unknown: 'unknown',
+} as const;
+
+export interface IntakeProfileField {
+  value: string;
+  reviewed: boolean;
+  changed: boolean;
+  basis?: IntakeProfileFieldBasis;
+  provenance?: string;
+}
+
+export type IntakeRequirementSourcesItem = typeof IntakeRequirementSourcesItem[keyof typeof IntakeRequirementSourcesItem];
+
+
+export const IntakeRequirementSourcesItem = {
+  problem: 'problem',
+  prototype: 'prototype',
+  agent: 'agent',
+} as const;
+
+export type IntakeRequirementKind = typeof IntakeRequirementKind[keyof typeof IntakeRequirementKind];
+
+
+export const IntakeRequirementKind = {
+  functional: 'functional',
+  constraint: 'constraint',
+} as const;
+
+export interface IntakeRequirement {
+  id: string;
+  text: string;
+  sources: IntakeRequirementSourcesItem[];
+  reviewed: boolean;
+  changed: boolean;
+  group?: string;
+  kind?: IntakeRequirementKind;
+  acceptance?: string;
+  provenance?: string;
+  edited?: boolean;
+}
+
+export type IntakeCapabilitySourceId = typeof IntakeCapabilitySourceId[keyof typeof IntakeCapabilitySourceId];
+
+
+export const IntakeCapabilitySourceId = {
+  problem: 'problem',
+  prototype: 'prototype',
+  agent: 'agent',
+} as const;
+
+export type IntakeCapabilityStatus = typeof IntakeCapabilityStatus[keyof typeof IntakeCapabilityStatus];
+
+
+export const IntakeCapabilityStatus = {
+  Described: 'Described',
+  Inferred: 'Inferred',
+  Needs_clarification: 'Needs clarification',
+  Confirmed: 'Confirmed',
+} as const;
+
+export interface IntakeCapability {
+  id: string;
+  sourceId?: IntakeCapabilitySourceId;
+  title: string;
+  description: string;
+  workflow: string;
+  input: string;
+  output: string;
+  dependency: string;
+  status: IntakeCapabilityStatus;
+  changed: boolean;
+  gap: string;
+  carry: boolean;
+  group?: string;
+  requirementIds?: string[];
+  provenance?: string;
+  edited?: boolean;
+}
+
+export type IntakeModelSourcesItemId = typeof IntakeModelSourcesItemId[keyof typeof IntakeModelSourcesItemId];
+
+
+export const IntakeModelSourcesItemId = {
+  problem: 'problem',
+  prototype: 'prototype',
+  agent: 'agent',
+} as const;
+
+export type IntakeModelCoverageItemSourceId = typeof IntakeModelCoverageItemSourceId[keyof typeof IntakeModelCoverageItemSourceId];
+
+
+export const IntakeModelCoverageItemSourceId = {
+  problem: 'problem',
+  prototype: 'prototype',
+  agent: 'agent',
+} as const;
+
+export type IntakeModelCoverageItemDisposition = typeof IntakeModelCoverageItemDisposition[keyof typeof IntakeModelCoverageItemDisposition];
+
+
+export const IntakeModelCoverageItemDisposition = {
+  accounted: 'accounted',
+  unresolved: 'unresolved',
+  'out-of-scope': 'out-of-scope',
+} as const;
+
+export type IntakeModelName = {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  value: string;
+  origin: IntakeModelNameOrigin;
+  provenance: string;
+};
+
+export type IntakeModelProfile = {
+  problem: IntakeProfileField;
+  user: IntakeProfileField;
+  scope: IntakeProfileField;
+  outcome: IntakeProfileField;
+};
+
+export type IntakeModelSourcesItem = {
+  id: IntakeModelSourcesItemId;
+  name: string;
+  text: string;
+  files: string[];
+  changed: boolean;
+  supplied?: boolean;
+};
+
+export type IntakeModelQuestionsItem = {
+  id: string;
+  text: string;
+  answer: string;
+  acknowledged: boolean;
+  itemIds?: string[];
+};
+
+export type IntakeModelGroupsItem = {
+  id: string;
+  title: string;
+  boundary: string;
+};
+
+export type IntakeModelCoverageItem = {
+  id: string;
+  sourceId: IntakeModelCoverageItemSourceId;
+  excerpt: string;
+  disposition: IntakeModelCoverageItemDisposition;
+  requirementIds: string[];
+  capabilityIds: string[];
+  note: string;
+  reviewed: boolean;
+};
+
+export type IntakeModelOverlapsItem = {
+  id: string;
+  itemIds: string[];
+  note: string;
+  resolved: boolean;
+};
+
+export interface IntakeModel {
+  name?: IntakeModelName;
+  profile: IntakeModelProfile;
+  requirements: IntakeRequirement[];
+  capabilities: IntakeCapability[];
+  sources: IntakeModelSourcesItem[];
+  questions: IntakeModelQuestionsItem[];
+  groups?: IntakeModelGroupsItem[];
+  coverage?: IntakeModelCoverageItem[];
+  overlaps?: IntakeModelOverlapsItem[];
+  removedItemIds?: string[];
+  orderReviewed: boolean;
+  safety: string;
+  agreed: boolean;
+  confirmed: boolean;
+  interpretedHash?: string;
+}
 
 export type IntakeAttachmentSourceId = typeof IntakeAttachmentSourceId[keyof typeof IntakeAttachmentSourceId];
 
@@ -886,7 +1080,7 @@ export interface IntakeAttachment {
 export interface IntakeRecord {
   id: string;
   title: string;
-  model: IntakeRecordModel;
+  model: IntakeModel;
   revision: number;
   status: IntakeRecordStatus;
   updatedAt: string;
@@ -894,22 +1088,14 @@ export interface IntakeRecord {
 }
 
 export interface IntakeRecordInput {
-  /**
-     * @minLength 1
-     * @maxLength 200
-     */
-  title: string;
+  /** @maxLength 200 */
+  title?: string;
 }
 
-export type IntakeRecordUpdateModel = { [key: string]: unknown };
-
 export interface IntakeRecordUpdate {
-  /**
-     * @minLength 1
-     * @maxLength 200
-     */
-  title: string;
-  model: IntakeRecordUpdateModel;
+  /** @maxLength 200 */
+  title?: string;
+  model: IntakeModel;
   /** @minimum 1 */
   revision: number;
 }
@@ -917,6 +1103,12 @@ export interface IntakeRecordUpdate {
 export interface IntakeRevisionInput {
   /** @minimum 1 */
   revision: number;
+}
+
+export interface IntakeInterpretInput {
+  /** @minimum 1 */
+  revision: number;
+  regenerateName?: boolean;
 }
 
 export type IntakeFileInputSourceId = typeof IntakeFileInputSourceId[keyof typeof IntakeFileInputSourceId];

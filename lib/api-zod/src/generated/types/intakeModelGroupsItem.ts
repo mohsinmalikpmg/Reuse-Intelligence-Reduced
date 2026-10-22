@@ -6,4 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type IntakeRecordUpdateModel = { [key: string]: unknown };
+export type IntakeModelGroupsItem = {
+  id: string;
+  title: string;
+  boundary: string;
+};

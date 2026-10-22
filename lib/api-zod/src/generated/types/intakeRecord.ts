@@ -6,13 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { IntakeAttachment } from './intakeAttachment';
-import type { IntakeRecordModel } from './intakeRecordModel';
+import type { IntakeModel } from './intakeModel';
 import type { IntakeRecordStatus } from './intakeRecordStatus';
 
 export interface IntakeRecord {
   id: string;
   title: string;
-  model: IntakeRecordModel;
+  model: IntakeModel;
   revision: number;
   status: IntakeRecordStatus;
   updatedAt: string;

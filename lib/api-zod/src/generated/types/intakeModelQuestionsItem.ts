@@ -6,4 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type IntakeRecordModel = { [key: string]: unknown };
+export type IntakeModelQuestionsItem = {
+  id: string;
+  text: string;
+  answer: string;
+  acknowledged: boolean;
+  itemIds?: string[];
+};
