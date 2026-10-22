@@ -3,6 +3,12 @@ name: Intake as collaborative validation
 description: User intent for the intake redesign and the boundary between confirmation and proof.
 ---
 
+Discover should offer a catalog starting point and a synthesized multi-source experiment plan using the library composition tooling. Users choose which complementary capabilities to include together, not only one missing capability at a time.
+
+**Why:** The user explicitly requested a synthesized selection review and continuity from discovery to the experiment.
+
+**How to apply:** Persist the originating intake context and all requirements in the experiment. Keep missing requirements visible whether there is no match, no compatible match, or the user excludes the suggested component. Never discard those gaps on plan edits or treat proposed coverage as proven satisfaction.
+
 Keep the primary intake experience simple: describe → review → find matching solutions. Show an editable name, business problem, concise distinct requirements and supplied capabilities only when a solution is provided. Keep groups, boundaries, source evidence and coverage in collapsed Analysis details; do not require per-item confirmation checkboxes.
 
 **Why:** The user found the expanded MECE interface more complex and worse than the earlier intake. MECE is an analysis responsibility, not an administration task for the user.
